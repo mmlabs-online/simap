@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T08:46:02Z |
-| PR | — |
+| Claimed by | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-019) |
 
 ## Goal
 Org admins can look up who changed what and when.
@@ -45,3 +45,9 @@ spec SYS-03; D28.
 - Plan approved (2026-11-20, batch 2026-11-20-3) — Ming: "duyệt hết theo đề xuất" (every proposal in the batch round accepted). Split: this ticket = Slice A (API); Slice B → SIM-019.2 (Audit page).
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 4, ~305k tokens (planner×1 sonnet 84k, implementer×1 58k, reviewer×1 n/a, security auditor×1 79k)
+- Done: Slice A audit API (/api/audit with filters + keyset cursor, /api/audit/facets); review PASS attempt 1 (one should-fix: impossible cursor date → 500); security 0 🔴 / 0 🟡
+- In progress / next: Ming decides on the cursor fix (default before merge), opens + merges; SIM-019.2 after SIM-006.2
+- Gotchas: real-DB behaviour pending (SIM-026 follow-up)
