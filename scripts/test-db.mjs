@@ -3,6 +3,7 @@
 // connects. Never prints the URL.
 import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { assertDevSeedTarget } from "../db/seeder.js";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -17,7 +18,11 @@ try {
   process.exit(2);
 }
 
-const vitestBin = createRequire(import.meta.url).resolve("vitest/vitest.mjs");
+// `vitest/vitest.mjs` is not in vitest's `exports`; resolve the exported package.json and take the bin next to it.
+const vitestBin = join(
+  dirname(createRequire(import.meta.url).resolve("vitest/package.json")),
+  "vitest.mjs",
+);
 const r = spawnSync(process.execPath, [vitestBin, "run", "-c", "vitest.db.config.ts"], {
   stdio: "inherit",
 });
