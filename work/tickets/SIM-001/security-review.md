@@ -23,3 +23,18 @@ Verdict: **no 🔴 blockers.** No secrets, no client-exposed env, no data leaks.
 
 ### Files reviewed
 `.github/workflows/ci.yml`, `.env.example`, `next.config.ts`, `src/app/api/healthz/route.ts`, `scripts/check-layers.mjs`, `.github/risk-tiers.yml`, `.claude/loop.config.md`, `.github/workflows/risk-tier.yml`, `package.json`, `.gitignore`, `tsconfig.json`, `vitest.config.ts`, `src/app/layout.tsx`, `src/app/page.tsx`. Grep for `process.env` / `NEXT_PUBLIC` across `src`, `scripts`, configs: only `TZ` in `vitest.config.ts`.
+
+## Attempt 2
+Agent: security-ai-generated-code-auditor (via general-purpose, opus). Read-only, diff `c188a64..HEAD` only.
+
+Verdict: **no new 🔴; no Attempt 1 finding changed status** (all 10 open as written — #1–#5, #10 live in `ci.yml` / `risk-tiers.yml` / `check-layers.mjs`, untouched; #6 still holds).
+
+### New findings in this diff
+- 🟢 `next.config.ts:7` `agentRules: false` — only stops Next writing `AGENTS.md` in dev; no env exposure, no `NEXT_PUBLIC_*`, not in the client bundle. Fix: none.
+- 🟢 `.gitattributes:1` `* text=auto eol=lf` — repo-defined line endings, reproducible `format:check`; binaries auto-detected (none yet). Fix: when images/fonts arrive, add explicit `*.png binary` etc.
+- 🟢 `CLAUDE.md:24,74`, `.claude/loop.config.md:5-6` — wording only; no secrets, no High-path semantics change. Fix: none.
+- 🟢 `work/tickets/SIM-001/impl-log.md:52-75` — process notes, no secrets; deleted `AGENTS.md` was untracked. Fix: none.
+
+### Still open from Attempt 1 (unchanged)
+- 🟡 #1 `ci.yml:20` `persist-credentials: false`. 🟡 #2 `ci.yml:20-22` SHA-pin actions. 🟡 #3 `check-layers.mjs:62-63` flag `src/` targets outside the five layers (+ allowlist, test). 🟡 #4 `risk-tiers.yml:6-30` make `risk_tier.py`, `.github/workflows/**`, `risk-tiers.yml` High (+ loop.config mirror, kit upstream).
+- 🟢 #5–#10 as in Attempt 1.

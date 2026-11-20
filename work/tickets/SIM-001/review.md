@@ -106,3 +106,74 @@ None — `security-review.md` Attempt 1 has no 🔴 findings (4 🟡, 6 🟢; se
   pinned 22 — recommend `mise` on Ming's Windows device so local matches CI.
 - SIM-004: copy `.next/static` (and `public/`) into the standalone image (Issue 3).
 - Ming: spaceM thin `AGENTS.md` for simap, and whether to keep Next's agent rules block (Issue 2).
+
+## Attempt 2 — 2026-11-20
+Verdict: PASS
+
+### Checks (run by reviewer)
+Fresh `git clone -b ticket/SIM-001` of the local repo into a new scratch folder (`clone2`, HEAD `34acc32`), Windows +
+Git Bash, Git for Windows default `core.autocrlf=true` (confirmed `git config --get core.autocrlf` = `true`), local
+Node v24.20.0, pnpm 10.34.9, install with `--config.engine-strict=false`. CRLF scan of the working tree
+(`grep -rlI $'\r'`, excluding `.git`): **0 files**.
+- `pnpm install --frozen-lockfile` — exit 0, "Done in 6s using pnpm v10.34.9".
+- `pnpm format:check` — **exit 0**, "All matched files use the correct format. Finished in 10ms on 16 files"
+  (Attempt 1 Issue 1 fixed).
+- `pnpm typecheck && pnpm check:layers` — exit 0, `check-layers: 9 files, no violations`.
+- `pnpm test` — exit 0, `Test Files 2 passed (2)`, `Tests 11 passed (11)`.
+- `pnpm build` — exit 0; routes `○ /`, `○ /_not-found`, `ƒ /api/healthz`; `.next/standalone/server.js` exists.
+- `git status --short` after install + build: clean.
+- Dev smoke (`next dev -p 3133` in the clone): `GET /api/healthz` 200, `cache-control: no-store`, `{"status":"ok"}`;
+  `GET /` contains "Đang xây dựng"; `POST /api/healthz` 405. No `AGENTS.md` created, no "Generated AGENTS.md" line in
+  the dev log, `git status` clean (Attempt 1 Issue 2 fixed).
+- Risk tier (`python .github/scripts/risk_tier.py --base origin/main`): **high**. Ming reviews the PR.
+
+The impl-log Attempt 2 check results match mine.
+
+### Attempt 1 issues
+- Issue 1 🔴 (CRLF checkout fails `format:check`) — fixed: `.gitattributes:1` `* text=auto eol=lf`; verified above on
+  a default-autocrlf clone. Listed under impl-log `Out-of-plan files`.
+- Issue 2 🟡 (`next dev` writes `AGENTS.md`) — fixed: `next.config.ts:7` `agentRules: false`; verified above. Local
+  untracked `AGENTS.md` is gone. Follow-up recorded in impl-log.
+- Issue 3 🟡 (`pnpm start` serves no static assets) — fixed as instructed: `CLAUDE.md:24` states the limit and SIM-004;
+  Follow-up recorded in impl-log.
+- Nits: `.claude/loop.config.md:5-6` header and `CLAUDE.md:74` "Start here" reworded.
+
+### Acceptance criteria
+- [x] AC1 install/dev/typecheck/format:check/test/build work on a clean checkout; standalone output — all Checks above
+  exit 0 on a default Windows clone; `.next/standalone/server.js` exists; dev smoke OK. `.gitattributes:1` makes this
+  device-independent.
+- [x] AC2 `GET /api/healthz` 200 `{status:"ok"}` without DB; Vitest covers it — `src/app/api/healthz/route.ts:1-5`
+  (unchanged, no imports), `src/app/api/healthz/route.test.ts:5-13` (in the 11 passing tests); curl above.
+- [x] AC3 CI runs typecheck, format check, test and build on every PR — `.github/workflows/ci.yml:4-7`, `:26-32`
+  (unchanged since Attempt 1). "Green" is shown only by the PR run; the orchestrator must confirm the `ci` check is
+  green before handing the PR to Ming.
+- [x] AC4 R1 written and layout follows it — `CLAUDE.md:29-33`, `scripts/check-layers.mjs:9-15` (unchanged);
+  `pnpm check:layers` exit 0; `scripts/check-layers.test.ts` passes.
+- [x] AC5 Commands / Prepare / Checks real; `.env.example` names only — `CLAUDE.md:23-26`,
+  `.claude/loop.config.md:21,27-30`; all commands run above. `.env.example` unchanged since Attempt 1.
+
+### Scope
+Rework diff `c188a64..f5ce573` (excluding `work/`): `.gitattributes` (new, justified), `next.config.ts` (+1 line, in
+plan's file list), `CLAUDE.md` (2 lines), `.claude/loop.config.md` (header wording). Nothing else. No new High path
+beyond Attempt 1's list (`next.config.ts` was already in it).
+
+### Rules (CLAUDE.md)
+- R1, R3, R4: no violation (as Attempt 1; rework changes nothing relevant).
+- R5: satisfied — all Checks green on a clean checkout; no new logic in this attempt.
+- R2 / R6: not affected.
+
+### Blockers from review agents
+None — `security-review.md` Attempt 2: no new 🔴, four 🟢 on the rework diff; Attempt 1's 🟡 #1–#4 remain open (not
+blocking; candidates for `debt` issues).
+
+### Nits (do not block)
+- `.claude/loop.config.md:5-6`: "the SIM-002 and the spec fill them" — drop "the".
+- `CLAUDE.md:74`: "run `/idea` ... to write `docs/spec-v1.md`" while `docs/spec-v1.md` already exists (and
+  `CLAUDE.md:8` still says "once it exists"). Could read "the spec is in `docs/spec-v1.md`; continue with `/ticket`".
+- Attempt 1 nits on `scripts/check-layers.mjs:28-33` / `:19-23` still apply.
+
+### Follow-ups (out of scope)
+- Open the `debt` issues the implementer could not (no `gh` on this device): loop.config Domain focus "migrations
+  reversible" vs D3; Domain focus spec edge-case TODO; local Node 24 vs pinned 22 (`mise`); security-review 🟡 #1–#4.
+- SIM-004: copy `.next/static` (and `public/`) into the standalone image.
+- Ming: spaceM thin `AGENTS.md` for simap; whether to re-enable `agentRules`.
