@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { authCopy, authErrorMessage } from "../copy/auth";
+import { orgCopy } from "../copy/org";
 import { AuthLayout } from "./AuthLayout";
 import { SignInScene } from "./SignInScene";
 import {
@@ -81,10 +82,17 @@ describe("other views", () => {
     expect(pending).not.toContain(authCopy.join.continue("an@example.invalid"));
   });
 
-  it("NoOrgView has sign-out", () => {
+  it("NoOrgView shows the AUT-06 text, how to get access, the email, sign-out and a notice", () => {
     const out = html(<NoOrgView email="an@example.invalid" onSignOut={noop} />);
+    expect(out).toContain(orgCopy.none.title);
+    expect(out).toContain("You are not in any organization yet");
+    expect(out).toContain(orgCopy.none.howTo);
     expect(out).toContain(authCopy.actions.signOut);
     expect(out).toContain("an@example.invalid");
+    expect(out).not.toContain(orgCopy.notices.org_denied);
+    expect(html(<NoOrgView email={null} notice="org_denied" onSignOut={noop} />)).toContain(
+      orgCopy.notices.org_denied,
+    );
   });
 
   it("NoAccessView shows 'You don't have permission'", () => {

@@ -1,5 +1,5 @@
 import { networkError, toAuthError } from "@/lib/identity/errors";
-import type { AuthError } from "@/lib/identity/types";
+import type { AuthError, OrgChoice } from "@/lib/identity/types";
 
 type FetchFn = typeof fetch;
 
@@ -9,7 +9,10 @@ export interface IdentityClient {
     password: string;
     turnstileToken?: string;
   }): Promise<{ accountId: string; email: string }>;
-  token(accountId: string): Promise<{ accessToken: string; expiresIn: number }>;
+  /** `orgId` is sent only when given; a token without it carries app-scope roles only. 403 `org_access_denied` if the org is refused. */
+  token(accountId: string, orgId?: string): Promise<{ accessToken: string; expiresIn: number }>;
+  /** The orgs the account may enter for this app (first page). Rejects `unknown` when the body cannot be read. */
+  orgs(accountId: string): Promise<OrgChoice[]>;
   logout(accountId: string): Promise<void>;
   signup(v: {
     email: string;
@@ -31,11 +34,50 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const EXPIRES_MAX = 86400;
 const LOGOUT_TIMEOUT_MS = 5000;
 const ACCOUNTS_TIMEOUT_MS = 5000;
+const ORGS_TIMEOUT_MS = 5000;
 /** A hung /token would hold the cross-tab renewal lock for every tab. */
 const TOKEN_TIMEOUT_MS = 15000;
 const unknownError = (): AuthError => ({ code: "unknown" });
 const asObject = (v: unknown): Record<string, unknown> =>
   typeof v === "object" && v !== null ? (v as Record<string, unknown>) : {};
+
+const firstString = (...vals: unknown[]): string | undefined =>
+  vals.find((v): v is string => typeof v === "string" && v.trim() !== "");
+
+/**
+ * Reads the `/auth/orgs` body. The shape is not documented (Q18), so this accepts a bare array or the first array
+ * under `items` / `orgs` / `organizations` / `data`, and an org either flat or nested under `org` / `organization`.
+ * Roles are ignored. A body that cannot be read rejects `unknown`: never an empty list by mistake.
+ */
+function parseOrgs(json: unknown): OrgChoice[] {
+  const body = asObject(json);
+  const list = Array.isArray(json)
+    ? json
+    : ["items", "orgs", "organizations", "data"]
+        .map((k) => body[k])
+        .find((v): v is unknown[] => Array.isArray(v));
+  if (!list) throw unknownError();
+  const out: OrgChoice[] = [];
+  const seen = new Set<string>();
+  for (const raw of list) {
+    const item = asObject(raw);
+    const src =
+      typeof item.org === "object" && item.org !== null
+        ? asObject(item.org)
+        : typeof item.organization === "object" && item.organization !== null
+          ? asObject(item.organization)
+          : item;
+    const id = firstString(src.id, item.org_id, src.org_id, item.organization_id);
+    const name = firstString(src.name, src.display_name, item.org_name, src.slug);
+    if (!id || !UUID_RE.test(id) || !name) continue;
+    const key = id.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ id: key, name: name.trim().normalize("NFC") });
+  }
+  if (list.length > 0 && out.length === 0) throw unknownError();
+  return out;
+}
 
 /**
  * Credentials mode per call (consumers.md): `cookie` = credentials include + X-MM-App; `app` = credentials omit +
@@ -128,11 +170,11 @@ export function createIdentityClient({
         email: typeof user.email === "string" ? user.email : email,
       };
     },
-    async token(accountId) {
+    async token(accountId, orgId) {
       const json = asObject(
         await post(
           "/auth/token",
-          { audience: app, account_id: accountId },
+          { audience: app, account_id: accountId, ...(orgId && { org_id: orgId }) },
           "cookie",
           AbortSignal.timeout(TOKEN_TIMEOUT_MS),
         ),
@@ -188,6 +230,14 @@ export function createIdentityClient({
       );
       if (json.status !== "member" && json.status !== "pending") throw unknownError();
       return json.status;
+    },
+    async orgs(accountId) {
+      return parseOrgs(
+        await get(
+          `/auth/orgs?account_id=${encodeURIComponent(accountId)}`,
+          AbortSignal.timeout(ORGS_TIMEOUT_MS),
+        ),
+      );
     },
     async accounts() {
       const items = asObject(

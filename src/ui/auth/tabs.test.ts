@@ -33,10 +33,13 @@ function world(expiresIn = 900) {
   const locks = createFakeLockManager();
   const hub = createFakeChannelHub();
   let n = 0;
-  const tab = (opts: { id?: string | null; storage?: ReturnType<typeof sharedStorage> } = {}) => {
+  const tab = (
+    opts: { id?: string | null; storage?: ReturnType<typeof sharedStorage>; org?: string } = {},
+  ) => {
     const cell = opts.storage ?? sharedStorage(opts.id === undefined ? ID : opts.id);
+    let orgCell: string | null = opts.org ?? null;
     const client = {
-      token: vi.fn(async (_id: string) => {
+      token: vi.fn(async (_id: string, _org?: string) => {
         await Promise.resolve();
         return { accessToken: `tok${++n}`, expiresIn };
       }),
@@ -47,6 +50,11 @@ function world(expiresIn = 900) {
     const store = createTokenStore({
       client: client as unknown as IdentityClient,
       storage: cell,
+      orgStorage: {
+        read: () => orgCell,
+        write: (_a: string, o: string) => void (orgCell = o),
+        clear: () => void (orgCell = null),
+      },
       lock: createRefreshLock({ locks }),
       channel: () => createAuthChannel({ create: () => hub.endpoint() }),
       doc,
@@ -397,5 +405,60 @@ describe("BUG-007: sign-out keeps another tab's account", () => {
     expect(c.store.accountId()).toBeNull();
     expect(shared.value()).toBe(ID2);
     expect(b.store.accountId()).toBe(ID2);
+  });
+});
+
+describe("per-tab org", () => {
+  const X = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const Y = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+
+  it("a tab on org A ignores a token broadcast for org B and adopts one for org A", async () => {
+    const w = world();
+    const b = w.tab({ org: X });
+    const own = b.store.getToken();
+    await settle();
+    expect(await own).toBe("tok1");
+    await settle(1000);
+    const { ep } = w.probe();
+    ep.postMessage(tokenMsg({ accessToken: "other-org", orgId: Y }));
+    await settle();
+    expect(await b.store.getToken()).toBe("tok1");
+    ep.postMessage(tokenMsg({ accessToken: "same-org", orgId: X.toUpperCase() }));
+    await settle();
+    expect(await b.store.getToken()).toBe("same-org");
+  });
+
+  it("an org-less message (no orgId field) is ignored by a tab with an org and adopted by an org-less tab", async () => {
+    const w = world();
+    const withOrg = w.tab({ org: X });
+    const without = w.tab();
+    const { ep } = w.probe();
+    ep.postMessage(tokenMsg({ accessToken: "legacy" }));
+    await settle();
+    const pw = without.store.getToken();
+    const po = withOrg.store.getToken();
+    await settle();
+    expect(await pw).toBe("legacy");
+    expect(await po).not.toBe("legacy");
+  });
+
+  it("tab 1 selectOrg(B) while tab 2 stays on A: tab 2 keeps its token and next renews with A", async () => {
+    const w = world();
+    const t1 = w.tab({ org: X });
+    const t2 = w.tab({ org: X });
+    const first = t2.store.getToken();
+    await settle();
+    await first;
+    await settle(1000);
+    const sel = t1.store.selectOrg(Y);
+    await settle();
+    await sel;
+    expect(t1.store.orgId()).toBe(Y);
+    expect(t2.store.orgId()).toBe(X);
+    expect(await t2.store.getToken()).toBe("tok1");
+    const renewed = t2.store.getToken("tok1");
+    await settle();
+    await renewed;
+    expect(t2.client.token).toHaveBeenLastCalledWith(ID, X);
   });
 });

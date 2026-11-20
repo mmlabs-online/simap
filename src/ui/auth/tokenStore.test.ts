@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IdentityClient } from "./identityClient";
 import { createRefreshLock } from "./refreshLock";
-import { createTokenStore, type AccountIdStorage } from "./tokenStore";
+import { createTokenStore, type AccountIdStorage, type OrgIdStorage } from "./tokenStore";
 import type { AuthError } from "@/lib/identity/types";
 
 const ID = "11111111-1111-4111-8111-111111111111";
@@ -26,12 +26,12 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function setup(opts: { id?: string | null; expiresIn?: number } = {}) {
+function setup(opts: { id?: string | null; expiresIn?: number; org?: string | null } = {}) {
   let n = 0;
   const calls: string[] = [];
   const client = {
     login: vi.fn(async () => ({ accountId: ID2, email: "a@b.co" })),
-    token: vi.fn(async (_id: string) => {
+    token: vi.fn(async (_id: string, _org?: string) => {
       await Promise.resolve();
       return { accessToken: `tok${++n}`, expiresIn: opts.expiresIn ?? 900 };
     }),
@@ -58,10 +58,20 @@ function setup(opts: { id?: string | null; expiresIn?: number } = {}) {
       stored = null;
     }),
   };
+  const orgs = new Map<string, string>(opts.org ? [[ID.toLowerCase(), opts.org]] : []);
+  const orgStorage: OrgIdStorage = {
+    read: (a) => orgs.get(a.toLowerCase()) ?? null,
+    write: vi.fn((a: string, o: string) => void orgs.set(a.toLowerCase(), o.toLowerCase())),
+    clear: vi.fn((a: string, onlyIf?: string) => {
+      if (onlyIf === undefined || orgs.get(a.toLowerCase()) === onlyIf.toLowerCase())
+        orgs.delete(a.toLowerCase());
+    }),
+  };
   let time = 1_000_000;
   const store = createTokenStore({
     client: client as unknown as IdentityClient,
     storage,
+    orgStorage,
     now: () => time,
     // no Web Locks: Node 24 has navigator.locks, jsdom (tudocuatui) and Node 22 do not
     lock: createRefreshLock({ locks: undefined }),
@@ -70,6 +80,8 @@ function setup(opts: { id?: string | null; expiresIn?: number } = {}) {
     store,
     client,
     storage,
+    orgStorage,
+    orgs,
     calls,
     advance: (ms: number) => (time += ms),
     stored: () => stored,
@@ -90,7 +102,7 @@ describe("getToken", () => {
     const all = await Promise.all(Array.from({ length: 10 }, () => s.store.getToken()));
     expect(new Set(all)).toEqual(new Set(["tok1"]));
     expect(s.client.token).toHaveBeenCalledTimes(1);
-    expect(s.client.token).toHaveBeenCalledWith(ID);
+    expect(s.client.token).toHaveBeenCalledWith(ID, undefined);
   });
 
   it("caches until receivedAt + (expires_in - 60) s", async () => {
@@ -239,7 +251,7 @@ describe("signIn / restore", () => {
     stop();
     expect(posts.map((m) => m.type)).toEqual(["token", "signedOut"]);
     expect(Object.keys(posts[0]).sort()).toEqual(
-      ["accessToken", "accountId", "at", "expiresAt", "type", "v"].sort(),
+      ["accessToken", "accountId", "at", "expiresAt", "orgId", "type", "v"].sort(),
     );
     expect(JSON.stringify(posts[1])).not.toContain("SECRET-TOKEN");
     expect(setItem.mock.calls).toEqual([["mm_account_id", ID]]);
@@ -385,7 +397,7 @@ describe("continueAs", () => {
     await s.store.continueAs(ID2, "x@y.co");
     expect(s.storage.write).toHaveBeenCalledWith(ID2);
     expect(s.stored()).toBe(ID2);
-    expect(s.client.token).toHaveBeenCalledWith(ID2);
+    expect(s.client.token).toHaveBeenCalledWith(ID2, undefined);
     expect(s.client.login).not.toHaveBeenCalled();
     expect(await s.store.getToken()).toBe("tok1");
     expect(await s.store.accountEmail()).toBe("x@y.co");
@@ -586,5 +598,114 @@ describe("renewNow", () => {
     const s = setup({ id: null });
     expect(await s.store.renewNow()).toBeNull();
     expect(s.client.token).not.toHaveBeenCalled();
+  });
+});
+
+describe("org", () => {
+  const X = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+  const Y = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const denied = () => Object.assign({}, { code: "org_access_denied" }) as AuthError;
+
+  it("no org: token() gets (accountId, undefined), the channel message has orgId null", async () => {
+    const s = setup();
+    expect(s.store.orgId()).toBeNull();
+    await s.store.getToken();
+    expect(s.client.token).toHaveBeenCalledWith(ID, undefined);
+  });
+
+  it("selectOrg(id): mints with (accountId, lowercase id), orgId() returns it, remembered only after the mint", async () => {
+    const s = setup();
+    const p = s.store.selectOrg(X.toUpperCase());
+    expect(s.orgStorage.write).not.toHaveBeenCalled();
+    await p;
+    expect(s.client.token).toHaveBeenCalledWith(ID, X);
+    expect(s.store.orgId()).toBe(X);
+    expect(s.orgStorage.write).toHaveBeenCalledWith(ID, X);
+    expect(await s.store.getToken()).toBe("tok1");
+  });
+
+  it("selectOrg drops an in-flight /token of the old org: its late answer is not stored", async () => {
+    const s = setup({ org: X });
+    let release!: () => void;
+    s.client.token.mockImplementationOnce(async () => {
+      await new Promise<void>((r) => (release = r));
+      return { accessToken: "late-old-org", expiresIn: 900 };
+    });
+    const old = s.store.getToken();
+    await Promise.resolve();
+    await s.store.selectOrg(Y);
+    release();
+    expect(await old).toBeNull();
+    expect(await s.store.getToken()).toBe("tok1");
+    expect(s.client.token).toHaveBeenLastCalledWith(ID, Y);
+  });
+
+  it("a store created with a remembered org mints with it on restore", async () => {
+    const s = setup({ org: X });
+    expect(s.store.orgId()).toBe(X);
+    await s.store.restore();
+    expect(s.client.token).toHaveBeenCalledWith(ID, X);
+  });
+
+  it("continueAs uses the NEW account's remembered org, never the previous one's", async () => {
+    const s = setup({ org: X });
+    await s.store.continueAs(ID2, "b@b.co");
+    expect(s.store.orgId()).toBeNull();
+    expect(s.client.token).toHaveBeenLastCalledWith(ID2, undefined);
+  });
+
+  it("org_access_denied: token and org cleared, remembered org cleared, account kept, listeners notified, error carries orgId; later mint is org-less", async () => {
+    const s = setup({ org: X });
+    const seen: AuthError[] = [];
+    s.store.subscribe((e) => seen.push(e));
+    s.client.token.mockRejectedValueOnce(denied());
+    await expect(s.store.getToken()).rejects.toMatchObject({
+      code: "org_access_denied",
+      orgId: X,
+    });
+    expect(seen).toEqual([{ code: "org_access_denied", orgId: X }]);
+    expect(s.store.orgId()).toBeNull();
+    expect(s.orgs.has(ID)).toBe(false);
+    expect(s.store.accountId()).toBe(ID);
+    await s.store.getToken();
+    expect(s.client.token).toHaveBeenLastCalledWith(ID, undefined);
+  });
+
+  it("a denial clears the remembered org only while it still names the denied org", async () => {
+    const s = setup({ org: X });
+    s.client.token.mockImplementationOnce(async () => {
+      s.orgs.set(ID, Y); // another tab remembered another org meanwhile
+      throw denied();
+    });
+    await expect(s.store.getToken()).rejects.toMatchObject({ orgId: X });
+    expect(s.orgs.get(ID)).toBe(Y);
+  });
+
+  it("selectOrg rejected with org_access_denied never writes the remembered org", async () => {
+    const s = setup();
+    s.client.token.mockRejectedValueOnce(denied());
+    await expect(s.store.selectOrg(X)).rejects.toMatchObject({
+      code: "org_access_denied",
+      orgId: X,
+    });
+    expect(s.orgStorage.write).not.toHaveBeenCalled();
+    expect(s.store.orgId()).toBeNull();
+  });
+
+  it("signOut, forget and session_invalid clear the remembered org of the gone account only", async () => {
+    const other = "99999999-9999-4999-8999-999999999999";
+    for (const how of ["signOut", "forget", "session_invalid"] as const) {
+      const s = setup({ org: X });
+      s.orgs.set(other, Y);
+      if (how === "signOut") await s.store.signOut();
+      else if (how === "forget") s.store.forget();
+      else {
+        s.client.token.mockRejectedValueOnce(fail("session_invalid"));
+        await expect(s.store.restore()).rejects.toBeTruthy();
+      }
+      expect(s.orgs.has(ID)).toBe(false);
+      expect(s.orgs.get(other)).toBe(Y);
+      expect(s.store.orgId()).toBeNull();
+    }
   });
 });
