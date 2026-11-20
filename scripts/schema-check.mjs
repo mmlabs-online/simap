@@ -1,16 +1,22 @@
 // Scripted check of the real db/migrations against a real Postgres (CI and local `pnpm schema:check`).
-// Creates a throwaway database from DATABASE_URL, applies the migrations, runs catalogue and constraint cases, seeds
+// Refuses a non-local DATABASE_URL (exit 2, before connecting). Creates a throwaway database from DATABASE_URL, applies the migrations, runs catalogue and constraint cases, seeds
 // twice, drops the database. Prints step names and pass/FAIL only: never the URL, row values or Postgres detail.
 import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { runMigrations } from "../db/migrator.js";
-import { SEED_ORGS, seedDev, seedRows } from "../db/seeder.js";
+import { SEED_ORGS, assertDevSeedTarget, seedDev, seedRows } from "../db/seeder.js";
 
 const base = process.env.DATABASE_URL;
 if (!base) {
   console.error("DATABASE_URL is not set");
+  process.exit(2);
+}
+try {
+  assertDevSeedTarget({ databaseUrl: base, nodeEnv: process.env.NODE_ENV });
+} catch (err) {
+  console.error(`schema check refused: ${err instanceof Error ? err.message : "bad target"}`);
   process.exit(2);
 }
 

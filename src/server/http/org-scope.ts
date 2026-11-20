@@ -1,14 +1,9 @@
 import "server-only";
-import type { AuthContext } from "./with-auth";
 
 declare const orgScopeBrand: unique symbol;
 
-/** The caller's verified org. Only `orgScopeOf` creates one, so an org id cannot come from a request body or URL. */
+/** The caller's verified org. Created only by `withAuth` from the verified token (`ctx.scope`); no exported constructor. Tests may cast. */
 export type OrgScope = { readonly orgId: string; readonly [orgScopeBrand]: true };
-
-export function orgScopeOf(ctx: Pick<AuthContext, "org">): OrgScope {
-  return { orgId: ctx.org } as OrgScope;
-}
 
 type Db<R> = { query(text: string, values: unknown[]): Promise<{ rows: R[] }> };
 

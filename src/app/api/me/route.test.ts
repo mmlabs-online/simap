@@ -17,6 +17,27 @@ describe("GET /api/me wiring", () => {
     expect(await r.json()).toEqual({ error: { code: "unavailable" } });
   });
 
+  it("valid token -> 200 with exactly {sub,email,org,tier}", async () => {
+    const issuer = "https://api.mmlabs.online";
+    vi.stubEnv("MM_IDENTITY_ISSUER", issuer);
+    globalThis.__simapAuth = {
+      issuer,
+      deps: {
+        verifier: {
+          verify: async () => ({
+            ok: true,
+            identity: { sub: "s1", email: "a@example.com", org: "o1", orgRoles: ["simap:user"] },
+          }),
+        },
+        memberGate: async () => "active",
+        log: () => {},
+      },
+    };
+    const r = await call();
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({ sub: "s1", email: "a@example.com", org: "o1", tier: "user" });
+  });
+
   it("valid issuer, no Authorization -> 401 unauthenticated, no network call", async () => {
     vi.stubEnv("MM_IDENTITY_ISSUER", "https://api.mmlabs.online");
     const fetchSpy = vi.spyOn(globalThis, "fetch");

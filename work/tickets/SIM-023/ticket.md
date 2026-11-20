@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P0 |
 | Size | S |
 | Areas | security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-023) |
 
 ## Goal
 Close the four 🟡 security findings left open when SIM-005 and SIM-008 merged, so an org scope can only come from a
@@ -61,6 +61,12 @@ server. Must land before SIM-007 / SIM-010 add org queries.
 - Manual: none (schema-check refusal is a unit-level or scripted check).
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-2) — Ming: "duyệt hết … còn lại theo đề xuất": questions 1–9 take their defaults.
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 3, ~219k tokens (planner×1 78k, implementer×1 61k, reviewer×1 53k, security auditor×1 88k — total ~280k)
+- Done: withAuth builds ctx.scope, orgScopeOf removed, runtime route marker + fixtures, seed guard via pg-connection-string, schema:check guarded; review PASS attempt 1; security 0 🔴 / 0 🟡, all four earlier 🟡 resolved
+- In progress / next: Ming opens + merges the PR; then SIM-010 can build (uses ctx.scope)
+- Gotchas: schema:check happy path is CI-only

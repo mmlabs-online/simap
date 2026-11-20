@@ -2,10 +2,21 @@ import "server-only";
 import { atLeast, tierFromOrgRoles, type Tier } from "@/lib/auth/tier";
 import { loadIdentityConfig } from "@/server/identity/config";
 import { createIdentityVerifier, type IdentityVerifier } from "@/server/identity/verify";
-import { orgScopeOf, type OrgScope } from "./org-scope";
+import type { OrgScope } from "./org-scope";
 import { apiError } from "./respond";
 
-export type AuthContext = { sub: string; email: string | null; org: string; tier: Tier };
+export type AuthContext = Readonly<{
+  sub: string;
+  email: string | null;
+  org: string; // verified `org` claim, for display / responses only
+  tier: Tier;
+  scope: OrgScope; // the only way to reach org data; built once by withAuth from the verified token
+}>;
+
+/** Runtime marker so tests can prove a route export went through `withAuth`. Non-enumerable on the wrapper. */
+export const WITH_AUTH_MARK = Symbol.for("simap.withAuth");
+
+const scopeFor = (org: string): OrgScope => Object.freeze({ orgId: org }) as OrgScope;
 
 /** Org-local member check (SIM-011 plugs the deny list in here). Must fail closed: a throw becomes 503. */
 export type MemberGate = (scope: OrgScope, sub: string) => Promise<"active" | "deactivated">;
@@ -25,7 +36,7 @@ export function createWithAuth(deps: () => AuthDeps, configLog: Log = logEntry) 
     handler: (req: Request, ctx: AuthContext, route: RouteContext<P>) => Promise<Response>,
     opts: { tier: Tier },
   ): (req: Request, route: RouteContext<P>) => Promise<Response> {
-    return async (req, route) => {
+    const guarded = async (req: Request, route: RouteContext<P>): Promise<Response> => {
       let d: AuthDeps;
       try {
         d = deps();
@@ -49,9 +60,9 @@ export function createWithAuth(deps: () => AuthDeps, configLog: Log = logEntry) 
         if (org === null) return apiError(403, "org_required");
         const tier = tierFromOrgRoles(orgRoles ?? []);
         if (!tier || !atLeast(tier, opts.tier)) return apiError(403, "forbidden");
-        const ctx: AuthContext = { sub, email, org, tier };
+        const ctx: AuthContext = Object.freeze({ sub, email, org, tier, scope: scopeFor(org) });
         try {
-          if ((await d.memberGate(orgScopeOf(ctx), sub)) === "deactivated") {
+          if ((await d.memberGate(ctx.scope, sub)) === "deactivated") {
             return apiError(403, "member_deactivated");
           }
         } catch {
@@ -70,6 +81,8 @@ export function createWithAuth(deps: () => AuthDeps, configLog: Log = logEntry) 
         return apiError(500, "internal");
       }
     };
+    Object.defineProperty(guarded, WITH_AUTH_MARK, { value: true });
+    return guarded;
   };
 }
 

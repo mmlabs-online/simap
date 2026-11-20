@@ -1,6 +1,8 @@
 // @ts-check
 // Dev seed: fake data only (fixed UUIDs, @simap.example emails, invented names). Never run against a shared or
-// production database: assertDevSeedTarget refuses any non-local host and NODE_ENV=production.
+// production database: assertDevSeedTarget refuses any non-local host (including host/hostaddr overrides, parsed
+// with the same parser pg uses) and NODE_ENV=production. schema-check.mjs uses the same guard.
+import { parse } from "pg-connection-string";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
@@ -11,13 +13,21 @@ const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 export function assertDevSeedTarget({ databaseUrl, nodeEnv }) {
   if (nodeEnv === "production") throw new Error("refusing to seed: NODE_ENV is production");
   if (!databaseUrl) throw new Error("refusing to seed: DATABASE_URL is missing or invalid");
-  let host;
+  let u;
   try {
-    host = new URL(databaseUrl).hostname;
+    u = new URL(databaseUrl);
   } catch {
     throw new Error("refusing to seed: DATABASE_URL is missing or invalid");
   }
-  if (!LOCAL_HOSTS.has(host)) throw new Error("refusing to seed: database host is not local");
+  const notLocal = new Error("refusing to seed: database host is not local");
+  if (u.searchParams.has("host") || u.searchParams.has("hostaddr")) throw notLocal;
+  let cfg;
+  try {
+    cfg = parse(databaseUrl);
+  } catch {
+    throw new Error("refusing to seed: DATABASE_URL is missing or invalid");
+  }
+  if (cfg.hostaddr || !cfg.host || !LOCAL_HOSTS.has(cfg.host)) throw notLocal;
 }
 
 /** Two fake orgs with fixed ids. */
