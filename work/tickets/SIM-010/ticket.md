@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T07:24:39Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -49,3 +49,9 @@ spec ROO-01, ROO-02, SYS-02, SYS-03; D29, D30.
 - 2026-11-20 (batch 2026-11-20-2, Q22): Ming: room codes are always uppercase; the input uppercases as the user types and the server stores uppercase. Plan to be revised; plan approval still pending.
 
 ## Handoff
+
+### 2026-11-20 — claude — PLANNING (approved, waiting)
+- Agent calls: 4 (api-platform-engineer×1 33k, frontend-developer×1 36k, planner×2 104k+36k sonnet)
+- Done: plan approved (Slice A = this ticket; Slice B → SIM-010.2; Q22 uppercase)
+- In progress / next: implement after SIM-023 is merged (uses ctx.scope); `/run-batch --resume`
+- Gotchas: shares src/lib/api/error.ts with SIM-006 (append-only)
