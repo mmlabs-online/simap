@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
 | Gate | none |
 | Depends on | SIM-003 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-022) |
 
 ## Goal
 Make every user-facing string English by default, kept in copy files, so the app matches D36 and a second language can
@@ -50,6 +50,12 @@ ticket follows SIM-003, which shipped Vietnamese copy).
 - Manual: open every page skeleton in light/dark.
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-2) — Ming: "duyệt hết … còn lại theo đề xuất": questions 10–15 take their defaults.
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 5, ~240k tokens (planner×1 sonnet 60k, implementer×2 47k+23k, reviewer×2 54k + sonnet n/a)
+- Done: English copy, copy-file convention, no-literals test; REWORK 1 (regex missed own-line JSX text), PASS attempt 2
+- In progress / next: Ming opens + merges the PR; SIM-006.2 / SIM-010.2 follow the convention
+- Gotchas: no-literals check is a regex heuristic

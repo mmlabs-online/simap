@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { Tier } from "@/lib/tier";
 import { AppShellView } from "./AppShellView";
+import { shellCopy } from "./copy/shell";
 
 const render = (tier: Tier | null, pathname = "/") =>
   renderToStaticMarkup(
@@ -22,24 +23,24 @@ const hrefs = (html: string) =>
 describe("AppShellView", () => {
   it("signed out shows the sign-in placeholder and no nav", () => {
     const html = render(null);
-    expect(html).toContain("Chưa đăng nhập");
+    expect(html).toContain(shellCopy.signedOut.title);
     expect(html).not.toContain("<nav");
-    expect(html).not.toContain("Đăng xuất");
+    expect(html).not.toContain(shellCopy.actions.signOut);
     expect(html).not.toContain("child-marker");
   });
 
   it("admin on /rooms/A1: nav landmark, 5 links, one aria-current", () => {
     const html = render("admin", "/rooms/A1");
-    expect(html).toContain('<nav aria-label="Điều hướng chính"');
+    expect(html).toContain(`<nav aria-label="${shellCopy.navLabel}"`);
     expect(hrefs(html)).toEqual(["/", "/rooms", "/devices", "/members", "/approvals"]);
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(
       /<a [^>]*aria-current="page"[^>]*href="\/rooms"/.test(html) ||
         /<a [^>]*href="\/rooms"[^>]*aria-current="page"/.test(html),
     ).toBe(true);
-    expect(html).toContain("Quản trị");
+    expect(html).toContain(shellCopy.tiers.admin);
     expect(html).toContain('href="#main"');
-    expect(html).toContain("Bỏ qua đến nội dung chính");
+    expect(html).toContain(shellCopy.skipLink);
     expect(html).toContain('<main id="main"');
     expect(html).toContain("child-marker");
   });

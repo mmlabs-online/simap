@@ -1,7 +1,7 @@
-/** Vietnamese strings used inside the UI kit components. */
+/** English strings used inside the UI kit components. */
 export const kitCopy = {
-  cancel: "Hủy",
-  save: "Lưu",
-  saving: "Đang lưu…",
-  close: "Đóng",
+  cancel: "Cancel",
+  save: "Save",
+  saving: "Saving…",
+  close: "Close",
 } as const;

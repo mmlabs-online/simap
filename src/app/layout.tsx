@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import { iconFontHref } from "@/lib/icons";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import { shellCopy } from "@/ui/copy/shell";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -10,11 +11,11 @@ const manrope = Manrope({
   display: "swap",
 });
 
-export const metadata: Metadata = { title: "simap" };
+export const metadata: Metadata = { title: shellCopy.brand };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={manrope.variable} suppressHydrationWarning>
+    <html lang="en" className={manrope.variable} suppressHydrationWarning>
       <head>
         {/* Sets data-theme before first paint (no flash). */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

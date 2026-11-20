@@ -78,3 +78,4 @@ Kit-managed files (`.claude/commands/`, `.claude/agents/`, `work/templates/`, `.
 ## Conventions
 - Code, comments, docs and commits in English; reports to Ming in Vietnamese.
 - Commits: `<ID>: <imperative summary>` for tickets, `solo: …` for `/solo`, otherwise conventional style.
+- UI copy: English, in `src/ui/copy/<feature>.ts` (D36).
