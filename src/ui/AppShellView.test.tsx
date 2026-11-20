@@ -44,6 +44,12 @@ describe("AppShellView", () => {
     expect(html).toContain("child-marker");
   });
 
+  it("role badge is hidden below lg by its wrapper, not by its own class", () => {
+    const html = render("admin");
+    expect(html).toContain('<span class="hidden lg:inline-flex"><span class="inline-flex');
+    expect(html).not.toMatch(/class="inline-flex[^"]*hidden/);
+  });
+
   it("user has no approvals link; manager has it", () => {
     expect(hrefs(render("user"))).not.toContain("/approvals");
     expect(hrefs(render("manager"))).toContain("/approvals");

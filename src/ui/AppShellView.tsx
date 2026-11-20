@@ -131,7 +131,9 @@ export function AppShellView({
                 <span title={session.email}>
                   <Avatar name={session.email.split("@")[0]} size={40} />
                 </span>
-                <RoleBadge tier={session.tier} className="hidden lg:inline-flex" />
+                <span className="hidden lg:inline-flex">
+                  <RoleBadge tier={session.tier} />
+                </span>
               </div>
             </>
           )}

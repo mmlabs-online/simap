@@ -49,3 +49,25 @@ None. `vitest.config.ts` was not needed (JSX tests run as is). `next.config.ts`,
 ### Scope self-check
 - Could the diff be smaller? No; ported kit and CSS dominate. `Chip`/`Avatar` icon/colour tweaks follow the plan.
 - Diff size: about +1,500 / -30 lines (new files plus the CSS replacement).
+
+## Attempt 2 — 2026-11-20 (REWORK, review attempt 1)
+
+### Fix
+Issue 1 (blocker): role badge was visible below 1024 px because `RoleBadge` always emits `inline-flex`, which came later in the CSS than `hidden`. Applied the reviewer's option (a): `AppShellView.tsx` wraps the badge in `<span className="hidden lg:inline-flex">`; `RoleBadge.tsx` is unchanged. Nits not touched (none was a one-line change in these files).
+
+### Files touched
+- `src/ui/AppShellView.tsx` — required because the wrapper carries the hiding classes.
+- `src/ui/AppShellView.test.tsx` — required because the review asks for a markup assertion: the wrapper has `hidden lg:inline-flex` and the badge's own element does not.
+
+### Checks (actual output summary)
+- format:check: `All matched files use the correct format.` exit 0
+- typecheck + check:layers: exit 0; `check-layers: 52 files, no violations`
+- test: `Test Files 14 passed (14)`, `Tests 71 passed (71)`
+- build: exit 0
+- Built CSS (`.next/static/chunks/*.css`): `.hidden{display:none}` (byte 8552) applies to the wrapper only, which has no plain `inline-flex`; `.lg\:inline-flex{display:inline-flex}` sits inside the `@media (min-width:64rem)` block (starts at byte 20141), so the wrapper is hidden below 1024 px and shown at lg. The badge element itself has no `hidden` class, so there is no conflict. The signed-in markup cannot be curled in prod (the shell needs a session; `/dev/shell` is 404 there), so the markup is verified by the new test. I did not curl dev this round (the server start was blocked by the permission system).
+
+### Out-of-plan files
+None.
+
+### Scope self-check
+Two files, about +9 lines.
