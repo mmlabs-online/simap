@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T15:20Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -38,5 +38,8 @@ Org admins browse and filter the audit log on an Audit page; slice B of the appr
 
 ## Notes / answers from Ming
 - 2026-11-20 (batch 2026-11-20-3): created from Ming's approval ("duyệt hết theo đề xuất").
+
+- Plan approved (2026-11-20, batch 2026-11-20-5): "ok hết" — every assumption takes its default.
+- Merge approved (2026-11-20, batch 2026-11-20-5): "ok hết" on the round that asked "cho merge" per Medium ticket.
 
 ## Handoff
