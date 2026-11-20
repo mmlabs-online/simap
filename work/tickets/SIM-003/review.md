@@ -66,3 +66,22 @@ None. No review trigger path was changed.
   - recording the contrast pairs (the values above can seed it);
   - the `/dev/shell` keep/remove decision.
 - seatMGT has the same `hidden md:inline-flex` RoleBadge bug (`src/components/shell/AppShell.tsx:150`). This is informational only, because seatMGT is read-only.
+
+## Attempt 2
+
+Verdict: PASS
+
+### Checks (run by reviewer, fresh clone at dca857c, Node v24.20.0)
+- `pnpm format:check` exit 0 (65 files); `pnpm typecheck` exit 0; `pnpm check:layers` exit 0 (52 files, no violations); `pnpm test` exit 0 (14 files, 71 tests); `pnpm build` exit 0.
+
+### Attempt 1 blocker (role badge visible below 1024 px): fixed
+- Diff `d5c30f4..HEAD` touches only `src/ui/AppShellView.tsx`, `AppShellView.test.tsx` and ticket work files (in plan scope).
+- Dev-server HTML for `/dev/shell?tier=admin`: `<span class="hidden lg:inline-flex"><span class="inline-flex items-center …">`. The badge's own element no longer carries `hidden`, and no `inline-flex…hidden` class combination remains.
+- Built CSS: `.hidden{display:none}` (byte 8552) comes before `.inline-flex{display:inline-flex}`, but the wrapper has no `inline-flex` base class. `.lg\:inline-flex{display:inline-flex}` sits inside `@media (min-width:64rem)`, later in the file, so the wrapper is hidden below 1024 px and shown at lg and above.
+- New test "role badge is hidden below lg by its wrapper, not by its own class" passes.
+
+### Blockers
+None. No regressions; the rest of the diff is unchanged from Attempt 1.
+
+### Manual checks for Ming
+Unchanged from Attempt 1 (kit gallery light/dark, 1024 and 390 px layout incl. header fit and badge hidden, keyboard/skip link, dialog behaviour, theme no-flash, post-merge device checks). Nits and follow-ups from Attempt 1 still stand (orchestrator files the `debt` issues).
