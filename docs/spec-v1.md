@@ -1,6 +1,6 @@
 # simap — Spec v1
 
-**Status:** Draft v0.2 (2026-11-20). Platform, auth, org and data questions answered by Ming (D1–D8 in
+**Status:** Draft v0.3 (2026-11-20). Platform, auth, org and data questions answered by Ming (D1–D15 in
 `work/decisions.md`); remaining items in [Open questions](#11-open-questions).
 **Owner:** Ming. **Scope source:** this file is the first scope source in `.claude/loop.config.md`; `work/decisions.md`
 records later decisions. If a ticket and this spec disagree, the spec wins and the conflict is flagged.
@@ -44,22 +44,29 @@ Everyone signs in with an **mmlabs Identity** account. simap has no local accoun
   has no Super Admin screen of its own.
 - An org's **admin** manages that org inside simap. Admins are appointed in the admin portal, never inside simap (as
   ricotdin's admin role, D5).
-- How managers and users are added to an org (org admin invites in simap, or staff adds them) is OQ-33.
+- Managers and users join an org by **invitation** (D11): an org admin or manager invites an email from simap
+  (Identity invitations, `simap:org:invite`; an inviter cannot grant more than they hold), and Super Admin can also
+  add people in the admin portal. The role is chosen when inviting; changing the role of someone already in the org
+  is done in the admin portal (Identity v1 has no app-side member management).
+- Only Super Admin creates orgs (D10); simap has no "create organization" screen.
 
 **Roles.** Roles come from the token's `org_roles` claim (the roles held in that org only), mapped through simap's role
 catalog. Per the contract, org data is never authorized from `roles`, and a token with `org` but no `org_roles` is
-refused. The exact role keys are registered in org-admin-api (OQ-37); proposed:
+refused. Role keys registered in org-admin-api (D14):
+- `simap:member`: app-scope default role on join; grants no org access.
+- `simap:admin` (org owner role), `simap:manager`, `simap:user`: org scope. Admin and manager hold `simap:org:invite`.
+
 
 | seatMGT role | Identity org role (proposed) | Granted by | Can do (from seatMGT `features.md` + code) |
 |---|---|---|---|
 | Admin | `simap:admin` | Super Admin, admin portal | Everything a Manager can do, plus create/edit/delete rooms and seats and edit layouts. Manages any device in the org. |
-| Manager | `simap:manager` | OQ-33 | Approves or rejects seat requests. Assigns and removes occupants directly. Manages members, groups/projects and seat tags. Sees the Approvals page. Manages own devices (see OQ-13). |
-| User | `simap:user` | OQ-33 | Views all rooms, seats, members and devices of the org. Requests an empty seat. Manages own devices. |
+| Manager | `simap:manager` | Invitation (admin) or admin portal | Approves or rejects seat requests. Assigns and removes occupants directly. Manages members, groups/projects and seat tags. Sees the Approvals page. Manages own devices (see OQ-13). |
+| User | `simap:user` | Invitation (admin, manager) or admin portal | Views all rooms, seats, members and devices of the org. Requests an empty seat. Manages own devices. |
 
 - Roles are per org; there are no per-room roles (seatMGT decision, kept).
 - A token without `org`, or with no simap role in `org_roles`, cannot read or write org data (403). Such a token is
   only used to list or pick the user's orgs (AUT-06).
-- Several roles in one org: the highest tier wins, Admin > Manager > User (OQ-4, proposal accepted unless Ming objects).
+- Several roles in one org: the highest tier wins, Admin > Manager > User (D15).
 - **Role changes (D7).** A role change or removal is made in Identity. It reaches simap when the browser gets a new
   token. simap makes that fast instead of waiting for the token to expire: the client re-mints the token
   (`/auth/token`) after a 403 from simap and retries once, on org switch and on every sign-in, and the shell offers
@@ -67,12 +74,11 @@ refused. The exact role keys are registered in org-admin-api (OQ-37); proposed:
   fails and the user is signed out. A demoted user who keeps an old token keeps old rights until it is re-minted or
   expires (up to 12 h); Ming accepted this, with re-mint/revocation as the remedy.
 
-**Member vs account (D6 / OQ-34).** Users belong to the org in Identity. A *Member* is simap's person record in an org
-(name, employee code, group): it sits in seats and owns devices. An *account* is an Identity user who is a member of
-the org, known in simap by `sub` and email. A member is linked to at most one account per org. Whether simap still
-needs members **without** an Identity account (people who never sign in, as seatMGT allowed) is OQ-34; the link rule
-(auto-create the member on the account's first visit to the org, or link by email) follows from it. An account with no
-linked member can browse but cannot request a seat or own devices.
+**Member = org account (D12).** Every person in simap is an mmlabs Identity account (the shared user service); simap
+keeps **no** person records without an account. A *Member* is simap's profile of one account in one org, keyed by
+(`org`, `sub`): email from the token, plus simap fields (display name, employee code, group). simap never stores
+passwords or Identity data beyond these. How simap learns about an account before its first visit is OQ-38 (Identity
+has no app-facing "list org members" API today).
 
 ## 3. Platform (decided by Ming, 2026-11-20)
 
@@ -116,7 +122,7 @@ needs to show.
 |---|---|---|
 | Room | org, code (unique, e.g. `C302`), name, description, floor | Layout fixtures belong to the room (LAY-03). |
 | Seat | org, code (unique, `<room code>-NN`), sequence no. (unique within the room), room, occupant (member, optional), group tag, project tag, layout geometry (x, y, rotation, width, height) | Status is **not stored** (invariant 6). |
-| Member | org, name, employee code (unique, optional), group (optional), linked Identity `sub` (unique in the org, optional per OQ-34) | Person record in the org. |
+| Member | org, Identity `sub` (unique in the org, required), email (from the token), display name, employee code (unique, optional), group (optional) | Profile of one org account (D12). |
 | Device | org, name, type, inventory number (unique), MAC (unique, optional), owner (member, required), seat (optional; empty = in inventory), role at the seat (primary / secondary) | |
 | SeatRequest | org, seat, subject member (who will sit there), created by, status (pending / approved / rejected / cancelled), note, decided by, decided at | |
 | Group | org, name (unique), colour | Label only. |
@@ -174,8 +180,9 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
   passwords, no self-signup in simap itself").
 - [ ] Orgs and org admins are managed by mmlabs Super Admin in the admin portal (D5). simap has no screen for creating
   orgs or appointing admins.
-- [ ] Adding managers and users to an org follows OQ-33 (if org admins invite in simap, simap implements the
-  invitation form and the `/accept-invitation` page from the contract).
+- [ ] Admins and managers invite people by email with a role (D11): simap implements the invitation form and the
+  `/accept-invitation` page from the contract (fragment token cleared, `Referrer-Policy: no-referrer`, sign-in with
+  exactly the invited address). An inviter never offers a role above their own.
 
 **AUT-04 Role assignment**
 - [ ] Each account maps to exactly one simap tier per org: the highest simap role in `org_roles` (OQ-4).
@@ -188,7 +195,7 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 
 **AUT-06 Pick and switch org** (new; D5)
 - [ ] After sign-in the client lists the account's orgs for simap (`GET /auth/orgs`). With one org it enters it
-  directly; with several it shows a picker (OQ-35); with none it shows "Bạn chưa thuộc tổ chức nào" and how to get
+  directly; with several it shows a picker (D13); with none it shows "Bạn chưa thuộc tổ chức nào" and how to get
   access. The chosen org is remembered on the device (an id, not a token).
 - [ ] The shell shows the current org's name and lets a user with several orgs switch; switching re-mints the token
   with the new `org_id` and reloads all data. Nothing from the previous org stays on screen.
@@ -277,7 +284,8 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
   seatMGT had only backend create/update; v1 adds the UI and delete.
 - [ ] Deleting a member that occupies seats or owns devices is refused until those are cleared or moved. This is an
   assumption; Ming to confirm (OQ-30).
-- [ ] Linking a member to an org account follows OQ-34 (auto-create on first visit, or link by email).
+- [ ] Every member is an org account (D12). Managers edit simap fields (display name, employee code, group); the
+  account itself is managed in Identity. How accounts that have not visited simap yet appear is OQ-38.
 
 **MEM-02 Member overview**
 - [ ] The member page or card lists every seat the member occupies and every device they own, with counts. It is
@@ -457,7 +465,7 @@ EntityFormDialog), seat tiles, room cards, fonts and icons. Copy changes to Viet
 - Buildings/floors/zones as separate entities (a room has a `floor` text field only). Multi-org **is** in scope
   (D5); several sites inside one org are modelled only through room names and the `floor` field.
 - Creating orgs, appointing org admins, billing or plans inside simap (the admin portal owns these). Entitlements
-  (`ent`) are not enforced in v1 (OQ-36).
+  (`ent`) are not read or enforced in v1 (D9).
 - Moving seatMGT data (D6).
 - Notifications (email, push, in-app), calendar integrations, visitor/guest flows.
 - Analytics beyond DSH-01 (utilisation history, trends, scheduled reports).
@@ -469,7 +477,7 @@ EntityFormDialog), seat tiles, room cards, fonts and icons. Copy changes to Viet
 - From seatMGT open items: audit-log viewer (OQ-17), Excel export (OQ-16), Viewer tier (OQ-8), floor-plan background
   image (OQ-14).
 - Playwright e2e suite and DB integration tests (after the first phase, D2).
-- Plan limits from Identity entitlements (`ent.limits`, e.g. max seats per org) (OQ-36).
+- Plan limits from Identity entitlements (`ent.limits`, e.g. max seats per org) (D9: not now).
 - From the non-authoritative draft PRD: bulk import of seats from CSV/Excel; in-app notification centre (for example
   when a request is decided); building/floor hierarchy; time-based booking with QR check-in and auto-release. None of
   these is in seatMGT, and none is in v1.
@@ -490,25 +498,19 @@ Owner: Ming for all of them. Each blocks the tickets named after it. IDs are sta
 - **OQ-24 Down migrations** — answered D3: forward-only, as tudocuatui. CLAUDE.md R2 updated.
 - **OQ-31 Scaffold choices** — answered D2: same tooling as tudocuatui, no extras, light unit tests only.
 
-**Auth and organizations (new, from D5)**
-- **OQ-4 Several roles.** Highest tier wins (Admin > Manager > User)? Proposal kept; treated as yes unless Ming objects.
-- **OQ-32 Who creates orgs.** Only mmlabs Super Admin in the admin portal (simap's default role gets no
-  `simap:org:create`), or may an Identity user create their own org from simap (self-service, like calechip)?
-  *Blocks: auth ticket, Identity app setup.*
-- **OQ-33 How managers and users join an org.** (a) The org admin invites by email from simap (Identity invitations,
-  `simap:org:invite`; simap builds the invite form and `/accept-invitation`); (b) only staff add people in the admin
-  portal; (c) both. Can an org admin also promote a user to manager in simap, or only in the portal? *Blocks: auth
-  ticket, MEM.*
-- **OQ-34 Members without an account.** Does an org still need person records for people who never sign in (seatMGT
-  allowed it), or is every member exactly one org account (member auto-created on first visit)? *Blocks: DB schema,
-  MEM-01, DEV-01, REG-01.*
-- **OQ-35 Several orgs per user.** Can one Identity account belong to several simap orgs (picker + switcher, AUT-06),
-  or exactly one? *Blocks: AUT-06 scope.*
-- **OQ-36 Entitlements.** Ignore `ent` (plans, limits such as max seats) in v1? Proposal: yes, ignore. *Blocks: none
-  for v1.*
-- **OQ-37 Role keys in Identity.** Register org-scope roles `simap:admin`, `simap:manager`, `simap:user`, with
-  `simap:admin` as the org owner role? (Exact keys and permissions are set in org-admin-api when Ming registers the
-  app.) *Blocks: auth ticket.*
+- **OQ-4** — answered D15 (highest tier wins). **OQ-32** — answered D10 (Super Admin only). **OQ-33** — answered D11
+  (invite from simap + admin portal). **OQ-34** — answered D12 (no records without an account). **OQ-35** — answered
+  D13 (several orgs per account). **OQ-36** — answered D9 (no plan limits for now). **OQ-37** — answered D14.
+
+**Members and directory (new, from D12)**
+- **OQ-38 Accounts that have not opened simap yet.** Identity lets only staff list an org's members (USR-23,
+  `aud=admin`); an app cannot. So simap only knows an account after its first visit (or after accepting an invitation
+  sent from simap). Options: (a) a member appears in simap on first visit; Managers can assign seats only to members
+  who have appeared, and simap shows its own pending invitations; (b) ask org-admin-api for an app-facing
+  "list org members" endpoint (cross-repo ticket) and sync from it; (c) both: (a) now, (b) later. *Blocks: MEM, SEA-03,
+  REG.*
+- **OQ-39 Display name.** Identity tokens carry only email. Where does a member's name come from: the member fills it
+  on first visit, a Manager edits it, or Identity adds a name claim later?
 
 **Behaviour (seatMGT 🟡 items and gaps found in its code)**
 - **OQ-8 Viewer tier.** Add a read-only `simap:viewer` tier (AUT-05)?
@@ -545,4 +547,5 @@ Owner: Ming for all of them. Each blocks the tickets named after it. IDs are sta
 | Date | Change |
 |---|---|
 | 2026-11-20 | First draft from Ming's `/idea` brief: seatMGT rebuild on Next.js + mmlabs Identity + shared Postgres, deployed like tudocuatui. |
+| 2026-11-20 | v0.3 from Ming's answers (D9–D15): Super Admin creates orgs; invitations from simap; every member is an Identity org account; several orgs per account; no plan limits; role keys; highest tier wins. Added OQ-38, OQ-39. |
 | 2026-11-20 | v0.2 from Ming's answers (D1–D8): multi-org service with Identity orgs (`org_mode = required`), admins appointed by mmlabs Super Admin; token in browser + route handlers; tudocuatui tooling (pg, SQL forward-only migrations, Vitest light unit tests); no data migration; `simap.mmlabs.online`. Added AUT-06, OQ-32–37; closed OQ-1/2/3/5/6/7/24/31. |
