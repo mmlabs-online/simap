@@ -2,8 +2,8 @@
 
 Project-specific settings for the spaceM project-kit commands (`/run`, `/run-batch`, `/ticket`, `/bug`, `/solo`,
 `/status`, `/idea`) and the `planner` / `implementer` / `reviewer` agents. Written by `/apply-kit` (2026-11-20, empty
-repo), then owned by this project: a kit upgrade never overwrites this file. **Most values are TODO until the
-scaffold ticket picks the framework**; that ticket updates this file in the same PR.
+repo), then owned by this project: a kit upgrade never overwrites this file. **Remaining TODOs are marked inline; the
+SIM-002 and the spec fill them.**
 
 ## Identity
 - Ticket prefix: `SIM` (tickets `SIM-001`…; bugs `BUG-001`…).

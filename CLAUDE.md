@@ -21,7 +21,7 @@ simap replaces the inactive SeatMGT (Ming, 2026-11-20).
 Do not change the stack without Ming's explicit decision.
 
 ## Commands
-- `pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm start` (runs the standalone build), `pnpm build`.
+- `pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm start` (runs the standalone server; static assets are served only after `.next/static` is copied next to it, done by the SIM-004 image), `pnpm build`.
 - `pnpm typecheck` (next typegen + tsc), `pnpm check:layers` (R1 import guard), `pnpm format` / `pnpm format:check`
   (oxfmt), `pnpm test` (Vitest). There is no lint script (no ESLint, D2). Keep `.claude/loop.config.md` → Checks in sync.
 
@@ -71,7 +71,7 @@ Files: `work/backlog.md` (board), `work/ming-todo.md` (Ming-only steps), `work/d
 Kit-managed files (`.claude/commands/`, `.claude/agents/`, `work/templates/`, `.github/scripts/risk_tier.py`,
 `.github/workflows/risk-tier.yml`) come from spaceM `skills-library/project-kit`; change them there, not here, so every project gets the fix.
 
-**Start here:** run `/idea "<what simap is for>"` to write `docs/spec-v1.md`, then `/ticket` a scaffold ticket (framework, test runner, migrations, CI) that also fills the TODOs in `.claude/loop.config.md` and this file.
+**Start here:** run `/idea "<what simap is for>"` to write `docs/spec-v1.md`; the scaffold (SIM-001) is in place, so continue with `/ticket` for the first feature ticket.
 
 ## Conventions
 - Code, comments, docs and commits in English; reports to Ming in Vietnamese.
