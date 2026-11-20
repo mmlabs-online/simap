@@ -20,6 +20,35 @@ describe("assertDevSeedTarget", () => {
     }
   });
 
+  it("refuses ?host= / ?hostaddr= overrides without echoing the URL", () => {
+    for (const q of ["host=10.0.0.5", "hostaddr=10.0.0.5", "host=localhost"]) {
+      let message = "";
+      try {
+        assertDevSeedTarget({ databaseUrl: `${url("localhost")}?${q}`, nodeEnv: undefined });
+      } catch (err) {
+        message = (err as Error).message;
+      }
+      expect(message, q).toMatch(/not local/);
+      expect(message).not.toContain("secret-pw");
+    }
+  });
+
+  it("refuses an empty host and a unix socket path", () => {
+    for (const u of [
+      "postgres:///simap",
+      "postgres://u:secret-pw@%2Fvar%2Frun%2Fpostgresql/simap",
+    ]) {
+      let message = "";
+      try {
+        assertDevSeedTarget({ databaseUrl: u, nodeEnv: undefined });
+      } catch (err) {
+        message = (err as Error).message;
+      }
+      expect(message).toMatch(/not local/);
+      expect(message).not.toContain("secret-pw");
+    }
+  });
+
   it("refuses NODE_ENV=production even on localhost", () => {
     expect(() =>
       assertDevSeedTarget({ databaseUrl: url("localhost"), nodeEnv: "production" }),

@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Tier } from "@/lib/auth/tier";
 import type { VerifyCode, VerifyResult } from "@/server/identity/verify";
-import { createWithAuth, type AuthContext, type AuthDeps, type MemberGate } from "./with-auth";
+import {
+  WITH_AUTH_MARK,
+  createWithAuth,
+  type AuthContext,
+  type AuthDeps,
+  type MemberGate,
+} from "./with-auth";
 
 const SUB = "11111111-1111-4111-8111-111111111111";
 const ORG = "22222222-2222-4222-8222-222222222222";
@@ -54,8 +60,29 @@ describe("withAuth", () => {
       email: EMAIL,
       org: ORG,
       tier: "manager",
+      scope: { orgId: ORG },
     });
     expect(t.verify).toHaveBeenCalledWith("Bearer a.b.c");
+  });
+
+  it("ctx.scope comes from the verified org, is frozen, and is the scope given to the member gate", async () => {
+    const t = setup(okResult(["simap:user"]));
+    await t.call("user");
+    const ctx = t.handler.mock.calls[0][1];
+    expect(ctx.scope.orgId).toBe(ORG);
+    expect(Object.isFrozen(ctx.scope)).toBe(true);
+    expect(Object.isFrozen(ctx)).toBe(true);
+    expect(t.memberGate.mock.calls[0][0]).toBe(ctx.scope);
+  });
+
+  it("returned function carries a non-enumerable withAuth marker", () => {
+    const t = setup(okResult(["simap:user"]));
+    const fn = t.withAuth(t.handler, { tier: "user" }) as unknown as Record<symbol, unknown>;
+    expect(WITH_AUTH_MARK).toBe(Symbol.for("simap.withAuth"));
+    expect(fn[WITH_AUTH_MARK]).toBe(true);
+    expect(Object.keys(fn)).not.toContain(String(WITH_AUTH_MARK));
+    expect(Object.getOwnPropertySymbols(fn)).toContain(WITH_AUTH_MARK);
+    expect(Object.keys(fn)).toEqual([]);
   });
 
   it("admin token passes a manager route with tier admin; user token on a manager route -> 403 forbidden", async () => {
