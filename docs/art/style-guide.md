@@ -4,6 +4,22 @@ Status: v1 draft, 2026-11-20. Decisions: D41–D46, D48–D52 (`work/decisions.m
 artifact (style 2, 32 px, UI A). Everything in that mockup is placeholder art drawn by code; it shows the target
 quality, not final sprites.
 
+## 0. Phase 1: reuse packs as they are (D53)
+
+To ship the map sooner, phase 1 uses objects cut from free packs **with their original colours**. Sections 3–5
+(palette, drawing rules) apply in phase 2, when Ming recolours and touches up the art.
+
+Phase 1 rules:
+- Licences still apply (D45, section 9): no pack is used before its licence row is in `assets/art/CREDITS.md`.
+- Prefer **one main pack** for floors, walls, desks and chairs so the room looks consistent; fill gaps from a second
+  pack only when needed.
+- Packs drawn at 16 px are scaled 2× with nearest-neighbour to the 32 px grid (no redraw).
+- Nobody cuts sprites by hand: the pack's original sheet is stored in `assets/art/sources/<pack>/` and
+  `assets/art/sprite-map.json` lists, for each key, the source sheet and the rectangle to cut (plus scale and
+  anchor). The packing script (SIM-024) cuts, scales and packs them.
+- Keys with no source in any accepted pack keep the code-drawn placeholder (for example `rack.server`, `device.phone`,
+  `whiteboard`) until drawn in phase 2.
+
 ## 1. Where the pixel style is used (D52)
 
 | Pixel / game style | Clean UI kit (no pixel art) |
@@ -155,6 +171,22 @@ About 45 sprites plus frames. Estimate for Ming (M-5): 3–4 days at 32 px.
   tiles). `blocks` = whether another blocking item may share the tile.
 - Keys are stable: the app code refers only to keys, so replacing `office.png` + `office.json` changes the art without
   code changes. Removing or renaming a key is a code change.
+
+## 8b. Sprite map (phase 1)
+
+```json
+{
+  "sources": { "2dpig-office": { "file": "assets/art/sources/2dpig-office/sheet.png", "tile": 16 } },
+  "sprites": {
+    "chair.office.s": { "source": "2dpig-office", "rect": [48, 32, 16, 16], "scale": 2, "tiles": [1, 1] },
+    "desk.single.s":  { "source": "2dpig-office", "rect": [0, 64, 32, 24], "scale": 2, "tiles": [2, 1] }
+  }
+}
+```
+
+`rect` is `[x, y, w, h]` in source pixels. The script scales by `scale`, places the result bottom-aligned in the
+export canvas (section 8 convention) and packs the atlas. Exported PNGs in `assets/art/export/` (drawn or recoloured
+art) override the map for the same key, so phase 2 replaces sprites one by one.
 
 ## 9. Licence workflow (D45)
 
