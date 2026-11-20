@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P0 |
 | Size | M |
 | Areas | db, security |
@@ -45,6 +45,6 @@ spec §4 Domain model, §5 Locked invariants, §8 Database; D3, D12, D26, D29, D
 - Manual: migrate a local DB, try the constraint violations by hand with psql.
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-1) — Ming: "duyệt hết theo mặc định" (every default in plan.md accepted).
 
 ## Handoff
