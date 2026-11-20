@@ -1,7 +1,6 @@
 # PR risk tiers for simap (spaceM CLAUDE.md §7). Written by /apply-kit; Ming reviews every change.
 # Precedence: high > low > default. Globs use gitignore syntax.
 # Keep `high:` in sync with "High paths" in .claude/loop.config.md (that list drives the plan-approval gate).
-# Revisit when the scaffold ticket fixes the code layout.
 version: 1
 default: medium
 high:
@@ -13,6 +12,12 @@ high:
   - "server/**/auth*"
   - "src/server/**/auth*"
   - "**/config.*"
+  - "next.config.*"
+  - "src/middleware.*"
+  - "src/proxy.*"
+  - "src/server/identity/**"
+  - "src/server/http/**"
+  - "scripts/check-layers.mjs"
   - ".env.example"
   # Production build, release and deploy
   - "Dockerfile"
