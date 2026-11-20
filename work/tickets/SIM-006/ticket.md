@@ -46,6 +46,6 @@ spec AUT-01, AUT-02, §3 Auth; D4, D7, D33.
 - Manual: sign in / out / two tabs against Identity once M-1 is done.
 
 ## Notes / answers from Ming
-—
+- 2026-11-20 (batch 2026-11-20-2, Q16): Ming: simap hosts its own sign-up and forgot-password pages, as ricotdin does, calling the same org-admin-api auth endpoints (replaces the D33 'link to Identity flows' reading). Plan to be revised; plan approval still pending.
 
 ## Handoff
