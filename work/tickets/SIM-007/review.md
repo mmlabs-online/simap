@@ -71,7 +71,7 @@ No violations found.
 - R3: no env reads or secrets added. R4: changed files match the plan's file list exactly (plus ticket work files).
 
 ### Blockers from review agents
-To be filled by the orchestrator (security trigger applies: `src/server/`, `db/`, `**/*.sql`).
+None: `security-review.md` Attempt 1 has 0 🔴 (2 🟡: p{Cf}/filler code points in display names; `defaultDisplayName` can return whitespace → 500).
 
 ### Nits (do not block)
 - `members.db.test.ts:89-104` "setDisplayName stores NFC …" passes an already-NFC string (`nfd.normalize("NFC")`) to
