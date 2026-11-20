@@ -45,7 +45,7 @@ On the first visit to an org the user confirms or edits a display name before us
 ## Handoff
 
 ### 2026-11-21 — claude — DONE (PR #26, Medium, merge pre-approved in batch 2026-11-20-5)
-- Agent calls: 4, ~234k tokens (planner×1 sonnet 124k incl. one resume, implementer×1 63k, reviewer×1 ~0k reported/default, security-ai-generated-code-auditor×1 47k)
+- Agent calls: 4, ~284k tokens (planner×1 sonnet 124k incl. one resume, implementer×1 63k, reviewer×1 50k, security-ai-generated-code-auditor×1 47k)
 - Done: first-visit profile screen (`profile` view from `needsProfile`, `ProfileView`, PATCH /api/me via apiFetch, copy); review attempt 1 PASS; CI green; security 0 🔴 1 🟡
 - In progress / next: auto-merge under the batch merge rule, then SIM-019.2
 - Gotchas: security 🟡 (AuthError during PATCH → inline retry dead end) must be fixed before go-live; the plan was written against the SIM-007.2 plan, adapted to merged code (deviations in impl-log)
