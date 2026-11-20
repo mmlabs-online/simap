@@ -37,7 +37,7 @@ Status: READY
 ## Acceptance criteria → verification
 | # | Criterion | How the reviewer verifies it |
 |---|---|---|
-| 1 | A duplicate room code in the same org is refused; the same code in another org is allowed. | `src/server/rooms/pg-error.test.ts` › "23505 on rooms_org_code_key → room_code_taken"; `src/server/rooms/rooms.test.ts` › "create maps unique violation to 409 room_code_taken" and "every statement is org-scoped ($1 = scope.orgId)". The cross-org half rests on the schema: `rooms_org_code_key unique (org_id, code)` (`db/migrations/20261120150000_init.sql:73`); the reviewer confirms that by reading. One-off psql check in impl-log: insert `C302` in org A twice → 23505, then in org B → ok. |
+| 1 | A duplicate room code in the same org is refused (codes are case-insensitive because they are uppercased, Q2: `c302` and `C302` are the same code); the same code in another org is allowed. | `src/lib/validate/room.test.ts` › "code `c302` normalises to `C302`" and "`c302` and `C302` yield the same value" (so the second create hits the unique key); `src/server/rooms/pg-error.test.ts` › "23505 on rooms_org_code_key → room_code_taken"; `src/server/rooms/rooms.test.ts` › "create maps unique violation to 409 room_code_taken" and "every statement is org-scoped ($1 = scope.orgId)". The cross-org half rests on the schema: `rooms_org_code_key unique (org_id, code)` (`db/migrations/20261120150000_init.sql:73`); the reviewer confirms that by reading. One-off psql check in impl-log: insert `C302` in org A twice → 23505, then in org B → ok; then POST `c302` after `C302` through the validator output → 409 `room_code_taken`. |
 | 2 | Renaming `C302` to `C303` renames all its seats to `C303-NN` atomically. | `src/lib/rooms/seat-code.test.ts` › "renameSeatCodes C302→C303 derives from seq"; `src/server/rooms/rooms.test.ts` › "rename runs BEGIN, lock, update room, update seats (unnest from renameSeatCodes), audit, COMMIT in one client" and "rename failure → ROLLBACK, no COMMIT". One-off psql replay in impl-log against compose Postgres. |
 | 3 | Deleting the last seat and adding a new one gives the next number, not the deleted one. | `src/lib/rooms/seat-code.test.ts` › "after seats 1..3 and deleting 3, next seq is 4 (D30)"; `src/server/rooms/rooms.test.ts` › "allocateSeatSeq increments seat_counter with UPDATE … RETURNING, never reads max(seq)". |
 | 4 | Non-Admins get 403 on writes; the UI hides the actions. | API (Slice A): `src/app/api/rooms/route.test.ts` › "User and Manager get 403 forbidden on POST, PATCH, DELETE, delete-impact" and "User passes the GET gate". UI (Slice B): `src/ui/rooms/RoomsView.test.tsx` › "user/manager see no New room, Edit or Delete buttons; admin sees them". |
@@ -59,7 +59,7 @@ Status: READY
 | `src/lib/rooms/types.ts` (new) | `RoomDto = {id, code, name, description, floor, seatCount, occupiedCount}`, `DeleteImpact = {seats, occupiedSeats, placedDevices, pendingRequests}` | Shared by API and UI (R1: lib) | No |
 | `src/lib/rooms/seat-code.ts` (new) | `formatSeatCode(roomCode, seq)`, `nextSeatSeq(counter)`, `renameSeatCodes(newCode, seats:{id,seq}[]) → {id, code}[]` | ROO-02, D29, D30 pure logic | No |
 | `src/lib/rooms/delete-impact.ts` (new) | `canDeleteDirectly(impact)` rule | ROO-01 delete rule, unit-testable | No |
-| `src/lib/validate/room.ts` (new) | `validateRoomCreate(body)`, `validateRoomPatch(body)` → `{ok:true,value}` / `{ok:false, field}`; `ROOM_LIMITS` constants | SYS-02 boundary validation; reused by the UI form in Slice B | No |
+| `src/lib/validate/room.ts` (new) | `validateRoomCreate(body)`, `validateRoomPatch(body)` → `{ok:true,value}` / `{ok:false, field}`; `ROOM_LIMITS` constants. The code is normalised first (`trim().toUpperCase()`), then validated against `[A-Z0-9._-]`, 1-32 chars; `value.code` is the uppercase form that the service stores (Q2, Ming) | SYS-02 boundary validation; reused by the UI form in Slice B | No |
 | `src/server/db/tx.ts` (new) | `withTx(pool, fn(client))`: connect, BEGIN, fn, COMMIT, ROLLBACK on throw, release | One transaction per write (SYS-02/03) | No |
 | `src/server/audit/write.ts` (new) | `writeAudit(client, scope, {actorSub, action, entity, entityId, meta})` via `orgQuery` | SYS-03; reused by later tickets | No |
 | `src/server/request/read-json.ts` (new) | `readJson(req, maxBytes = 16_384)` → `{ok:true, body}` / `{ok:false}` (content type `application/json`, size cap, parse error) | POST/PATCH bodies; kept outside `src/server/http/**` on purpose (see Q10) | No |
@@ -80,7 +80,7 @@ Status: READY
 | `src/ui/rooms/useRooms.ts` (new) | `{status:"loading"|"error"|"ready", rooms, errorCode, reload}`; waits for a session before fetching | Data loading | No |
 | `src/ui/rooms/RoomsView.tsx` (new) | Pure view: header + "New room" (admin only), loading skeleton cards (`aria-busy`), empty, error (`role=alert` + Retry), grid of cards | Test seam | No |
 | `src/ui/rooms/RoomCard.tsx`, `src/ui/rooms/OccupancyRing.tsx` (new) | Port of the seatMGT card and ring (SVG `role=img`, `aria-label` from copy) | DSH/ticket scope | No |
-| `src/ui/rooms/RoomFormDialog.tsx` (new) | Create/edit on `EntityFormDialog` + `DialogField`; client validation through `@/lib/validate/room`; rename warning subtitle | ROO-01 | No |
+| `src/ui/rooms/RoomFormDialog.tsx` (new) | Create/edit on `EntityFormDialog` + `DialogField`; the code input uppercases as the user types (`onChange` → `toUpperCase()`, Q2); client validation through `@/lib/validate/room`; rename warning subtitle | ROO-01 | No |
 | `src/ui/rooms/DeleteRoomDialog.tsx` (new) | Loads impact, then plain or forced confirmation | ROO-01 | No |
 | `src/ui/rooms/RoomsPage.tsx` (new) | `"use client"` wiring: `useSession`, `useRooms`, dialogs, `atLeastTier(tier,"admin")` | Glue | No |
 | `src/app/(app)/rooms/page.tsx` | Render `<RoomsPage />` instead of `PageSkeleton` | Route | No |
@@ -115,7 +115,7 @@ No endpoint accepts `seat_counter`, `org_id`, `id` or any seat code (ROO-02).
 ## Tests to write
 | Test (file › name) | Covers |
 |---|---|
-| `src/lib/rooms/seat-code.test.ts` › formatSeatCode pads 1→`C302-01`, 9→`-09`, 10→`-10`, 99→`-99`, 100→`C302-100` (no truncation) | ROO-02 |
+| `src/lib/rooms/seat-code.test.ts` › formatSeatCode pads 1→`C302-01`, 9→`-09`, 10→`-10`, 99→`-99`, 100→`C302-100` (no truncation); it takes the already-normalised (uppercase) room code and does not change case itself | ROO-02, Q2 |
 | › formatSeatCode throws for seq 0, negative, non-integer | Bounds |
 | › nextSeatSeq(0)=1; nextSeatSeq(counter) = counter+1 | D30 |
 | › after seats 1..3 and deleting 3, next seq is 4 (D30), not 3 | AC3 |
@@ -125,7 +125,10 @@ No endpoint accepts `seat_counter`, `org_id`, `id` or any seat code (ROO-02).
 | `src/lib/rooms/delete-impact.test.ts` › all zero → direct | ROO-01 |
 | › occupiedSeats > 0 → needs force; placedDevices > 0 → needs force | ROO-01 |
 | › unoccupied seats and pending requests only → direct (Q4) | ROO-01 |
-| `src/lib/validate/room.test.ts` › valid create; trims code/name; code charset `[A-Za-z0-9._-]` (space, `/`, `Phòng` rejected), length 0 and 33 rejected | SYS-02 |
+| `src/lib/validate/room.test.ts` › valid create; trims code/name; code charset after normalisation `[A-Z0-9._-]` (space, `/`, `Phòng` rejected), length 0 and 33 rejected | SYS-02 |
+| › lowercase input `c302` (and ` c302 `) → `value.code === "C302"` (stored uppercase); same for PATCH `code` | Q2 |
+| › `c302` and `C302` normalise to the same value (a duplicate differing only by case reaches the unique key → 409) | Q2, AC1 |
+| › length is checked after trim and uppercase (a 32-char lowercase code is accepted, 33 rejected) | Q2 |
 | › name with Vietnamese diacritics accepted and NFC-normalized (`"Phòng họp"` in NFD → NFC); 121 chars rejected | Domain focus |
 | › description > 500, floor > 40 rejected; `""` → null | Empty/null |
 | › unknown keys (`seat_counter`, `org_id`, `seatCode`) rejected with that field | ROO-02, R6 |
@@ -134,6 +137,7 @@ No endpoint accepts `seat_counter`, `org_id`, `id` or any seat code (ROO-02).
 | `src/server/rooms/pg-error.test.ts` › 23505 + `rooms_org_code_key` → room_code_taken; 23505 + `seats_org_code_key` → room_code_taken; other code/constraint → null | AC1 |
 | `src/server/rooms/rooms.test.ts` (fake client records `[sql, values]`; `{ orgId } as OrgScope`) › every statement matches `org_id = $1` and binds the scope org first | R6 |
 | › create: insert + audit `room.create` in one transaction; unique violation → `{ok:false,409,"room_code_taken"}` and ROLLBACK | AC1, SYS-03 |
+| › create after validation of `c302`: the insert binds `"C302"` (uppercase) and the audit meta `{code:"C302"}`; a second create of `C302` (unique violation) → 409 `room_code_taken` | Q2, AC1 |
 | › rename: BEGIN, `select … for update`, update rooms, update seats from `unnest($2::uuid[], $3::text[])` built by renameSeatCodes, audit `room.update` meta `{fields, from, to, seats}`, COMMIT | AC2 |
 | › update without a code change does not touch seats | D29 |
 | › rename failure → ROLLBACK, no COMMIT | Atomicity |
@@ -227,7 +231,9 @@ follow-ups), R5 (tests above), R6 (`orgQuery` + `ctx.scope`, 404 for other orgs'
   it touches the SIM-022/SIM-006 hotspot `AppShellView.tsx`; follow-up, Q7). Re-keying `rooms/[roomCode]` to the id
   is left to SIM-015.1/SIM-012, which build those pages (Q13).
 - frontend-developer, rejected: error code names `duplicate_room_code`/`room_not_found`/`validation`, in favour of the
-  API consult's names (one set). Uppercase normalization of codes, pending Q2.
+  API consult's names (one set).
+- Uppercase normalization of codes: adopted after Ming's answer to Q2 (server `trim().toUpperCase()` in the validator,
+  plus input uppercasing in the Slice B form).
 
 ## Assumptions
 - **SIM-023 (merged before this ticket is built):** `AuthContext = Readonly<{sub, email, org, tier, scope: OrgScope}>`;
@@ -252,7 +258,11 @@ follow-ups), R5 (tests above), R6 (`orgQuery` + `ctx.scope`, 404 for other orgs'
   - `src/ui/copy/copy.test.ts`, `src/app/(app)/rooms/page.tsx` (SIM-022) and `src/ui/index.ts`: Slice B only.
 - "Empty room" for a direct delete means 0 occupied seats and 0 placed devices. Unoccupied seats and their pending
   requests are removed without force (Q4).
-- Room codes are stored as typed (case-sensitive, matching the schema's unique key) (Q2).
+- Room codes are always uppercase (Ming, Q2/Q22). The validator normalises (`trim().toUpperCase()`) before validation
+  and storage, so `c302` and `C302` are the same code and the unique key `(org_id, code)` yields 409 on a case-only
+  duplicate. No migration is needed: the schema stays as is, and case is enforced at the server boundary. A
+  `check (code = upper(code))` constraint would be a separate forward-only migration and is not part of this ticket
+  (follow-up if wanted). Importing lowercase seatMGT data is outside this ticket; an importer would have to normalise.
 - Floor is free text of at most 40 characters (schema `floor text null`). Name is at most 120, description at most 500.
 - Audit actions: `room.create` `{code}`, `room.update` `{fields, from?, to?, seats?}` (one row, including the seat
   rename), `room.delete` `{code, seats, devices, forced}`. Entity `room`.
@@ -266,9 +276,11 @@ None. All decisions below have defaults and are reversible. They are listed for 
 1. **Split** into Slice A (API, this PR) and SIM-010.2 (UI, depends on SIM-006)? Why: about 1,600 lines in total;
    Slice A alone is about 900 (about 60% tests). Default: **yes, split**. The orchestrator adds SIM-010.2 to the
    board after SIM-010. AC4's "UI hides the actions" moves there.
-2. Room code case: stored as typed, or forced to uppercase? Default: **as typed**. Uppercase would need a decision
-   because existing seatMGT data may be lowercase.
-3. Code charset/length: Default **`[A-Za-z0-9._-]`, 1-32 characters**.
+2. Room code case: **ANSWERED by Ming (Q22, 2026-11-20): always uppercase.** The UI input uppercases as the user
+   types (Slice B) and the server validator normalises with trim + `toUpperCase()` before validation and storage, so
+   `c302` and `C302` are the same code (409 on a duplicate).
+3. Code charset/length: Default **`[A-Z0-9._-]` after normalisation, 1-32 characters** (changed from `[A-Za-z0-9._-]`
+   by Q2; lowercase input is accepted and uppercased, not rejected).
 4. Does "empty room" mean no occupants and no devices, or no seats at all? Default: **no occupants and no devices**.
 5. A 400 carries only `invalid_request` (no `field`), so that `src/server/http/respond.ts` (High) is not touched.
    Default: **yes**. The UI validates with the same lib validator.
