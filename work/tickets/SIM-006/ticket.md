@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P0 |
 | Size | M |
 | Areas | security, ui |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-006) |
 
 ## Goal
 People sign in with their mmlabs account on simap's sign-in page and keep a renewed access token in memory, like tudocuatui and ricotdin.
@@ -46,6 +46,13 @@ spec AUT-01, AUT-02, §3 Auth; D4, D7, D33.
 - Manual: sign in / out / two tabs against Identity once M-1 is done.
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-2) — Ming: "duyệt hết; câu 20 tách 3 phần; câu 34 dùng metadata.referrer; còn lại theo đề xuất". Split: this ticket = slice S1 (auth library) only; S2 → SIM-006.2 (sign-in gate UI), S3 → SIM-006.3 (account pages). Q34: Referrer-Policy via metadata.referrer (no next.config.ts change, applies to SIM-006.3). Q17: reuse tudocuatui's Turnstile widget key for now; own widget before go-live (SIM-021). Q18: no jsdom/testing-library. Q35: no Resend on /verify-email. Q16b: SIM-006.3 records a decision superseding D33's link targets and updates spec AUT-01 / Out of scope.
+- 2026-11-20 (batch 2026-11-20-2, Q16): Ming: simap hosts its own sign-up and forgot-password pages, as ricotdin does, calling the same org-admin-api auth endpoints (replaces the D33 'link to Identity flows' reading). Plan to be revised; plan approval still pending.
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 6, ~640k tokens (frontend-developer×1 57k, planner×2 141k+99k, implementer×1 114k, reviewer×1 n/a, security auditor×1 97k)
+- Done: slice S1 auth library (identity client, token store, refresh lock, auth channel, apiFetch, validation) ported from tudocuatui; review PASS attempt 1; security 0 🔴 / 0 🟡
+- In progress / next: Ming opens + merges the PR; SIM-006.2 (sign-in UI) next, needs .env.example names + Turnstile hostnames
+- Gotchas: Node 24 has navigator.locks — ported tokenStore tests disable Web Locks (CI Node 22 has none)
