@@ -61,6 +61,7 @@ caught before merge instead of only by fake-client tests and hand review.
 - Unit: the guard refusal path of the setup script.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-20, batch 2026-11-20-3) — Ming: "duyệt hết theo đề xuất" (every proposal in the batch round accepted).
 - 2026-11-20: created on Ming's request ("tạo 2 ticket follow-up") from the SIM-010 review condition.
 
 ## Handoff
