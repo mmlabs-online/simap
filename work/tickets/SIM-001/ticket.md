@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P0 |
 | Size | M |
 | Areas | architecture, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T03:50Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -64,6 +64,12 @@ ticket has a layout, commands and checks to build on.
 - Manual: clean clone → install → dev server shows the placeholder page; `pnpm build` succeeds.
 
 ## Notes / answers from Ming
-—
+Waiting for Ming: plan approval (High tier) — `work/tickets/SIM-001/plan.md`, incl. its 9 *Decisions for Ming* (defaults apply if approved without comment).
 
 ## Handoff
+
+### 2026-11-20 — claude — BLOCKED
+- Agent calls: 2, tokens ~89k total (software-architect×1 opus 35k; planner×1 opus 54k; in/out split not reported)
+- Done: claimed; consult saved (`consult-software-architect.md`); `plan.md` Status READY.
+- In progress / next: Ming approves the plan (add a dated "Plan approved" line above, plus any changes to the 9 decisions), then `/run SIM-001` resumes at IMPLEMENT.
+- Gotchas: seatMGT `ming_dev` not checked out locally, so the Next 16.x pin is unverified; the planner rejects consult Finding 6 (`**/config.*` only matches files named `config.*`); CLAUDE.md R2 still says "down/rollback" vs D3 — implementer opens a `debt` issue; `gh` CLI is missing on this Windows device, so the PR step needs it installed or Ming opens the PR.
