@@ -24,7 +24,8 @@ Members see the room list with occupancy; Admins create, edit and delete rooms f
 - Everything listed under Slice B in `work/tickets/SIM-010/plan.md` (`createRoomsApi(fetcher)`, `RoomsView`/`RoomsPage`, `RoomCard`, `OccupancyRing`, `RoomFormDialog`, delete confirm, `src/ui/copy/rooms.ts`).
 
 ## Out of scope
-- Room switcher in the shell (SIM-015.1). Re-keying `/rooms/[roomCode]` (SIM-015.1/SIM-012).
+- Room switcher in the shell and re-keying `/rooms/[roomCode]` (SIM-012; SIM-015.1 is BLOCKED, D47).
+- Room detail page, seat list and seat add/delete (SIM-012, D47). No map, canvas or pixel-art UI (D47).
 
 ## Acceptance criteria
 - [ ] Slice B acceptance criteria as written in `work/tickets/SIM-010/plan.md`.
@@ -42,3 +43,7 @@ Members see the room list with occupancy; Admins create, edit and delete rooms f
 - 2026-11-20 (batch 2026-11-20-2): created from the split Ming approved ("duyệt hết; câu 20 tách 3 phần; … còn lại theo đề xuất").
 
 ## Handoff
+
+### 2026-11-20 — claude — BACKLOG (board update, D47)
+- Done: Out of scope now points at SIM-012 instead of the blocked SIM-015.1 (D47); clean UI kit only.
+- Next: unchanged; runs after SIM-010 and SIM-006.2.
