@@ -9,22 +9,30 @@ const clean = (s: string): string => s.normalize("NFC").replace(/\s+/gu, " ").tr
 const length = (s: string): number => [...s].length;
 const truncate = (s: string): string => [...s].slice(0, DISPLAY_NAME_MAX).join("").trimEnd();
 
-/** NFC, whitespace runs collapsed, trimmed, 1-80 code points, no control characters. null = invalid. */
+const INVISIBLE_SRC = String.raw`[\p{Cc}\p{Cf}ᅟᅠㅤﾠ]`;
+const INVISIBLE = new RegExp(INVISIBLE_SRC, "u");
+const INVISIBLE_G = new RegExp(INVISIBLE_SRC, "gu");
+const VISIBLE = /[\p{L}\p{N}\p{S}\p{P}]/u;
+
+/**
+ * NFC, whitespace runs collapsed, trimmed, 1-80 code points. Rejects control, format (incl. ZWJ/ZWNJ, bidi
+ * overrides) and filler characters, and names without a letter, number, symbol or punctuation. null = invalid.
+ */
 export function normalizeDisplayName(v: unknown): string | null {
   if (typeof v !== "string") return null;
   const s = clean(v);
-  if (s === "" || /\p{Cc}/u.test(s) || length(s) > DISPLAY_NAME_MAX) return null;
+  if (!VISIBLE.test(s) || INVISIBLE.test(s) || length(s) > DISPLAY_NAME_MAX) return null;
   return s;
 }
 
 /** D17: the email local part (before the last `@`); never blank. */
 export function defaultDisplayName(email: string): string {
   const at = email.lastIndexOf("@");
-  const local = truncate(clean(at > 0 ? email.slice(0, at) : email));
+  const local = truncate(clean((at > 0 ? email.slice(0, at) : email).replace(INVISIBLE_G, "")));
   const fromLocal = normalizeDisplayName(local);
   if (fromLocal !== null) return fromLocal;
-  const whole = truncate(clean(email).replace(/\p{Cc}/gu, ""));
-  return whole === "" ? "member" : whole;
+  const whole = truncate(clean(email.replace(INVISIBLE_G, "")));
+  return VISIBLE.test(whole) ? whole : "member";
 }
 
 export function validateMePatch(body: unknown): Validated<{ displayName: string }> {

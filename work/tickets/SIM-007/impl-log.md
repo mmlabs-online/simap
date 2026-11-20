@@ -34,3 +34,22 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No.
 - Diff size: about +700 / -20 lines incl. tests.
+
+## Attempt 2 (REWORK)
+
+### Changes
+- `src/lib/validate/member.ts`: `normalizeDisplayName` now rejects `\p{Cc}`, `\p{Cf}` and fillers U+115F, U+1160, U+3164, U+FFA0 and requires one `\p{L}|\p{N}|\p{S}|\p{P}` (security 🟡1). Choice: emoji ZWJ sequences and ZWNJ are NOT supported (all `\p{Cf}` rejected; simplest, closes bidi spoofing; single emoji still fine). `defaultDisplayName` strips the same set before `clean` and falls back to "member" (security 🟡2).
+- `src/server/members/members.ts`: whitespace-only email treated as no email (403, no insert) in `getOrCreateMember` and `ensure`. The `any` in `Query` stays: `orgQuery<R>` needs `rows: R[]` for different R, and `unknown[]`/`never[]` fail typecheck (not feasible).
+- Tests: `member.test.ts` (rejects "​", "a‮b", "ㅤ", "́", "a‍b"; default-name cases), `members.db.test.ts` (NFC test now passes NFD through `normalizeDisplayName`; whitespace email 403 and no insert).
+
+### Check results (local, WSL)
+- format:check, typecheck, check:layers, build: exit 0; test: 651 passed (651).
+
+### CI evidence (draft PR #23)
+See below (filled after the run).
+
+### Out-of-plan files
+None.
+
+### Scope self-check
+Only review/security items fixed.

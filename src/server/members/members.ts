@@ -51,7 +51,7 @@ async function find(
 async function ensure(c: TxClient, scope: OrgScope, who: Who): Promise<Row | null> {
   const existing = await find(c, scope, who.sub);
   if (existing) return existing;
-  if (who.email === null) return null;
+  if (!who.email?.trim()) return null;
   // The select-from-subselect form satisfies orgQuery's org_id = $1 guard; org_id is always the scope org.
   const { rows } = await orgQuery<{ id: string }>(
     c,
@@ -81,7 +81,7 @@ export async function getOrCreateMember(
 ): Promise<Result<MeMemberDto>> {
   const existing = await find(db, scope, who.sub);
   if (existing) return { ok: true, value: toDto(existing) };
-  if (who.email === null) return forbidden;
+  if (!who.email?.trim()) return forbidden;
   const row = await withTx(db, (c) => ensure(c, scope, who));
   return row ? { ok: true, value: toDto(row) } : forbidden;
 }

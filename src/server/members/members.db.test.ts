@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { normalizeDisplayName } from "@/lib/validate/member";
 import { assertTestDb, newOrg, testPool } from "@/test/db/fixtures";
 import { getOrCreateMember, setOwnDisplayName } from "./members";
 
@@ -89,7 +90,7 @@ describe("members (db)", () => {
     const w = who();
     await getOrCreateMember(pool, scope, w);
     const nfd = "Nguyễn Văn A".normalize("NFD");
-    const m = ok(await setOwnDisplayName(pool, scope, w, nfd.normalize("NFC")));
+    const m = ok(await setOwnDisplayName(pool, scope, w, normalizeDisplayName(nfd)!));
     expect(m.displayName).toBe(nfd.normalize("NFC"));
     expect(m.needsProfile).toBe(false);
     expect(ok(await getOrCreateMember(pool, scope, w)).needsProfile).toBe(false);
@@ -141,6 +142,11 @@ describe("members (db)", () => {
       code: "forbidden",
     });
     expect(await setOwnDisplayName(pool, scope, w, "An")).toMatchObject({ ok: false });
+    expect(await members(orgId)).toBe(0);
+    expect(await getOrCreateMember(pool, scope, who("  "))).toMatchObject({
+      ok: false,
+      status: 403,
+    });
     expect(await members(orgId)).toBe(0);
     const w2 = who();
     const m = ok(await getOrCreateMember(pool, scope, w2));

@@ -11,6 +11,10 @@ describe("defaultDisplayName", () => {
     ["  a  b @x", "a b"],
     ["@x.com", "@x.com"],
     ["plain", "plain"],
+    ["\u0007 \u0007@x.vn", "@x.vn"],
+    ["\u200Ba\u202Eb@x.vn", "ab"],
+    ["\u3164@x.vn", "@x.vn"],
+    ["\u0007 \u0007", "member"],
   ])("%s -> %s", (email, out) => {
     expect(defaultDisplayName(email)).toBe(out);
   });
@@ -33,7 +37,24 @@ describe("normalizeDisplayName", () => {
     expect(normalizeDisplayName("  a \t\n b ")).toBe("a b");
   });
 
-  it.each([["", "   ", 1, null, undefined, "a\u0007b", "a\u007fb"]].flat())("rejects %j", (v) => {
+  it.each(
+    [
+      [
+        "",
+        "   ",
+        1,
+        null,
+        undefined,
+        "a\u0007b",
+        "a\u007fb",
+        "\u200B",
+        "a\u202Eb",
+        "\u3164",
+        "\u0301",
+        "a\u200Db",
+      ],
+    ].flat(),
+  )("rejects %j", (v) => {
     expect(normalizeDisplayName(v)).toBeNull();
   });
 
