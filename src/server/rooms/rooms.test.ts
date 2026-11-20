@@ -253,19 +253,40 @@ describe("delete impact and deleteRoom", () => {
     const s = t.sqls();
     expect(s[0]).toBe("begin");
     expect(s[1]).toMatch(/for update$/);
-    expect(s[2]).toMatch(/count\(\*\)::int as seats/);
-    expect(s[3]).toMatch(/^update devices set role = 'secondary', seat_id = null/);
-    expect(s[4]).toMatch(/^delete from seats/);
-    expect(s[5]).toMatch(/^delete from rooms/);
-    expect(s[6]).toMatch(/^insert into audit_log/);
-    expect(s[7]).toBe("commit");
-    expect(t.calls[6]![1][2]).toBe("room.delete");
-    expect(JSON.parse(t.calls[6]![1][5] as string)).toEqual({
+    expect(s[2]).toBe(
+      "select id from seats where org_id = $1 and room_id = $2 order by id for update",
+    );
+    expect(s[3]).toMatch(/count\(\*\)::int as seats/);
+    expect(s[4]).toMatch(/^update devices set role = 'secondary', seat_id = null/);
+    expect(s[5]).toMatch(/^delete from seats/);
+    expect(s[6]).toMatch(/^delete from rooms/);
+    expect(s[7]).toMatch(/^insert into audit_log/);
+    expect(s[8]).toBe("commit");
+    expect(t.calls[7]![1][2]).toBe("room.delete");
+    expect(JSON.parse(t.calls[7]![1][5] as string)).toEqual({
       code: "C302",
       seats: 3,
       devices: 2,
+      pending: 0,
       forced: true,
     });
+  });
+
+  it("seats lock runs after the room lock and before the impact count, also without force", async () => {
+    const t = fakeDb((sql) => {
+      if (sql.startsWith("select id, code from rooms")) return [{ id: RID, code: "C302" }];
+      if (sql.includes("count(*)::int as seats")) return [impactRow({ seats: 2, occupied: 1 })];
+      return [];
+    });
+    await deleteRoom(t.db, scope, ACTOR, RID, false);
+    const s = t.sqls();
+    const room = s.findIndex((q) => q.startsWith("select id, code from rooms"));
+    const seats = s.findIndex((q) => q.startsWith("select id from seats"));
+    const count = s.findIndex((q) => q.includes("count(*)::int as seats"));
+    expect(room).toBeGreaterThan(0);
+    expect(seats).toBeGreaterThan(room);
+    expect(count).toBeGreaterThan(seats);
+    expect(t.calls[seats]![1]).toEqual([scope.orgId, RID]);
   });
 
   it("an empty room is deleted without force", async () => {

@@ -15,6 +15,7 @@ export async function writeAudit(
     meta?: Record<string, unknown>;
   },
 ): Promise<void> {
+  // The select-from-subselect form satisfies orgQuery's org_id = $1 guard; org_id is always the scope org.
   await orgQuery(
     db,
     scope,
