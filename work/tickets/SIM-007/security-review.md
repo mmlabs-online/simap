@@ -14,3 +14,14 @@ Agent: `security-ai-generated-code-auditor` (read-only; no checks run). Result: 
 - 🟢 9 R1/R3 hold.
 
 Follow-ups: SIM-011 reuses `normalizeDisplayName` with the 🟡 1 hardening and blocks deactivated members in `memberGate`; consider a DB guard (`char_length(display_name) <= 80`, non-printing chars) in a later migration.
+
+## Attempt 2
+Agent: `security-ai-generated-code-auditor` (read-only; no checks run). Result: **0 🔴, 0 🟡, 5 🟢** — both attempt-1 🟡 resolved, no new should-fix issue.
+
+- 🟢 1 Attempt-1 🟡 1 resolved (`src/lib/validate/member.ts:12-15,24`): `INVISIBLE` = `[\p{Cc}\p{Cf}` + U+115F/U+1160/U+3164/U+FFA0`]/u`, `VISIBLE` = `[\p{L}\p{N}\p{S}\p{P}]/u` required, checked after NFC + whitespace collapse; tests `member.test.ts:48-54`. Minor gap: U+115F, U+1160, U+FFA0 untested; consider `\u` escapes in the class.
+- 🟢 2 Attempt-1 🟡 2 resolved: `defaultDisplayName` strips invisible chars before `clean`, never blank (`member.ts:29-36`); whitespace-only email → 403, no insert (`members.ts:54,84`; `members.db.test.ts:146-150`).
+- 🟢 3 No over-rejection of Vietnamese names: NFD composed by NFC first, `\p{Mn}` not rejected (`member.test.ts:22-24,35-36`, `members.db.test.ts:92-94`). Trade-off: ZWJ/ZWNJ rejected (some Persian/Indic names, ZWJ emoji sequences).
+- 🟢 4 No ReDoS; `g` flag only on the replace regex, `.test()` regexes are non-global; `u` flag everywhere.
+- 🟢 5 Optional hardening for SIM-011: U+2800 (braille blank, `\p{So}`) and `\p{Co}`/`\p{Cn}`/`\p{Cs}` still pass.
+
+Follow-ups unchanged: SIM-011 `memberGate` before go-live; DB guard `char_length(display_name) <= 80` in a later migration.

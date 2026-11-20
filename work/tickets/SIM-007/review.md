@@ -158,6 +158,7 @@ R2: there is still one forward-only, expand-only migration. R4: the attempt-2 co
 including the DB checks in CI. R6: unchanged since attempt 1.
 
 ### Blockers from review agents
+None: `security-review.md` Attempt 2 has 0 🔴 (0 🟡).
 
 ### Nits (do not block)
 - `normalizeDisplayName` now rejects every `\p{Cf}`, including ZWJ and ZWNJ. Emoji ZWJ sequences (e.g. family emoji) and
