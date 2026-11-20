@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | none (D47 lifted for this ticket by D55) |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-20T16:29Z |
 | PR | — |
 
 ## Goal
