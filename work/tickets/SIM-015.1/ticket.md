@@ -54,7 +54,7 @@ manifest (spec LAY "Visual style", LAY-06):
   until a later contract migration).
 - Read-only view renders desks, fixtures, LAY-06 overlays (state sprites, device sprites by type, generated avatars),
   integer zoom 2×/3×/4×, pan, keyboard focus on seats.
-- Depends on the sprite-atlas ticket (placeholder art is enough; final art per OQ-40).
+- Depends on SIM-024 (sprite atlas + renderer; placeholder art is enough; final art is M-9).
 
 ## Handoff
 

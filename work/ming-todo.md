@@ -29,3 +29,7 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [ ] M-8 First release: from a commit on `main`, push branch `release/v0.1.0` (Ming's step, agents never push
   `release/*`); check the `release` run is green, review and merge the `release/simap-v0.1.0` PR on
   `mmlabs-online/deployment`, then check the `deploy-simap` run and `/api/readyz` (needs M-2, M-3, M-6, M-7). (D8)
+- [ ] M-9 Pixel art for the room map (D45, D52): check licences of the candidates in `docs/art/asset-candidates.md`
+  (screenshot to `assets/art/licences/`, row in `assets/art/CREDITS.md`), then adapt or draw the sprites in
+  `docs/art/style-guide.md` §7 and export `public/sprites/office.png/json`. About 3–4 days. Not blocking: SIM-024 ships
+  placeholder art.

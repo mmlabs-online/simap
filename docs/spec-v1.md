@@ -331,6 +331,8 @@ from an atlas plus a manifest, so the art can be replaced without code changes (
 office" (D46) in UI shell A: clean UI around the map. Quality bar: name tags as dark pills with crisp (non-pixel)
 text, soft shadows under furniture, pastel floors per zone, walls with a top face (3/4 view), rich decor (D46).
 One map per room in v1; a whole-floor map is v2 (D49).
+The pixel style is limited to end-user surfaces (sign-in, room browser and map, my seat, requests); management screens
+use the clean UI kit (D52). Art rules: `docs/art/style-guide.md`.
 
 **LAY-01 Tile-grid layout that saves** (supersedes D20's free-form editor)
 - [ ] A room has a size in tiles (width × height). An Admin opens the room's editor, places items on whole tiles and
