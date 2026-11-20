@@ -17,3 +17,4 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [x] M-4 (2026-11-20) Approve plan for SIM-001: `work/tickets/SIM-001/plan.md` (High tier; 9 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
 - [ ] M-4 Run the org-admin-api request for an app-facing org members read and remove-from-org (prompt in
   `docs/requests/org-admin-api-org-members.md`). Blocks SIM-020. (D16, D34)
+- [ ] M-5 Approve plan for SIM-002: `work/tickets/SIM-002/plan.md` (High tier; 8 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.

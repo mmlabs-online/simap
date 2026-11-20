@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P0 |
 | Size | M |
 | Areas | db, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T04:25Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -59,6 +59,13 @@ and a readiness route, so the schema ticket can add migrations.
   Postgres → readyz 503.
 
 ## Notes / answers from Ming
-—
+Waiting for Ming: plan approval (High tier) — `work/tickets/SIM-002/plan.md`, incl. its 8 *Decisions for Ming* (defaults apply if approved without comment).
+Orchestrator correction to plan.md: `.env.example` **already exists** (SIM-001, contains `PORT=`). The planner could not see it because `.claude/settings.json` denies `Read(**/.env.*)`, which also matches `.env.example`. The implementer must **add** `DATABASE_URL=` to the existing file, not create/overwrite it.
 
 ## Handoff
+
+### 2026-11-20 — claude — BLOCKED
+- Agent calls: 2, tokens ~105k total (database-optimizer×1 sonnet 30k; planner×1 opus 76k; in/out split not reported)
+- Done: claimed; Prepare (`pnpm install`) ok; consult saved; `plan.md` Status READY.
+- In progress / next: Ming approves the plan (dated "Plan approved" line), then `/run SIM-002` resumes at IMPLEMENT.
+- Gotchas: tudocuatui working tree is on `bug/BUG-010` — reference files were read from its `origin/main` (41ee069) via an export in the session scratchpad; the deny rule `Read(**/.env.*)` hides `.env.example` from agents (see note above); local Postgres needs Docker for `compose.dev.yml` / smoke runs.
