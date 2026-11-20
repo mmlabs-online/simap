@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T08:46:02Z |
-| PR | — |
+| Claimed by | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-025) |
 
 ## Goal
 Close the two 🟡 findings left open when SIM-010 merged, so one oversized request cannot exhaust server memory and a
@@ -62,3 +62,9 @@ SIM-015.x).
 - 2026-11-20: created on Ming's request ("tạo 2 ticket follow-up") from the SIM-010 security review.
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 4, ~243k tokens (planner×1 sonnet 43k, implementer×1 39k, reviewer×1 n/a, security auditor×1 82k)
+- Done: streamed readJson cap, seats lock in deleteRoom + lock-order rule, pending in audit meta, INSERT comments; review PASS attempt 1; security 0 🔴 / 0 🟡, SIM-010 findings resolved
+- In progress / next: Ming merges this before SIM-026 (built on top)
+- Gotchas: —
