@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "additionalDirectories": ["../.."],
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.env)",
+      "Read(~/.config/spacem/**)",
+      "Edit(~/.config/spacem/**)",
+      "Read(~/.config/*/*.env)",
+      "Edit(~/.config/*/*.env)",
+      "Read(~/.config/*/dev-token)",
+      "Read(~/.config/Bitwarden CLI/**)",
+      "Read(~/.config/Bitwarden/**)",
+      "Read(~/.env)",
+      "Read(~/.env.*)",
+      "Read(~/.ssh/**)",
+      "Read(~/.config/gh/hosts.yml)",
+      "Read(~/.git-credentials)",
+      "Read(~/.netrc)",
+      "Read(~/.npmrc)",
+      "Read(~/.aws/**)",
+      "Read(~/.docker/config.json)",
+      "Read(~/.supabase/**)"
+    ]
+  }
+}
