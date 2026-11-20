@@ -23,7 +23,8 @@ Do not change the stack without Ming's explicit decision.
 ## Commands
 - `pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm start` (runs the standalone server; static assets are served only after `.next/static` is copied next to it, done by the SIM-004 image), `pnpm build`.
 - `pnpm typecheck` (next typegen + tsc), `pnpm check:layers` (R1 import guard), `pnpm format` / `pnpm format:check`
-  (oxfmt), `pnpm test` (Vitest). There is no lint script (no ESLint, D2). Keep `.claude/loop.config.md` → Checks in sync.
+  (oxfmt), `pnpm test` (Vitest), `pnpm migrate` (applies `db/migrations`, needs `DATABASE_URL`), `pnpm migrate:smoke`
+  (scripted migrator check), `docker compose -f compose.dev.yml up -d` (local Postgres). There is no lint script (no ESLint, D2). Keep `.claude/loop.config.md` → Checks in sync.
 
 ## Rules (reviewer enforces these)
 - R1 UI and page code never imports server code; route handlers under `src/app/api/**` are the only entry into

@@ -1,0 +1,19 @@
+# Local development database. Trust auth, bound to localhost only: no password is committed.
+# DATABASE_URL for .env.local: postgres://simap@127.0.0.1:5432/simap
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: simap
+      POSTGRES_USER: simap
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports: ["127.0.0.1:5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U simap -d simap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - simap-dev-db:/var/lib/postgresql/data
+volumes:
+  simap-dev-db:

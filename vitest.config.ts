@@ -16,6 +16,6 @@ export default defineConfig({
     environment: "node",
     globals: false,
     restoreMocks: true,
-    include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.ts"],
+    include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.ts", "db/**/*.test.ts"],
   },
 });
