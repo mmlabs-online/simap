@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T09:46Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -48,3 +48,9 @@ spec AUT-06, §2 Member = org account; D12, D13, D16 (a), D17.
 - Plan approved (2026-11-20, batch 2026-11-20-4): "duyệt hết theo đề xuất" — Q11–Q18 take the proposals; split into SIM-007 (server, this ticket), SIM-007.2, SIM-007.3. High tier: no merge approval (Ming merges).
 
 ## Handoff
+
+### 2026-11-20 — claude — IN_PROGRESS (plan approved, build not started)
+- Agent calls: 3, ~279k tokens (api-platform-engineer×1 39k, frontend-developer×1 53k, planner×1 139k; ×1 share of batch)
+- Done: consult, plan (slice 1 of 3: /api/me server + migration), plan approved by Ming (batch 2026-11-20-4); SIM-007.2/007.3 created on main
+- In progress / next: batch stopped before IMPLEMENT (GitHub Actions not running → no auto-merge); resume with `/run-batch --resume`
+- Gotchas: High tier (db/migrations) → Ming merges; needs `pnpm schema:check` against a local DB
