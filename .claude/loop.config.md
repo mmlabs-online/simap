@@ -19,7 +19,7 @@ SIM-002 and the spec fill them.**
 
 ## Prepare
 - `pnpm install --frozen-lockfile`
-- TODO (SIM-002): local Postgres for tests (docker compose or a test container).
+- Tests need no database. For `pnpm migrate` / readiness locally: `docker compose -f compose.dev.yml up -d`.
 
 ## Checks
 | Check | Command |
