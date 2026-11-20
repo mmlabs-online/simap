@@ -456,7 +456,7 @@ EntityFormDialog), seat tiles, room cards, fonts and icons. UI copy is English b
 
 ## 8. Non-functional requirements
 
-- **Language (D36):** UI copy is **English** by default. All user-facing text lives in copy files (no literals in
+- **Language (D36, D40):** UI copy is **English** by default and v1 ships English only. All user-facing text lives in copy files (no literals in
   components) so another language can be added later. People's names and data stay as entered: Vietnamese diacritics
   must display, sort and search correctly. Text is stored as Unicode NFC. Code, comments, docs and commits in English.
 - **Time (D35):** stored in UTC, shown in Asia/Ho_Chi_Minh (UTC+7) for every org in v1; a per-org time zone is a later candidate.
@@ -552,7 +552,7 @@ All v1 open questions are answered as of 2026-11-20. New questions get the next 
 | Date | Change |
 |---|---|
 | 2026-11-20 | First draft from Ming's `/idea` brief: seatMGT rebuild on Next.js + mmlabs Identity + shared Postgres, deployed like tudocuatui. |
-| 2026-11-20 | v0.6 (D35–D38): UTC+7 for all orgs; English UI copy by default in copy files; suggested device types; audit kept indefinitely. |
+| 2026-11-20 | v0.6 (D35–D40; D39 SIM-022 English copy follow-up, D40 English only in v1): UTC+7 for all orgs; English UI copy by default in copy files; suggested device types; audit kept indefinitely. |
 | 2026-11-20 | v0.5 from Ming's answers (D25–D34): no Viewer; cannot-seat flag blocks; CSV export + layout PNG if feasible; audit screen for Admins; room code editable (unique in org, seat codes follow); seat numbers never reused; placed device must go to inventory before delete; seat takes occupant's group; Identity sign-in links + account picker; members are deactivated or removed from the org, never deleted. No open questions left. |
 | 2026-11-20 | v0.4 from Ming's answers (D16–D24): member directory now + Identity members endpoint later; display name; confirm-replace on assign; Manager moves any device; free-form editor; requests in any room, self only, cancellable, in-app status; self-release in v1. |
 | 2026-11-20 | v0.3 from Ming's answers (D9–D15): Super Admin creates orgs; invitations from simap; every member is an Identity org account; several orgs per account; no plan limits; role keys; highest tier wins. Added OQ-38, OQ-39. |

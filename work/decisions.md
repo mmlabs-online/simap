@@ -43,3 +43,5 @@ with a new one that names it. Format: `D<n> — YYYY-MM-DD — <decision> — <w
 | D36 | 2026-11-20 | UI copy is English by default; all user-facing text lives in copy files so another language can be added later. Names/data keep Vietnamese diacritics (display, sort, search). Supersedes the "Vietnamese UI copy" wording in the spec and tickets. | (Ming) |
 | D37 | 2026-11-20 | Device type: suggested list (PC, Laptop, Monitor, IP phone, Other) plus free text. | Cleaner data, still flexible (Ming) |
 | D38 | 2026-11-20 | Audit rows are kept indefinitely in v1; retention purge later. | Small scale (Ming) |
+| D39 | 2026-11-20 | SIM-003 is merged with its Vietnamese copy as is; follow-up SIM-022 switches the copy to English. | Cheap (copy is centralised) and does not stall the running batch (Ming) |
+| D40 | 2026-11-20 | v1 ships English only; the structure is ready for more languages; a language switcher and Vietnamese translation come after v1. | Avoid writing and checking every string twice (Ming) |
