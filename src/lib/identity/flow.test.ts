@@ -166,6 +166,13 @@ describe("readMeResult", () => {
     ).toEqual({ status: 200, code: undefined, me: { tier: "admin", email: "a@b.co" } });
   });
 
+  it("readMeResult reads tier and email from the SIM-007 body with member", async () => {
+    const member = { id: "m", displayName: "a", status: "active", needsProfile: true };
+    expect(
+      await readMeResult(json({ sub: "s", email: "a@b.co", org: "o", tier: "user", member }, 200)),
+    ).toEqual({ status: 200, code: undefined, me: { tier: "user", email: "a@b.co" } });
+  });
+
   it("an error body gives its code; a 200 with an unknown tier has no me", async () => {
     expect(await readMeResult(json({ error: { code: "org_required" } }, 403))).toEqual({
       status: 403,

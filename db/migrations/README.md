@@ -34,5 +34,7 @@ The app never migrates.
   `seats`: it raises at COMMIT with SQLSTATE `23514`, constraint `devices_primary_owner_is_occupant`. A service that
   changes the occupant must demote the old primary in the same transaction (invariant 8). Services map this error.
 - `audit_log` is append-only (update, delete and truncate raise `55000`).
+- `members.profile_confirmed_at` (SIM-007, `20261120190000_members_profile_confirmed_at.sql`): null = profile not
+  confirmed yet; set once by the member's first `PATCH /api/me`, never reset.
 - Dev seed: `pnpm seed:dev` loads fake data (fixed UUIDs, `@simap.example` emails, invented names) into a local
   database only; it refuses non-local hosts and `NODE_ENV=production`. Never put real data in the seed.
