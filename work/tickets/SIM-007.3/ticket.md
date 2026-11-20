@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T15:00Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -38,5 +38,8 @@ On the first visit to an org the user confirms or edits a display name before us
 
 ## Notes / answers from Ming
 - 2026-11-20 (batch 2026-11-20-4): created from the split Ming approved ("duyệt hết theo đề xuất", Q11).
+
+- Plan approved (2026-11-20, batch 2026-11-20-5): "ok hết" — every assumption takes its default.
+- Merge approved (2026-11-20, batch 2026-11-20-5): "ok hết" on the round that asked "cho merge" per Medium ticket.
 
 ## Handoff
