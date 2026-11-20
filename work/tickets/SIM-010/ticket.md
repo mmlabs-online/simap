@@ -45,6 +45,6 @@ spec ROO-01, ROO-02, SYS-02, SYS-03; D29, D30.
 - Manual: create/rename/delete rooms as Admin and as User.
 
 ## Notes / answers from Ming
-—
+- 2026-11-20 (batch 2026-11-20-2, Q22): Ming: room codes are always uppercase; the input uppercases as the user types and the server stores uppercase. Plan to be revised; plan approval still pending.
 
 ## Handoff
