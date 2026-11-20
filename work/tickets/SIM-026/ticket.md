@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | db, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-026) |
+| PR | https://github.com/mmlabs-online/simap/pull/18 |
 
 ## Goal
 Service SQL (starting with the rooms service) runs against a real Postgres in CI on every PR, so SQL mistakes are

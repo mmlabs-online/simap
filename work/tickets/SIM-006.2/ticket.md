@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P0 |
 | Size | M |
 | Areas | security, ui |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-006.2) |
+| PR | https://github.com/mmlabs-online/simap/pull/19 |
 
 ## Goal
 Signed-out users see the sign-in screen in place on any app page and land back on it after signing in, using the SIM-006 auth library; slice S2 of the approved SIM-006 plan.

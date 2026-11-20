@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | S |
 | Areas | security, api |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-025) |
+| PR | https://github.com/mmlabs-online/simap/pull/17 |
 
 ## Goal
 Close the two 🟡 findings left open when SIM-010 merged, so one oversized request cannot exhaust server memory and a
