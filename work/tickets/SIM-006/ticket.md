@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P0 |
 | Size | M |
 | Areas | security, ui |
@@ -46,6 +46,7 @@ spec AUT-01, AUT-02, §3 Auth; D4, D7, D33.
 - Manual: sign in / out / two tabs against Identity once M-1 is done.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-20, batch 2026-11-20-2) — Ming: "duyệt hết; câu 20 tách 3 phần; câu 34 dùng metadata.referrer; còn lại theo đề xuất". Split: this ticket = slice S1 (auth library) only; S2 → SIM-006.2 (sign-in gate UI), S3 → SIM-006.3 (account pages). Q34: Referrer-Policy via metadata.referrer (no next.config.ts change, applies to SIM-006.3). Q17: reuse tudocuatui's Turnstile widget key for now; own widget before go-live (SIM-021). Q18: no jsdom/testing-library. Q35: no Resend on /verify-email. Q16b: SIM-006.3 records a decision superseding D33's link targets and updates spec AUT-01 / Out of scope.
 - 2026-11-20 (batch 2026-11-20-2, Q16): Ming: simap hosts its own sign-up and forgot-password pages, as ricotdin does, calling the same org-admin-api auth endpoints (replaces the D33 'link to Identity flows' reading). Plan to be revised; plan approval still pending.
 
 ## Handoff
