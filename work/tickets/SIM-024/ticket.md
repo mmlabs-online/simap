@@ -2,13 +2,13 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | BACKLOG |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, architecture |
 | Gate | none |
 | Depends on | SIM-003 |
-| Needs Ming | Lift D47 (map work waits) |
+| Needs Ming | none (D47 lifted for this ticket by D55) |
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
@@ -21,7 +21,7 @@ replace the placeholders without code changes.
 
 ## Scope reference
 `docs/art/style-guide.md` (sections 2, 3, 6, 7, 8); spec LAY "Visual style", LAY-06; decisions D41, D43, D44, D46,
-D48, D50, D51, D52. Blocked for now by D47 (map work waits) until Ming lifts it.
+D48, D50, D51, D52, D54, D55. D47 is lifted for this ticket only (D55).
 
 ## Scope
 - Manifest format and loader exactly as style guide §8 (`public/sprites/office.json` + `office.png`), with a validator
@@ -62,6 +62,6 @@ D48, D50, D51, D52. Blocked for now by D47 (map work waits) until Ming lifts it.
 - Manual: demo page at 390 px and desktop, light/dark app theme (map art itself is theme-independent).
 
 ## Notes / answers from Ming
-—
+- 2026-11-20: D47 lifted for SIM-024 (D55). Phase-1 art: `assets/art/sprite-map.json` (Imersa free pack, 32 px, scale 1). Place pack sprites by the map's `anchor` ([x, y] in the rect of the footprint's top-left pixel), not by bottom-alignment; accept the map's `wall.*` tile keys as the wall set; source sheets are git-ignored (M-10), so a missing sheet falls back to the placeholder and must not fail the build or CI. Directions: pack front/back/left/right = s/n/w/e. Reference preview: `docs/art/mockups/c302-phase1-preview.png`.
 
 ## Handoff

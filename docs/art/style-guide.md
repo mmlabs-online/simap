@@ -4,7 +4,7 @@ Status: v1 draft, 2026-11-20. Decisions: D41–D46, D48–D52 (`work/decisions.m
 artifact (style 2, 32 px, UI A). Everything in that mockup is placeholder art drawn by code; it shows the target
 quality, not final sprites.
 
-## 0. Phase 1: reuse packs as they are (D53)
+## 0. Phase 1: reuse packs as they are (D54)
 
 To ship the map sooner, phase 1 uses objects cut from free packs **with their original colours**. Sections 3–5
 (palette, drawing rules) apply in phase 2, when Ming recolours and touches up the art.

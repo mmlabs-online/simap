@@ -39,8 +39,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-027 | Security headers, CSP and apiFetch hardening before go-live | IN_PROGRESS | P1 | M | security, architecture | SIM-006.2 | plan-approval | 0 | 2026-11-20 |
 | SIM-021 | Go-live checklist and first production deploy | BACKLOG | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | none | 0 | 2026-11-20 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
-| SIM-024 | Sprite atlas, manifest, placeholder art and map renderer | BLOCKED | P1 | M | ui, architecture | SIM-003 | none | 0 | 2026-11-20 |
+| SIM-024 | Sprite atlas, manifest, placeholder art and map renderer | BACKLOG | P1 | M | ui, architecture | SIM-003 | none | 0 | 2026-11-20 |
 | SIM-015.1 | Room layout API and read-only room view | BLOCKED | P1 | M | api, ui | SIM-010 | none | 0 | 2026-11-20 |
 | SIM-015.2 | Free-form layout editor | BLOCKED | P1 | M | ui, ux | SIM-015.1 | none | 0 | 2026-11-20 |
 
-Blocked (D47): SIM-015.1, SIM-015.2 and any later sprite/atlas/map ticket — waiting for pixel-art decisions (D41–D46).
+Blocked (D47; SIM-024 unblocked by D55): SIM-015.1, SIM-015.2 and any later sprite/atlas/map ticket — waiting for pixel-art decisions (D41–D46).
