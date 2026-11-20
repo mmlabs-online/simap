@@ -1,6 +1,6 @@
 # simap — Spec v1
 
-**Status:** v0.7 (2026-11-20); open: OQ-40 (pixel-art assets). Platform, auth, org and data questions answered by Ming (D1–D44 in
+**Status:** v0.8 (2026-11-20), no open questions. Platform, auth, org and data questions answered by Ming (D1–D51 in
 `work/decisions.md`); remaining items in [Open questions](#11-open-questions).
 **Owner:** Ming. **Scope source:** this file is the first scope source in `.claude/loop.config.md`; `work/decisions.md`
 records later decisions. If a ticket and this spec disagree, the spec wins and the conflict is flagged.
@@ -225,7 +225,8 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 ### SEA — Seat
 
 **SEA-01 Manage seats** (Admin)
-- [ ] Seats are created and deleted from the layout designer (LAY-02). Each seat belongs to exactly one room.
+- [ ] An Admin adds seats to a room and deletes them through the API and a plain seat list on the room page (D47);
+  the map editor (LAY-02) places existing seats and can also add new ones. Each seat belongs to exactly one room.
 - [ ] Deleting a seat that has an occupant or any device is refused with a clear message (seatMGT guard).
 - [ ] An Admin or Manager marks a seat "cannot seat" with a reason (broken, storage…). Such a seat cannot be
   assigned or requested and shows grey with the reason; its status is still derived (D26).
@@ -322,11 +323,14 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 
 ### LAY — Layout designer (Admin)
 
-**Visual style of rooms (D41, D43).** The room view and the editor are **pixel-art, top-down, on a 16 px tile
+**Visual style of rooms (D41, D43, D46, D48).** The room view and the editor are **pixel-art, top-down, on a 32 px tile
 grid**, drawn from a sprite atlas (desks, chairs, devices, walls, floors, fixtures). Everything else in the app keeps
 the clean UI kit, with small pixel accents (logo, icons, empty states). Sprites scale by whole numbers only (2×, 3×,
 4×, `image-rendering: pixelated`). No game engine or new library: DOM or plain canvas (stack unchanged). The art comes
-from an atlas plus a manifest, so the art can be replaced without code changes (asset sourcing: OQ-40).
+from an atlas plus a manifest, so the art can be replaced without code changes (asset rules D45). Art style "modern
+office" (D46) in UI shell A: clean UI around the map. Quality bar: name tags as dark pills with crisp (non-pixel)
+text, soft shadows under furniture, pastel floors per zone, walls with a top face (3/4 view), rich decor (D46).
+One map per room in v1; a whole-floor map is v2 (D49).
 
 **LAY-01 Tile-grid layout that saves** (supersedes D20's free-form editor)
 - [ ] A room has a size in tiles (width × height). An Admin opens the room's editor, places items on whole tiles and
@@ -352,8 +356,8 @@ from an atlas plus a manifest, so the art can be replaced without code changes (
   mine (highlight), cannot-seat (blocked sign), pending request (marker).
 - [ ] Devices at a seat are drawn by type (PC, laptop, monitor, IP phone, other; D37): the primary on the desk,
   secondary next to it.
-- [ ] Occupants are generated pixel avatars (body/hair/shirt colours derived from `sub`, stable per person); the name
-  shows on hover/focus. No real photos (D44).
+- [ ] Occupants are generated 32 px layered avatars (body/hair/shirt colours derived from `sub`, stable per person);
+  no real photos (D44, D51). Name tags appear only on hover or keyboard focus, at every zoom (D50).
 
 **Room view (all roles)**
 - [ ] `/rooms/<code>` shows the saved pixel layout read-only with LAY-06 overlays, zoom and pan (works at 390 px), and
@@ -559,7 +563,7 @@ Owner: Ming for all of them. Each blocks the tickets named after it. IDs are sta
   seatMGT code lets only the owner or an Admin manage a device. Which is right?
 - **OQ-14 Layout style.** *Answered D20.* Keep the free-form editor (what seatMGT ships today), or use a simple grid? Is a floor-plan
   background image in v1?
-- **OQ-40 Pixel-art assets (open).** D42 sets free assets customised in-house as the direction. Open: sourcing
+- **OQ-40** — answered D45, D46, D48. (Was: **OQ-40 Pixel-art assets.**) D42 sets free assets customised in-house as the direction. Open: sourcing
   rules (licences allowed), who customises and with which tool, where sources live, credits page. *Blocks: the sprite
   atlas ticket's final art (placeholder art can start).*
 - **OQ-15** — D26. **OQ-16** — D27. **OQ-17** — D28. **OQ-18** — D29. **OQ-19** — D30. **OQ-21** — D31.
@@ -572,6 +576,7 @@ All v1 open questions are answered as of 2026-11-20. New questions get the next 
 | Date | Change |
 |---|---|
 | 2026-11-20 | First draft from Ming's `/idea` brief: seatMGT rebuild on Next.js + mmlabs Identity + shared Postgres, deployed like tudocuatui. |
+| 2026-11-20 | v0.8 (D45–D51): asset rules; style 2 + UI A; seats managed without the map, logic/API first; 32 px tiles; per-room map in v1, floor map v2; name tags on hover/focus; 32 px layered avatars. |
 | 2026-11-20 | v0.7 (D41–D44): pixel-art tile-grid room view and editor (supersedes D20), avatars; OQ-40 assets open. |
 | 2026-11-20 | v0.6 (D35–D40; D39 SIM-022 English copy follow-up, D40 English only in v1): UTC+7 for all orgs; English UI copy by default in copy files; suggested device types; audit kept indefinitely. |
 | 2026-11-20 | v0.5 from Ming's answers (D25–D34): no Viewer; cannot-seat flag blocks; CSV export + layout PNG if feasible; audit screen for Admins; room code editable (unique in org, seat codes follow); seat numbers never reused; placed device must go to inventory before delete; seat takes occupant's group; Identity sign-in links + account picker; members are deactivated or removed from the org, never deleted. No open questions left. |

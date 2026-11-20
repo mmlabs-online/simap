@@ -47,7 +47,7 @@ spec LAY (Room view), LAY-03, SEA-02; D20.
 —
 
 ## Change from Ming (2026-11-20, D41–D44)
-Supersedes the free-form parts above. The room view is **pixel-art on a 16 px tile grid** drawn from a sprite atlas +
+Supersedes the free-form parts above. The room view is **pixel-art on a 32 px tile grid** (D48; style D46, name tags on hover D50) drawn from a sprite atlas +
 manifest (spec LAY "Visual style", LAY-06):
 - Layout data: room size in tiles; items with tile x/y, rotation 0/90/180/270, sprite key; needs a forward-only
   migration adding these to `seats` / `layout_fixtures` and room grid size (SIM-008's double x/y/rotation/w/h stay
