@@ -46,6 +46,11 @@ spec LAY-01, LAY-02, LAY-03, LAY-05, SEA-01; D20.
 ## Notes / answers from Ming
 - 2026-11-20 (D47): BLOCKED — waiting for pixel-art decisions (D41–D46). Do not start until Ming lifts it; the map tickets bring the tile-grid model and are re-scoped then.
 
+## Change from Ming (2026-11-20, D43)
+Supersedes the free-form editor above: the editor places sprites on whole tiles, rotates in 4 directions, no resize,
+no free snap; palette of sprites from the manifest; multi-select moves by whole tiles; undo before save. Porting
+seatMGT's `LayoutEditor` is now reference only.
+
 ## Handoff
 
 ### 2026-11-20 — claude — BLOCKED (board update, D47)

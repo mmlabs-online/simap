@@ -33,6 +33,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-018 | CSV export | BACKLOG | P2 | S | api, ui | SIM-017 | none | 0 | 2026-11-20 |
 | SIM-021 | Go-live checklist and first production deploy | BACKLOG | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019 | none | 0 | 2026-11-20 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
+| SIM-024 | Sprite atlas, manifest, placeholder art and map renderer | BLOCKED | P1 | M | ui, architecture | SIM-003 | none | 0 | 2026-11-20 |
 | SIM-015.1 | Room layout API and read-only room view | BLOCKED | P1 | M | api, ui | SIM-010 | none | 0 | 2026-11-20 |
 | SIM-015.2 | Free-form layout editor | BLOCKED | P1 | M | ui, ux | SIM-015.1 | none | 0 | 2026-11-20 |
 
