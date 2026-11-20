@@ -1,6 +1,6 @@
 # simap — Spec v1
 
-**Status:** v0.6 (2026-11-20), all open questions answered. Platform, auth, org and data questions answered by Ming (D1–D38 in
+**Status:** v0.7 (2026-11-20); open: OQ-40 (pixel-art assets). Platform, auth, org and data questions answered by Ming (D1–D44 in
 `work/decisions.md`); remaining items in [Open questions](#11-open-questions).
 **Owner:** Ming. **Scope source:** this file is the first scope source in `.claude/loop.config.md`; `work/decisions.md`
 records later decisions. If a ticket and this spec disagree, the spec wins and the conflict is flagged.
@@ -322,25 +322,42 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 
 ### LAY — Layout designer (Admin)
 
-**LAY-01 Drag-and-drop layout that saves**
-- [ ] An Admin opens a room's editor, drags seats on a canvas and saves. Positions survive reloads and sessions.
-- [ ] v1 targets the free-form editor seatMGT ships today (move, resize, rotate, multi-select, zoom/pan, optional
-  fine snap; LAY-05). Free-form confirmed; a floor-plan background image is later (D20).
+**Visual style of rooms (D41, D43).** The room view and the editor are **pixel-art, top-down, on a 16 px tile
+grid**, drawn from a sprite atlas (desks, chairs, devices, walls, floors, fixtures). Everything else in the app keeps
+the clean UI kit, with small pixel accents (logo, icons, empty states). Sprites scale by whole numbers only (2×, 3×,
+4×, `image-rendering: pixelated`). No game engine or new library: DOM or plain canvas (stack unchanged). The art comes
+from an atlas plus a manifest, so the art can be replaced without code changes (asset sourcing: OQ-40).
 
-**LAY-02 Canvas tile = seat**
-- [ ] Each seat tile on the canvas is one seat record. Adding a tile creates a seat and its code (ROO-02). Deleting a
-  tile deletes the seat, with the SEA-01 guard.
+**LAY-01 Tile-grid layout that saves** (supersedes D20's free-form editor)
+- [ ] A room has a size in tiles (width × height). An Admin opens the room's editor, places items on whole tiles and
+  saves. Positions survive reloads and sessions.
+- [ ] Items: seat desks (a desk sprite may cover several tiles), fixtures, and walls/floor. Rotation in 4 directions
+  only; size is fixed by the sprite; no free resize.
+- [ ] Items cannot overlap where the manifest says they block (e.g. two desks on one tile).
+
+**LAY-02 Desk = seat**
+- [ ] Each desk on the grid is one seat record. Placing a desk creates a seat and its code (ROO-02). Removing a desk
+  deletes the seat, with the SEA-01 guard.
 
 **LAY-03 Layout fixtures**
-- [ ] An Admin adds, moves, rotates and deletes fixtures: door, window, room, stairs, elevator, server, cabinet,
-  pillar, blocked area, label. They are saved with the room.
+- [ ] An Admin adds, moves, rotates and deletes fixtures from the sprite palette: door, window, wall, stairs,
+  elevator, server rack, cabinet, pillar, plant, blocked area, label. They are saved with the room.
 
 **LAY-05 Editor controls**
-- [ ] Moving a group of tiles, resizing, rotating, marquee and multi-select, zoom and pan, and optional 8 px snap. All
-  of this is saved in one layout save.
+- [ ] Sprite palette, click/drag to place, rotate (R), delete, multi-select and move a group by whole tiles, zoom
+  2×/3×/4× and pan, undo of the last steps before save. All of this is saved in one layout save. Desktop only.
+
+**LAY-06 Seats and people drawn on the map** (D41, D44)
+- [ ] Each seat shows its state with a sprite overlay, not colour alone: empty, occupied (a pixel avatar sits there),
+  mine (highlight), cannot-seat (blocked sign), pending request (marker).
+- [ ] Devices at a seat are drawn by type (PC, laptop, monitor, IP phone, other; D37): the primary on the desk,
+  secondary next to it.
+- [ ] Occupants are generated pixel avatars (body/hair/shirt colours derived from `sub`, stable per person); the name
+  shows on hover/focus. No real photos (D44).
 
 **Room view (all roles)**
-- [ ] `/rooms/<code>` shows the saved layout read-only, with seat status, and opens the seat detail (SEA-05).
+- [ ] `/rooms/<code>` shows the saved pixel layout read-only with LAY-06 overlays, zoom and pan (works at 390 px), and
+  opens the seat detail (SEA-05) on click or keyboard focus.
 
 ### REG — Seat requests
 
@@ -542,6 +559,9 @@ Owner: Ming for all of them. Each blocks the tickets named after it. IDs are sta
   seatMGT code lets only the owner or an Admin manage a device. Which is right?
 - **OQ-14 Layout style.** *Answered D20.* Keep the free-form editor (what seatMGT ships today), or use a simple grid? Is a floor-plan
   background image in v1?
+- **OQ-40 Pixel-art assets (open).** D42 sets free assets customised in-house as the direction. Open: sourcing
+  rules (licences allowed), who customises and with which tool, where sources live, credits page. *Blocks: the sprite
+  atlas ticket's final art (placeholder art can start).*
 - **OQ-15** — D26. **OQ-16** — D27. **OQ-17** — D28. **OQ-18** — D29. **OQ-19** — D30. **OQ-21** — D31.
   **OQ-26** — D32. **OQ-29** — D33. **OQ-30** — D34. **OQ-8** — D25.
 
@@ -552,6 +572,7 @@ All v1 open questions are answered as of 2026-11-20. New questions get the next 
 | Date | Change |
 |---|---|
 | 2026-11-20 | First draft from Ming's `/idea` brief: seatMGT rebuild on Next.js + mmlabs Identity + shared Postgres, deployed like tudocuatui. |
+| 2026-11-20 | v0.7 (D41–D44): pixel-art tile-grid room view and editor (supersedes D20), avatars; OQ-40 assets open. |
 | 2026-11-20 | v0.6 (D35–D40; D39 SIM-022 English copy follow-up, D40 English only in v1): UTC+7 for all orgs; English UI copy by default in copy files; suggested device types; audit kept indefinitely. |
 | 2026-11-20 | v0.5 from Ming's answers (D25–D34): no Viewer; cannot-seat flag blocks; CSV export + layout PNG if feasible; audit screen for Admins; room code editable (unique in org, seat codes follow); seat numbers never reused; placed device must go to inventory before delete; seat takes occupant's group; Identity sign-in links + account picker; members are deactivated or removed from the org, never deleted. No open questions left. |
 | 2026-11-20 | v0.4 from Ming's answers (D16–D24): member directory now + Identity members endpoint later; display name; confirm-replace on assign; Manager moves any device; free-form editor; requests in any room, self only, cancellable, in-app status; self-release in v1. |

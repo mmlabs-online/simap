@@ -46,4 +46,14 @@ spec LAY (Room view), LAY-03, SEA-02; D20.
 ## Notes / answers from Ming
 —
 
+## Change from Ming (2026-11-20, D41–D44)
+Supersedes the free-form parts above. The room view is **pixel-art on a 16 px tile grid** drawn from a sprite atlas +
+manifest (spec LAY "Visual style", LAY-06):
+- Layout data: room size in tiles; items with tile x/y, rotation 0/90/180/270, sprite key; needs a forward-only
+  migration adding these to `seats` / `layout_fixtures` and room grid size (SIM-008's double x/y/rotation/w/h stay
+  until a later contract migration).
+- Read-only view renders desks, fixtures, LAY-06 overlays (state sprites, device sprites by type, generated avatars),
+  integer zoom 2×/3×/4×, pan, keyboard focus on seats.
+- Depends on the sprite-atlas ticket (placeholder art is enough; final art per OQ-40).
+
 ## Handoff
