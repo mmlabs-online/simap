@@ -14,3 +14,4 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [ ] M-2 Cloudflare Tunnel published application `simap.mmlabs.online` → the simap container. Before go-live. (D8)
 - [ ] M-3 Shared Postgres: create database and role `simap`; put the password where the deployment repo's deploy job
   reads it (as tudocuatui). Before the first deploy. (D3)
+- [x] M-4 (2026-11-20) Approve plan for SIM-001: `work/tickets/SIM-001/plan.md` (High tier; 9 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
