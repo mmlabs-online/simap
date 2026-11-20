@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P0 |
 | Size | M |
 | Areas | security, ui |
@@ -38,6 +38,7 @@ Signed-out users see the sign-in screen in place on any app page and land back o
 - As in the source plan's slice.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-20, batch 2026-11-20-3) — Ming: "duyệt hết theo đề xuất" (every proposal in the batch round accepted). Deltas Δ1–Δ7 accepted; runtime CSP goes to a separate security ticket (SIM-027) before SIM-021.
 - 2026-11-20 (batch 2026-11-20-2): created from the split Ming approved ("duyệt hết; câu 20 tách 3 phần; … còn lại theo đề xuất").
 
 ## Handoff
