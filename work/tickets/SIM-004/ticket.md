@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | architecture, security |
@@ -59,6 +59,6 @@ deployment-repo compose file and release workflow modelled on tudocuatui, so Min
 - Manual: build image, run check script, run migrate against local Postgres, `docker compose config`.
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-1) — Ming: "duyệt hết theo mặc định" (every default in plan.md accepted).
 
 ## Handoff
