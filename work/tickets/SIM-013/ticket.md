@@ -23,7 +23,7 @@ spec DEV-01..06, REG-03 (device); D19, D22, D31.
 ## Scope
 - CRUD (owner or Admin edits/deletes; any member creates their own); MAC format and uniqueness per org.
 - Placement: primary (owner = occupant, one per seat) / secondary; lend; move; return to inventory (owner, Manager+).
-- Delete blocked while placed, with "Đưa về kho" (D31).
+- Delete blocked while placed, with "Move to inventory" (D31).
 - Devices page with all / placed / inventory filter; seatMGT `DeviceTable`, `DeviceFormDialog`.
 
 ## Out of scope

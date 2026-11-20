@@ -39,3 +39,9 @@ with a new one that names it. Format: `D<n> — YYYY-MM-DD — <decision> — <w
 | D32 | 2026-11-20 | On assign, a seat with no group takes the occupant's group (editable). Answers OQ-26. | (Ming) |
 | D33 | 2026-11-20 | Sign-in page links to Identity sign-up/forgot-password and shows "continue as" for accounts on this browser. Answers OQ-29. | Same as other mmlabs apps (Ming) |
 | D34 | 2026-11-20 | Members are never deleted in simap: Manager+ deactivate (simap-local) or an Admin removes them from the org; only the admin portal deletes accounts. Unused-group/project delete warns and clears tags. Removing from the org needs a new Identity endpoint (add to the org-admin-api request). Answers OQ-30. | Accounts belong to the shared user service (Ming) |
+| D35 | 2026-11-20 | Times stored in UTC and shown in UTC+7 (Asia/Ho_Chi_Minh) for every org in v1; per-org time zone later. | Few time displays in v1 (Ming) |
+| D36 | 2026-11-20 | UI copy is English by default; all user-facing text lives in copy files so another language can be added later. Names/data keep Vietnamese diacritics (display, sort, search). Supersedes the "Vietnamese UI copy" wording in the spec and tickets. | (Ming) |
+| D37 | 2026-11-20 | Device type: suggested list (PC, Laptop, Monitor, IP phone, Other) plus free text. | Cleaner data, still flexible (Ming) |
+| D38 | 2026-11-20 | Audit rows are kept indefinitely in v1; retention purge later. | Small scale (Ming) |
+| D39 | 2026-11-20 | SIM-003 is merged with its Vietnamese copy as is; follow-up SIM-022 switches the copy to English. | Cheap (copy is centralised) and does not stall the running batch (Ming) |
+| D40 | 2026-11-20 | v1 ships English only; the structure is ready for more languages; a language switcher and Vietnamese translation come after v1. | Avoid writing and checking every string twice (Ming) |

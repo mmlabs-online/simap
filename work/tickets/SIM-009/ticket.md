@@ -23,8 +23,8 @@ spec AUT-03, MEM-01 (pending invitations); D11, D14, D16 (a).
 ## Scope
 - Invite form (Admin: user or manager; Manager: user) calling `POST /auth/orgs/{org_id}/invitations`; never offer a role above the inviter's.
 - `/accept-invitation` page per contract: token from fragment, cleared at once, `Referrer-Policy: no-referrer`, sign in or sign up with exactly the invited address, `POST /auth/invitations/accept`, then token with `org_id`.
-- simap records the invitations it sent (email, role, inviter, time; no token) for the "Đang mời" list.
-- Vietnamese messages for every documented error code.
+- simap records the invitations it sent (email, role, inviter, time; no token) for the "Pending invitations" list.
+- English messages (copy files, D36) for every documented error code.
 
 ## Out of scope
 - Revoking invitations, member removal (later, needs Identity endpoints).

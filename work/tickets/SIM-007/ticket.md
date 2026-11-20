@@ -21,7 +21,7 @@ After sign-in a user enters one of their orgs, can switch orgs, and on their fir
 spec AUT-06, §2 Member = org account; D12, D13, D16 (a), D17.
 
 ## Scope
-- Client: `GET /auth/orgs` → enter the only org, picker for several, "Bạn chưa thuộc tổ chức nào" for none; remember the chosen org id; switch re-mints with the new `org_id` and clears all cached data.
+- Client: `GET /auth/orgs` → enter the only org, picker for several, "You are not in any organization yet" for none; remember the chosen org id; switch re-mints with the new `org_id` and clears all cached data.
 - Server: `GET /api/me` creates the member on first call for (`org`, `sub`) and returns member + tier; `PATCH /api/me` sets display name.
 - First-visit screen asking for the display name (default: email local part).
 - Shell shows org name and switcher (SIM-003 slot).

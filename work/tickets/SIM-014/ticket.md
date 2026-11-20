@@ -23,7 +23,7 @@ spec REG-01, REG-02; D21, D23, D24, D26.
 ## Scope
 - Request from an empty, seatable seat in any room, for self only; dedupe pending.
 - Approvals page (Manager+): filter by status, approve (assign + reject rivals in one transaction), reject.
-- "Yêu cầu của tôi" with status and a badge of newly decided requests; cancel own pending request.
+- "My requests" with status and a badge of newly decided requests; cancel own pending request.
 
 ## Out of scope
 - Email notifications (D24: none).

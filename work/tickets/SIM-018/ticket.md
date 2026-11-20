@@ -28,7 +28,7 @@ spec DSH-02 export; D27.
 - `.xlsx`.
 
 ## Acceptance criteria
-- [ ] CSV opens in Excel with correct Vietnamese characters.
+- [ ] CSV opens in Excel with correct Vietnamese characters in names.
 - [ ] Exports contain only the caller's org.
 - [ ] Users get 403 on CSV routes.
 - [ ] Unit tests cover CSV escaping.

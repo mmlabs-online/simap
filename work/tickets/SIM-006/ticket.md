@@ -22,9 +22,9 @@ spec AUT-01, AUT-02, §3 Auth; D4, D7, D33.
 
 ## Scope
 - Port tudocuatui `src/features/auth/` (identityClient, tokenStore, refreshLock, authChannel, accountId) to simap with app key `simap`.
-- Sign-in page: email + password, Turnstile when asked, "Tiếp tục với <email>" for accounts on this browser, links to Identity sign-up and forgot-password; join step (`/auth/apps/simap/join`) on click.
+- Sign-in page: email + password, Turnstile when asked, "Continue as <email>" for accounts on this browser, links to Identity sign-up and forgot-password; join step (`/auth/apps/simap/join`) on click.
 - An `apiFetch` used by all UI data calls: bearer header, re-mint once and retry after a 401/403 (D7), sign-out on `session_invalid`.
-- Sign-out (`/auth/logout`), "refresh permissions" action in the shell, Vietnamese error copy.
+- Sign-out (`/auth/logout`), "refresh permissions" action in the shell, English error copy (copy files, D36).
 - Wire the SIM-003 session context to the real token store.
 
 ## Out of scope
@@ -33,7 +33,7 @@ spec AUT-01, AUT-02, §3 Auth; D4, D7, D33.
 ## Acceptance criteria
 - [ ] A signed-out visit to any app page shows the sign-in page; after sign-in the user lands back on the page.
 - [ ] The token is only in memory (not in a cookie, `localStorage` or URL) and is renewed before `exp`; two tabs share one renewal.
-- [ ] A 403 from simap triggers one re-mint and one retry; a second 403 shows "Không có quyền".
+- [ ] A 403 from simap triggers one re-mint and one retry; a second 403 shows "You don't have permission".
 - [ ] Sign-out ends the session in this tab and in other tabs.
 - [ ] Unit tests cover token renewal timing, error-code → screen mapping and the retry rule.
 
