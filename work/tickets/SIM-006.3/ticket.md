@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | security, ui |
@@ -41,5 +41,7 @@ simap hosts its own sign-up, verify-email, forgot-password and reset-password pa
 
 ## Notes / answers from Ming
 - 2026-11-20 (batch 2026-11-20-2): created from the split Ming approved ("duyệt hết; câu 20 tách 3 phần; … còn lại theo đề xuất").
+- Plan approved (2026-11-20, batch 2026-11-20-4): "duyệt hết theo đề xuất" — every proposal in the batch round taken.
+- Merge approved (2026-11-20, batch 2026-11-20-4): "bật --auto-merge".
 
 ## Handoff
