@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -50,6 +50,6 @@ ticket follows SIM-003, which shipped Vietnamese copy).
 - Manual: open every page skeleton in light/dark.
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-2) — Ming: "duyệt hết … còn lại theo đề xuất": questions 10–15 take their defaults.
 
 ## Handoff
