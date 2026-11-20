@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T09:46Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/22 |
 
 ## Goal
 simap hosts its own sign-up, verify-email, forgot-password and reset-password pages, as ricotdin does, calling the org-admin-api auth endpoints (Ming, Q16); slice S3 of the approved SIM-006 plan.
@@ -45,3 +45,9 @@ simap hosts its own sign-up, verify-email, forgot-password and reset-password pa
 - Merge approved (2026-11-20, batch 2026-11-20-4): "bật --auto-merge".
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 5, ~386k tokens (frontend-developer×1 43k, planner×1 109k, implementer×1 79k, reviewer×1 70k, security auditor×1 45k; default models)
+- Done: sign-up / verify-email / forgot / reset pages, Resend in the gate, D53 + spec; review PASS attempt 1; security 0 🔴 / 0 🟡 / 4 💭; PR https://github.com/mmlabs-online/simap/pull/22
+- In progress / next: batch --auto-merge stopped: GitHub Actions jobs fail without a runner (CI not green) → Ming merges; manual checks in the PR
+- Gotchas: branch synced with main by merge, not rebase (no force-push)
