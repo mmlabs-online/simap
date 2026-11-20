@@ -20,6 +20,7 @@ SIM-002 and the spec fill them.**
 ## Prepare
 - `pnpm install --frozen-lockfile`
 - Tests need no database. For `pnpm migrate` / readiness locally: `docker compose -f compose.dev.yml up -d`.
+  Tickets that change `db/migrations` also run `pnpm schema:check` against that database (not in Checks: it needs one).
 
 ## Checks
 | Check | Command |

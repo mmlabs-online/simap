@@ -46,6 +46,10 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
         run: node scripts/migrate-smoke.mjs
+      - name: schema check
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+        run: node scripts/schema-check.mjs
       - run: pnpm format:check
       - run: pnpm build
       - run: test -f .next/standalone/server.js
