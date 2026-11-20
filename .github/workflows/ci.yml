@@ -50,6 +50,10 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
         run: node scripts/schema-check.mjs
+      - name: db integration tests
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+        run: pnpm test:db
       - run: pnpm format:check
       - run: pnpm build
       - run: test -f .next/standalone/server.js

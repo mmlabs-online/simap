@@ -8,7 +8,10 @@ mmlabs app (replaces the inactive SeatMGT). Purpose and scope: to be written in 
 2. Put `DATABASE_URL=postgres://simap@127.0.0.1:5432/simap` in `.env.local` (never commit it).
 3. `pnpm migrate` applies `db/migrations/*.sql` (rules: `db/migrations/README.md`); `pnpm migrate:smoke` runs a
    scripted check in a throwaway database.
-4. `pnpm dev`, then `curl -i localhost:3000/api/readyz`: 200 when the database answers, 503 otherwise.
+4. `pnpm test:db` runs the DB integration tests in a throwaway `simap_test_<hex>` database (the role needs
+   `create database`; refuses a non-local `DATABASE_URL`). After a killed run, drop an orphan with
+   `drop database simap_test_<hex> with (force)`.
+5. `pnpm dev`, then `curl -i localhost:3000/api/readyz`: 200 when the database answers, 503 otherwise.
 
 Deployed to the mmlabs home server through `mmlabs-online/deployment` like the other mmlabs apps: see
 [Release and deploy](#release-and-deploy).
