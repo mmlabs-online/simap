@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-022) |
+| PR | https://github.com/mmlabs-online/simap/pull/14 |
 
 ## Goal
 Make every user-facing string English by default, kept in copy files, so the app matches D36 and a second language can

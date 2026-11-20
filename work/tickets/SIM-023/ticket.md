@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P0 |
 | Size | S |
 | Areas | security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-023) |
+| PR | https://github.com/mmlabs-online/simap/pull/13 |
 
 ## Goal
 Close the four 🟡 security findings left open when SIM-005 and SIM-008 merged, so an org scope can only come from a

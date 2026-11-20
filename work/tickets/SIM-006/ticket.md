@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P0 |
 | Size | M |
 | Areas | security, ui |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-006) |
+| PR | https://github.com/mmlabs-online/simap/pull/15 |
 
 ## Goal
 People sign in with their mmlabs account on simap's sign-in page and keep a renewed access token in memory, like tudocuatui and ricotdin.
