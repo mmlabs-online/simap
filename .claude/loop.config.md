@@ -78,7 +78,7 @@ impl-log when that level cannot see the bug.
 
 ## Domain focus
 - TODO (from `docs/spec-v1.md` once written): domain edge cases.
-- Always: Vietnamese text and diacritics, UTC vs UTC+7 dates, empty/null fields, pagination bounds.
+- Always: Vietnamese diacritics in names and data (UI copy is English, D36), UTC vs UTC+7 dates, empty/null fields, pagination bounds.
 - Server: input validation at the boundary, one error shape, no secrets or PII in logs, migrations reversible.
 
 ## Guardrails

@@ -1,0 +1,26 @@
+/** English strings for the dev-only kit gallery (`/dev/shell`). */
+export const galleryCopy = {
+  title: "UI kit",
+  buttons: {
+    primary: "Primary",
+    tonal: "Tonal",
+    outlined: "Outlined",
+    text: "Text",
+    danger: "Danger",
+    disabled: "Disabled",
+    search: "Search",
+    mail: "Mail",
+  },
+  filters: { all: "All", free: "Free", used: "In use", ariaLabel: "Filter" },
+  chip: "Group A",
+  input: { ariaLabel: "Search", placeholder: "Search rooms, members…" },
+  dialog: {
+    open: "Open dialog",
+    title: "Add room",
+    subtitle: "Enter the new room's details.",
+    code: "Room code",
+    type: "Type",
+    meeting: "Meeting",
+    work: "Work",
+  },
+} as const;
