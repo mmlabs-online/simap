@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-003) |
+| PR | https://github.com/mmlabs-online/simap/pull/11 |
 
 ## Goal
 Give simap seatMGT's look: the UI kit and an app shell with role-aware navigation, light/dark theme and Vietnamese
