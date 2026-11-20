@@ -40,6 +40,7 @@ Changed files: `flow.ts`, `flow.test.ts`, `AuthGate.tsx`, `copy/profile.ts`, `Pr
 No violations found. R1: `src/ui/org/*` imports only `@/lib/*` and `../` UI modules (`check:layers` clean). R3/R6/R2: not touched. R4: within plan. R5: checks green, new logic tested.
 
 ### Blockers from review agents
+None: `security-review.md` Attempt 1 has 0 🔴 (1 🟡 → follow-up, fix before go-live: `AuthError` from the token mint during PATCH shows inline retry instead of gate routing).
 <Filled by the orchestrator. Note: `src/ui/auth/AuthGate.tsx` may match the `**/auth*` trigger of `security-ai-generated-code-auditor`.>
 
 ### Nits (do not block)
