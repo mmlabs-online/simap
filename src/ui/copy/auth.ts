@@ -11,6 +11,8 @@ export const authCopy = {
   fields: {
     email: "Email",
     password: "Password",
+    confirmPassword: "Confirm password",
+    newPassword: "New password",
     showPassword: "Show password",
   },
   fieldErrors: {
@@ -49,8 +51,51 @@ export const authCopy = {
         ? `${email} is not verified yet. Open the link in the email we sent you, then come back here.`
         : "Your email is not verified yet. Open the link in the email we sent you, then come back here.",
     checkAgain: "Check again",
+    resend: "Resend email",
+    resending: "Sending...",
+    resent: "We sent a new link. Check your inbox.",
     otherAccount: "Use another account",
   },
+  signUp: {
+    pageTitle: "Create an account",
+    title: "Create an account",
+    submit: "Create account",
+    submitting: "Creating account...",
+    sent: (email: string) =>
+      `Check your inbox at ${email}. Open the link in the email to verify your address.`,
+    toSignIn: "Back to sign in",
+  },
+  forgot: {
+    pageTitle: "Forgot password",
+    title: "Forgot password",
+    body: "Enter your email address and we will send you a link to choose a new password.",
+    submit: "Send link",
+    submitting: "Sending...",
+    sent: "If an account exists for this address, we sent a link.",
+    toSignIn: "Back to sign in",
+  },
+  verify: {
+    pageTitle: "Verify email",
+    title: "Verify your email",
+    body: "Press the button to verify your email address.",
+    submit: "Verify my email",
+    submitting: "Verifying...",
+    verified: "Email verified.",
+    continue: "Continue",
+    invalid: "This link no longer works. Sign in to get a new one.",
+    toSignIn: "Sign in",
+  },
+  reset: {
+    pageTitle: "Reset password",
+    title: "Choose a new password",
+    submit: "Change password",
+    submitting: "Changing password...",
+    done: "Password changed. Sign in with your new password.",
+    invalid: "This link is not valid or has expired.",
+    newLink: "Get a new link",
+    toSignIn: "Sign in",
+  },
+  linkChecking: "Checking your link...",
   noOrg: {
     title: "No organization",
     body: (email: string | null) =>

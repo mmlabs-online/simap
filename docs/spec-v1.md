@@ -161,8 +161,9 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 - [ ] Wrong credentials show a clear message. No message reveals whether the email exists.
 - [ ] Sign-out calls Identity `/auth/logout` and drops the access token. The next request to a protected page or API
   is refused.
-- [ ] simap has no sign-up form of its own. The sign-in page links to Identity's sign-up and forgot-password flows
-  and lists accounts already signed in on this browser as "Continue as <email>" (`/auth/accounts`) (D33).
+- [ ] simap hosts sign-up, forgot-password, verify-email and reset-password pages that call Identity (D53). The
+  sign-in page links to them and lists accounts already signed in on this browser as "Continue as <email>"
+  (`/auth/accounts`) (D33).
 
 **AUT-02 Session**
 - [ ] A signed-in user stays signed in across page loads and tabs until the Identity session ends. The access token is
@@ -180,7 +181,7 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 
 **AUT-03 Account management**
 - [ ] Accounts are created, edited and removed in mmlabs Identity, not in simap (Ming, 2026-11-20: "no local
-  passwords, no self-signup in simap itself").
+  passwords"). simap only hosts the Identity sign-up and password screens (D53).
 - [ ] Orgs and org admins are managed by mmlabs Super Admin in the admin portal (D5). simap has no screen for creating
   orgs or appointing admins.
 - [ ] Admins and managers invite people by email with a role (D11): simap implements the invitation form and the
@@ -509,7 +510,8 @@ EntityFormDialog), seat tiles, room cards, fonts and icons. UI copy is English b
 
 ## 9. Non-goals (v1)
 
-- Local accounts, passwords, sign-up, password reset or SSO/AD inside simap. Identity owns all of these.
+- Local accounts, passwords or SSO/AD inside simap. Identity owns accounts and passwords; simap only hosts the
+  Identity sign-up and password-reset screens (D53).
 - Time-based booking, reservations, QR check-in, auto-release, waitlists, meeting-room booking.
 - Buildings/floors/zones as separate entities (a room has a `floor` text field only). Multi-org **is** in scope
   (D5); several sites inside one org are modelled only through room names and the `floor` field.

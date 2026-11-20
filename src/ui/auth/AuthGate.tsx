@@ -11,6 +11,7 @@ import {
   type GateView,
   type MeView,
 } from "@/lib/identity/flow";
+import { resendOutcome } from "@/lib/identity/email-flows";
 import type { AccountChoice, AuthError, Credentials } from "@/lib/identity/types";
 import type { Session } from "@/lib/session";
 import { SessionProvider } from "../session";
@@ -33,7 +34,13 @@ type View =
   | { kind: "ready"; generation: number; session: Session }
   | { kind: "signedOut"; error?: AuthError | null; notice?: SignInNotice | null }
   | { kind: "join"; email: string; error?: AuthError | null; pending?: boolean }
-  | { kind: "unverified"; email: string | null; still?: boolean }
+  | {
+      kind: "unverified";
+      email: string | null;
+      still?: boolean;
+      resend?: "idle" | "sending" | "sent";
+      resendError?: AuthError | null;
+    }
   | { kind: "retry"; error: AuthError }
   | { kind: "noOrg"; email: string | null }
   | { kind: "noAccess"; code: "forbidden" | "member_deactivated" };
@@ -380,6 +387,44 @@ function Gate({
     }
   };
 
+  const resend = async () => {
+    if (busy.current) return;
+    const id = store.accountId();
+    if (id === null) {
+      useOtherAccount();
+      return;
+    }
+    busy.current = true;
+    const s = ++seq.current;
+    setView((v) => (v.kind === "unverified" ? { ...v, resend: "sending", resendError: null } : v));
+    let out;
+    try {
+      await client.resendVerification(id);
+      out = resendOutcome({ ok: true });
+    } catch (e) {
+      out = resendOutcome({ ok: false, error: e as AuthError });
+    } finally {
+      busy.current = false;
+    }
+    if (s !== seq.current) return;
+    switch (out.kind) {
+      case "sent":
+        setView((v) => (v.kind === "unverified" ? { ...v, resend: "sent" } : v));
+        return;
+      case "recheck":
+        rechecking.current = true;
+        check();
+        return;
+      case "signIn":
+        await apply(viewForTokenError(out.error, false), s);
+        return;
+      case "error":
+        setView((v) =>
+          v.kind === "unverified" ? { ...v, resend: "idle", resendError: out.error } : v,
+        );
+    }
+  };
+
   switch (view.kind) {
     case "ready":
       return (
@@ -412,6 +457,9 @@ function Gate({
             check();
           }}
           onUseOtherAccount={useOtherAccount}
+          onResend={resend}
+          resend={view.resend}
+          resendError={view.resendError}
         />
       );
     case "retry":
@@ -428,6 +476,8 @@ function Gate({
           notice={view.notice}
           initialEmail={email}
           onSignIn={signIn}
+          signUpHref="/sign-up"
+          forgotHref="/forgot-password"
           turnstileRequired={needTurnstile}
           turnstileSlot={
             <TurnstileWidget
