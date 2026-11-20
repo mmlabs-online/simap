@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P0 |
 | Size | M |
 | Areas | db, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-008) |
+| PR | https://github.com/mmlabs-online/simap/pull/10 |
 
 ## Goal
 Create every v1 table in one forward-only migration, scoped by org, with the locked invariants backed by constraints where Postgres allows.

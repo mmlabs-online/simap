@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P0 |
 | Size | M |
 | Areas | security, api, architecture |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-005) |
+| PR | https://github.com/mmlabs-online/simap/pull/9 |
 
 ## Goal
 Every `/api/*` route handler knows who calls it, in which org and with which tier, by verifying the mmlabs Identity access token the tudocuatui way, and refuses everything else.

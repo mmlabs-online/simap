@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | architecture, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-004) |
+| PR | https://github.com/mmlabs-online/simap/pull/8 |
 
 ## Goal
 Package simap as one Docker image that runs the Next.js server and the one-shot `migrate` command, with the
