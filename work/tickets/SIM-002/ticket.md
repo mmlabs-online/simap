@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T04:34Z |
-| PR | — |
+| Claimed by | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-002) |
 
 ## Goal
 Connect simap to Postgres the tudocuatui way: one `pg` pool, the tudocuatui SQL migrator run as a one-shot command,
@@ -70,3 +70,9 @@ Plan approved — 2026-11-20 (Ming, in chat: "approved"; all 8 *Decisions for Mi
 - Done: claimed; Prepare (`pnpm install`) ok; consult saved; `plan.md` Status READY.
 - In progress / next: Ming approves the plan (dated "Plan approved" line), then `/run SIM-002` resumes at IMPLEMENT.
 - Gotchas: tudocuatui working tree is on `bug/BUG-010` — reference files were read from its `origin/main` (41ee069) via an export in the session scratchpad; the deny rule `Read(**/.env.*)` hides `.env.example` from agents (see note above); local Postgres needs Docker for `compose.dev.yml` / smoke runs.
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 5, tokens ~345k total (database-optimizer×1 sonnet 30k; planner×1 opus 76k; implementer×1 sonnet 81k; reviewer×1 opus 81k; security-ai-generated-code-auditor×1 opus via general-purpose 79k; in/out split not reported)
+- Done: plan approved (defaults); attempt 1 PASS, no 🔴 from security; rebased on main (resolved `work/ming-todo.md` conflicts, kept both sides), checks re-run green, branch pushed.
+- In progress / next: Ming opens the PR, checks CI (AC 1–3 rest on "migrate CLI" + "migrate smoke"), confirms `.env.example` content, merges.
+- Gotchas: no Docker locally; agents cannot read `.env.example` (deny rule); two `M-4` items in ming-todo after PR #4; security 🟡 #1 (smoke script may print the URL) left as follow-up.
