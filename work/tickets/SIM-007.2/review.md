@@ -58,6 +58,7 @@ file is in the plan's file table; no High path touched (`risk:medium`). R5: gree
 org list is convenience only; server authorisation unchanged.
 
 ### Blockers from review agents
+None: `security-review.md` Attempt 1 has 0 🔴 (2 🟡 → follow-ups, fix before go-live: gate loop on a token without `org` claim; `parseOrgs` id precedence on flat rows).
 
 ### Nits (do not block)
 - `src/ui/auth/AuthGate.tsx` `openSwitcher`/`fetchOrgs`: the switcher shows `client.orgs()` in server order; the entry
