@@ -99,6 +99,32 @@ describe("other views", () => {
     expect(out).toContain(authCopy.unverified.otherAccount);
   });
 
+  it("UnverifiedView shows Resend, Check again, Use another account", () => {
+    const out = html(
+      <UnverifiedView email={null} onCheckAgain={noop} onUseOtherAccount={noop} onResend={noop} />,
+    );
+    expect(out).toContain(authCopy.unverified.resend);
+    expect(out).toContain(authCopy.unverified.checkAgain);
+    expect(out).toContain(authCopy.unverified.otherAccount);
+  });
+
+  it("UnverifiedView sent / rate-limited / sending states", () => {
+    const props = { email: null, onCheckAgain: noop, onUseOtherAccount: noop, onResend: noop };
+    expect(html(<UnverifiedView {...props} resend="sent" />)).toContain(authCopy.unverified.resent);
+    const limited = html(
+      <UnverifiedView {...props} resendError={{ code: "rate_limited", retryAfterSeconds: 30 }} />,
+    );
+    expect(limited).toContain('role="alert"');
+    expect(limited).toContain(authErrorMessage({ code: "rate_limited", retryAfterSeconds: 30 }));
+    const sending = html(<UnverifiedView {...props} resend="sending" />);
+    expect(sending).toMatch(/<button[^>]*disabled[^>]*>\s*(<[^>]+>)*Sending/);
+  });
+
+  it("UnverifiedView without onResend shows no Resend", () => {
+    const out = html(<UnverifiedView email={null} onCheckAgain={noop} onUseOtherAccount={noop} />);
+    expect(out).not.toContain(authCopy.unverified.resend);
+  });
+
   it("RetryView has a Try again button and no sign-out", () => {
     const out = html(<RetryView error={{ code: "network" }} onRetry={noop} />);
     expect(out.match(/<button/g)).toHaveLength(1);

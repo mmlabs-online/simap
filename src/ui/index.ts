@@ -14,4 +14,8 @@ export { AppShellView } from "./AppShellView";
 export { AuthGate } from "./auth/AuthGate";
 export { SignInRoute } from "./auth/SignInRoute";
 export { useApiFetch } from "./auth/api-fetch-context";
+export { SignUpPage } from "./auth/SignUpPage";
+export { ForgotPasswordPage } from "./auth/ForgotPasswordPage";
+export { VerifyEmailPage } from "./auth/VerifyEmailPage";
+export { ResetPasswordPage } from "./auth/ResetPasswordPage";
 export { RoomsPage } from "./rooms/RoomsPage";

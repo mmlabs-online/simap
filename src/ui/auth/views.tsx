@@ -6,34 +6,8 @@ import { hasErrors, validateSignIn, type FieldErrors } from "@/lib/validate/cred
 import { Button } from "../Button";
 import { apiErrorMessage } from "../copy/api";
 import { authCopy, authErrorMessage } from "../copy/auth";
-import { FilledInput } from "../FilledInput";
 import { AuthLayout } from "./AuthLayout";
-
-function Notice({
-  kind,
-  busy,
-  children,
-}: {
-  kind: "error" | "info";
-  busy?: boolean;
-  children: ReactNode;
-}) {
-  const tone =
-    kind === "error"
-      ? "border-error/40 bg-error-container text-on-error-container"
-      : "border-outline-variant bg-surface-container text-on-surface";
-  return (
-    <div
-      role={kind === "error" ? "alert" : "status"}
-      aria-busy={busy ? true : undefined}
-      className={`rounded-md3 border p-3 text-sm ${tone}`}
-    >
-      <p className="break-words">{children}</p>
-    </div>
-  );
-}
-
-const linkClass = "self-center text-sm font-semibold text-on-surface underline";
+import { Field, linkClass, Notice, ShowPasswordToggle } from "./fields";
 
 export function CheckingView() {
   return (
@@ -148,14 +122,7 @@ export function SignInView({
             setErrors(({ password: _, ...rest }) => rest);
           }}
         />
-        <label className="flex min-h-[44px] items-center gap-2 text-xs text-on-surface-variant">
-          <input
-            type="checkbox"
-            checked={showPassword}
-            onChange={(e) => setShowPassword(e.target.checked)}
-          />
-          {authCopy.fields.showPassword}
-        </label>
+        <ShowPasswordToggle checked={showPassword} onChange={setShowPassword} />
         {showTurnstile && <div className="min-h-[65px]">{turnstileSlot}</div>}
         <Button type="submit" size="lg" fullWidth disabled={submitting}>
           {submitting ? copy.submitting : copy.submit}
@@ -172,46 +139,6 @@ export function SignInView({
         </a>
       )}
     </AuthLayout>
-  );
-}
-
-function Field({
-  id,
-  label,
-  icon,
-  error,
-  onChange,
-  ...input
-}: {
-  id: string;
-  label: string;
-  icon: "mail" | "login";
-  error?: string;
-  onChange: (value: string) => void;
-  type: string;
-  autoComplete: string;
-  value: string;
-}) {
-  const errorId = `${id}-error`;
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-xs font-semibold text-on-surface-variant">
-        {label}
-      </label>
-      <FilledInput
-        id={id}
-        icon={icon}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
-        onChange={(e) => onChange(e.target.value)}
-        {...input}
-      />
-      {error && (
-        <small id={errorId} className="text-xs text-error">
-          {error}
-        </small>
-      )}
-    </div>
   );
 }
 
@@ -261,21 +188,35 @@ export function UnverifiedView({
   still,
   onCheckAgain,
   onUseOtherAccount,
+  onResend,
+  resend = "idle",
+  resendError,
 }: {
   email: string | null;
   /** The last re-check still found the email unverified. */
   still?: boolean;
   onCheckAgain: () => void;
   onUseOtherAccount: () => void;
+  /** "Resend email" renders only when set. */
+  onResend?: () => void;
+  resend?: "idle" | "sending" | "sent";
+  resendError?: AuthError | null;
 }) {
   const copy = authCopy.unverified;
   return (
     <AuthLayout title={copy.title}>
       <Notice kind="info">{copy.body(email)}</Notice>
       {still && <Notice kind="error">{authCopy.errors.email_unverified}</Notice>}
+      {resend === "sent" && <Notice kind="info">{copy.resent}</Notice>}
+      {resendError && <Notice kind="error">{authErrorMessage(resendError)}</Notice>}
       <Button size="lg" fullWidth onClick={onCheckAgain}>
         {copy.checkAgain}
       </Button>
+      {onResend && (
+        <Button variant="tonal" disabled={resend === "sending"} onClick={onResend}>
+          {resend === "sending" ? copy.resending : copy.resend}
+        </Button>
+      )}
       <Button variant="text" onClick={onUseOtherAccount}>
         {copy.otherAccount}
       </Button>
