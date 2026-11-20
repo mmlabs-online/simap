@@ -96,13 +96,6 @@ export const authCopy = {
     toSignIn: "Sign in",
   },
   linkChecking: "Checking your link...",
-  noOrg: {
-    title: "No organization",
-    body: (email: string | null) =>
-      email
-        ? `Signed in as ${email}. No organization selected yet.`
-        : "No organization selected yet.",
-  },
   noAccess: { title: "No access" },
   retry: { title: "Cannot continue", button: "Try again" },
   actions: { signOut: "Sign out" },
@@ -124,6 +117,7 @@ export const authCopy = {
     validation_error: "Some of the information is not valid. Check it and try again.",
     token_invalid: "This link is not valid or has expired.",
     email_already_verified: "Your email is already verified. You can sign in.",
+    org_access_denied: "You no longer have access to that organization.",
     no_access:
       "This account has no access to simap. Sign in with another account or try again later.",
     unknown: "Something went wrong. Try again later.",

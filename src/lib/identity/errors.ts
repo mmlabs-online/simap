@@ -21,6 +21,7 @@ export const SERVER_AUTH_ERROR_CODES: readonly AuthErrorCode[] = [
   "validation_error",
   "token_invalid",
   "email_already_verified",
+  "org_access_denied",
 ];
 
 const RETRY_MAX_SECONDS = 86400;

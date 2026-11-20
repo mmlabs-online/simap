@@ -1,4 +1,5 @@
 import { clearAccountId, readAccountId, writeAccountId } from "./accountId";
+import { clearOrgId, readOrgId, writeOrgId } from "./orgId";
 import { createAuthChannel, type AuthChannel, type AuthMessage } from "./authChannel";
 import type { IdentityClient } from "./identityClient";
 import { createRefreshLock, defaultTimers, type RefreshLock, type Timers } from "./refreshLock";
@@ -8,6 +9,13 @@ export interface AccountIdStorage {
   read: () => string | null;
   write: (id: string) => void;
   clear: () => void;
+}
+
+/** The org last entered, per account. `clear(account, onlyIf)` clears only while the stored value still equals `onlyIf`. */
+export interface OrgIdStorage {
+  read: (accountId: string) => string | null;
+  write: (accountId: string, orgId: string) => void;
+  clear: (accountId: string, onlyIf?: string) => void;
 }
 
 export interface TokenStore {
@@ -24,6 +32,13 @@ export interface TokenStore {
   /** Failures of a background refresh (`getToken`); sign-in and restore reject to their caller. */
   subscribe: (fn: (e: AuthError) => void) => () => void;
   accountId: () => string | null;
+  /** The org this tab mints tokens for (lowercase), or `null` (app-scope token only). */
+  orgId: () => string | null;
+  /**
+   * Switches this tab to `orgId`: drops the current token, mints one with the org, then remembers the org.
+   * Rejects with the mint's `AuthError` (`org_access_denied` carries `orgId`).
+   */
+  selectOrg: (orgId: string) => Promise<void>;
   /** Email of the current account: memory after sign-in, else one `accounts` call. */
   accountEmail: () => Promise<string | null>;
   /** Joins the app, then fetches the token (not when `pending`). Only ever called from the user's click (D8). `stale`: the store moved on (forget / sign-in) meanwhile. */
@@ -47,7 +62,12 @@ const LOCK_WAIT_MS = 20_000;
 const SIGN_OUT_WAIT_MS = 5_000;
 const RETRY_MS = 15_000;
 const MAX_TIMER_MS = 2 ** 31 - 1;
-const NOTIFY_CODES: AuthError["code"][] = ["session_invalid", "not_member", "email_unverified"];
+const NOTIFY_CODES: AuthError["code"][] = [
+  "session_invalid",
+  "not_member",
+  "email_unverified",
+  "org_access_denied",
+];
 const isAuthError = (e: unknown): e is AuthError =>
   typeof e === "object" && e !== null && typeof (e as AuthError).code === "string";
 
@@ -59,6 +79,7 @@ const isAuthError = (e: unknown): e is AuthError =>
 export function createTokenStore({
   client,
   storage = { read: readAccountId, write: writeAccountId, clear: clearAccountId },
+  orgStorage = { read: readOrgId, write: writeOrgId, clear: clearOrgId },
   now = () => Date.now(),
   timers = defaultTimers,
   lock = createRefreshLock({ timers }),
@@ -67,6 +88,7 @@ export function createTokenStore({
 }: {
   client: IdentityClient;
   storage?: AccountIdStorage;
+  orgStorage?: OrgIdStorage;
   now?: () => number;
   timers?: Timers;
   lock?: RefreshLock;
@@ -74,6 +96,7 @@ export function createTokenStore({
   doc?: VisibilityDoc;
 }): TokenStore {
   let id = storage.read();
+  let orgId: string | null = id ? orgStorage.read(id) : null;
   let email: string | null = null;
   let token: string | null = null;
   let validUntil = 0;
@@ -127,6 +150,7 @@ export function createTokenStore({
     if (!id) return Promise.resolve(null);
     const epoch = generation;
     const accountId = id;
+    const org = orgId;
     const p: Promise<string | null> = lock
       .run(
         async (locked) => {
@@ -135,7 +159,7 @@ export function createTokenStore({
           if (locked) await new Promise<void>((r) => timers.setTimeout(r, 0));
           if (epoch !== generation) return null;
           if (fresh() && token !== rejected) return token;
-          const r = await client.token(accountId);
+          const r = await client.token(accountId, org ?? undefined);
           if (epoch !== generation) return null;
           const t = now();
           token = r.accessToken;
@@ -149,6 +173,7 @@ export function createTokenStore({
             accessToken: r.accessToken,
             expiresAt,
             at: t,
+            orgId: org,
           });
           arm();
           return token;
@@ -162,10 +187,19 @@ export function createTokenStore({
             token = null;
             id = null;
             email = null;
+            orgId = null;
             forgetStored(accountId);
+            orgStorage.clear(accountId);
             disarm();
           } else if (err.code === "not_member" || err.code === "email_unverified") {
             token = null;
+          } else if (err.code === "org_access_denied") {
+            token = null;
+            if (org) {
+              orgStorage.clear(accountId, org);
+              orgId = null;
+              throw { ...err, orgId: org };
+            }
           }
         }
         throw err;
@@ -214,6 +248,8 @@ export function createTokenStore({
   const onMessage = (msg: AuthMessage) => {
     if (!id || msg.accountId.toLowerCase() !== id.toLowerCase()) return;
     if (msg.type === "token") {
+      // per-tab org: a token minted for another org (or an org-less one) is never adopted
+      if (msg.orgId !== orgId) return;
       if (msg.at > tokenAt && msg.expiresAt - REFRESH_MARGIN_S * 1000 > now()) {
         token = msg.accessToken;
         expiresAt = msg.expiresAt;
@@ -227,7 +263,9 @@ export function createTokenStore({
     reset();
     id = null;
     email = null;
+    orgId = null;
     forgetStored(gone);
+    orgStorage.clear(gone);
     for (const fn of remoteListeners) fn();
   };
 
@@ -236,6 +274,7 @@ export function createTokenStore({
     reset();
     id = accountId;
     email = accountEmail;
+    orgId = orgStorage.read(accountId); // the new account's own org, never the previous one's
     storage.write(accountId);
     return renew();
   };
@@ -258,7 +297,9 @@ export function createTokenStore({
       reset();
       id = null;
       email = null;
+      orgId = null;
       forgetStored(gone); // the local session ends first; /logout is best effort and may hang
+      if (gone) orgStorage.clear(gone);
       if (!gone) return { confirmed: true };
       channel?.post({ v: 1, type: "signedOut", accountId: gone, at: now() });
       if (running) {
@@ -287,7 +328,9 @@ export function createTokenStore({
       reset();
       id = null;
       email = null;
+      orgId = null;
       forgetStored(gone);
+      if (gone) orgStorage.clear(gone);
     },
     subscribe(fn) {
       listeners.add(fn);
@@ -314,6 +357,16 @@ export function createTokenStore({
       };
     },
     accountId: () => id,
+    orgId: () => orgId,
+    async selectOrg(next) {
+      const account = id;
+      reset();
+      orgId = next.toLowerCase();
+      const gen = generation;
+      await renew();
+      // remembered only after a successful mint, and only if nothing moved on meanwhile
+      if (account && gen === generation && token !== null) orgStorage.write(account, orgId!);
+    },
     async accountEmail() {
       if (!id) return null;
       if (email) return email;
@@ -334,8 +387,10 @@ export function createTokenStore({
       } catch (err) {
         if (gen === generation && isAuthError(err) && err.code === "session_invalid") {
           forgetStored(id);
+          orgStorage.clear(id);
           id = null;
           email = null;
+          orgId = null;
         }
         throw err;
       }

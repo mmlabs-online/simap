@@ -11,6 +11,7 @@ const token = (o: Record<string, unknown> = {}) => ({
   accessToken: "abc.DEF-123_x",
   expiresAt: NOW + 900_000,
   at: NOW - 1000,
+  orgId: null,
   ...o,
 });
 const signedOut = (o: Record<string, unknown> = {}) => ({
@@ -101,5 +102,31 @@ describe("createAuthChannel", () => {
       }),
     });
     expect(() => ch.post(signedOut() as never)).not.toThrow();
+  });
+});
+
+describe("parseAuthMessage orgId", () => {
+  const ORG = "22222222-2222-4222-8222-222222222222";
+  const { orgId: _dropped, ...legacy } = token();
+
+  it("missing -> null, null -> null, UUID -> lowercased", () => {
+    expect(parseAuthMessage(legacy, NOW)).toMatchObject({ orgId: null });
+    expect(parseAuthMessage(token({ orgId: null }), NOW)).toMatchObject({ orgId: null });
+    expect(parseAuthMessage(token({ orgId: ORG.toUpperCase() }), NOW)).toMatchObject({
+      orgId: ORG,
+    });
+  });
+
+  it.each<[string, unknown]>([
+    ["number", 1],
+    ["not a UUID", "x"],
+    ["empty string", ""],
+    ["object", {}],
+  ])("orgId %s -> message rejected", (_n, orgId) => {
+    expect(parseAuthMessage(token({ orgId }), NOW)).toBeNull();
+  });
+
+  it("signedOut ignores orgId", () => {
+    expect(parseAuthMessage(signedOut({ orgId: 5 }), NOW)).toEqual(signedOut());
   });
 });

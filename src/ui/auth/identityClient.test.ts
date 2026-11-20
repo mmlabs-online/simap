@@ -347,3 +347,89 @@ describe("credentials and X-MM-App per call", () => {
     expect(headers["X-MM-App"]).toBe(app ? "simap" : undefined);
   });
 });
+
+describe("orgs and token with an org", () => {
+  const ORG = "22222222-2222-4222-8222-222222222222";
+  const ORG2 = "33333333-3333-4333-8333-333333333333";
+  const list = [
+    { id: ORG, name: "Alpha" },
+    { id: ORG2, name: "Beta" },
+  ];
+  const expected = [
+    { id: ORG, name: "Alpha" },
+    { id: ORG2, name: "Beta" },
+  ];
+
+  it("orgs: GET {BASE}/auth/orgs?account_id=, credentials include, X-MM-App, no Authorization, no body, no-store, 5 s signal", async () => {
+    const { client, fetchFn } = setup(() => json([]));
+    expect(await client.orgs(ID)).toEqual([]);
+    const [url, init] = fetchFn.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe(`${BASE}/auth/orgs?account_id=${ID}`);
+    expect(init.method).toBe("GET");
+    expect(init.credentials).toBe("include");
+    expect(init.headers).toEqual({ "X-MM-App": "simap" });
+    expect(init.body).toBeUndefined();
+    expect(init.cache).toBe("no-store");
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("orgs: bare array, items, orgs, organizations and data all parse to the same list", async () => {
+    for (const body of [
+      list,
+      { items: list },
+      { orgs: list },
+      { organizations: list },
+      { data: list },
+    ]) {
+      expect(await setup(() => json(body)).client.orgs(ID)).toEqual(expected);
+    }
+  });
+
+  it("orgs: id and name from the supported keys; ids lowercased; names trimmed and NFC; duplicates and non-UUID ids dropped", async () => {
+    const body = [
+      { org_id: ORG.toUpperCase(), name: "  Tổ chức  ".normalize("NFD") },
+      { organization_id: ORG2, display_name: "Beta" },
+      { org: { id: "44444444-4444-4444-8444-444444444444", name: "Nested" }, roles: ["admin"] },
+      { organization: { id: "55555555-5555-4555-8555-555555555555", slug: "slug-only" } },
+      { id: ORG, name: "Duplicate" },
+      { id: "nope", name: "Bad id" },
+    ];
+    expect(await setup(() => json({ items: body })).client.orgs(ID)).toEqual([
+      { id: ORG, name: "Tổ chức" },
+      { id: ORG2, name: "Beta" },
+      { id: "44444444-4444-4444-8444-444444444444", name: "Nested" },
+      { id: "55555555-5555-4555-8555-555555555555", name: "slug-only" },
+    ]);
+  });
+
+  it("orgs: an unreadable body rejects unknown, never an empty list", async () => {
+    for (const body of [{}, null, "x", { items: "x" }, [{ nope: 1 }], [{ id: "bad", name: "A" }]]) {
+      expect(await reject(setup(() => json(body)).client.orgs(ID))).toEqual({ code: "unknown" });
+    }
+    expect(
+      await reject(setup(() => new Response("<html>", { status: 200 })).client.orgs(ID)),
+    ).toEqual({ code: "unknown" });
+  });
+
+  it("orgs: 401 session_invalid is mapped; a rejected fetch -> network", async () => {
+    expect(
+      await reject(setup(() => json({ error: { code: "session_invalid" } }, 401)).client.orgs(ID)),
+    ).toEqual({ code: "session_invalid" });
+    const down = setup(() => Promise.reject(new TypeError("offline")));
+    expect(await reject(down.client.orgs(ID))).toEqual({ code: "network" });
+  });
+
+  it("token: body is {audience, account_id} without an org and adds org_id with one", async () => {
+    const plain = setup(() => json(tokenBody));
+    await plain.client.token(ID);
+    expect(plain.req().body).toEqual({ audience: "simap", account_id: ID });
+    const withOrg = setup(() => json(tokenBody));
+    await withOrg.client.token(ID, ORG);
+    expect(withOrg.req().body).toEqual({ audience: "simap", account_id: ID, org_id: ORG });
+  });
+
+  it("token: 403 org_access_denied -> {code: org_access_denied}", async () => {
+    const { client } = setup(() => json({ error: { code: "org_access_denied" } }, 403));
+    expect(await reject(client.token(ID, ORG))).toEqual({ code: "org_access_denied" });
+  });
+});

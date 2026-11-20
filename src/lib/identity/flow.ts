@@ -10,6 +10,7 @@ export type GateView =
   | { kind: "signIn"; error?: AuthError; relistAccounts?: boolean }
   | { kind: "join"; error?: AuthError }
   | { kind: "unverified" }
+  | { kind: "pickOrg"; error: AuthError }
   | { kind: "retry"; error: AuthError };
 
 const RETRY_CODES: AuthError["code"][] = ["network", "rate_limited", "unknown"];
@@ -25,6 +26,10 @@ export function viewForTokenError(err: AuthError, hasAccount: boolean): GateView
   if (err.code === "not_member" && err.joinAvailable === true && hasAccount)
     return { kind: "join" };
   if (err.code === "email_unverified" && hasAccount) return { kind: "unverified" };
+  if (err.code === "org_access_denied")
+    return hasAccount && err.orgId
+      ? { kind: "pickOrg", error: err }
+      : { kind: "retry", error: { code: "unknown" } };
   if (err.code === "session_invalid") return { kind: "signIn", error: err, relistAccounts: true };
   if (RETRY_CODES.includes(err.code)) return { kind: "retry", error: err };
   if (JOIN_ERROR_CODES.includes(err.code) && hasAccount) return { kind: "join", error: err };
@@ -47,7 +52,7 @@ export type MeResult =
 
 export type MeView =
   | { kind: "ready"; tier: Tier; email: string }
-  | { kind: "noOrg" }
+  | { kind: "needOrg" }
   | { kind: "noAccess"; code: "forbidden" | "member_deactivated" }
   | { kind: "signedOut"; error: AuthError }
   | { kind: "retry"; error: AuthError };
@@ -60,7 +65,7 @@ export function viewForMe(result: MeResult): MeView {
   }
   if (result.status === 401) return { kind: "signedOut", error: { code: "no_access" } };
   if (result.status === 403) {
-    if (result.code === "org_required") return { kind: "noOrg" };
+    if (result.code === "org_required") return { kind: "needOrg" };
     if (result.code === "member_deactivated")
       return { kind: "noAccess", code: "member_deactivated" };
     return { kind: "noAccess", code: "forbidden" };

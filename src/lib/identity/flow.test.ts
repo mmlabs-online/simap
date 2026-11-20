@@ -67,8 +67,8 @@ describe("viewForMe", () => {
     });
   });
 
-  it("403 org_required -> noOrg", () => {
-    expect(viewForMe({ status: 403, code: "org_required" })).toEqual({ kind: "noOrg" });
+  it("403 org_required -> needOrg", () => {
+    expect(viewForMe({ status: 403, code: "org_required" })).toEqual({ kind: "needOrg" });
   });
 
   it("403 forbidden / member_deactivated -> noAccess(code); unknown 403 and a 200 without a body fail closed", () => {
@@ -131,7 +131,7 @@ describe("meErrorView", () => {
       kind: "noAccess",
       code: "member_deactivated",
     });
-    expect(meErrorView(new ApiAccessError("org_required"), true)).toEqual({ kind: "noOrg" });
+    expect(meErrorView(new ApiAccessError("org_required"), true)).toEqual({ kind: "needOrg" });
     expect(meErrorView(new ApiAccessError("unauthenticated"), true)).toEqual({
       kind: "signedOut",
       error: e("no_access"),
@@ -190,6 +190,28 @@ describe("readMeResult", () => {
       status: 502,
       code: undefined,
       me: undefined,
+    });
+  });
+});
+
+describe("org_access_denied", () => {
+  const ORG = "22222222-2222-4222-8222-222222222222";
+  it("with an account and orgId -> pickOrg(error)", () => {
+    const err = e("org_access_denied", { orgId: ORG });
+    expect(viewForTokenError(err, true)).toEqual({ kind: "pickOrg", error: err });
+  });
+
+  it("without an account -> retry(unknown)", () => {
+    expect(viewForTokenError(e("org_access_denied", { orgId: ORG }), false)).toEqual({
+      kind: "retry",
+      error: { code: "unknown" },
+    });
+  });
+
+  it("without orgId -> retry(unknown), never pickOrg", () => {
+    expect(viewForTokenError(e("org_access_denied"), true)).toEqual({
+      kind: "retry",
+      error: { code: "unknown" },
     });
   });
 });

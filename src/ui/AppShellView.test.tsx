@@ -21,6 +21,23 @@ const hrefs = (html: string) =>
   );
 
 describe("AppShellView", () => {
+  it("shows the org name; the switch button only when switchOrg is given", () => {
+    const withAction = renderToStaticMarkup(
+      <AppShellView
+        session={{ tier: "user", email: "a@example.invalid", orgName: "Tổ chức" }}
+        pathname="/"
+        actions={{ switchOrg: () => {} }}
+      >
+        <p>x</p>
+      </AppShellView>,
+    );
+    expect(withAction).toContain("Tổ chức");
+    expect(withAction).toContain(shellCopy.actions.switchOrg);
+    const without = render("user");
+    expect(without).toContain("Tổ chức");
+    expect(without).not.toContain(shellCopy.actions.switchOrg);
+  });
+
   it("signed out shows the sign-in placeholder and no nav", () => {
     const html = render(null);
     expect(html).toContain(shellCopy.signedOut.title);

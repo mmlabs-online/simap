@@ -12,8 +12,11 @@ import {
   type MeView,
 } from "@/lib/identity/flow";
 import { resendOutcome } from "@/lib/identity/email-flows";
-import type { AccountChoice, AuthError, Credentials } from "@/lib/identity/types";
+import { decideOrg, type OrgNotice } from "@/lib/identity/orgs";
+import type { AccountChoice, AuthError, Credentials, OrgChoice } from "@/lib/identity/types";
 import type { Session } from "@/lib/session";
+import { OrgPickerView } from "../org/OrgPickerView";
+import { OrgSwitcherDialog, type OrgSwitcherState } from "../org/OrgSwitcherDialog";
 import { SessionProvider } from "../session";
 import { ApiFetchProvider } from "./api-fetch-context";
 import { getAuthRuntime, setAuthLostHandler, type AuthRuntime } from "./runtime";
@@ -31,7 +34,8 @@ import {
 
 type View =
   | { kind: "checking" }
-  | { kind: "ready"; generation: number; session: Session }
+  | { kind: "ready"; generation: number; session: Session; orgs: OrgChoice[] | null }
+  | { kind: "orgPicker"; orgs: OrgChoice[]; notice?: OrgNotice; busyId?: string | null }
   | { kind: "signedOut"; error?: AuthError | null; notice?: SignInNotice | null }
   | { kind: "join"; email: string; error?: AuthError | null; pending?: boolean }
   | {
@@ -42,7 +46,7 @@ type View =
       resendError?: AuthError | null;
     }
   | { kind: "retry"; error: AuthError }
-  | { kind: "noOrg"; email: string | null }
+  | { kind: "noOrg"; email: string | null; notice?: OrgNotice }
   | { kind: "noAccess"; code: "forbidden" | "member_deactivated" };
 
 const MAX_LISTED_ACCOUNTS = 5;
@@ -83,6 +87,10 @@ function Gate({
   const tsToken = useRef<string | null>(null);
   const seq = useRef(0); // epoch: any move to another screen bumps it, and a late answer of an older epoch is dropped
   const listSeq = useRef(0);
+  const denied = useRef(new Set<string>()); // org ids refused in this tab: while any is set, no org is auto-entered
+  const orgList = useRef<OrgChoice[] | null>(null); // the account's orgs (name and count for the shell); null = not loaded
+  const orgListSeq = useRef(0);
+  const [switcher, setSwitcher] = useState<OrgSwitcherState | null>(null);
   const generation = useRef(0);
   const lastEmail = useRef<string | null>(null);
   const rechecking = useRef(false);
@@ -128,32 +136,114 @@ function Gate({
     clearAccounts();
   };
 
+  // The account changed (or ended): its org list, this tab's denied orgs and any open switcher are void.
+  const resetOrgs = () => {
+    denied.current.clear();
+    orgList.current = null;
+    orgListSeq.current += 1;
+    setSwitcher(null);
+  };
+  const orgNameOf = (orgs: OrgChoice[] | null) => {
+    const current = store.orgId();
+    return orgs?.find((o) => o.id === current)?.name;
+  };
+  /** Lists the account's orgs and keeps the shell's name and count current. A newer call drops an older answer. */
+  const fetchOrgs = async (): Promise<OrgChoice[] | "failed" | "stale"> => {
+    const acct = store.accountId();
+    if (!acct) return "failed";
+    const my = ++orgListSeq.current;
+    let orgs: OrgChoice[];
+    try {
+      orgs = await client.orgs(acct);
+    } catch {
+      return my === orgListSeq.current ? "failed" : "stale";
+    }
+    if (my !== orgListSeq.current) return "stale";
+    orgList.current = orgs;
+    setView((v) =>
+      v.kind === "ready" ? { ...v, orgs, session: { ...v.session, orgName: orgNameOf(orgs) } } : v,
+    );
+    return orgs;
+  };
+
+  /** Lists the orgs and enters one, shows the picker, or shows "no organization". Shared by `needOrg` and `pickOrg`. */
+  const enterOrg = async (s: number) => {
+    setView({ kind: "checking" });
+    const acct = store.accountId();
+    if (!acct) {
+      await apply({ kind: "signedOut", error: { code: "session_invalid" } }, s);
+      return;
+    }
+    let list: OrgChoice[];
+    try {
+      list = await client.orgs(acct);
+    } catch (e) {
+      if (s === seq.current) await apply(meErrorView(e, true), s);
+      return;
+    }
+    if (s !== seq.current) return;
+    orgList.current = list;
+    const d = decideOrg({
+      orgs: list,
+      remembered: store.orgId(),
+      denied: [...denied.current],
+    });
+    if (d.kind === "enter") {
+      await selectAndCheck(d.org.id, s);
+    } else if (d.kind === "pick") {
+      setView({ kind: "orgPicker", orgs: d.orgs, notice: d.notice });
+    } else {
+      let who: string | null = null;
+      try {
+        who = await store.accountEmail();
+      } catch {
+        // the message reads fine without the address
+      }
+      if (s === seq.current) setView({ kind: "noOrg", email: who, notice: d.notice });
+    }
+  };
+
+  /** Mints a token for the org, then runs the `/api/me` check. Every way into an org ends here (restore aside). */
+  const selectAndCheck = async (id: string, s: number) => {
+    try {
+      await store.selectOrg(id);
+    } catch (e) {
+      if (s === seq.current) await apply(meErrorView(e, store.accountId() !== null), s);
+      return;
+    }
+    if (s !== seq.current) return;
+    denied.current.delete(id.toLowerCase());
+    await runCheck(s);
+  };
+
   /** Moves the gate to the screen a decision names. `s`: the epoch the decision was made in. */
   const apply = async (v: GateView | MeView, s: number) => {
     const still = rechecking.current;
     rechecking.current = false;
     const alive = () => s === seq.current;
+    if (v.kind !== "ready") setSwitcher(null);
     switch (v.kind) {
       case "ready": {
         clearAccounts();
         const prev = viewRef.current;
+        const orgs = orgList.current;
+        // A switch passes through `checking`, so it always gets a new generation and remounts all data. Do not optimise.
         setView({
           kind: "ready",
           generation: prev.kind === "ready" ? prev.generation : ++generation.current,
-          session: { tier: v.tier, email: v.email },
+          session: { tier: v.tier, email: v.email, orgName: orgNameOf(orgs) },
+          orgs,
         });
+        if (orgs === null) void fetchOrgs();
         return;
       }
-      case "noOrg": {
-        let who: string | null = null;
-        try {
-          who = await store.accountEmail();
-        } catch {
-          // the message reads fine without the address
-        }
-        if (alive()) setView({ kind: "noOrg", email: who });
+      case "needOrg":
+        await enterOrg(s);
         return;
-      }
+      case "pickOrg":
+        if (v.error.orgId) denied.current.add(v.error.orgId.toLowerCase());
+        await enterOrg(s);
+        return;
       case "noAccess":
         setView({ kind: "noAccess", code: v.code });
         return;
@@ -238,6 +328,7 @@ function Gate({
         if (viewRef.current.kind === "ready") flushSync(() => setView({ kind: "checking" }));
         setStatus("idle");
         setContinuingId(null);
+        resetOrgs();
         forgetForm();
         setView({ kind: "signedOut", notice: "signed_out" });
       }),
@@ -285,6 +376,7 @@ function Gate({
           : v,
       );
     });
+    resetOrgs();
     forgetForm();
     setView({ kind: "signedOut", notice: "signed_out" });
   };
@@ -305,9 +397,42 @@ function Gate({
     seq.current += 1;
     busy.current = false;
     store.forget();
+    resetOrgs();
     forgetForm();
     setStatus("idle");
     setView({ kind: "signedOut" });
+  };
+
+  // Picker click.
+  const pickOrg = async (id: string) => {
+    if (busy.current) return;
+    busy.current = true;
+    const s = ++seq.current;
+    setView((v) => (v.kind === "orgPicker" ? { ...v, busyId: id } : v));
+    try {
+      await selectAndCheck(id, s);
+    } finally {
+      busy.current = false;
+    }
+  };
+
+  const openSwitcher = async () => {
+    if (viewRef.current.kind !== "ready") return;
+    setSwitcher({ status: "loading" });
+    const out = await fetchOrgs();
+    if (out === "stale") return;
+    setSwitcher((cur) =>
+      cur ? (out === "failed" ? { status: "failed" } : { status: "ready", orgs: out }) : cur,
+    );
+  };
+
+  const switchTo = (id: string) => {
+    setSwitcher(null);
+    if (viewRef.current.kind !== "ready" || id.toLowerCase() === store.orgId()) return;
+    const s = ++seq.current;
+    // unmount the old org's screens before the new token exists, as signOut does
+    flushSync(() => setView({ kind: "checking" }));
+    void selectAndCheck(id, s);
   };
 
   const signIn = async (v: Credentials) => {
@@ -322,6 +447,7 @@ function Gate({
     lastEmail.current = v.email;
     setStatus("submitting");
     const turnstileToken = needTurnstile ? (tsToken.current ?? undefined) : undefined;
+    resetOrgs();
     try {
       await store.signIn({ ...v, turnstileToken });
       setNeedTurnstile(false);
@@ -346,6 +472,7 @@ function Gate({
     lastEmail.current = a.email;
     setContinuingId(a.accountId);
     setStatus("submitting");
+    resetOrgs();
     try {
       await store.continueAs(a.accountId, a.email);
       if (s !== seq.current) return;
@@ -428,10 +555,28 @@ function Gate({
   switch (view.kind) {
     case "ready":
       return (
-        <SessionProvider value={view.session} actions={{ signOut, refreshPermissions }}>
+        <SessionProvider
+          value={view.session}
+          actions={{
+            signOut,
+            refreshPermissions,
+            // hidden once the list is known to hold a single org; shown while it is still loading
+            switchOrg: view.orgs === null || view.orgs.length > 1 ? openSwitcher : undefined,
+          }}
+        >
           <ApiFetchProvider value={apiFetch}>
             <Fragment key={view.generation}>{children}</Fragment>
           </ApiFetchProvider>
+          {switcher && (
+            <OrgSwitcherDialog
+              open
+              state={switcher}
+              currentId={store.orgId()}
+              onSwitch={switchTo}
+              onRetry={openSwitcher}
+              onClose={() => setSwitcher(null)}
+            />
+          )}
         </SessionProvider>
       );
     case "checking":
@@ -464,8 +609,18 @@ function Gate({
       );
     case "retry":
       return <RetryView error={view.error} onRetry={check} />;
+    case "orgPicker":
+      return (
+        <OrgPickerView
+          orgs={view.orgs}
+          notice={view.notice}
+          busyId={view.busyId}
+          onPick={pickOrg}
+          onSignOut={signOut}
+        />
+      );
     case "noOrg":
-      return <NoOrgView email={view.email} onSignOut={signOut} />;
+      return <NoOrgView email={view.email} notice={view.notice} onSignOut={signOut} />;
     case "noAccess":
       return <NoAccessView code={view.code} onSignOut={signOut} />;
     case "signedOut":

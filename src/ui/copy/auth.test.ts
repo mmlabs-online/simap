@@ -22,6 +22,7 @@ const CODES: AuthErrorCode[] = [
   "validation_error",
   "token_invalid",
   "email_already_verified",
+  "org_access_denied",
   "no_access",
   "unknown",
 ];
