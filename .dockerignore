@@ -1,0 +1,20 @@
+# SIM-004: keep the build context small and never let a local .env* reach the image (R3).
+node_modules
+.next
+coverage
+.git
+.github
+.claude
+work
+docs
+deploy
+scripts
+src/test
+**/*.test.ts
+**/*.test.tsx
+.env*
+**/.env*
+*.log
+*.tsbuildinfo
+next-env.d.ts
+compose.dev.yml

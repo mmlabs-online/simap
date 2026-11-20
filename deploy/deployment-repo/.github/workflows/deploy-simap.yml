@@ -1,0 +1,208 @@
+name: deploy-simap
+
+# SIM-004 draft (D3/D8). Same flow as deploy-tudocuatui.yml: only the app name, the image name, the strict
+# vX.Y.Z image pattern and the env file content differ; simap always has a `migrate` service.
+# A merge to main that touches apps/simap/ deploys simap, and only it, on the home server's self-hosted runner:
+#   1. check release.env pins one mingming21400/simap:vX.Y.Z@sha256:<digest> (no release.env yet: skip)
+#   2. write the host env file (DATABASE_URL from postgres/secrets/apps/simap.password)
+#   3. pull the image
+#   4. dump the databases now (the pg-backup sidecar's /backup.sh), so a bad migration can be undone
+#   5. run the migrations (one-shot `migrate` service). If they fail, nothing is replaced.
+#   6. replace the app and wait for its health check (/api/readyz, which also checks the database)
+# If the new app is not healthy, restore apps/simap/ as it was before the push, start that (without migrating)
+# and push the revert. A restored deploy is still a red run. Migrations must therefore stay compatible with the
+# previous release's image (expand first, contract later).
+# workflow_dispatch from main redeploys what main pins and rewrites the env file.
+#
+# No repository secret is used: the only secret value (the Postgres password) is the file committed in
+# postgres/secrets/ (see README) and is written only to the host env file, never printed.
+
+on:
+  push:
+    branches: [main]
+    paths: ["apps/simap/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write # the revert push after a restore
+  pull-requests: write # the outcome comment on the merged release PR
+
+concurrency:
+  group: deploy-simap
+  cancel-in-progress: false
+
+env:
+  APP_DIR: apps/simap
+  PROJECT: simap
+  DB_APP: simap
+  ENV_FILE: /Users/mingming/.config/simap/simap.env
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, macbook-runner]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: release
+        id: release
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ ! -f "$APP_DIR/release.env" ]; then
+            echo "::notice::No $APP_DIR/release.env yet: nothing has been released. Nothing was deployed."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          pattern='^mingming21400/simap:v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?@sha256:[0-9a-f]{64}$'
+          image="$(sed -n 's/^SIMAP_IMAGE=//p' "$APP_DIR/release.env")"
+          if ! [[ "$image" =~ $pattern ]]; then
+            echo "::error::SIMAP_IMAGE in $APP_DIR/release.env is '$image', not one mingming21400/simap:vX.Y.Z@sha256:<digest>. Nothing was started."
+            exit 1
+          fi
+          previous=""
+          # BEFORE is empty on workflow_dispatch: no previous release, so a failure is not restored.
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
+             && git cat-file -e "$BEFORE:$APP_DIR/release.env" 2>/dev/null; then
+            previous="$(git show "$BEFORE:$APP_DIR/release.env" | sed -n 's/^SIMAP_IMAGE=//p')"
+          fi
+          {
+            echo "skip=false"
+            echo "image=$image"
+            echo "previous=$previous"
+          } >> "$GITHUB_OUTPUT"
+
+      # Writes DATABASE_URL to the host env file. The password is never printed (no echo, no argv). If this
+      # fails, the old file stays and nothing is started.
+      - name: envfile
+        id: envfile
+        if: steps.release.outputs.skip != 'true'
+        run: |
+          umask 077
+          [[ "$ENV_FILE" == "$HOME/"* ]] || { echo "::error::ENV_FILE $ENV_FILE is not under $HOME. Nothing was started."; exit 1; }
+          pwfile="postgres/secrets/apps/$DB_APP.password"
+          if ! grep -Eq '^[A-Za-z0-9_-]{16,}$' "$pwfile"; then
+            echo "::error::$pwfile is missing or malformed (see postgres/scripts/add-app-db.sh). Nothing was started."
+            exit 1
+          fi
+          read -r pw < "$pwfile"
+          dir="$(dirname "$ENV_FILE")"
+          install -d -m 700 "$dir"
+          tmp="$(mktemp "$dir/.env.XXXXXX")"
+          trap 'rm -f "$tmp"' EXIT
+          printf 'DATABASE_URL=postgres://%s:%s@postgres:5432/%s\n' "$DB_APP" "$pw" "$DB_APP" > "$tmp"
+          chmod 600 "$tmp"
+          if cmp -s "$tmp" "$ENV_FILE"; then changed=false; else changed=true; fi
+          mv -f "$tmp" "$ENV_FILE"
+          trap - EXIT
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+
+      - name: pull
+        id: pull
+        if: steps.envfile.outcome == 'success'
+        run: |
+          compose=(docker compose -p "$PROJECT" -f "$APP_DIR/compose.yml" --env-file "$APP_DIR/release.env")
+          "${compose[@]}" --profile migrate config --quiet
+          "${compose[@]}" --profile migrate pull
+
+      # A dump right before the schema changes (same sidecar and folder as the nightly dumps).
+      - name: backup
+        id: backup
+        if: steps.pull.outcome == 'success'
+        run: |
+          if ! docker compose -p postgres -f "$HOME/srv/postgres/compose.yml" exec -T pg-backup /backup.sh; then
+            echo "::error::The pre-migration backup failed. Nothing was migrated or replaced; the old app is still running."
+            exit 1
+          fi
+
+      - name: migrate
+        id: migrate
+        if: steps.backup.outcome == 'success'
+        run: |
+          compose=(docker compose -p "$PROJECT" -f "$APP_DIR/compose.yml" --env-file "$APP_DIR/release.env")
+          if ! "${compose[@]}" run --rm migrate; then
+            echo "::error::Migrations failed. The app was not replaced; the old release is still running. Restore the database from the dump taken by the backup step if the migration left it half-applied (ops/backup/RESTORE.md)."
+            exit 1
+          fi
+
+      - name: deploy
+        id: deploy
+        if: steps.migrate.outcome == 'success'
+        env:
+          CHANGED: ${{ steps.envfile.outputs.changed }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          compose=(docker compose -p "$PROJECT" -f "$APP_DIR/compose.yml" --env-file "$APP_DIR/release.env")
+          recreate=()
+          # The env file is only read on container creation. Recreate when it changed, and on every manual run, so a
+          # dispatch after a failed run (file already rewritten, container still old) still applies the new values.
+          if [ "$CHANGED" = "true" ] || [ "$EVENT" = "workflow_dispatch" ]; then recreate=(--force-recreate); fi
+          "${compose[@]}" up -d --wait --wait-timeout 120 ${recreate[@]+"${recreate[@]}"} simap
+
+      # Only when the new app itself is unhealthy. Never migrates (or un-migrates) the database.
+      - name: rollback
+        id: rollback
+        if: failure() && steps.deploy.outcome == 'failure'
+        env:
+          BEFORE: ${{ github.event.before }}
+          FAILED: ${{ steps.release.outputs.image }}
+          PREVIOUS: ${{ steps.release.outputs.previous }}
+        run: |
+          if [ -z "$PREVIOUS" ]; then
+            echo "::error::$FAILED failed its health check and there is no previous release to restore. Nothing was pushed."
+            echo "result=no-previous" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          git restore --source="$BEFORE" --staged --worktree -- "$APP_DIR"
+          compose=(docker compose -p "$PROJECT" -f "$APP_DIR/compose.yml" --env-file "$APP_DIR/release.env")
+          if ! "${compose[@]}" pull simap || ! "${compose[@]}" up -d --wait --wait-timeout 120 simap; then
+            echo "::error::$FAILED failed its health check, and restoring $PREVIOUS failed too. Nothing was pushed."
+            echo "result=restore-failed" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          failed_version="${FAILED#*:}"; failed_version="${failed_version%%@*}"
+          previous_version="${PREVIOUS#*:}"; previous_version="${previous_version%%@*}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Restore simap ${previous_version}: ${failed_version} failed its health check"
+          if ! git push origin HEAD:main; then
+            echo "::error::Restored $PREVIOUS on the server, but the revert could not be pushed to main. The repository and the server disagree until it is."
+            echo "result=restore-unpushed" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+          echo "result=restored" >> "$GITHUB_OUTPUT"
+          echo "::error::$FAILED failed its health check. Restored $PREVIOUS and pushed the revert."
+          exit 1
+
+      - name: notify
+        if: always() && steps.release.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MIGRATE: ${{ steps.migrate.outcome }}
+          DEPLOY: ${{ steps.deploy.outcome }}
+          RESULT: ${{ steps.rollback.outputs.result }}
+          IMAGE: ${{ steps.release.outputs.image }}
+          PREVIOUS: ${{ steps.release.outputs.previous }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          case "$MIGRATE:$DEPLOY:$RESULT" in
+            success:success:)                  msg="deployed: \`$IMAGE\` is running and healthy." ;;
+            failure:*)                         msg="migrate-failed: migrations for \`$IMAGE\` failed; the old release is still running. Check the database (a dump was taken just before)." ;;
+            *:failure:restored)                msg="restored: \`$IMAGE\` failed its health check; \`$PREVIOUS\` is running again and the revert is on main. Migrations, if any, were kept." ;;
+            *:failure:restore-unpushed)        msg="restored, revert NOT pushed: \`$PREVIOUS\` is running, but main still pins \`$IMAGE\`." ;;
+            *:failure:no-previous)             msg="no-previous: \`$IMAGE\` failed its health check and there was no earlier release to restore." ;;
+            *:failure:restore-failed)          msg="restore-failed: \`$IMAGE\` failed its health check and so did \`$PREVIOUS\`. simap needs a hand." ;;
+            *)                                 msg="did-not-complete: the deploy did not run to the end (migrate: ${MIGRATE:-not run}, deploy: ${DEPLOY:-not run}, restore: ${RESULT:-not run})." ;;
+          esac
+          {
+            echo "### deploy-simap"
+            echo ""
+            echo "$msg"
+          } >> "$GITHUB_STEP_SUMMARY"
+          pr="$(gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/pulls" --jq '.[0].number // empty' || true)"
+          if [ -n "$pr" ]; then
+            gh pr comment "$pr" --repo "$GITHUB_REPOSITORY" --body "deploy-simap — $msg Run: $RUN_URL"
+          fi

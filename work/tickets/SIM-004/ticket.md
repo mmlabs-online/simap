@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | architecture, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-004) |
 
 ## Goal
 Package simap as one Docker image that runs the Next.js server and the one-shot `migrate` command, with the
@@ -59,6 +59,12 @@ deployment-repo compose file and release workflow modelled on tudocuatui, so Min
 - Manual: build image, run check script, run migrate against local Postgres, `docker compose config`.
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-1) — Ming: "duyệt hết theo mặc định" (every default in plan.md accepted).
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 4, ~468k tokens (software-architect×1 65k, planner×1 118k, implementer×1 106k, reviewer×1 n/a, security auditor×1 98k)
+- Done: Dockerfile, check-image.sh + CI image job, release workflow, deployment-repo compose/workflow/README, ming-todo M-6..M-8; review PASS conditional on CI; security 0 🔴 / 0 🟡
+- In progress / next: CI image + ci jobs must be green before merge; ming-todo M-6 clashes with SIM-008's M-6 (renumber on rebase); Ming opens + merges the PR
+- Gotchas: no Docker on the dev device; envfile run-block tests skip on win32
