@@ -24,70 +24,453 @@
     }
   },
   "sprites": {
-    "floor.carpet": { "source": "imersa-office", "sheet": "floors", "rect": [64, 0, 32, 32], "scale": 1, "tiles": [1, 1], "note": "pack 'vinyl_grey' (light 2x2 tiles); closest to the mockup's light work-zone floor" },
-    "floor.carpet.alt": { "source": "imersa-office", "sheet": "floors", "rect": [32, 0, 32, 32], "scale": 1, "tiles": [1, 1], "note": "pack 'carpet_grey' (dark carpet); a different zone floor, not a checker alternate" },
-    "floor.wood": { "source": "imersa-office", "sheet": "floors", "rect": [0, 0, 32, 32], "scale": 1, "tiles": [1, 1], "note": "warm orange wood, darker than the §3 wood" },
+    "floor.carpet": {
+      "source": "imersa-office",
+      "sheet": "floors",
+      "rect": [64, 0, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'vinyl_grey' (light 2x2 tiles); closest to the mockup's light work-zone floor"
+    },
+    "floor.carpet.alt": {
+      "source": "imersa-office",
+      "sheet": "floors",
+      "rect": [32, 0, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'carpet_grey' (dark carpet); a different zone floor, not a checker alternate"
+    },
+    "floor.wood": {
+      "source": "imersa-office",
+      "sheet": "floors",
+      "rect": [0, 0, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "warm orange wood, darker than the §3 wood"
+    },
 
-    "wall.corner.nw": { "source": "imersa-office", "sheet": "walls", "rect": [32, 0, 32, 32], "scale": 1, "tiles": [1, 1], "note": "back-wall row 1, left corner (top cap + face)" },
-    "wall.top": { "source": "imersa-office", "sheet": "walls", "rect": [64, 0, 32, 32], "scale": 1, "tiles": [1, 1], "note": "back-wall row 1: 16 px top cap + upper face" },
-    "wall.t.s": { "source": "imersa-office", "sheet": "walls", "rect": [96, 0, 32, 32], "scale": 1, "tiles": [1, 1], "note": "back-wall row 1 where an inner wall joins from below" },
-    "wall.corner.ne": { "source": "imersa-office", "sheet": "walls", "rect": [160, 0, 32, 32], "scale": 1, "tiles": [1, 1] },
-    "wall.corner.nw.face": { "source": "imersa-office", "sheet": "walls", "rect": [192, 0, 32, 32], "scale": 1, "tiles": [1, 1], "note": "back-wall row 2, left end" },
-    "wall.face": { "source": "imersa-office", "sheet": "walls", "rect": [224, 0, 32, 32], "scale": 1, "tiles": [1, 1], "note": "back-wall row 2: lower face with the skirting baked in (covers wall.base)" },
-    "wall.t.s.face": { "source": "imersa-office", "sheet": "walls", "rect": [0, 32, 32, 32], "scale": 1, "tiles": [1, 1] },
-    "wall.corner.ne.face": { "source": "imersa-office", "sheet": "walls", "rect": [64, 32, 32, 32], "scale": 1, "tiles": [1, 1] },
-    "wall.side.w": { "source": "imersa-office", "sheet": "walls", "rect": [96, 32, 32, 32], "scale": 1, "tiles": [1, 1], "note": "left wall seen from above (wall in the left half of the tile)" },
-    "wall.inner.v": { "source": "imersa-office", "sheet": "walls", "rect": [128, 32, 32, 32], "scale": 1, "tiles": [1, 1], "note": "inner vertical wall, centred" },
-    "wall.side.e": { "source": "imersa-office", "sheet": "walls", "rect": [160, 32, 32, 32], "scale": 1, "tiles": [1, 1] },
-    "wall.inner.h.end.w": { "source": "imersa-office", "sheet": "walls", "rect": [192, 32, 32, 32], "scale": 1, "tiles": [1, 1], "note": "free end of an inner horizontal wall (row 1)" },
-    "wall.t.e": { "source": "imersa-office", "sheet": "walls", "rect": [224, 32, 32, 32], "scale": 1, "tiles": [1, 1], "note": "inner horizontal wall meeting the right wall (row 1)" },
-    "wall.side.w.end": { "source": "imersa-office", "sheet": "walls", "rect": [0, 64, 32, 32], "scale": 1, "tiles": [1, 1], "note": "left wall ending above a door gap" },
-    "wall.inner.v.end": { "source": "imersa-office", "sheet": "walls", "rect": [32, 64, 32, 32], "scale": 1, "tiles": [1, 1] },
-    "wall.inner.h.end.w.face": { "source": "imersa-office", "sheet": "walls", "rect": [64, 64, 32, 32], "scale": 1, "tiles": [1, 1] },
-    "wall.side.w.start": { "source": "imersa-office", "sheet": "walls", "rect": [96, 64, 32, 32], "scale": 1, "tiles": [1, 1], "note": "left wall resuming below a door gap" },
-    "wall.corner.sw": { "source": "imersa-office", "sheet": "walls", "rect": [128, 64, 32, 32], "scale": 1, "tiles": [1, 1] },
-    "wall.front.end.e": { "source": "imersa-office", "sheet": "walls", "rect": [160, 64, 32, 32], "scale": 1, "tiles": [1, 1], "note": "front wall ending at a door gap on its right" },
-    "wall.front.end.w": { "source": "imersa-office", "sheet": "walls", "rect": [192, 64, 32, 32], "scale": 1, "tiles": [1, 1], "note": "front wall resuming after a door gap" },
-    "wall.front": { "source": "imersa-office", "sheet": "walls", "rect": [224, 64, 32, 32], "scale": 1, "tiles": [1, 1], "note": "front (south) wall, top only" },
-    "wall.corner.se": { "source": "imersa-office", "sheet": "walls", "rect": [0, 96, 32, 32], "scale": 1, "tiles": [1, 1] },
+    "wall.corner.nw": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [32, 0, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "back-wall row 1, left corner (top cap + face)"
+    },
+    "wall.top": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [64, 0, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "back-wall row 1: 16 px top cap + upper face"
+    },
+    "wall.t.s": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [96, 0, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "back-wall row 1 where an inner wall joins from below"
+    },
+    "wall.corner.ne": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [160, 0, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "wall.corner.nw.face": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [192, 0, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "back-wall row 2, left end"
+    },
+    "wall.face": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [224, 0, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "back-wall row 2: lower face with the skirting baked in (covers wall.base)"
+    },
+    "wall.t.s.face": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [0, 32, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "wall.corner.ne.face": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [64, 32, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "wall.side.w": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [96, 32, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "left wall seen from above (wall in the left half of the tile)"
+    },
+    "wall.inner.v": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [128, 32, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "inner vertical wall, centred"
+    },
+    "wall.side.e": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [160, 32, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "wall.inner.h.end.w": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [192, 32, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "free end of an inner horizontal wall (row 1)"
+    },
+    "wall.t.e": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [224, 32, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "inner horizontal wall meeting the right wall (row 1)"
+    },
+    "wall.side.w.end": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [0, 64, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "left wall ending above a door gap"
+    },
+    "wall.inner.v.end": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [32, 64, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "wall.inner.h.end.w.face": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [64, 64, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "wall.side.w.start": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [96, 64, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "left wall resuming below a door gap"
+    },
+    "wall.corner.sw": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [128, 64, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "wall.front.end.e": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [160, 64, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "front wall ending at a door gap on its right"
+    },
+    "wall.front.end.w": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [192, 64, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "front wall resuming after a door gap"
+    },
+    "wall.front": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [224, 64, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "front (south) wall, top only"
+    },
+    "wall.corner.se": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [0, 96, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
 
-    "window.single.top": { "source": "imersa-office", "sheet": "walls", "rect": [128, 0, 32, 32], "scale": 1, "tiles": [1, 1], "note": "1-tile window in a back wall, row 1 (not §7's 2x1 window.double)" },
-    "window.single": { "source": "imersa-office", "sheet": "walls", "rect": [32, 32, 32, 32], "scale": 1, "tiles": [1, 1], "note": "same window, row 2" },
+    "window.single.top": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [128, 0, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "1-tile window in a back wall, row 1 (not §7's 2x1 window.double)"
+    },
+    "window.single": {
+      "source": "imersa-office",
+      "sheet": "walls",
+      "rect": [32, 32, 32, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "same window, row 2"
+    },
 
-    "desk.single.s": { "source": "imersa-office", "sheet": "desks", "rect": [76, 0, 68, 53], "anchor": [2, 21], "scale": 1, "tiles": [2, 1], "note": "drawers face the viewer" },
-    "desk.single.n": { "source": "imersa-office", "sheet": "desks", "rect": [145, 0, 68, 53], "anchor": [2, 19], "scale": 1, "tiles": [2, 1] },
-    "desk.single.w": { "source": "imersa-office", "sheet": "desks", "rect": [38, 0, 37, 83], "anchor": [2, 20], "scale": 1, "tiles": [1, 2] },
-    "desk.single.e": { "source": "imersa-office", "sheet": "desks", "rect": [0, 0, 37, 84], "anchor": [3, 20], "scale": 1, "tiles": [1, 2] },
+    "desk.single.s": {
+      "source": "imersa-office",
+      "sheet": "desks",
+      "rect": [76, 0, 68, 53],
+      "anchor": [2, 21],
+      "scale": 1,
+      "tiles": [2, 1],
+      "note": "drawers face the viewer"
+    },
+    "desk.single.n": {
+      "source": "imersa-office",
+      "sheet": "desks",
+      "rect": [145, 0, 68, 53],
+      "anchor": [2, 19],
+      "scale": 1,
+      "tiles": [2, 1]
+    },
+    "desk.single.w": {
+      "source": "imersa-office",
+      "sheet": "desks",
+      "rect": [38, 0, 37, 83],
+      "anchor": [2, 20],
+      "scale": 1,
+      "tiles": [1, 2]
+    },
+    "desk.single.e": {
+      "source": "imersa-office",
+      "sheet": "desks",
+      "rect": [0, 0, 37, 84],
+      "anchor": [3, 20],
+      "scale": 1,
+      "tiles": [1, 2]
+    },
 
-    "chair.office.s": { "source": "imersa-office", "sheet": "seating", "rect": [0, 0, 34, 58], "anchor": [1, 28], "scale": 1, "tiles": [1, 1] },
-    "chair.office.w": { "source": "imersa-office", "sheet": "seating", "rect": [35, 0, 33, 55], "anchor": [0, 26], "scale": 1, "tiles": [1, 1] },
-    "chair.office.e": { "source": "imersa-office", "sheet": "seating", "rect": [69, 0, 33, 55], "anchor": [1, 26], "scale": 1, "tiles": [1, 1] },
-    "chair.office.n": { "source": "imersa-office", "sheet": "seating", "rect": [103, 0, 34, 42], "anchor": [1, 14], "scale": 1, "tiles": [1, 1] },
+    "chair.office.s": {
+      "source": "imersa-office",
+      "sheet": "seating",
+      "rect": [0, 0, 34, 58],
+      "anchor": [1, 28],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "chair.office.w": {
+      "source": "imersa-office",
+      "sheet": "seating",
+      "rect": [35, 0, 33, 55],
+      "anchor": [0, 26],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "chair.office.e": {
+      "source": "imersa-office",
+      "sheet": "seating",
+      "rect": [69, 0, 33, 55],
+      "anchor": [1, 26],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "chair.office.n": {
+      "source": "imersa-office",
+      "sheet": "seating",
+      "rect": [103, 0, 34, 42],
+      "anchor": [1, 14],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
 
-    "device.monitor.s": { "source": "imersa-office", "sheet": "tech", "rect": [50, 0, 32, 34], "anchor": [0, 6], "scale": 1, "tiles": [1, 1], "note": "pack 'computer': monitor with keyboard baked in" },
-    "device.monitor.n": { "source": "imersa-office", "sheet": "tech", "rect": [156, 0, 32, 30], "anchor": [0, 2], "scale": 1, "tiles": [1, 1] },
-    "device.monitor.w": { "source": "imersa-office", "sheet": "tech", "rect": [25, 0, 24, 47], "anchor": [-4, 17], "scale": 1, "tiles": [1, 1] },
-    "device.monitor.e": { "source": "imersa-office", "sheet": "tech", "rect": [0, 0, 24, 48], "anchor": [-4, 17], "scale": 1, "tiles": [1, 1] },
-    "device.laptop.s": { "source": "imersa-office", "sheet": "tech", "rect": [131, 0, 24, 31], "anchor": [-4, 3], "scale": 1, "tiles": [1, 1] },
-    "device.laptop.n": { "source": "imersa-office", "sheet": "tech", "rect": [189, 0, 24, 19], "anchor": [-4, -3], "scale": 1, "tiles": [1, 1] },
-    "device.laptop.w": { "source": "imersa-office", "sheet": "tech", "rect": [83, 0, 23, 32], "anchor": [-4, 4], "scale": 1, "tiles": [1, 1] },
-    "device.laptop.e": { "source": "imersa-office", "sheet": "tech", "rect": [107, 0, 23, 32], "anchor": [-5, 4], "scale": 1, "tiles": [1, 1] },
+    "device.monitor.s": {
+      "source": "imersa-office",
+      "sheet": "tech",
+      "rect": [50, 0, 32, 34],
+      "anchor": [0, 6],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'computer': monitor with keyboard baked in"
+    },
+    "device.monitor.n": {
+      "source": "imersa-office",
+      "sheet": "tech",
+      "rect": [156, 0, 32, 30],
+      "anchor": [0, 2],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "device.monitor.w": {
+      "source": "imersa-office",
+      "sheet": "tech",
+      "rect": [25, 0, 24, 47],
+      "anchor": [-4, 17],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "device.monitor.e": {
+      "source": "imersa-office",
+      "sheet": "tech",
+      "rect": [0, 0, 24, 48],
+      "anchor": [-4, 17],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "device.laptop.s": {
+      "source": "imersa-office",
+      "sheet": "tech",
+      "rect": [131, 0, 24, 31],
+      "anchor": [-4, 3],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "device.laptop.n": {
+      "source": "imersa-office",
+      "sheet": "tech",
+      "rect": [189, 0, 24, 19],
+      "anchor": [-4, -3],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "device.laptop.w": {
+      "source": "imersa-office",
+      "sheet": "tech",
+      "rect": [83, 0, 23, 32],
+      "anchor": [-4, 4],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "device.laptop.e": {
+      "source": "imersa-office",
+      "sheet": "tech",
+      "rect": [107, 0, 23, 32],
+      "anchor": [-5, 4],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
 
-    "prop.mug": { "source": "imersa-office", "sheet": "desk_items", "rect": [234, 0, 15, 17], "anchor": [-8, -5], "scale": 1, "tiles": [1, 1], "note": "front view; other views at x 208, 221, 250" },
-    "prop.papers": { "source": "imersa-office", "sheet": "desk_items", "rect": [177, 0, 30, 30], "anchor": [-1, 1], "scale": 1, "tiles": [1, 1], "note": "front view; other views at x 71, 100, 146" },
+    "prop.mug": {
+      "source": "imersa-office",
+      "sheet": "desk_items",
+      "rect": [234, 0, 15, 17],
+      "anchor": [-8, -5],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "front view; other views at x 208, 221, 250"
+    },
+    "prop.papers": {
+      "source": "imersa-office",
+      "sheet": "desk_items",
+      "rect": [177, 0, 30, 30],
+      "anchor": [-1, 1],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "front view; other views at x 71, 100, 146"
+    },
 
-    "cabinet.filing.s": { "source": "imersa-office", "sheet": "storage", "rect": [0, 0, 31, 59], "anchor": [0, 29], "scale": 1, "tiles": [1, 1] },
-    "cabinet.filing.n": { "source": "imersa-office", "sheet": "storage", "rect": [32, 0, 31, 59], "anchor": [0, 28], "scale": 1, "tiles": [1, 1] },
-    "cabinet.filing.w": { "source": "imersa-office", "sheet": "storage", "rect": [64, 0, 33, 58], "anchor": [1, 28], "scale": 1, "tiles": [1, 1] },
-    "cabinet.filing.e": { "source": "imersa-office", "sheet": "storage", "rect": [98, 0, 34, 58], "anchor": [1, 28], "scale": 1, "tiles": [1, 1] },
+    "cabinet.filing.s": {
+      "source": "imersa-office",
+      "sheet": "storage",
+      "rect": [0, 0, 31, 59],
+      "anchor": [0, 29],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "cabinet.filing.n": {
+      "source": "imersa-office",
+      "sheet": "storage",
+      "rect": [32, 0, 31, 59],
+      "anchor": [0, 28],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "cabinet.filing.w": {
+      "source": "imersa-office",
+      "sheet": "storage",
+      "rect": [64, 0, 33, 58],
+      "anchor": [1, 28],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
+    "cabinet.filing.e": {
+      "source": "imersa-office",
+      "sheet": "storage",
+      "rect": [98, 0, 34, 58],
+      "anchor": [1, 28],
+      "scale": 1,
+      "tiles": [1, 1]
+    },
 
-    "table.meeting.s": { "source": "imersa-office", "sheet": "meeting", "rect": [159, 0, 100, 76], "anchor": [2, 20], "scale": 1, "tiles": [3, 2] },
-    "table.meeting.n": { "source": "imersa-office", "sheet": "meeting", "rect": [260, 0, 100, 76], "anchor": [2, 20], "scale": 1, "tiles": [3, 2] },
-    "table.meeting.w": { "source": "imersa-office", "sheet": "meeting", "rect": [0, 0, 68, 110], "anchor": [2, 20], "scale": 1, "tiles": [2, 3] },
-    "table.meeting.e": { "source": "imersa-office", "sheet": "meeting", "rect": [69, 0, 68, 110], "anchor": [2, 20], "scale": 1, "tiles": [2, 3] },
+    "table.meeting.s": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [159, 0, 100, 76],
+      "anchor": [2, 20],
+      "scale": 1,
+      "tiles": [3, 2]
+    },
+    "table.meeting.n": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [260, 0, 100, 76],
+      "anchor": [2, 20],
+      "scale": 1,
+      "tiles": [3, 2]
+    },
+    "table.meeting.w": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [0, 0, 68, 110],
+      "anchor": [2, 20],
+      "scale": 1,
+      "tiles": [2, 3]
+    },
+    "table.meeting.e": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [69, 0, 68, 110],
+      "anchor": [2, 20],
+      "scale": 1,
+      "tiles": [2, 3]
+    },
 
-    "plant.small": { "source": "imersa-office", "sheet": "decor", "rect": [83, 0, 35, 57], "anchor": [1, 31], "scale": 1, "tiles": [1, 1], "note": "pack 'office_plant' front; it ships 4 near-identical views" },
-    "plant.large": { "source": "imersa-office", "sheet": "decor", "rect": [56, 0, 26, 59], "anchor": [-4, 32], "scale": 1, "tiles": [1, 1], "note": "pack 'tall_plant' front; same 1x1 footprint as plant.small" }
+    "plant.small": {
+      "source": "imersa-office",
+      "sheet": "decor",
+      "rect": [83, 0, 35, 57],
+      "anchor": [1, 31],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'office_plant' front; it ships 4 near-identical views"
+    },
+    "plant.large": {
+      "source": "imersa-office",
+      "sheet": "decor",
+      "rect": [56, 0, 26, 59],
+      "anchor": [-4, 32],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'tall_plant' front; same 1x1 footprint as plant.small"
+    }
   },
   "extras": {
     "_doc": "Pack sprites outside style guide §7, kept for later (not packed until a key is added to §7).",
