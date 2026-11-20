@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P0 |
 | Size | M |
 | Areas | db, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-20T04:34Z |
 | PR | — |
 
 ## Goal
@@ -61,6 +61,7 @@ and a readiness route, so the schema ticket can add migrations.
 ## Notes / answers from Ming
 Waiting for Ming: plan approval (High tier) — `work/tickets/SIM-002/plan.md`, incl. its 8 *Decisions for Ming* (defaults apply if approved without comment).
 Orchestrator correction to plan.md: `.env.example` **already exists** (SIM-001, contains `PORT=`). The planner could not see it because `.claude/settings.json` denies `Read(**/.env.*)`, which also matches `.env.example`. The implementer must **add** `DATABASE_URL=` to the existing file, not create/overwrite it.
+Plan approved — 2026-11-20 (Ming, in chat: "approved"; all 8 *Decisions for Ming* take their defaults; no local Docker on this device, so AC 1–3 are proven by the CI run).
 
 ## Handoff
 
