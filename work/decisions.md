@@ -20,3 +20,12 @@ with a new one that names it. Format: `D<n> — YYYY-MM-DD — <decision> — <w
 | D13 | 2026-11-20 | One account may belong to several simap orgs: picker after sign-in and an org switcher in the shell. Answers OQ-35. | (Ming) |
 | D14 | 2026-11-20 | Identity roles: `simap:member` (app-scope default), org-scope `simap:admin` (org owner role), `simap:manager`, `simap:user`; admin and manager hold `simap:org:invite`. Answers OQ-37. | Identity requires owner role ≠ default role (Ming) |
 | D15 | 2026-11-20 | Several simap roles in one org: highest tier wins (Admin > Manager > User). Answers OQ-4. | (Ming) |
+| D16 | 2026-11-20 | Member directory: (a) now — a member appears on the account's first visit; Managers assign only known members; pending invitations sent from simap are listed read-only. (b) later — request an app-facing "list org members" endpoint from org-admin-api and sync from it. Answers OQ-38. | Identity has no app-facing members API yet (Ming) |
+| D17 | 2026-11-20 | Display name: filled by the member on first visit (default: email local part), editable by Managers; an Identity display name becomes the default when available. Answers OQ-39. | Tokens carry only email (Ming) |
+| D18 | 2026-11-20 | Assigning to an occupied seat asks for confirmation, then replaces the occupant and demotes the primary device. Answers OQ-12. | Keep seatMGT behaviour, avoid mistakes (Ming) |
+| D19 | 2026-11-20 | Managers and Admins place, move and return any device of the org; editing/deleting a device is owner or Admin only. Answers OQ-13. | Managers arrange seating (Ming) |
+| D20 | 2026-11-20 | Keep seatMGT's free-form layout editor; floor-plan background image after v1. Answers OQ-14. | Faster port; no file storage yet (Ming) |
+| D21 | 2026-11-20 | Users may request a seat in any room of the org. Answers OQ-9. | Approval already guards it (Ming) |
+| D22 | 2026-11-20 | REG-03 in v1: users release their own seat without approval and return their own devices to inventory. Answers OQ-10. | Releasing carries no risk (Ming) |
+| D23 | 2026-11-20 | Users request seats only for themselves; Managers assign others directly. Answers OQ-11. | (Ming) |
+| D24 | 2026-11-20 | Requesters can cancel pending requests; decisions show in-app ("Yêu cầu của tôi" with a badge), no email. Answers OQ-20. | (Ming) |
