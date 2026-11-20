@@ -90,3 +90,85 @@ None: `security-review.md` Attempt 1 has 0 🔴 (2 🟡: p{Cf}/filler code point
 - Kit/workflow: `ci.yml` does not run on `ticket/*` pushes, so the reviewer cannot get DB evidence before a PR exists;
   either add `workflow_dispatch` / `push` on `ticket/**`, or have `/run` open a draft PR before REVIEW for tickets with
   DB tests.
+
+## Attempt 2 — 2026-11-20
+Verdict: PASS
+
+### Checks (run by reviewer)
+Local run in WSL on `ticket/SIM-007` @ `2e55cb1` (code identical to `80f4215`: `git diff --stat 80f4215 HEAD` touches
+only `impl-log.md` and `ticket.md`).
+- `pnpm format:check`: exit 0, "All matched files use the correct format" (215 files).
+- `pnpm typecheck`: exit 0, tsc clean.
+- `pnpm check:layers`: exit 0, "189 files, no violations".
+- `pnpm test`: exit 0, "Test Files 67 passed (67)". CI log for the same code: "Tests 651 passed (651)", which matches impl-log.
+- `pnpm build`: exit 0.
+- DB checks, verified by the reviewer with `gh` on draft PR #23 (`ticket/SIM-007` → `main`, isDraft true):
+  - Run 44746052478 (ci, head `80f42156…`, code-bearing): conclusion success. Every step passed. Log lines:
+    migrate CLI "applied 20261120150000_init", "applied 20261120190000_members_profile_confirmed_at", "up to date";
+    migrate smoke "migrate smoke ok"; schema check all `pass:` lines; `pnpm test:db`
+    "✓ src/server/members/members.db.test.ts (9 tests)", "Test Files 2 passed (2)", "Tests 20 passed (20)".
+  - Run 44746547944 (ci, head `2e55cb17…`, latest push): conclusion success. Same migrate, smoke, schema-check and
+    test:db lines (members.db.test.ts 9 tests, 20/20 passed). `gh pr checks 23`: ci pass, image pass, tier pass.
+  - Earlier runs 44746497611/44746497663 were cancelled (superseded by the next push), so they don't affect the result.
+- impl-log attempt 2's CI claims match the run data exactly.
+
+### Acceptance criteria
+- [x] AC2 one member per first `/api/me`, even under concurrent calls. Evidence: `members.db.test.ts` › "10 concurrent
+  first calls create one row with one id and one member.create audit row" and › "same sub in two orgs …", green in
+  runs 44746052478 and 44746547944. `route.test.ts` › "GET returns {sub,email,org,tier,member}" green.
+- [x] AC3 (server half) display name required, stored in NFC. Evidence: `member.test.ts` › `normalizeDisplayName` /
+  `validateMePatch` tables. `members.db.test.ts:88` › "setDisplayName stores NFC …" now passes NFD through
+  `normalizeDisplayName` (attempt-1 nit fixed) and is green in CI. `route.test.ts` › invalid/valid PATCH cases.
+- [x] AC5 (part) display-name defaults. Evidence: `member.test.ts` › `defaultDisplayName` cases, plus the new control,
+  format and filler cases (`"\u0007 \u0007@x.vn"` → `"@x.vn"`, `"​a‮b@x.vn"` → `"ab"`, `"\u0007 \u0007"` → `"member"`).
+- [x] S1-a needsProfile survives reloads and a returning member is not asked again. Evidence: `members.db.test.ts` › "second GET …",
+  › "setDisplayName stores NFC and clears needsProfile …" (re-GET asserts `needsProfile` false), › "same name again
+  is a no-op …", all green in CI.
+- [x] S1-b the existing client keeps working. Evidence: `flow.test.ts` › "readMeResult reads tier and email from the SIM-007 body
+  with member", plus typecheck and test green.
+- [x] S1-c migration is forward-only and expand-only. Evidence: the file is a single `add column … null` (read in attempt 1,
+  unchanged). CI "applied 20261120190000_members_profile_confirmed_at", "up to date", migrate smoke ok, schema check
+  passes (every table org_id not null, every FK and unique key includes org_id).
+
+Ming verification after merge (carry into the PR): with a real org token, `GET /api/me` twice → same `member.id`,
+`needsProfile: true`; `PATCH /api/me {"displayName":"Nguyễn Văn A"}` → 200, `needsProfile: false`; `audit_log` has
+one `member.create` and one `member.update` row for that `sub`.
+
+### Re-check of attempt-1 items
+- Issue 1 (🔴 DB evidence): resolved (see Checks).
+- Nit NFC test: fixed (`members.db.test.ts:93` uses `normalizeDisplayName(nfd)!`).
+- Nit `\p{Cf}`: fixed together with security 🟡 1 (below).
+- Nit `rows: any[]` in `members.ts:8`: left as is. impl-log explains that `orgQuery<R>` needs `rows: R[]` for varying R. This is acceptable.
+- Security 🟡 1: fixed. `src/lib/validate/member.ts:12-15,24` rejects `[\p{Cc}\p{Cf}]`, the fillers U+115F, U+1160,
+  U+3164 and U+FFA0 (the literal characters in the regex source), and requires one `\p{L}|\p{N}|\p{S}|\p{P}`. Tests reject
+  `"​"`, `"a‮b"`, `"ㅤ"`, `"́"` and `"a‍b"`.
+- Security 🟡 2: fixed. `member.ts:31,34` strips the invisible set before `clean`, and the fallback falls back to `"member"`
+  unless the result has a visible character, so the result can't be blank and can't hit `members_display_name_check`.
+  `members.ts:15,84` (`ensure` and `getOrCreateMember`) treat a whitespace-only email as no email, so the result is
+  403 with no insert. Evidence: `members.db.test.ts` › "no email and no row …" now asserts `who("  ")` → 403 and 0 members,
+  green in CI.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1: `check:layers` clean, and the DB test imports `@/lib/validate/member` (server test → lib is allowed).
+R2: there is still one forward-only, expand-only migration. R4: the attempt-2 code changes only touch `member.ts`, `member.test.ts`,
+`members.ts` and `members.db.test.ts`, all in the plan's file list. Out-of-plan files: none. R5: all checks are green,
+including the DB checks in CI. R6: unchanged since attempt 1.
+
+### Blockers from review agents
+
+### Nits (do not block)
+- `normalizeDisplayName` now rejects every `\p{Cf}`, including ZWJ and ZWNJ. Emoji ZWJ sequences (e.g. family emoji) and
+  scripts that need ZWNJ (Persian, some Indic) can't be used in a display name. impl-log states this as a deliberate choice. Note it
+  for SIM-011 (Manager edit) and the UI copy, so the error message doesn't confuse users.
+- `ensure` inserts `who.email` without trimming, so the whitespace check covers only whitespace-only emails. Emails padded
+  with spaces are stored as given. Identity emails are not expected to be padded, so this is cosmetic.
+
+### Follow-ups (out of scope)
+- Same as attempt 1: email refresh on later visits (A4); SIM-011 reuses `normalizeDisplayName`, keeps the
+  `profile_confirmed_at` semantics and blocks deactivated members in `memberGate`. Possible later DB guard on
+  `char_length(display_name) <= 80`.
+- Kit/workflow: getting DB evidence through a draft PR worked. Making that the standard `/run` step before REVIEW
+  for tickets with DB tests is still open (attempt-1 follow-up).
