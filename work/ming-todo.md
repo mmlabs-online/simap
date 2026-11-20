@@ -18,3 +18,4 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [ ] M-4 Run the org-admin-api request for an app-facing org members read and remove-from-org (prompt in
   `docs/requests/org-admin-api-org-members.md`). Blocks SIM-020. (D16, D34)
 - [x] M-5 (2026-11-20) Approve plan for SIM-002: `work/tickets/SIM-002/plan.md` (High tier; 8 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [ ] M-6 Before the first production `migrate` (SIM-021): run `select version();` on the shared Postgres and confirm it is 13 or newer (`gen_random_uuid()` is built in), and that the `simap` role owns the `simap` database (it creates tables, functions and triggers). (SIM-008)
