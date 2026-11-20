@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/21 |
 
 ## Goal
 Members see the room list with occupancy; Admins create, edit and delete rooms from the Rooms page; slice B of the approved SIM-010 plan.
@@ -41,9 +41,17 @@ Members see the room list with occupancy; Admins create, edit and delete rooms f
 
 ## Notes / answers from Ming
 - 2026-11-20 (batch 2026-11-20-2): created from the split Ming approved ("duyệt hết; câu 20 tách 3 phần; … còn lại theo đề xuất").
+- Plan approved (2026-11-20, batch 2026-11-20-4): "duyệt hết theo đề xuất" — every proposal in the batch round taken.
+- Merge approved (2026-11-20, batch 2026-11-20-4): "bật --auto-merge".
 
 ## Handoff
 
 ### 2026-11-20 — claude — BACKLOG (board update, D47)
 - Done: Out of scope now points at SIM-012 instead of the blocked SIM-015.1 (D47); clean UI kit only.
 - Next: unchanged; runs after SIM-010 and SIM-006.2.
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 4, ~245k tokens (frontend-developer×1 45k, planner×1 85k, implementer×1 57k, reviewer×1 58k; default models)
+- Done: Rooms page UI (cards, occupancy ring, create/edit/delete dialogs, uppercase code input); review PASS attempt 1; PR https://github.com/mmlabs-online/simap/pull/21
+- In progress / next: batch 2026-11-20-4 --auto-merge: merge after green CI (Medium, merge approved); Ming manual check on /rooms after merge
+- Gotchas: ticket branch synced with main by merge (not rebase) to avoid force-pushing already-pushed commits
