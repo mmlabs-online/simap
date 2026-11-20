@@ -2,13 +2,13 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, architecture |
 | Gate | none |
 | Depends on | SIM-003 |
-| Needs Ming | — |
+| Needs Ming | Lift D47 (map work waits) |
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
