@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -44,7 +44,7 @@ spec LAY-01, LAY-02, LAY-03, LAY-05, SEA-01; D20.
 - Manual: edit and save a room with 20+ seats.
 
 ## Notes / answers from Ming
-—
+- 2026-11-20 (D47): BLOCKED — waiting for pixel-art decisions (D41–D46). Do not start until Ming lifts it; the map tickets bring the tile-grid model and are re-scoped then.
 
 ## Change from Ming (2026-11-20, D43)
 Supersedes the free-form editor above: the editor places sprites on whole tiles, rotates in 4 directions, no resize,
@@ -52,3 +52,7 @@ no free snap; palette of sprites from the manifest; multi-select moves by whole 
 seatMGT's `LayoutEditor` is now reference only.
 
 ## Handoff
+
+### 2026-11-20 — claude — BLOCKED (board update, D47)
+- Done: set BLOCKED on Ming's instruction (2026-11-20): the room map becomes pixel art; art style and tile size are not decided (D41–D46 on branch `claude/confident-cerf-67q5le`).
+- Next: wait for Ming; re-scope against D41–D46 before planning. Seat add/delete without the map moved to SIM-012.

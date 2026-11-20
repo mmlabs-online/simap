@@ -1,4 +1,4 @@
-# SIM-018: CSV export and layout image export
+# SIM-018: CSV export
 
 | Field | Value |
 |---|---|
@@ -7,7 +7,7 @@
 | Size | S |
 | Areas | api, ui |
 | Gate | none |
-| Depends on | SIM-017, SIM-015.2 |
+| Depends on | SIM-017 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
@@ -15,17 +15,17 @@
 | PR | — |
 
 ## Goal
-Managers export the org's lists for Excel, and anyone can save a room layout as an image.
+Managers export the org's lists for Excel.
 
 ## Scope reference
 spec DSH-02 export; D27.
 
 ## Scope
 - CSV (UTF-8 with BOM) for seats with occupants, devices, members (Manager+).
-- Room layout PNG export from the room view (client-side), if feasible (Should).
 
 ## Out of scope
 - `.xlsx`.
+- Room layout PNG export (D27 "if feasible"): follow-up, do not build (D47); comes with the map tickets.
 
 ## Acceptance criteria
 - [ ] CSV opens in Excel with correct Vietnamese characters in names.
@@ -34,14 +34,18 @@ spec DSH-02 export; D27.
 - [ ] Unit tests cover CSV escaping.
 
 ## Technical notes
-- Files: `src/server/export/*`, `src/app/api/export/*`, `src/ui/roomlayout/exportPng*`.
-- Risks / open questions: PNG export of the canvas may need a small library; keep it optional.
+- Files: `src/server/export/*`, `src/app/api/export/*`.
+- Risks / open questions: —
 
 ## Test plan
 - Unit: CSV escaping.
-- Manual: open the CSV in Excel; save a PNG.
+- Manual: open the CSV in Excel.
 
 ## Notes / answers from Ming
-—
+- 2026-11-20 (D47): CSV only; layout PNG export stays a follow-up.
 
 ## Handoff
+
+### 2026-11-20 — claude — BACKLOG (board update, D47)
+- Done: scope cut to CSV export; PNG export moved to Out of scope as a follow-up; dependency on SIM-015.2 removed.
+- Next: runs after SIM-017.

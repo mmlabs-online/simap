@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui |
@@ -44,7 +44,7 @@ spec LAY (Room view), LAY-03, SEA-02; D20.
 - Manual: view a seeded room on mobile and desktop.
 
 ## Notes / answers from Ming
-—
+- 2026-11-20 (D47): BLOCKED — waiting for pixel-art decisions (D41–D46). Do not start until Ming lifts it; the map tickets bring the tile-grid model and are re-scoped then.
 
 ## Change from Ming (2026-11-20, D41–D44)
 Supersedes the free-form parts above. The room view is **pixel-art on a 32 px tile grid** (D48; style D46, name tags on hover D50) drawn from a sprite atlas +
@@ -57,3 +57,7 @@ manifest (spec LAY "Visual style", LAY-06):
 - Depends on the sprite-atlas ticket (placeholder art is enough; final art per OQ-40).
 
 ## Handoff
+
+### 2026-11-20 — claude — BLOCKED (board update, D47)
+- Done: set BLOCKED on Ming's instruction (2026-11-20): the room map becomes pixel art; art style and tile size are not decided (D41–D46 on branch `claude/confident-cerf-67q5le`).
+- Next: wait for Ming; re-scope against D41–D46 before planning. Seat add/delete without the map moved to SIM-012.

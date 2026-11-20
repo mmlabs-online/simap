@@ -7,7 +7,7 @@
 | Size | M |
 | Areas | api, ui, security |
 | Gate | none |
-| Depends on | SIM-006, SIM-008 |
+| Depends on | SIM-006.2, SIM-008 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
