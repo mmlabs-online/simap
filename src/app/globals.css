@@ -1,1 +1,342 @@
 @import "tailwindcss";
+
+/* ============================================================
+   Token layer ported from seatMGT (light SaaS look, orange accent).
+   Token names are preserved so every component reads one central source.
+   Canvas #F6F6F5, surface cards, solid pill CTAs, orange punctuates.
+   The dark block below is new design work (seatMGT has no real dark theme).
+   Theme is set by <html data-theme="light|dark"> (see src/lib/theme.ts).
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* ---- accent + status (orange punctuates; status pairs with a label) ---- */
+  --accent-orange: #fb5729;
+  --accent-orange-soft: #fff1ec;
+  --on-accent: #ffffff;
+  --status-online: #16a34a;
+  --status-warn: #4fb0e5;
+  --status-alert: #dc2626;
+
+  /* focus / accent rings (derived from the orange accent) */
+  --focus-ring: color-mix(in srgb, var(--accent-orange) 22%, transparent);
+  --field-focus: color-mix(in srgb, var(--accent-orange) 15%, transparent);
+  --accent-shadow: color-mix(in srgb, var(--accent-orange) 30%, transparent);
+
+  /* ---- primary = solid pill (buttons, selected ring) ---- */
+  --primary: #1c1c1c;
+  --on-primary: #ffffff;
+  --primary-container: #fb5729;
+  --on-primary-container: #ffffff;
+
+  /* ---- secondary = neutral (tonal chips/buttons) ---- */
+  --secondary: #6b6b6b;
+  --secondary-container: #f0f0ef;
+  --on-secondary-container: #1c1c1c;
+
+  /* ---- tertiary = soft blue accent ---- */
+  --tertiary: #4fb0e5;
+  --tertiary-container: #e7f3fa;
+  --on-tertiary-container: #0e5e82;
+
+  /* ---- error = red ---- */
+  --error: #dc2626;
+  --error-container: #fdecec;
+  --on-error-container: #7f1d1d;
+
+  /* ---- base + surfaces ---- */
+  --background: #f6f6f5;
+  --on-background: #1c1c1c;
+  --surface: #ffffff;
+  --on-surface: #1c1c1c;
+  --on-surface-variant: #6b6b6b;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #ffffff;
+  --surface-container: #f6f6f5;
+  --surface-container-high: #f0f0ef;
+  --surface-container-highest: #ececec;
+
+  /* ---- hairline borders ---- */
+  --outline: #dadada;
+  --outline-variant: #ececec;
+
+  --inverse-surface: #1c1c1c;
+  --inverse-on-surface: #ffffff;
+  --inverse-primary: #fb5729;
+
+  --scrim: rgba(28, 28, 28, 0.32);
+  --shadow: rgba(0, 0, 0, 0.06);
+  --shadow-strong: rgba(0, 0, 0, 0.16);
+
+  --grid-line: rgba(0, 0, 0, 0.045);
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.1);
+
+  /* type scale */
+  --text-hero: 80px;
+  --text-h2: 30px;
+  --text-body: 16px;
+  --text-small: 14px;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --accent-orange-soft: #3a1d14;
+
+  --primary: #ececec;
+  --on-primary: #161616;
+
+  --secondary: #a3a3a3;
+  --secondary-container: #232323;
+  --on-secondary-container: #ececec;
+
+  --tertiary: #4fb0e5;
+  --tertiary-container: #10324a;
+  --on-tertiary-container: #a8d8f2;
+
+  --error: #f87171;
+  --error-container: #3b1414;
+  --on-error-container: #fecaca;
+
+  --background: #0f0f0f;
+  --on-background: #ececec;
+  --surface: #161616;
+  --on-surface: #ececec;
+  --on-surface-variant: #a3a3a3;
+  --surface-container-lowest: #121212;
+  --surface-container-low: #161616;
+  --surface-container: #1b1b1b;
+  --surface-container-high: #232323;
+  --surface-container-highest: #2c2c2c;
+
+  --outline: #3a3a3a;
+  --outline-variant: #2a2a2a;
+
+  --inverse-surface: #ececec;
+  --inverse-on-surface: #1c1c1c;
+
+  --scrim: rgba(0, 0, 0, 0.6);
+  --shadow: rgba(0, 0, 0, 0.5);
+  --shadow-strong: rgba(0, 0, 0, 0.6);
+
+  --grid-line: rgba(255, 255, 255, 0.06);
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.6);
+}
+
+/* Class-based dark variant for later tickets: `dark:` utilities follow data-theme. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* Map tokens into Tailwind's theme so every color/radius/font is a utility. */
+@theme inline {
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary-container: var(--on-primary-container);
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary-container: var(--on-secondary-container);
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+  --color-error: var(--error);
+  --color-error-container: var(--error-container);
+  --color-on-error-container: var(--on-error-container);
+  --color-background: var(--background);
+  --color-on-background: var(--on-background);
+  --color-surface: var(--surface);
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-surface-lowest: var(--surface-container-lowest);
+  --color-surface-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-high: var(--surface-container-high);
+  --color-surface-highest: var(--surface-container-highest);
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-orange-soft: var(--accent-orange-soft);
+  --color-status-online: var(--status-online);
+  --color-status-warn: var(--status-warn);
+  --color-status-alert: var(--status-alert);
+
+  /* type: Manrope covers Latin and Vietnamese (loaded in layout.tsx). */
+  --font-sans: var(--font-manrope), -apple-system, system-ui, sans-serif;
+  --font-heading: var(--font-manrope), system-ui, sans-serif;
+  --font-mono: var(--font-manrope), ui-sans-serif, sans-serif;
+
+  --radius-md3-sm: 10px;
+  --radius-md3: 12px;
+  --radius-md3-lg: 16px;
+  --radius-md3-xl: 20px;
+
+  --ease-md3: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--on-surface);
+  font-family: var(--font-manrope), -apple-system, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s var(--ease-md3);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-manrope), system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+.font-heading {
+  font-family: var(--font-manrope), system-ui, sans-serif;
+}
+
+.text-hero {
+  font-size: var(--text-hero);
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+.text-h2 {
+  font-size: var(--text-h2);
+  line-height: 1.15;
+}
+
+/* Material Symbols icon face (loaded via <link> in layout head). */
+.i {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+.i.f {
+  font-variation-settings: "FILL" 1;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-container-highest);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--outline);
+  background-clip: content-box;
+}
+
+/* Status dot (always accompanied by a text label in the markup). */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.status-dot.online {
+  background: var(--status-online);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-online) 15%, transparent);
+}
+.status-dot.warn {
+  background: var(--status-warn);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-warn) 18%, transparent);
+}
+.status-dot.alert {
+  background: var(--status-alert);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-alert) 15%, transparent);
+}
+
+/* ---- Motion (fast ease-out) ---- */
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes popin {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Native <dialog> scrim (EntityFormDialog). */
+dialog::backdrop {
+  background: var(--scrim);
+  animation: fadein 0.18s ease;
+}
+
+/* ---- state layer + focus ring (shared by every primitive) ---- */
+.state-layer {
+  position: relative;
+  isolation: isolate;
+}
+.state-layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.14s var(--ease-md3);
+  pointer-events: none;
+  z-index: 0;
+}
+.state-layer:hover::after {
+  opacity: 0.06;
+}
+.state-layer:active::after {
+  opacity: 0.1;
+}
+.state-layer > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --primary inverts in dark, so the ring stays visible in both themes. */
+:where(button, a, [tabindex], input, select, summary):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Honor reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
