@@ -32,4 +32,9 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [ ] M-9 Pixel art, phase 1 (D45, D53): pick 1 main free pack (+1 backup) from `docs/art/asset-candidates.md`, check
   its licence (screenshot to `assets/art/licences/`, row in `assets/art/CREDITS.md`), and put the pack's original
   sheet PNG(s) in `assets/art/sources/<pack>/`. No cutting or recolouring: Claude writes `assets/art/sprite-map.json`
-  from the sheets. About half a day. Phase 2 (recolour to the palette, draw missing sprites) later, no deadline.
+  from the sheets. About half a day. Phase 2 (recolour to the palette, draw missing sprites) later, no deadline.- [ ] M-10 Art sources in a public repo (on hold, Ming 2026-11-20): the Imersa "Office Pixel Art" licence forbids
+  redistributing the asset files, and `mmlabs-online/simap` is public, so `assets/art/sources/imersa-office/` is
+  git-ignored for now (copy steps in `assets/art/CREDITS.md`). Decide later: keep ignored, make the repo private, or ask
+  Imersa Studios whether the original free sheets may sit in a public source repo (draft question in the 2026-11-20
+  art report). Until then, CI and other machines cannot cut the Imersa sprites; the packing script (SIM-024) must fall
+  back to placeholders when a source sheet is missing.
