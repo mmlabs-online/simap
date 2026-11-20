@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P0 |
 | Size | M |
 | Areas | architecture, security |
@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — open from https://github.com/mmlabs-online/simap/pull/new/ticket/SIM-001 (`gh` missing on this device) |
+| PR | https://github.com/mmlabs-online/simap/pull/5 |
 
 ## Goal
 Give simap a running Next.js (App Router) project with the tudocuatui tooling and green CI checks, so every later
