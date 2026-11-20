@@ -9,8 +9,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | ID | Title | State | Priority | Size | Areas | Depends on | Gate | Attempts | Updated |
 |---|---|---|---|---|---|---|---|---|---|
 | SIM-001 | Scaffold the Next.js app, tooling and CI | MERGED | P0 | M | architecture, security | — | plan-approval | 1 | 2026-11-20 |
-| SIM-002 | Database client, tudocuatui migrator and readiness | DONE | P0 | M | db, security | SIM-001 | plan-approval | 0 | 2026-11-20 |
-| SIM-003 | App shell and UI kit ported from seatMGT | BACKLOG | P1 | M | ui, ux | SIM-001 | none | 0 | 2026-11-20 |
+| SIM-002 | Database client, tudocuatui migrator and readiness | MERGED | P0 | M | db, security | SIM-001 | plan-approval | 0 | 2026-11-20 |
+| SIM-003 | App shell and UI kit ported from seatMGT | PLANNING | P1 | M | ui, ux | SIM-001 | none | 0 | 2026-11-20 |
 | SIM-004 | Production image and tudocuatui-style deploy | BACKLOG | P1 | M | architecture, security | SIM-002 | plan-approval | 0 | 2026-11-20 |
 | SIM-005 | Verify Identity tokens on the server and guard /api routes | BACKLOG | P0 | M | security, api, architecture | SIM-001 | plan-approval | 0 | 2026-11-20 |
 | SIM-008 | v1 database schema | BACKLOG | P0 | M | db, security | SIM-002 | plan-approval | 0 | 2026-11-20 |
