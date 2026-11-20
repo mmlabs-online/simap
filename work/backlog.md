@@ -18,9 +18,9 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-022 | Switch UI copy to English by default | MERGED | P1 | S | ui | SIM-003 | none | 1 | 2026-11-20 |
 | SIM-006 | Browser sign-in with mmlabs Identity | MERGED | P0 | M | security, ui | SIM-003, SIM-005 | plan-approval | 0 | 2026-11-20 |
 | SIM-010 | Rooms: CRUD, seat codes and room list | MERGED | P1 | M | api, ui, db | SIM-003, SIM-005, SIM-008 | none | 0 | 2026-11-20 |
-| SIM-025 | Fix rooms API security findings (streamed body cap, delete lock order) | IN_PROGRESS | P1 | S | security, api | SIM-010 | none | 0 | 2026-11-20 |
-| SIM-026 | Run service SQL against Postgres in CI (DB integration tests) | PLANNING | P1 | M | db, security | SIM-010 | none | 0 | 2026-11-20 |
-| SIM-006.2 | Sign-in gate UI (AuthGate, sign-in screen, /sign-in) | IN_PROGRESS | P0 | M | security, ui | SIM-006, SIM-022 | none | 0 | 2026-11-20 |
+| SIM-025 | Fix rooms API security findings (streamed body cap, delete lock order) | DONE | P1 | S | security, api | SIM-010 | none | 0 | 2026-11-20 |
+| SIM-026 | Run service SQL against Postgres in CI (DB integration tests) | DONE | P1 | M | db, security | SIM-010 | none | 0 | 2026-11-20 |
+| SIM-006.2 | Sign-in gate UI (AuthGate, sign-in screen, /sign-in) | DONE | P0 | M | security, ui | SIM-006, SIM-022 | none | 0 | 2026-11-20 |
 | SIM-010.2 | Rooms page UI: cards, occupancy ring, create/edit/delete dialogs | BACKLOG | P1 | M | ui | SIM-010, SIM-006.2, SIM-022 | none | 0 | 2026-11-20 |
 | SIM-006.3 | Account pages: sign-up, verify email, forgot and reset password | BACKLOG | P1 | M | security, ui | SIM-006.2 | none | 0 | 2026-11-20 |
 | SIM-007 | Org picker, org switcher and first-visit member profile | BACKLOG | P0 | M | api, ui, security | SIM-006.2, SIM-008 | none | 0 | 2026-11-20 |
@@ -30,7 +30,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-013 | Devices | BACKLOG | P1 | M | api, ui | SIM-012 | none | 0 | 2026-11-20 |
 | SIM-014 | Seat requests and approvals | BACKLOG | P1 | M | api, ui, ux | SIM-012 | none | 0 | 2026-11-20 |
 | SIM-016 | Groups, projects and seat tags | BACKLOG | P2 | S | api, ui | SIM-012 | none | 0 | 2026-11-20 |
-| SIM-019 | Audit-log screen for org admins | IN_PROGRESS | P2 | S | api, ui | SIM-010 | none | 0 | 2026-11-20 |
+| SIM-019 | Audit-log screen for org admins | DONE | P2 | S | api, ui | SIM-010 | none | 0 | 2026-11-20 |
 | SIM-019.2 | Audit-log page UI for org admins | BACKLOG | P2 | S | ui | SIM-019, SIM-006.2, SIM-022 | none | 0 | 2026-11-20 |
 | SIM-017 | Dashboard and search | BACKLOG | P2 | M | api, ui | SIM-013, SIM-014 | none | 0 | 2026-11-20 |
 | SIM-018 | CSV export | BACKLOG | P2 | S | api, ui | SIM-017 | none | 0 | 2026-11-20 |
