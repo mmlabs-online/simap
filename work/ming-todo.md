@@ -15,3 +15,5 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [ ] M-3 Shared Postgres: create database and role `simap`; put the password where the deployment repo's deploy job
   reads it (as tudocuatui). Before the first deploy. (D3)
 - [x] M-4 (2026-11-20) Approve plan for SIM-001: `work/tickets/SIM-001/plan.md` (High tier; 9 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [ ] M-4 Run the org-admin-api request for an app-facing org members read and remove-from-org (prompt in
+  `docs/requests/org-admin-api-org-members.md`). Blocks SIM-020. (D16, D34)
