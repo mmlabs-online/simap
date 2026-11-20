@@ -33,6 +33,12 @@ D48, D50, D51, D52. Blocked for now by D47 (map work waits) until Ming lifts it.
 - Layered avatar compositor (body/hair/shirt by hash of `sub`, front/back views).
 - State overlays and HTML name tags on hover/focus (style guide §6).
 - A dev-only demo page that renders a sample room from fixture data (no API).
+- Packing script `pnpm sprites:pack`: reads `assets/art/export/*.png` (export convention, style guide §8), computes
+  anchors from the canvas size, and writes `public/sprites/office.png` + `office.json`; fails on unknown keys or wrong
+  canvas sizes. Placeholder art is produced into the same folder first, then packed the same way.
+- The packing script also reads `assets/art/sprite-map.json` (style guide §0, §8b): cuts each key's rect from its
+  source sheet, scales it with nearest-neighbour, bottom-aligns it in the export canvas and packs it. Priority per key:
+  `export/<key>.png` > sprite map > code-drawn placeholder. Missing keys fall back to the placeholder.
 
 ## Out of scope
 - Layout API and DB columns (SIM-015.1). Editor (SIM-015.2). Final art (Ming, M-9).

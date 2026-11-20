@@ -12,3 +12,6 @@ out/
 next-env.d.ts
 *.tsbuildinfo
 .claude/settings.local.json
+
+# Third-party art sheets whose licence forbids redistribution (assets/art/CREDITS.md)
+assets/art/sources/imersa-office/
