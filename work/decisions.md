@@ -29,3 +29,13 @@ with a new one that names it. Format: `D<n> — YYYY-MM-DD — <decision> — <w
 | D22 | 2026-11-20 | REG-03 in v1: users release their own seat without approval and return their own devices to inventory. Answers OQ-10. | Releasing carries no risk (Ming) |
 | D23 | 2026-11-20 | Users request seats only for themselves; Managers assign others directly. Answers OQ-11. | (Ming) |
 | D24 | 2026-11-20 | Requesters can cancel pending requests; decisions show in-app ("Yêu cầu của tôi" with a badge), no email. Answers OQ-20. | (Ming) |
+| D25 | 2026-11-20 | No Viewer tier in v1. Answers OQ-8. | `simap:user` is already mostly read-only (Ming) |
+| D26 | 2026-11-20 | Keep the per-seat "không xếp chỗ" flag with a reason; it blocks assignment and requests; status stays derived. Answers OQ-15. | (Ming) |
+| D27 | 2026-11-20 | CSV export (seats with occupants, devices, members) for Manager+; room layout export as PNG if feasible in v1. Answers OQ-16. | (Ming) |
+| D28 | 2026-11-20 | Audit-log screen for org Admins (filter by actor, entity type, date). Answers OQ-17. | (Ming) |
+| D29 | 2026-11-20 | Room code is editable; unique within the org; changing it regenerates the room's seat codes in one transaction. Answers OQ-18. | (Ming) |
+| D30 | 2026-11-20 | Seat numbers are never reused (per-room counter). Answers OQ-19. | Printed labels and audit history (Ming) |
+| D31 | 2026-11-20 | A placed device cannot be deleted: warn, offer "move to inventory", then allow delete. Answers OQ-21. | (Ming) |
+| D32 | 2026-11-20 | On assign, a seat with no group takes the occupant's group (editable). Answers OQ-26. | (Ming) |
+| D33 | 2026-11-20 | Sign-in page links to Identity sign-up/forgot-password and shows "continue as" for accounts on this browser. Answers OQ-29. | Same as other mmlabs apps (Ming) |
+| D34 | 2026-11-20 | Members are never deleted in simap: Manager+ deactivate (simap-local) or an Admin removes them from the org; only the admin portal deletes accounts. Unused-group/project delete warns and clears tags. Removing from the org needs a new Identity endpoint (add to the org-admin-api request). Answers OQ-30. | Accounts belong to the shared user service (Ming) |
