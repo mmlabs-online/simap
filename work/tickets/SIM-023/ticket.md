@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P0 |
 | Size | S |
 | Areas | security |
@@ -61,6 +61,6 @@ server. Must land before SIM-007 / SIM-010 add org queries.
 - Manual: none (schema-check refusal is a unit-level or scripted check).
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-2) — Ming: "duyệt hết … còn lại theo đề xuất": questions 1–9 take their defaults.
 
 ## Handoff
