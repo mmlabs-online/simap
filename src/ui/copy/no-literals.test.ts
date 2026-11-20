@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 const ROOT = process.cwd();
 const PROPS =
   "aria-label|title|placeholder|alt|label|subtitle|submitLabel|cancelLabel|emptyText|description";
-const JSX_TEXT = />([^<>{}();=\n]*\p{L}[^<>{}();=]*)</gu;
+const JSX_TEXT = />([^<>{}();=]*\p{L}[^<>{}();=]*)</gu;
 const PROP_LITERAL = new RegExp(`\\b(?:${PROPS})=(?:"[^"]*"|'[^']*')`);
 
 function findLiterals(source: string): string[] {
@@ -35,6 +35,7 @@ describe("copy rules", () => {
   it("components contain no user-facing literals", () => {
     expect(findLiterals("<p>Hello</p>")).toEqual(["Hello"]);
     expect(findLiterals('<a aria-label="Hi" />')).toEqual(['aria-label="Hi"']);
+    expect(findLiterals("<b>\n  Hello\n</b>")).toEqual(["Hello"]);
     expect(findLiterals("<p>{shellCopy.x}</p>")).toEqual([]);
     expect(findLiterals('<a aria-label="Hi" /> // copy-ok: fixture')).toEqual([]);
 

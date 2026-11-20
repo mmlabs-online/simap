@@ -33,3 +33,22 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No.
 - Diff size: about +114 / -83 lines tracked, plus two new files.
+
+## Attempt 2 — 2026-11-20 (REWORK, review Attempt 1 Issue 1)
+
+### Files touched
+| File | Required because |
+|---|---|
+| `src/ui/copy/no-literals.test.ts` | `JSX_TEXT` leading class no longer excludes `\n`, so own-line JSX text is caught; self-check `<b>\n  Hello\n</b>` added |
+
+### Checks
+- format:check, typecheck, check:layers (74 files, no violations), test, build: all exit 0 (test counts below in the report)
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+None new.
+
+### Scope self-check
+- Smaller diff possible? No (+2/-1 lines).
