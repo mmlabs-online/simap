@@ -48,3 +48,28 @@ Local Node v24.20.0 (engines wants 22); pnpm resolves to 10.34.9 via corepack/pa
 ### Scope self-check
 - Could the diff be smaller? No.
 - Diff size: see `git show --stat` (config/docs plus ~100-line guard script and tests; lockfile excluded).
+
+## Attempt 2 — 2026-11-20 (REWORK)
+### Files touched
+- `.gitattributes` (new): `* text=auto eol=lf` — Issue 1 (CRLF checkout broke `format:check`). Index was already LF; `git add --renormalize .` changed nothing else.
+- `next.config.ts`: `agentRules: false` — Issue 2.
+- `CLAUDE.md`: line 24 `pnpm start` limit stated (Issue 3); "Start here" paragraph refreshed (nit).
+- `.claude/loop.config.md`: stale "TODO until the scaffold ticket" header reworded (nit).
+- Deleted the untracked local `AGENTS.md` (Next-generated).
+
+### Checks (fresh `git clone -b ticket/SIM-001` of local repo into scratchpad, default Git for Windows `core.autocrlf=true`, 0 files with CRLF in working tree)
+- install --frozen-lockfile: exit 0
+- format:check: exit 0, "All matched files use the correct format." (16 files)
+- typecheck: exit 0; check:layers: `9 files, no violations`; test: `11 passed (11)`; build: exit 0, `.next/standalone/server.js` exists
+- `next dev` on the clean clone: `/api/healthz` 200, `git status` clean, no `AGENTS.md` created.
+
+### Out-of-plan files
+- `.gitattributes` (required by AC1).
+
+### Follow-ups
+- Ming: add the spaceM thin `AGENTS.md` for simap; optionally re-enable `agentRules` (Next upserts only its marked block).
+- SIM-004: copy `.next/static` (and `public/` once it exists) into the standalone image.
+- Debt issues (no `gh` here): loop.config Domain focus "migrations reversible" vs D3; Domain focus spec-edge-case TODO; local Node 24 vs pinned 22 (suggest `mise`).
+
+### Scope self-check
+- Only review-listed issues (plus two trivial wording nits) changed.
