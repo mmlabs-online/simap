@@ -21,6 +21,7 @@ SIM-002 and the spec fill them.**
 - `pnpm install --frozen-lockfile`
 - Tests need no database. For `pnpm migrate` / readiness locally: `docker compose -f compose.dev.yml up -d`.
   Tickets that change `db/migrations` also run `pnpm schema:check` against that database (not in Checks: it needs one).
+  `pnpm test:db` (DB integration tests, throwaway database) needs one too and runs in CI.
 
 ## Checks
 | Check | Command |
@@ -29,6 +30,7 @@ SIM-002 and the spec fill them.**
 | lint / typecheck | `pnpm typecheck && pnpm check:layers` |
 | test | `pnpm test` |
 | build | `pnpm build` |
+| db integration (CI-only, needs Postgres) | `pnpm test:db` |
 
 Bug test level: Vitest unit test; a one-off scripted check recorded in
 impl-log when that level cannot see the bug.
