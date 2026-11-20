@@ -45,6 +45,7 @@ spec ROO-01, ROO-02, SYS-02, SYS-03; D29, D30.
 - Manual: create/rename/delete rooms as Admin and as User.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-20, batch 2026-11-20-2) — Ming: "duyệt hết … còn lại theo đề xuất". Q21: split — this ticket = Slice A (API); Slice B → SIM-010.2 (Rooms UI). Q22: uppercase room codes (already in plan). Others take their defaults. Build only after SIM-023 is merged (uses ctx.scope).
 - 2026-11-20 (batch 2026-11-20-2, Q22): Ming: room codes are always uppercase; the input uppercases as the user types and the server stores uppercase. Plan to be revised; plan approval still pending.
 
 ## Handoff
