@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T04:52Z |
-| PR | — |
+| Claimed by | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-003) |
 
 ## Goal
 Give simap seatMGT's look: the UI kit and an app shell with role-aware navigation, light/dark theme and Vietnamese
@@ -64,3 +64,9 @@ copy, so feature tickets only add page content.
 —
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 7, tokens ~430k total (frontend-developer×1 sonnet 45k; ux-architect×1 sonnet 37k; planner×1 opus 98k; implementer×2 sonnet 103k+31k; reviewer×2 opus 89k + sonnet 24k; in/out split not reported)
+- Done: plan READY (Gate none, no High path); attempt 1 REWORK (role badge shown below 1024 px — `hidden` overridden by RoleBadge's `inline-flex`, inherited from seatMGT); attempt 2 PASS. Branch pushed.
+- In progress / next: Ming opens the PR, does the manual visual/keyboard/theme checks listed in review.md, merges.
+- Gotchas: agents have no browser — visual ACs are code-level only; a reviewer dev server on port 3137 in the scratchpad clone may still be running (its stop command was denied); seatMGT `ming_dev` checked out locally.
