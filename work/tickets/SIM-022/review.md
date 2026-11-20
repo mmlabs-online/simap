@@ -64,3 +64,32 @@ None.
 ### Follow-ups (out of scope)
 - Consider an AST-based literal check (e.g. TypeScript compiler API over `JsxText` nodes) if the regex heuristic
   produces gaps or false positives as features land.
+
+## Attempt 2 — 2026-11-20
+Verdict: PASS
+
+### Checks (run by reviewer)
+Local env: Windows, Node 24 (`--config.engine-strict=false`); CI uses Node 22.
+- `pnpm format:check` — exit 0 (96 files)
+- `pnpm typecheck` — exit 0
+- `pnpm check:layers` — exit 0, "74 files, no violations"
+- `pnpm test` — exit 0, "Test Files 28 passed (28); Tests 183 passed | 3 skipped (186)"
+- `pnpm build` — exit 0
+
+### Issue 1 (attempt 1) — resolved
+- Fix commit `b05d574` changes only `src/ui/copy/no-literals.test.ts` (plus impl-log): `JSX_TEXT` is now
+  `/>([^<>{}();=]*\p{L}[^<>{}();=]*)</gu` (the `\n` exclusion is dropped) and the self-check
+  `findLiterals("<b>\n  Hello\n</b>")` equals `["Hello"]` is added (line 38).
+- The test `components contain no user-facing literals` passes, so the self-check holds and the scan over `src/ui` and
+  `src/app` (non-test `.tsx`, excluding `src/app/api`) yields `offenders = []`: no false positives.
+- Independent probe: the new regex over `origin/main`'s `KitGallery.tsx` finds `Viền` (the own-line case missed in attempt 1).
+- Working tree clean after the checks; no other code changed since attempt 1; scope and rules findings from attempt 1 stand.
+
+### Acceptance criteria
+All met (the literal-enforcement criterion is now backed by a working test; the others are unchanged from attempt 1).
+
+### Nits (do not block)
+- Attempt 1 nits stand (heuristic gaps for text after `{expr}` or containing `(`, `)`, `;`, `=`; preview org name comment).
+
+### Follow-ups (out of scope)
+- AST-based literal check if the regex heuristic develops gaps (from attempt 1).
