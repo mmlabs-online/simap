@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T08:46:02Z |
-| PR | — |
+| Claimed by | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-026) |
 
 ## Goal
 Service SQL (starting with the rooms service) runs against a real Postgres in CI on every PR, so SQL mistakes are
@@ -65,3 +65,9 @@ caught before merge instead of only by fake-client tests and hand review.
 - 2026-11-20: created on Ming's request ("tạo 2 ticket follow-up") from the SIM-010 review condition.
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 5, ~320k tokens (database-optimizer×1 40k, planner×1 84k, implementer×1 70k, reviewer×1 n/a, security auditor×1 87k)
+- Done: test:db wrapper + guard, throwaway-DB global setup, 11 rooms DB tests incl. trigger control and two-client lock test, CI step, docs; review PASS attempt 1 (conditional on CI); security 0 🔴 / 2 🟡 (High-path fixes)
+- In progress / next: Ming merges SIM-025 first, then this once CI 'db integration tests' is green; decide on the 🟡 follow-up ticket
+- Gotchas: built on ticket/SIM-025; first real DB run is CI
