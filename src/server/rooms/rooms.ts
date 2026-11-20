@@ -88,6 +88,7 @@ export function createRoom(
   v: RoomCreateValue,
 ): Promise<Result<RoomDto>> {
   return inTx(db, async (c) => {
+    // The select-from-subselect form satisfies orgQuery's org_id = $1 guard; org_id is always the scope org.
     const { rows } = await orgQuery<{ id: string }>(
       c,
       scope,
@@ -209,6 +210,16 @@ export async function getDeleteImpact(
   return { ok: true, value: await impactOf(db, scope, id) };
 }
 
+/**
+ * Seat/device lock order (every writer of seats, occupants, device placement, seat-request approval):
+ * 1. room row first: `for update` when creating, deleting or renaming seats (lockRoom, allocateSeatSeq),
+ *    `for share` when only changing an existing seat's occupant or placing/moving a device on it;
+ * 2. then seat rows `for update`, in ascending id order when more than one;
+ * 3. then devices / seat_requests.
+ * Never take a seat lock before the room row, never lock a room while holding a seat lock.
+ * deleteRoom holds the room then all its seats, so a concurrent writer either committed before
+ * (and is counted by the impact check) or waits and then fails the row check.
+ */
 export function deleteRoom(
   db: Db,
   scope: OrgScope,
@@ -218,6 +229,12 @@ export function deleteRoom(
 ): Promise<Result<null>> {
   return inTx(db, async (c) => {
     const room = await lockRoom(c, scope, id);
+    await orgQuery(
+      c,
+      scope,
+      "select id from seats where org_id = $1 and room_id = $2 order by id for update",
+      [id],
+    );
     const impact = await impactOf(c, scope, id);
     if (!force && !canDeleteDirectly(impact)) {
       throw new Abort({ ok: false, status: 409, code: "room_not_empty" });
@@ -236,7 +253,13 @@ export function deleteRoom(
       action: "room.delete",
       entity: "room",
       entityId: id,
-      meta: { code: room.code, seats: impact.seats, devices: impact.placedDevices, forced: force },
+      meta: {
+        code: room.code,
+        seats: impact.seats,
+        devices: impact.placedDevices,
+        pending: impact.pendingRequests,
+        forced: force,
+      },
     });
     return null;
   });
