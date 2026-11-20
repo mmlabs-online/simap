@@ -17,6 +17,8 @@ import type { AccountChoice, AuthError, Credentials, OrgChoice } from "@/lib/ide
 import type { Session } from "@/lib/session";
 import { OrgPickerView } from "../org/OrgPickerView";
 import { OrgSwitcherDialog, type OrgSwitcherState } from "../org/OrgSwitcherDialog";
+import { mapPatchResult, profilePatchInit } from "../org/profile-form";
+import { ProfileView, type ProfileError } from "../org/ProfileView";
 import { SessionProvider } from "../session";
 import { ApiFetchProvider } from "./api-fetch-context";
 import { getAuthRuntime, setAuthLostHandler, type AuthRuntime } from "./runtime";
@@ -36,6 +38,7 @@ type View =
   | { kind: "checking" }
   | { kind: "ready"; generation: number; session: Session; orgs: OrgChoice[] | null }
   | { kind: "orgPicker"; orgs: OrgChoice[]; notice?: OrgNotice; busyId?: string | null }
+  | { kind: "profile"; displayName: string; email: string; error?: ProfileError | null }
   | { kind: "signedOut"; error?: AuthError | null; notice?: SignInNotice | null }
   | { kind: "join"; email: string; error?: AuthError | null; pending?: boolean }
   | {
@@ -237,6 +240,10 @@ function Gate({
         if (orgs === null) void fetchOrgs();
         return;
       }
+      case "profile":
+        clearAccounts();
+        setView({ kind: "profile", displayName: v.displayName, email: v.email });
+        return;
       case "needOrg":
         await enterOrg(s);
         return;
@@ -514,6 +521,35 @@ function Gate({
     }
   };
 
+  // Profile form submit: PATCH /api/me; the answer is the same body as GET, so it goes through the usual decision.
+  const saveProfile = async (name: string) => {
+    if (busy.current) return;
+    busy.current = true;
+    const s = ++seq.current;
+    setStatus("submitting");
+    try {
+      let r: { res: Response } | { error: unknown };
+      try {
+        r = { res: await apiFetch("/api/me", profilePatchInit(name)) };
+      } catch (error) {
+        r = { error };
+      }
+      const out = await mapPatchResult(r);
+      if (s !== seq.current) return;
+      if (out.kind === "saved") {
+        await apply(viewForMe(await readMeResult(out.res)), s);
+      } else if (out.kind === "access") {
+        await apply(meErrorView(out.error, store.accountId() !== null), s);
+      } else {
+        const error: ProfileError = out.kind === "invalid" ? "invalid" : "retry";
+        setView((v) => (v.kind === "profile" ? { ...v, error } : v));
+      }
+    } finally {
+      busy.current = false;
+      setStatus("idle");
+    }
+  };
+
   const resend = async () => {
     if (busy.current) return;
     const id = store.accountId();
@@ -616,6 +652,17 @@ function Gate({
           notice={view.notice}
           busyId={view.busyId}
           onPick={pickOrg}
+          onSignOut={signOut}
+        />
+      );
+    case "profile":
+      return (
+        <ProfileView
+          initialName={view.displayName}
+          email={view.email}
+          status={status}
+          error={view.error}
+          onSubmit={saveProfile}
           onSignOut={signOut}
         />
       );
