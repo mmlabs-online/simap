@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T06:36:18Z |
-| PR | — |
+| Claimed by | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-008) |
 
 ## Goal
 Create every v1 table in one forward-only migration, scoped by org, with the locked invariants backed by constraints where Postgres allows.
@@ -48,3 +48,9 @@ spec §4 Domain model, §5 Locked invariants, §8 Database; D3, D12, D26, D29, D
 - Plan approved (2026-11-20, batch 2026-11-20-1) — Ming: "duyệt hết theo mặc định" (every default in plan.md accepted).
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 5, ~470k tokens (database-optimizer×1 33k, planner×1 87k, implementer×1 69k, reviewer×1 77k, security auditor×1 90k)
+- Done: init migration (10 tables, composite org FKs, triggers), dev seed, schema:check + CI step; review PASS conditional on CI; security 0 🔴 / 2 🟡
+- In progress / next: CI migrate CLI + schema check must be green before merge; decide on the seed-guard 🟡 fixes (default: small commit before merge)
+- Gotchas: no Postgres on the dev device; SQL never run locally
