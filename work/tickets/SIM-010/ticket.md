@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui, db |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-010) |
+| PR | https://github.com/mmlabs-online/simap/pull/16 |
 
 ## Goal
 Admins manage the org's rooms, seat codes stay consistent automatically, and everyone sees the room list with occupancy.
