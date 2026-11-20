@@ -12,9 +12,9 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-002 | Database client, tudocuatui migrator and readiness | MERGED | P0 | M | db, security | SIM-001 | plan-approval | 0 | 2026-11-20 |
 | SIM-003 | App shell and UI kit ported from seatMGT | DONE | P1 | M | ui, ux | SIM-001 | none | 1 | 2026-11-20 |
 | SIM-022 | Switch UI copy to English by default | BACKLOG | P1 | S | ui | SIM-003 | none | 0 | 2026-11-20 |
-| SIM-004 | Production image and tudocuatui-style deploy | IN_PROGRESS | P1 | M | architecture, security | SIM-002 | plan-approval | 0 | 2026-11-20 |
-| SIM-005 | Verify Identity tokens on the server and guard /api routes | IN_PROGRESS | P0 | M | security, api, architecture | SIM-001 | plan-approval | 0 | 2026-11-20 |
-| SIM-008 | v1 database schema | IN_PROGRESS | P0 | M | db, security | SIM-002 | plan-approval | 0 | 2026-11-20 |
+| SIM-004 | Production image and tudocuatui-style deploy | DONE | P1 | M | architecture, security | SIM-002 | plan-approval | 0 | 2026-11-20 |
+| SIM-005 | Verify Identity tokens on the server and guard /api routes | DONE | P0 | M | security, api, architecture | SIM-001 | plan-approval | 0 | 2026-11-20 |
+| SIM-008 | v1 database schema | DONE | P0 | M | db, security | SIM-002 | plan-approval | 0 | 2026-11-20 |
 | SIM-006 | Browser sign-in with mmlabs Identity | BACKLOG | P0 | M | security, ui | SIM-003, SIM-005 | plan-approval | 0 | 2026-11-20 |
 | SIM-007 | Org picker, org switcher and first-visit member profile | BACKLOG | P0 | M | api, ui, security | SIM-006, SIM-008 | none | 0 | 2026-11-20 |
 | SIM-009 | Invite people to an org | BACKLOG | P1 | M | security, ui, api | SIM-007 | none | 0 | 2026-11-20 |

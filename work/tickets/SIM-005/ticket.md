@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P0 |
 | Size | M |
 | Areas | security, api, architecture |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-005) |
 
 ## Goal
 Every `/api/*` route handler knows who calls it, in which org and with which tier, by verifying the mmlabs Identity access token the tudocuatui way, and refuses everything else.
@@ -46,6 +46,12 @@ spec §2 Organizations/Roles, §3 Auth, AUT-02, AUT-04, SYS-01, §8 Security; D4
 - Manual: call `/api/me`-like test route with a dev token once M-1 exists.
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-1) — Ming: "duyệt hết theo mặc định" (every default in plan.md accepted).
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 6, ~452k tokens (api-platform-engineer×1 40k, software-architect×1 60k, planner×1 91k, implementer×1 103k, reviewer×1 71k, security auditor×1 86k)
+- Done: verifier/JWKS port, withAuth guard, error shape, OrgScope/orgQuery, /api/me; review PASS attempt 1; security 0 🔴 / 2 🟡
+- In progress / next: Ming appends MM_IDENTITY_ISSUER= to .env.example; decide on the two 🟡 fixes (default: small commit before merge); Ming opens + merges the PR
+- Gotchas: .env.example is unreadable/unwritable for agents (deny rule)
