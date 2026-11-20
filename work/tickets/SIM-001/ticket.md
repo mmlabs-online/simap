@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T03:57Z |
-| PR | — |
+| Claimed by | — |
+| PR | pending — open from https://github.com/mmlabs-online/simap/pull/new/ticket/SIM-001 (`gh` missing on this device) |
 
 ## Goal
 Give simap a running Next.js (App Router) project with the tudocuatui tooling and green CI checks, so every later
@@ -74,3 +74,9 @@ Plan approved — 2026-11-20 (Ming, in chat: "approved"; all 9 *Decisions for Mi
 - Done: claimed; consult saved (`consult-software-architect.md`); `plan.md` Status READY.
 - In progress / next: Ming approves the plan (add a dated "Plan approved" line above, plus any changes to the 9 decisions), then `/run SIM-001` resumes at IMPLEMENT.
 - Gotchas: seatMGT `ming_dev` not checked out locally, so the Next 16.x pin is unverified; the planner rejects consult Finding 6 (`**/config.*` only matches files named `config.*`); CLAUDE.md R2 still says "down/rollback" vs D3 — implementer opens a `debt` issue; `gh` CLI is missing on this Windows device, so the PR step needs it installed or Ming opens the PR.
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 8, tokens ~400k total (software-architect×1 opus 35k; planner×1 opus 54k; implementer×2 sonnet 52k+27k; reviewer×2 opus 66k+33k; security-ai-generated-code-auditor×2 opus via general-purpose 70k+63k; in/out split not reported)
+- Done: plan approved by Ming (defaults); attempt 1 REWORK (CRLF checkout broke `format:check` on Windows); attempt 2 PASS (`.gitattributes` eol=lf, `agentRules: false`, `pnpm start` note). Branch pushed.
+- In progress / next: Ming opens the PR (body prepared by the orchestrator), confirms CI `ci` is green, resolves the trivial `.gitignore` conflict with PR #3 (keep both sides) or asks the agent to; merges.
+- Gotchas: rebase on main aborted — `.gitignore` conflict with PR #3 (outside `work/`); `security-ai-generated-code-auditor` agent was not loaded in this session, run via general-purpose with its file; security 🟡 #1–#4 left open as follow-ups; `debt` issues unopened (no `gh`).
