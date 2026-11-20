@@ -1,6 +1,8 @@
 # simap (spaceM project rules)
 
-TODO: one-paragraph description of what this project does and for whom (from `docs/spec-v1.md` once `/idea` writes it).
+simap is a seat (network port) and device tracking app in the mmlabs ecosystem, run as a multi-organization service:
+each organization has its own data, admins and users. It records rooms, seats, who sits where and which devices sit
+where, lets users request seats for a Manager to approve, and shows capacity on a dashboard (`docs/spec-v1.md` §1).
 simap replaces the inactive SeatMGT (Ming, 2026-11-20).
 
 - Scope: `docs/spec-v1.md` is the source of truth once it exists. If a ticket and the spec disagree, the spec wins; flag the conflict.
@@ -10,7 +12,7 @@ simap replaces the inactive SeatMGT (Ming, 2026-11-20).
 - Backlog: `work/` (spaceM project-kit).
 
 ## Stack
-- Node 22 + pnpm, TypeScript; one Next.js app (App Router) serves the UI and the API (`/api/*` route handlers) (D1).
+- Node 22 + pnpm 10, TypeScript; Next.js 16; one Next.js app (App Router) serves the UI and the API (`/api/*` route handlers) (D1).
 - Same tooling as tudocuatui (D2): `pg` with hand-written SQL (no ORM), tudocuatui's SQL migrator (forward-only),
   `jose` for Identity tokens, Tailwind CSS v4, oxfmt, Vitest (light unit tests in the first phase).
 - Auth: mmlabs Identity (org-admin-api), token in browser memory, bearer to route handlers (D4); multi-org via Identity
@@ -19,10 +21,16 @@ simap replaces the inactive SeatMGT (Ming, 2026-11-20).
 Do not change the stack without Ming's explicit decision.
 
 ## Commands
-- TODO (scaffold ticket): install, dev, typecheck, lint, format, test, build. Keep `.claude/loop.config.md` → Checks in sync.
+- `pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm start` (runs the standalone build), `pnpm build`.
+- `pnpm typecheck` (next typegen + tsc), `pnpm check:layers` (R1 import guard), `pnpm format` / `pnpm format:check`
+  (oxfmt), `pnpm test` (Vitest). There is no lint script (no ESLint, D2). Keep `.claude/loop.config.md` → Checks in sync.
 
 ## Rules (reviewer enforces these)
-- R1 TODO: layering and module shape (decided by the scaffold ticket).
+- R1 UI and page code never imports server code; route handlers under `src/app/api/**` are the only entry into
+  `src/server/**` (D4). Layers: api (`src/app/api/**`) → server, lib; pages (`src/app/**`) → ui, lib; ui (`src/ui/**`) →
+  lib; server (`src/server/**`, each non-test file starts with `import "server-only"`) → server, lib; lib
+  (`src/lib/**`, pure code, validators in `src/lib/validate/`) → lib. Imports across layers use the `@/` alias.
+  `pnpm check:layers` enforces this.
 - R2 Every schema change ships with a reviewed forward-only SQL migration (tudocuatui rules: expand then contract, so
   the previous image keeps working); never edit an applied migration (D3).
 - R6 Every org table has `org_id`; every query of org data is scoped by the verified token's `org` claim and roles come

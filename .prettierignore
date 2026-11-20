@@ -1,0 +1,9 @@
+*.md
+docs/
+work/
+.claude/
+pnpm-lock.yaml
+coverage/
+.next/
+next-env.d.ts
+.github/workflows/risk-tier.yml
