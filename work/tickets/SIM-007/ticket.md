@@ -6,7 +6,7 @@
 | Priority | P0 |
 | Size | M |
 | Areas | api, ui, security |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-006.2, SIM-008 |
 | Needs Ming | — |
 | Attempts | 0 |
