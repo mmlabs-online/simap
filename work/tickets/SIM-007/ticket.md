@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P0 |
 | Size | M |
 | Areas | api, ui, security |
@@ -45,6 +45,6 @@ spec AUT-06, §2 Member = org account; D12, D13, D16 (a), D17.
 - Manual: two orgs on one account (needs M-1).
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-4): "duyệt hết theo đề xuất" — Q11–Q18 take the proposals; split into SIM-007 (server, this ticket), SIM-007.2, SIM-007.3. High tier: no merge approval (Ming merges).
 
 ## Handoff
