@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui, db |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-010) |
 
 ## Goal
 Admins manage the org's rooms, seat codes stay consistent automatically, and everyone sees the room list with occupancy.
@@ -45,6 +45,19 @@ spec ROO-01, ROO-02, SYS-02, SYS-03; D29, D30.
 - Manual: create/rename/delete rooms as Admin and as User.
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-2) — Ming: "duyệt hết … còn lại theo đề xuất". Q21: split — this ticket = Slice A (API); Slice B → SIM-010.2 (Rooms UI). Q22: uppercase room codes (already in plan). Others take their defaults. Build only after SIM-023 is merged (uses ctx.scope).
+- 2026-11-20 (batch 2026-11-20-2, Q22): Ming: room codes are always uppercase; the input uppercases as the user types and the server stores uppercase. Plan to be revised; plan approval still pending.
 
 ## Handoff
+
+### 2026-11-20 — claude — PLANNING (approved, waiting)
+- Agent calls: 4 (api-platform-engineer×1 33k, frontend-developer×1 36k, planner×2 104k+36k sonnet)
+- Done: plan approved (Slice A = this ticket; Slice B → SIM-010.2; Q22 uppercase)
+- In progress / next: implement after SIM-023 is merged (uses ctx.scope); `/run-batch --resume`
+- Gotchas: shares src/lib/api/error.ts with SIM-006 (append-only)
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 7, ~460k tokens (api-platform-engineer×1 33k, frontend-developer×1 36k, planner×2 104k+36k, implementer×1 92k, reviewer×1 81k, security auditor×1 n/a)
+- Done: Slice A rooms API (routes, services, tx, audit writer, readJson, validator, seat codes); review PASS attempt 1 (conditional on a real-DB run); security 0 🔴 / 2 🟡
+- In progress / next: Ming: decide on the 🟡 fixes (default fix before merge) and the real-DB replay; open + merge the PR; SIM-010.2 next
+- Gotchas: no Postgres locally and CI does not execute service SQL
