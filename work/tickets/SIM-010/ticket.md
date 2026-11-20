@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T08:19:21Z |
-| PR | — |
+| Claimed by | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-010) |
 
 ## Goal
 Admins manage the org's rooms, seat codes stay consistent automatically, and everyone sees the room list with occupancy.
@@ -55,3 +55,9 @@ spec ROO-01, ROO-02, SYS-02, SYS-03; D29, D30.
 - Done: plan approved (Slice A = this ticket; Slice B → SIM-010.2; Q22 uppercase)
 - In progress / next: implement after SIM-023 is merged (uses ctx.scope); `/run-batch --resume`
 - Gotchas: shares src/lib/api/error.ts with SIM-006 (append-only)
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 7, ~460k tokens (api-platform-engineer×1 33k, frontend-developer×1 36k, planner×2 104k+36k, implementer×1 92k, reviewer×1 81k, security auditor×1 n/a)
+- Done: Slice A rooms API (routes, services, tx, audit writer, readJson, validator, seat codes); review PASS attempt 1 (conditional on a real-DB run); security 0 🔴 / 2 🟡
+- In progress / next: Ming: decide on the 🟡 fixes (default fix before merge) and the real-DB replay; open + merge the PR; SIM-010.2 next
+- Gotchas: no Postgres locally and CI does not execute service SQL
