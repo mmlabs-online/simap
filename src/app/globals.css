@@ -73,6 +73,12 @@
   --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
   --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.1);
 
+  /* pixel accents (D52, docs/art/style-guide.md section 3) */
+  --px-outline: #2a3140;
+  --px-accent: #14b8a6;
+  --px-floor: #d9dee5;
+  --px-wall: #eef1f5;
+
   /* type scale */
   --text-hero: 80px;
   --text-h2: 30px;
@@ -124,6 +130,9 @@
   --grid-line: rgba(255, 255, 255, 0.06);
   --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
   --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.6);
+
+  /* wall top: keeps the pixel frame at 3:1 or more on the dark surface */
+  --px-outline: #8b95a7;
 }
 
 /* Class-based dark variant for later tickets: `dark:` utilities follow data-theme. */
@@ -164,6 +173,10 @@
   --color-status-online: var(--status-online);
   --color-status-warn: var(--status-warn);
   --color-status-alert: var(--status-alert);
+  --color-px-outline: var(--px-outline);
+  --color-px-accent: var(--px-accent);
+  --color-px-floor: var(--px-floor);
+  --color-px-wall: var(--px-wall);
 
   /* type: Manrope covers Latin and Vietnamese (loaded in layout.tsx). */
   --font-sans: var(--font-manrope), -apple-system, system-ui, sans-serif;
@@ -339,4 +352,36 @@ dialog::backdrop {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* Pixel accents for the sign-in surface (D52): CSS only, no font, no motion. */
+.px-frame {
+  position: relative;
+  /* four 2 px bands without corner squares: stepped corners */
+  box-shadow:
+    0 -2px 0 0 var(--px-outline),
+    0 2px 0 0 var(--px-outline),
+    -2px 0 0 0 var(--px-outline),
+    2px 0 0 0 var(--px-outline);
+}
+.px-strip {
+  height: 12px;
+  background: var(--px-accent);
+  border-bottom: 2px solid var(--px-outline);
+}
+.px-scene {
+  width: 384px; /* 12 tiles of 32 px at 1x */
+  aspect-ratio: 12 / 7;
+  image-rendering: pixelated;
+  background: linear-gradient(
+    to bottom,
+    var(--px-wall) 0 40%,
+    var(--px-outline) 40% calc(40% + 4px),
+    var(--px-floor) calc(40% + 4px) 100%
+  );
+  box-shadow:
+    0 -2px 0 0 var(--px-outline),
+    0 2px 0 0 var(--px-outline),
+    -2px 0 0 0 var(--px-outline),
+    2px 0 0 0 var(--px-outline);
 }

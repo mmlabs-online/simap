@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 process.env.TZ = "Asia/Ho_Chi_Minh";
 
@@ -17,5 +17,6 @@ export default defineConfig({
     globals: false,
     restoreMocks: true,
     include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.ts", "db/**/*.test.ts"],
+    exclude: [...configDefaults.exclude, "**/*.db.test.ts"],
   },
 });

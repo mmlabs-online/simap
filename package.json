@@ -13,6 +13,7 @@
     "check:layers": "node scripts/check-layers.mjs",
     "migrate": "node --env-file-if-exists=.env.local db/migrate.js",
     "migrate:smoke": "node --env-file-if-exists=.env.local scripts/migrate-smoke.mjs",
+    "test:db": "node --env-file-if-exists=.env.local scripts/test-db.mjs",
     "schema:check": "node --env-file-if-exists=.env.local scripts/schema-check.mjs",
     "seed:dev": "node --env-file-if-exists=.env.local db/seed-dev.js"
   },

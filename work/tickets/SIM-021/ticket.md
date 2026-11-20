@@ -7,7 +7,7 @@
 | Size | S |
 | Areas | architecture, security |
 | Gate | none |
-| Depends on | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019 |
+| Depends on | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 |
 | Needs Ming | M-1, M-2, M-3 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
