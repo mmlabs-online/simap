@@ -13,3 +13,29 @@ with a new one that names it. Format: `D<n> — YYYY-MM-DD — <decision> — <w
 | D6 | 2026-11-20 | No seatMGT data is migrated; simap starts empty and data is built again. Users follow the org. Answers OQ-1. | Clean start (Ming) |
 | D7 | 2026-11-20 | Role changes take effect by re-minting or revoking the token (client re-mints after a 403 and on org switch; Identity can revoke the session); the residual lag up to token expiry is accepted. Answers OQ-5. | Identity tokens live up to 12 h (Ming) |
 | D8 | 2026-11-20 | Production host `simap.mmlabs.online`; Ming registers the Identity app and hostname later. Answers OQ-7. | (Ming) |
+| D9 | 2026-11-20 | No plan/entitlement limits for now: simap does not read or enforce `ent`. Answers OQ-36. | No plans granted yet (Ming) |
+| D10 | 2026-11-20 | Only mmlabs Super Admin creates orgs (admin portal); simap has no create-org screen and its default role has no `simap:org:create`. Answers OQ-32. | Admins are appointed by Super Admin (Ming) |
+| D11 | 2026-11-20 | People join an org by invitation: org admins/managers invite by email from simap (Identity invitations), Super Admin can also add in the admin portal. Role chosen at invite; later role changes in the admin portal. Answers OQ-33. | Identity v1 has invitations but no app-side member management (Ming) |
+| D12 | 2026-11-20 | Every person is an mmlabs Identity account managed by the shared user service; simap keeps no person records without an account. A member is simap's profile of one account in one org. Answers OQ-34; supersedes the seatMGT "member without account" model. | One account system across mmlabs (Ming) |
+| D13 | 2026-11-20 | One account may belong to several simap orgs: picker after sign-in and an org switcher in the shell. Answers OQ-35. | (Ming) |
+| D14 | 2026-11-20 | Identity roles: `simap:member` (app-scope default), org-scope `simap:admin` (org owner role), `simap:manager`, `simap:user`; admin and manager hold `simap:org:invite`. Answers OQ-37. | Identity requires owner role ≠ default role (Ming) |
+| D15 | 2026-11-20 | Several simap roles in one org: highest tier wins (Admin > Manager > User). Answers OQ-4. | (Ming) |
+| D16 | 2026-11-20 | Member directory: (a) now — a member appears on the account's first visit; Managers assign only known members; pending invitations sent from simap are listed read-only. (b) later — request an app-facing "list org members" endpoint from org-admin-api and sync from it. Answers OQ-38. | Identity has no app-facing members API yet (Ming) |
+| D17 | 2026-11-20 | Display name: filled by the member on first visit (default: email local part), editable by Managers; an Identity display name becomes the default when available. Answers OQ-39. | Tokens carry only email (Ming) |
+| D18 | 2026-11-20 | Assigning to an occupied seat asks for confirmation, then replaces the occupant and demotes the primary device. Answers OQ-12. | Keep seatMGT behaviour, avoid mistakes (Ming) |
+| D19 | 2026-11-20 | Managers and Admins place, move and return any device of the org; editing/deleting a device is owner or Admin only. Answers OQ-13. | Managers arrange seating (Ming) |
+| D20 | 2026-11-20 | Keep seatMGT's free-form layout editor; floor-plan background image after v1. Answers OQ-14. | Faster port; no file storage yet (Ming) |
+| D21 | 2026-11-20 | Users may request a seat in any room of the org. Answers OQ-9. | Approval already guards it (Ming) |
+| D22 | 2026-11-20 | REG-03 in v1: users release their own seat without approval and return their own devices to inventory. Answers OQ-10. | Releasing carries no risk (Ming) |
+| D23 | 2026-11-20 | Users request seats only for themselves; Managers assign others directly. Answers OQ-11. | (Ming) |
+| D24 | 2026-11-20 | Requesters can cancel pending requests; decisions show in-app ("Yêu cầu của tôi" with a badge), no email. Answers OQ-20. | (Ming) |
+| D25 | 2026-11-20 | No Viewer tier in v1. Answers OQ-8. | `simap:user` is already mostly read-only (Ming) |
+| D26 | 2026-11-20 | Keep the per-seat "không xếp chỗ" flag with a reason; it blocks assignment and requests; status stays derived. Answers OQ-15. | (Ming) |
+| D27 | 2026-11-20 | CSV export (seats with occupants, devices, members) for Manager+; room layout export as PNG if feasible in v1. Answers OQ-16. | (Ming) |
+| D28 | 2026-11-20 | Audit-log screen for org Admins (filter by actor, entity type, date). Answers OQ-17. | (Ming) |
+| D29 | 2026-11-20 | Room code is editable; unique within the org; changing it regenerates the room's seat codes in one transaction. Answers OQ-18. | (Ming) |
+| D30 | 2026-11-20 | Seat numbers are never reused (per-room counter). Answers OQ-19. | Printed labels and audit history (Ming) |
+| D31 | 2026-11-20 | A placed device cannot be deleted: warn, offer "move to inventory", then allow delete. Answers OQ-21. | (Ming) |
+| D32 | 2026-11-20 | On assign, a seat with no group takes the occupant's group (editable). Answers OQ-26. | (Ming) |
+| D33 | 2026-11-20 | Sign-in page links to Identity sign-up/forgot-password and shows "continue as" for accounts on this browser. Answers OQ-29. | Same as other mmlabs apps (Ming) |
+| D34 | 2026-11-20 | Members are never deleted in simap: Manager+ deactivate (simap-local) or an Admin removes them from the org; only the admin portal deletes accounts. Unused-group/project delete warns and clears tags. Removing from the org needs a new Identity endpoint (add to the org-admin-api request). Answers OQ-30. | Accounts belong to the shared user service (Ming) |

@@ -1,6 +1,6 @@
 # simap — Spec v1
 
-**Status:** Draft v0.2 (2026-11-20). Platform, auth, org and data questions answered by Ming (D1–D8 in
+**Status:** v0.5 (2026-11-20), all open questions answered. Platform, auth, org and data questions answered by Ming (D1–D34 in
 `work/decisions.md`); remaining items in [Open questions](#11-open-questions).
 **Owner:** Ming. **Scope source:** this file is the first scope source in `.claude/loop.config.md`; `work/decisions.md`
 records later decisions. If a ticket and this spec disagree, the spec wins and the conflict is flagged.
@@ -44,22 +44,29 @@ Everyone signs in with an **mmlabs Identity** account. simap has no local accoun
   has no Super Admin screen of its own.
 - An org's **admin** manages that org inside simap. Admins are appointed in the admin portal, never inside simap (as
   ricotdin's admin role, D5).
-- How managers and users are added to an org (org admin invites in simap, or staff adds them) is OQ-33.
+- Managers and users join an org by **invitation** (D11): an org admin or manager invites an email from simap
+  (Identity invitations, `simap:org:invite`; an inviter cannot grant more than they hold), and Super Admin can also
+  add people in the admin portal. The role is chosen when inviting; changing the role of someone already in the org
+  is done in the admin portal (Identity v1 has no app-side member management).
+- Only Super Admin creates orgs (D10); simap has no "create organization" screen.
 
 **Roles.** Roles come from the token's `org_roles` claim (the roles held in that org only), mapped through simap's role
 catalog. Per the contract, org data is never authorized from `roles`, and a token with `org` but no `org_roles` is
-refused. The exact role keys are registered in org-admin-api (OQ-37); proposed:
+refused. Role keys registered in org-admin-api (D14):
+- `simap:member`: app-scope default role on join; grants no org access.
+- `simap:admin` (org owner role), `simap:manager`, `simap:user`: org scope. Admin and manager hold `simap:org:invite`.
+
 
 | seatMGT role | Identity org role (proposed) | Granted by | Can do (from seatMGT `features.md` + code) |
 |---|---|---|---|
 | Admin | `simap:admin` | Super Admin, admin portal | Everything a Manager can do, plus create/edit/delete rooms and seats and edit layouts. Manages any device in the org. |
-| Manager | `simap:manager` | OQ-33 | Approves or rejects seat requests. Assigns and removes occupants directly. Manages members, groups/projects and seat tags. Sees the Approvals page. Manages own devices (see OQ-13). |
-| User | `simap:user` | OQ-33 | Views all rooms, seats, members and devices of the org. Requests an empty seat. Manages own devices. |
+| Manager | `simap:manager` | Invitation (admin) or admin portal | Approves or rejects seat requests. Assigns and removes occupants directly. Manages members, groups/projects and seat tags. Sees the Approvals page. Places, moves and returns any device of the org (D19). |
+| User | `simap:user` | Invitation (admin, manager) or admin portal | Views all rooms, seats, members and devices of the org. Requests an empty seat. Manages own devices. |
 
 - Roles are per org; there are no per-room roles (seatMGT decision, kept).
 - A token without `org`, or with no simap role in `org_roles`, cannot read or write org data (403). Such a token is
   only used to list or pick the user's orgs (AUT-06).
-- Several roles in one org: the highest tier wins, Admin > Manager > User (OQ-4, proposal accepted unless Ming objects).
+- Several roles in one org: the highest tier wins, Admin > Manager > User (D15).
 - **Role changes (D7).** A role change or removal is made in Identity. It reaches simap when the browser gets a new
   token. simap makes that fast instead of waiting for the token to expire: the client re-mints the token
   (`/auth/token`) after a 403 from simap and retries once, on org switch and on every sign-in, and the shell offers
@@ -67,12 +74,13 @@ refused. The exact role keys are registered in org-admin-api (OQ-37); proposed:
   fails and the user is signed out. A demoted user who keeps an old token keeps old rights until it is re-minted or
   expires (up to 12 h); Ming accepted this, with re-mint/revocation as the remedy.
 
-**Member vs account (D6 / OQ-34).** Users belong to the org in Identity. A *Member* is simap's person record in an org
-(name, employee code, group): it sits in seats and owns devices. An *account* is an Identity user who is a member of
-the org, known in simap by `sub` and email. A member is linked to at most one account per org. Whether simap still
-needs members **without** an Identity account (people who never sign in, as seatMGT allowed) is OQ-34; the link rule
-(auto-create the member on the account's first visit to the org, or link by email) follows from it. An account with no
-linked member can browse but cannot request a seat or own devices.
+**Member = org account (D12).** Every person in simap is an mmlabs Identity account (the shared user service); simap
+keeps **no** person records without an account. A *Member* is simap's profile of one account in one org, keyed by
+(`org`, `sub`): email from the token, plus simap fields (display name, employee code, group). simap never stores
+passwords or Identity data beyond these. How simap learns about accounts (D16): a member appears on the account's first visit (now), and simap syncs the
+org's member list from an app-facing Identity endpoint once org-admin-api ships it (requested). Display name (D17): the
+member fills it on first visit (default: email local part), Managers can edit it; an Identity display name becomes the
+default once the members endpoint or a token claim provides it.
 
 ## 3. Platform (decided by Ming, 2026-11-20)
 
@@ -116,7 +124,7 @@ needs to show.
 |---|---|---|
 | Room | org, code (unique, e.g. `C302`), name, description, floor | Layout fixtures belong to the room (LAY-03). |
 | Seat | org, code (unique, `<room code>-NN`), sequence no. (unique within the room), room, occupant (member, optional), group tag, project tag, layout geometry (x, y, rotation, width, height) | Status is **not stored** (invariant 6). |
-| Member | org, name, employee code (unique, optional), group (optional), linked Identity `sub` (unique in the org, optional per OQ-34) | Person record in the org. |
+| Member | org, Identity `sub` (unique in the org, required), email (from the token), display name, employee code (unique, optional), group (optional) | Profile of one org account (D12). |
 | Device | org, name, type, inventory number (unique), MAC (unique, optional), owner (member, required), seat (optional; empty = in inventory), role at the seat (primary / secondary) | |
 | SeatRequest | org, seat, subject member (who will sit there), created by, status (pending / approved / rejected / cancelled), note, decided by, decided at | |
 | Group | org, name (unique), colour | Label only. |
@@ -153,7 +161,8 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 - [ ] Wrong credentials show a clear message in Vietnamese. No message reveals whether the email exists.
 - [ ] Sign-out calls Identity `/auth/logout` and drops the access token. The next request to a protected page or API
   is refused.
-- [ ] simap has no sign-up page. Links to Identity's sign-up and forgot-password flows are open (OQ-29).
+- [ ] simap has no sign-up form of its own. The sign-in page links to Identity's sign-up and forgot-password flows
+  and lists accounts already signed in on this browser as "Tiếp tục với <email>" (`/auth/accounts`) (D33).
 
 **AUT-02 Session**
 - [ ] A signed-in user stays signed in across page loads and tabs until the Identity session ends. The access token is
@@ -174,8 +183,9 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
   passwords, no self-signup in simap itself").
 - [ ] Orgs and org admins are managed by mmlabs Super Admin in the admin portal (D5). simap has no screen for creating
   orgs or appointing admins.
-- [ ] Adding managers and users to an org follows OQ-33 (if org admins invite in simap, simap implements the
-  invitation form and the `/accept-invitation` page from the contract).
+- [ ] Admins and managers invite people by email with a role (D11): simap implements the invitation form and the
+  `/accept-invitation` page from the contract (fragment token cleared, `Referrer-Policy: no-referrer`, sign-in with
+  exactly the invited address). An inviter never offers a role above their own.
 
 **AUT-04 Role assignment**
 - [ ] Each account maps to exactly one simap tier per org: the highest simap role in `org_roles` (OQ-4).
@@ -184,11 +194,11 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 
 **AUT-05 Role tiers**
 - [ ] Three tiers, User < Manager < Admin. Each tier can do only what section 2 lists.
-- [ ] An optional read-only Viewer tier is open (OQ-8).
+- [ ] No Viewer tier in v1 (D25).
 
 **AUT-06 Pick and switch org** (new; D5)
 - [ ] After sign-in the client lists the account's orgs for simap (`GET /auth/orgs`). With one org it enters it
-  directly; with several it shows a picker (OQ-35); with none it shows "Bạn chưa thuộc tổ chức nào" and how to get
+  directly; with several it shows a picker (D13); with none it shows "Bạn chưa thuộc tổ chức nào" and how to get
   access. The chosen org is remembered on the device (an id, not a token).
 - [ ] The shell shows the current org's name and lets a user with several orgs switch; switching re-mints the token
   with the new `org_id` and reloads all data. Nothing from the previous org stays on screen.
@@ -200,8 +210,8 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 **ROO-01 Manage rooms** (Admin)
 - [ ] An Admin creates a room with code, name, description and floor. A duplicate code is rejected with a clear
   message.
-- [ ] An Admin edits a room's name, description and floor. seatMGT never built room editing. Whether the room code can
-  change is open (OQ-18).
+- [ ] An Admin edits a room's code, name, description and floor. The code stays unique within the org. Changing the
+  code regenerates every seat code of the room (`C302-01` → `C303-01`) in one transaction, with an audit row (D29).
 - [ ] Deleting a room first shows its impact: the number of occupied seats and placed devices.
 - [ ] If the room is empty, delete works directly. If not, the Admin must confirm a forced delete. A forced delete
   turns primary devices in the room into secondary, returns them to inventory, deletes the room's seats and drops
@@ -209,7 +219,7 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 
 **ROO-02 Automatic port codes**
 - [ ] A new seat's code is `<room code>-<NN>`. NN is the highest existing sequence number in the room plus 1, padded
-  to 2 digits. This is seatMGT behaviour; number reuse is OQ-19.
+  to 2 digits. Numbers are never reused: the room keeps a counter of the highest number ever issued (D30).
 - [ ] No API or form lets anyone type in a seat code.
 
 ### SEA — Seat
@@ -217,6 +227,8 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 **SEA-01 Manage seats** (Admin)
 - [ ] Seats are created and deleted from the layout designer (LAY-02). Each seat belongs to exactly one room.
 - [ ] Deleting a seat that has an occupant or any device is refused with a clear message (seatMGT guard).
+- [ ] An Admin or Manager marks a seat "không xếp chỗ" with a reason (broken, storage…). Such a seat cannot be
+  assigned or requested and shows grey with the reason; its status is still derived (D26).
 
 **SEA-02 Derived seat status**
 - [ ] Every view shows a seat as empty or occupied, computed from its occupant. No status column exists.
@@ -224,14 +236,15 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 **SEA-03 Assign / remove occupant** (Manager+)
 - [ ] A Manager+ sets a seat's occupant to any member, or clears it.
 - [ ] Clearing the occupant turns the seat's primary device into secondary (invariant 8).
-- [ ] Assigning a different member to an occupied seat follows OQ-12. In seatMGT it replaces the occupant and demotes
-  the primary.
+- [ ] Assigning a different member to an occupied seat asks for confirmation ("Ghế đang có X ngồi. Thay bằng Y?");
+  on confirm it replaces the occupant and demotes the primary (D18).
+- [ ] Only members known to simap can be assigned (D16).
 - [ ] Assigning the current occupant again changes nothing.
 
 **SEA-04 / GRP-02 Tag seat with group / project** (Manager+)
 - [ ] A Manager+ sets or clears a seat's group and its project. Tags never affect permissions. seatMGT only displayed
   tags and had no way to set them.
-- [ ] Whether a seat takes the occupant's group when assigned is open (OQ-26).
+- [ ] On assign, a seat with no group takes the occupant's group; a Manager+ can change it afterwards (D32).
 
 **SEA-05 Seat detail**
 - [ ] Any user opens a seat's detail: code, room, status, occupant, primary device, secondary devices with their
@@ -245,9 +258,10 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 - [ ] A device has type, inventory number (unique), MAC (unique if set; format checked), name and owner (exactly one
   member).
 - [ ] A User or Manager creates devices only for their own member and edits or deletes only their own devices. An
-  Admin can do this for any member. The Manager scope follows OQ-13.
+  Admin can do this for any member. Editing or deleting a device: its owner or an Admin only (D19).
 - [ ] New devices start in inventory. Editing a device cannot change its owner (seatMGT).
-- [ ] Whether a placed device can be deleted is open (OQ-21). seatMGT allows it, and the device simply leaves the seat.
+- [ ] Deleting a device that is placed at a seat is blocked: a warning says it must go back to inventory first and
+  offers "Đưa về kho"; delete is allowed once it is in inventory (D31).
 
 **DEV-02 Placement status**
 - [ ] Every device list and device detail shows "at seat X" or "in inventory". The Devices page filters by
@@ -260,11 +274,11 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 
 **DEV-04 Lend a device to another seat**
 - [ ] The device's owner places it as secondary on any seat. A borrowed device is never primary.
-- [ ] Whether a Manager may do this for others is OQ-13.
+- [ ] A Manager+ may do this for any device of the org (D19).
 
 **DEV-05 Move device**
 - [ ] A device moves seat to seat (it takes the chosen role; the DEV-03 rules apply) or back to inventory.
-- [ ] Who may move whose device follows DEV-01 and OQ-13.
+- [ ] The owner moves their own devices; a Manager+ moves any device of the org (D19).
 
 **DEV-06 Auto-demote when the occupant leaves**
 - [ ] Every path that removes or replaces an occupant turns the seat's primary device into secondary, in the same
@@ -273,11 +287,23 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 ### MEM — Member
 
 **MEM-01 Manage members** (Manager+)
-- [ ] A Manager+ creates, edits and deletes members (name, employee code (unique if set), group, linked account).
-  seatMGT had only backend create/update; v1 adds the UI and delete.
-- [ ] Deleting a member that occupies seats or owns devices is refused until those are cleared or moved. This is an
-  assumption; Ming to confirm (OQ-30).
-- [ ] Linking a member to an org account follows OQ-34 (auto-create on first visit, or link by email).
+- [ ] A Manager+ edits a member's simap fields (display name, employee code (unique in the org if set), group).
+- [ ] simap never deletes an Identity account; only the admin portal does (D34).
+- [ ] A Manager+ can **deactivate** a member in simap: the member keeps their history, cannot request seats or own new
+  devices, is hidden from pickers, and simap refuses their calls to org data (app-local deny list, `consumers.md`
+  item 11). Reactivation undoes it (D34).
+- [ ] An Admin can **remove a member from the org** (their org roles in Identity). This needs an Identity endpoint
+  that does not exist yet (requested with the members endpoint, D16, D34); until then removal is done in the admin
+  portal and simap offers deactivation.
+- [ ] Deactivating or removing a member who still occupies seats or owns placed devices warns with the counts and
+  offers to release the seats and return the devices to inventory in the same step (D34).
+- [ ] Every member is an org account (D12). Managers edit simap fields (display name, employee code, group); the
+  account itself is managed in Identity.
+- [ ] A member is created on the account's first visit to the org and asked for a display name (D16, D17).
+- [ ] The Members page also lists the org's pending invitations sent from simap (read-only; no seat can be assigned to
+  them) (D16).
+- [ ] Once Identity offers the app-facing members endpoint, simap syncs the org's members from it so Managers can
+  assign people who have not visited yet (D16, later ticket).
 
 **MEM-02 Member overview**
 - [ ] The member page or card lists every seat the member occupies and every device they own, with counts. It is
@@ -288,8 +314,8 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 **GRP-01 Manage groups / projects** (Manager+)
 - [ ] A Manager+ creates, edits and deletes groups (name unique, colour) and projects (code unique, name). Both are
   labels only. seatMGT never built this.
-- [ ] Deleting a group or project that is in use clears the tag on its seats (and on members, for groups). The user is
-  warned first. Ming to confirm (OQ-30).
+- [ ] Deleting a group or project that is in use warns with the number of seats tagged; on confirm it clears the tag
+  on its seats (and on members, for groups) (D34).
 
 **GRP-02** is covered by SEA-04.
 
@@ -298,7 +324,7 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 **LAY-01 Drag-and-drop layout that saves**
 - [ ] An Admin opens a room's editor, drags seats on a canvas and saves. Positions survive reloads and sessions.
 - [ ] v1 targets the free-form editor seatMGT ships today (move, resize, rotate, multi-select, zoom/pan, optional
-  fine snap; LAY-05). Ming has not confirmed free-form over a simple grid, nor a floor-plan background image (OQ-14).
+  fine snap; LAY-05). Free-form confirmed; a floor-plan background image is later (D20).
 
 **LAY-02 Canvas tile = seat**
 - [ ] Each seat tile on the canvas is one seat record. Adding a tile creates a seat and its code (ROO-02). Deleting a
@@ -321,8 +347,7 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 - [ ] From the detail of an empty seat, a user requests it, and a pending request is created.
 - [ ] A second identical pending request (same seat and member) creates nothing new.
 - [ ] A request for an occupied seat is refused.
-- [ ] Which rooms a User may request in is open (OQ-9). Whether a User can request for another member is open
-  (OQ-11).
+- [ ] A User may request a seat in any room of the org (D21), for themselves only (D23).
 
 **REG-02 Approve, reject or assign directly** (Manager+)
 - [ ] The Approvals page lists requests and filters them by status.
@@ -330,10 +355,13 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
   pending request for that seat, all in one transaction.
 - [ ] Rejecting marks the request rejected. Approving or rejecting a request that is not pending changes nothing.
 - [ ] Manager+ assign directly without a request (SEA-03). Only Users go through the approval flow.
-- [ ] Whether the requester can cancel a request is open (OQ-20). seatMGT has the status but no action for it.
+- [ ] The requester can cancel their own pending request (D24).
+- [ ] "Yêu cầu của tôi" lists the user's requests with their status; a badge counts requests decided since the user
+  last opened it. No email (D24).
 
-**REG-03 Release own seat / device** — open (OQ-10). seatMGT never built it. If it is in scope, releasing a seat
-clears the occupant and triggers DEV-06.
+**REG-03 Release own seat / device** (in v1, D22)
+- [ ] A user releases a seat they occupy without approval; the occupant is cleared and DEV-06 runs.
+- [ ] A user returns their own device from a seat to inventory.
 
 ### DSH — Dashboard
 
@@ -348,7 +376,9 @@ clears the occupant and triggers DEV-06.
   (name, employee code). Results are always current.
 - [ ] Search ignores case and Vietnamese diacritics: "nguyen" finds "Nguyễn".
 - [ ] Result lists have bounded page sizes.
-- [ ] Excel export is open (OQ-16).
+- [ ] Manager+ export CSV (opens in Excel, UTF-8 with BOM for Vietnamese) of seats with occupants, devices and
+  members of the org (D27).
+- [ ] If feasible in v1, any user exports a room's layout as an image (PNG) from the room view (D27; Should).
 
 ### SYS — System
 
@@ -368,7 +398,8 @@ clears the occupant and triggers DEV-06.
 **SYS-03 Audit log**
 - [ ] Every change writes an audit row in the same transaction: actor `sub`, action, entity, id, small meta. The row
   holds no secrets and no tokens.
-- [ ] A screen to view the log is open (OQ-17).
+- [ ] Admins of the org see an audit-log screen: newest first, filter by actor, entity type and date range,
+  paginated (D28).
 
 **SYS-04 Health**
 - [ ] A liveness endpoint (no DB) and a readiness endpoint (DB `select 1`) exist, as in tudocuatui. The compose
@@ -419,7 +450,7 @@ EntityFormDialog), seat tiles, room cards, fonts and icons. Copy changes to Viet
   `addRoomFeature`, `moveRoomFeature`, `deleteRoomFeature` (LAY-04 capacity "walls").
 - Mock data (`src/lib/mock/data.ts`, the client `AppStore` fed from it), `dev.log`, and seed files with real-looking
   data. Dev and test seeds may exist but contain no production data.
-- better-auth (`/api/auth/[...all]`, `lib/auth/*`) and the `cannotSeat` flag, unless OQ-15 keeps the flag.
+- better-auth (`/api/auth/[...all]`, `lib/auth/*`). (The `cannotSeat` flag is kept and now blocks assignment, D26.)
 
 ## 8. Non-functional requirements
 
@@ -457,19 +488,19 @@ EntityFormDialog), seat tiles, room cards, fonts and icons. Copy changes to Viet
 - Buildings/floors/zones as separate entities (a room has a `floor` text field only). Multi-org **is** in scope
   (D5); several sites inside one org are modelled only through room names and the `floor` field.
 - Creating orgs, appointing org admins, billing or plans inside simap (the admin portal owns these). Entitlements
-  (`ent`) are not enforced in v1 (OQ-36).
+  (`ent`) are not read or enforced in v1 (D9).
 - Moving seatMGT data (D6).
 - Notifications (email, push, in-app), calendar integrations, visitor/guest flows.
 - Analytics beyond DSH-01 (utilisation history, trends, scheduled reports).
 - Native mobile apps or offline mode.
-- Bulk CSV/Excel import of rooms/seats (later candidate). Excel export is OQ-16.
+- Bulk CSV/Excel import of rooms/seats (later candidate). `.xlsx` export (CSV is in v1, D27).
 
 ## 10. Later candidates (not v1; need Ming's decision to move up)
 
-- From seatMGT open items: audit-log viewer (OQ-17), Excel export (OQ-16), Viewer tier (OQ-8), floor-plan background
-  image (OQ-14).
+- From seatMGT open items: `.xlsx` export, Viewer tier (D25: not v1), floor-plan background
+  image (D20).
 - Playwright e2e suite and DB integration tests (after the first phase, D2).
-- Plan limits from Identity entitlements (`ent.limits`, e.g. max seats per org) (OQ-36).
+- Plan limits from Identity entitlements (`ent.limits`, e.g. max seats per org) (D9: not now).
 - From the non-authoritative draft PRD: bulk import of seats from CSV/Excel; in-app notification centre (for example
   when a request is decided); building/floor hierarchy; time-based booking with QR check-in and auto-release. None of
   these is in seatMGT, and none is in v1.
@@ -490,59 +521,35 @@ Owner: Ming for all of them. Each blocks the tickets named after it. IDs are sta
 - **OQ-24 Down migrations** — answered D3: forward-only, as tudocuatui. CLAUDE.md R2 updated.
 - **OQ-31 Scaffold choices** — answered D2: same tooling as tudocuatui, no extras, light unit tests only.
 
-**Auth and organizations (new, from D5)**
-- **OQ-4 Several roles.** Highest tier wins (Admin > Manager > User)? Proposal kept; treated as yes unless Ming objects.
-- **OQ-32 Who creates orgs.** Only mmlabs Super Admin in the admin portal (simap's default role gets no
-  `simap:org:create`), or may an Identity user create their own org from simap (self-service, like calechip)?
-  *Blocks: auth ticket, Identity app setup.*
-- **OQ-33 How managers and users join an org.** (a) The org admin invites by email from simap (Identity invitations,
-  `simap:org:invite`; simap builds the invite form and `/accept-invitation`); (b) only staff add people in the admin
-  portal; (c) both. Can an org admin also promote a user to manager in simap, or only in the portal? *Blocks: auth
-  ticket, MEM.*
-- **OQ-34 Members without an account.** Does an org still need person records for people who never sign in (seatMGT
-  allowed it), or is every member exactly one org account (member auto-created on first visit)? *Blocks: DB schema,
-  MEM-01, DEV-01, REG-01.*
-- **OQ-35 Several orgs per user.** Can one Identity account belong to several simap orgs (picker + switcher, AUT-06),
-  or exactly one? *Blocks: AUT-06 scope.*
-- **OQ-36 Entitlements.** Ignore `ent` (plans, limits such as max seats) in v1? Proposal: yes, ignore. *Blocks: none
-  for v1.*
-- **OQ-37 Role keys in Identity.** Register org-scope roles `simap:admin`, `simap:manager`, `simap:user`, with
-  `simap:admin` as the org owner role? (Exact keys and permissions are set in org-admin-api when Ming registers the
-  app.) *Blocks: auth ticket.*
+- **OQ-4** — answered D15 (highest tier wins). **OQ-32** — answered D10 (Super Admin only). **OQ-33** — answered D11
+  (invite from simap + admin portal). **OQ-34** — answered D12 (no records without an account). **OQ-35** — answered
+  D13 (several orgs per account). **OQ-36** — answered D9 (no plan limits for now). **OQ-37** — answered D14.
+
+- **OQ-38** — answered D16 ((a) now + (b) request to org-admin-api). **OQ-39** — answered D17.
 
 **Behaviour (seatMGT 🟡 items and gaps found in its code)**
 - **OQ-8 Viewer tier.** Add a read-only `simap:viewer` tier (AUT-05)?
-- **OQ-9 Request scope.** In which rooms may a User request a seat: any room, or a limited set (REG-01)?
-- **OQ-10 Self-release.** Is REG-03 in v1: can a User release their own seat and remove their own device from a seat?
-- **OQ-11 Request for someone else.** seatMGT lets any user file a request with another member as the subject. Keep
+- **OQ-9 Request scope.** *Answered D21.* In which rooms may a User request a seat: any room, or a limited set (REG-01)?
+- **OQ-10 Self-release.** *Answered D22.* Is REG-03 in v1: can a User release their own seat and remove their own device from a seat?
+- **OQ-11 Request for someone else.** *Answered D23.* seatMGT lets any user file a request with another member as the subject. Keep
   that, or self only?
-- **OQ-12 Assign to an occupied seat.** Replace the occupant (seatMGT behaviour, which demotes the primary), or refuse
+- **OQ-12 Assign to an occupied seat.** *Answered D18.* Replace the occupant (seatMGT behaviour, which demotes the primary), or refuse
   until the seat is released?
-- **OQ-13 Manager and other people's devices.** `features.md` says a Manager can place and move any device (DEV-04/05).
+- **OQ-13 Manager and other people's devices.** *Answered D19.* `features.md` says a Manager can place and move any device (DEV-04/05).
   seatMGT code lets only the owner or an Admin manage a device. Which is right?
-- **OQ-14 Layout style.** Keep the free-form editor (what seatMGT ships today), or use a simple grid? Is a floor-plan
+- **OQ-14 Layout style.** *Answered D20.* Keep the free-form editor (what seatMGT ships today), or use a simple grid? Is a floor-plan
   background image in v1?
-- **OQ-15 "Cannot seat" flag.** seatMGT has a per-seat `cannotSeat` hint, which leaves status unchanged. Keep it? If
-  yes, should it block assignment and requests?
-- **OQ-16 Excel export.** In v1? If so, of what: seats, devices, members?
-- **OQ-17 Audit-log viewer.** Is a screen for the audit log in v1, and who sees it?
-- **OQ-18 Room code change.** Can a room's code be edited? If yes, should all its seat codes be regenerated?
-- **OQ-19 Seat number reuse.** seatMGT numbers a new seat as highest + 1, so deleting the last seat lets its number be
-  reused. Is that acceptable, or should numbers never be reused?
-- **OQ-20 Cancel request.** Can the requester cancel a pending request? Should they be told when it is decided
-  (in-app only)?
-- **OQ-21 Delete a placed device.** Allow it (seatMGT), or require moving it to inventory first?
-- **OQ-26 Seat takes the occupant's group.** seatMGT's schema says a seat inherits the occupant's group on assign
-  (overridable), but the code never does it. Should it?
-- **OQ-29 Identity links on sign-in.** Should simap's sign-in page link to Identity's sign-up and forgot-password
-  flows, or show nothing? Should it support several Identity accounts in one browser (`/auth/accounts` picker, as in
-  tudocuatui)?
-- **OQ-30 Delete rules for members, groups and projects.** Refuse deleting a member who still occupies seats or owns
-  devices? Clear the tag when a group or project in use is deleted?
+- **OQ-15** — D26. **OQ-16** — D27. **OQ-17** — D28. **OQ-18** — D29. **OQ-19** — D30. **OQ-21** — D31.
+  **OQ-26** — D32. **OQ-29** — D33. **OQ-30** — D34. **OQ-8** — D25.
+
+All v1 open questions are answered as of 2026-11-20. New questions get the next free number (OQ-40).
 
 ## 12. Change log
 
 | Date | Change |
 |---|---|
 | 2026-11-20 | First draft from Ming's `/idea` brief: seatMGT rebuild on Next.js + mmlabs Identity + shared Postgres, deployed like tudocuatui. |
+| 2026-11-20 | v0.5 from Ming's answers (D25–D34): no Viewer; cannot-seat flag blocks; CSV export + layout PNG if feasible; audit screen for Admins; room code editable (unique in org, seat codes follow); seat numbers never reused; placed device must go to inventory before delete; seat takes occupant's group; Identity sign-in links + account picker; members are deactivated or removed from the org, never deleted. No open questions left. |
+| 2026-11-20 | v0.4 from Ming's answers (D16–D24): member directory now + Identity members endpoint later; display name; confirm-replace on assign; Manager moves any device; free-form editor; requests in any room, self only, cancellable, in-app status; self-release in v1. |
+| 2026-11-20 | v0.3 from Ming's answers (D9–D15): Super Admin creates orgs; invitations from simap; every member is an Identity org account; several orgs per account; no plan limits; role keys; highest tier wins. Added OQ-38, OQ-39. |
 | 2026-11-20 | v0.2 from Ming's answers (D1–D8): multi-org service with Identity orgs (`org_mode = required`), admins appointed by mmlabs Super Admin; token in browser + route handlers; tudocuatui tooling (pg, SQL forward-only migrations, Vitest light unit tests); no data migration; `simap.mmlabs.online`. Added AUT-06, OQ-32–37; closed OQ-1/2/3/5/6/7/24/31. |
