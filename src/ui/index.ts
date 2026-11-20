@@ -11,3 +11,6 @@ export { ThemeToggle } from "./ThemeToggle";
 export { SessionProvider, useSession, useShellActions, type ShellActions } from "./session";
 export { AppShell } from "./AppShell";
 export { AppShellView } from "./AppShellView";
+export { AuthGate } from "./auth/AuthGate";
+export { SignInRoute } from "./auth/SignInRoute";
+export { useApiFetch } from "./auth/api-fetch-context";

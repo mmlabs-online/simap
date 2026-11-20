@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initials } from "./format";
+import { initials, waitText } from "./format";
 
 describe("initials", () => {
   it("uses the first and last name part", () => {
@@ -16,5 +16,20 @@ describe("initials", () => {
   it("falls back to ?", () => {
     expect(initials("")).toBe("?");
     expect(initials("   ")).toBe("?");
+  });
+});
+
+describe("waitText", () => {
+  it("uses seconds, minutes and hours, rounded up", () => {
+    expect(waitText(1)).toBe("1 second");
+    expect(waitText(30)).toBe("30 seconds");
+    expect(waitText(59.2)).toBe("60 seconds");
+    expect(waitText(60)).toBe("1 minute");
+    expect(waitText(61)).toBe("2 minutes");
+    expect(waitText(3600)).toBe("1 hour");
+    expect(waitText(3601)).toBe("2 hours");
+  });
+  it("falls back for NaN, zero and negative", () => {
+    for (const n of [NaN, 0, -5, Infinity]) expect(waitText(n)).toBe("a few minutes");
   });
 });
