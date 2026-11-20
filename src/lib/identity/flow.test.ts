@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { initialView, viewForMe, viewForTokenError } from "./flow";
+import { ApiAccessError } from "@/lib/api/fetch";
+import { initialView, meErrorView, readMeResult, viewForMe, viewForTokenError } from "./flow";
 import type { AuthError } from "./types";
 
 const e = (code: AuthError["code"], extra: Partial<AuthError> = {}): AuthError => ({
@@ -100,5 +101,88 @@ describe("initialView", () => {
   it("without an account id -> signIn; with an id -> checking", () => {
     expect(initialView(false)).toEqual({ kind: "signIn" });
     expect(initialView(true)).toEqual({ kind: "checking" });
+  });
+});
+
+describe("viewForMe 5xx", () => {
+  it("500, 502, 503 and 504 -> retry (a server fault is not a permission answer)", () => {
+    for (const status of [500, 502, 503, 504]) {
+      expect(viewForMe({ status }), String(status)).toEqual({ kind: "retry", error: e("unknown") });
+    }
+  });
+
+  it("404 and 429 stay fail-closed (noAccess forbidden)", () => {
+    for (const status of [404, 429]) {
+      expect(viewForMe({ status }), String(status)).toEqual({
+        kind: "noAccess",
+        code: "forbidden",
+      });
+    }
+  });
+});
+
+describe("meErrorView", () => {
+  it("ApiAccessError maps like the matching /api/me answer", () => {
+    expect(meErrorView(new ApiAccessError("forbidden"), true)).toEqual({
+      kind: "noAccess",
+      code: "forbidden",
+    });
+    expect(meErrorView(new ApiAccessError("member_deactivated"), true)).toEqual({
+      kind: "noAccess",
+      code: "member_deactivated",
+    });
+    expect(meErrorView(new ApiAccessError("org_required"), true)).toEqual({ kind: "noOrg" });
+    expect(meErrorView(new ApiAccessError("unauthenticated"), true)).toEqual({
+      kind: "signedOut",
+      error: e("no_access"),
+    });
+    expect(meErrorView(new ApiAccessError("signed_out"), false)).toEqual({ kind: "signIn" });
+  });
+
+  it("an AuthError from getToken goes through viewForTokenError", () => {
+    expect(meErrorView(e("session_invalid"), true)).toEqual({
+      kind: "signIn",
+      error: e("session_invalid"),
+      relistAccounts: true,
+    });
+    expect(meErrorView(e("network"), true)).toEqual({ kind: "retry", error: e("network") });
+    expect(meErrorView(e("email_unverified"), true)).toEqual({ kind: "unverified" });
+  });
+
+  it("a TypeError, a string or null -> retry, never no access", () => {
+    for (const err of [new TypeError("fetch failed"), "x", null, undefined]) {
+      expect(meErrorView(err, true)).toEqual({ kind: "retry", error: e("network") });
+    }
+  });
+});
+
+describe("readMeResult", () => {
+  const json = (body: unknown, status: number) =>
+    new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+
+  it("200 with a valid body -> me", async () => {
+    expect(
+      await readMeResult(json({ sub: "s", email: "a@b.co", org: "o", tier: "admin" }, 200)),
+    ).toEqual({ status: 200, code: undefined, me: { tier: "admin", email: "a@b.co" } });
+  });
+
+  it("an error body gives its code; a 200 with an unknown tier has no me", async () => {
+    expect(await readMeResult(json({ error: { code: "org_required" } }, 403))).toEqual({
+      status: 403,
+      code: "org_required",
+      me: undefined,
+    });
+    expect(await readMeResult(json({ email: "a@b.co", tier: "root" }, 200))).toMatchObject({
+      status: 200,
+      me: undefined,
+    });
+  });
+
+  it("an unreadable body still returns the status", async () => {
+    expect(await readMeResult(new Response("<html>", { status: 502 }))).toEqual({
+      status: 502,
+      code: undefined,
+      me: undefined,
+    });
   });
 });

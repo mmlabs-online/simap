@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P0 |
 | Size | M |
 | Areas | security, ui |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-006.2) |
 
 ## Goal
 Signed-out users see the sign-in screen in place on any app page and land back on it after signing in, using the SIM-006 auth library; slice S2 of the approved SIM-006 plan.
@@ -38,6 +38,13 @@ Signed-out users see the sign-in screen in place on any app page and land back o
 - As in the source plan's slice.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-20, batch 2026-11-20-3) — Ming: "duyệt hết theo đề xuất" (every proposal in the batch round accepted). Deltas Δ1–Δ7 accepted; runtime CSP goes to a separate security ticket (SIM-027) before SIM-021.
 - 2026-11-20 (batch 2026-11-20-2): created from the split Ming approved ("duyệt hết; câu 20 tách 3 phần; … còn lại theo đề xuất").
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 5, ~620k tokens (frontend-developer×1 51k, planner×1 125k, implementer×1 168k, reviewer×1 n/a, security auditor×1 107k)
+- Done: sign-in gate UI (AuthGate, views, /sign-in, Turnstile, runtime config, CSS pixel frame per D52); review PASS attempt 1; security 0 🔴 / 0 🟡
+- In progress / next: Ming: .env.example names, Turnstile hostnames, M-1 dev origin; merge; manual checks under pnpm dev; then SIM-006.3, SIM-007, SIM-010.2, SIM-019.2 unblock
+- Gotchas: first build may time out on fonts.gstatic.com (Manrope); a stray background shell from implementation was stopped
