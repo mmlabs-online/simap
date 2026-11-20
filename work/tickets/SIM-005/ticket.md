@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P0 |
 | Size | M |
 | Areas | security, api, architecture |
@@ -46,6 +46,6 @@ spec §2 Organizations/Roles, §3 Auth, AUT-02, AUT-04, SYS-01, §8 Security; D4
 - Manual: call `/api/me`-like test route with a dev token once M-1 exists.
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-1) — Ming: "duyệt hết theo mặc định" (every default in plan.md accepted).
 
 ## Handoff
