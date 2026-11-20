@@ -14,7 +14,7 @@ scaffold ticket picks the framework**; that ticket updates this file in the same
 - Pick order: `board`
 
 ## Scope sources
-- `docs/spec-v1.md` (written by `/idea`; does not exist yet — the first step is `/idea "<what simap is for>"`)
+- `docs/spec-v1.md` (written by `/idea`, 2026-11-20)
 - `work/decisions.md`
 
 ## Prepare
