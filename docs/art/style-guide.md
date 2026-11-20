@@ -128,6 +128,14 @@ About 45 sprites plus frames. Estimate for Ming (M-5): 3–4 days at 32 px.
 ## 8. Files and naming
 
 - Working files: `assets/art/src/<group>.pxo` (Pixelorama) or `.aseprite`. Not shipped.
+- Palette files: `assets/art/palette/simap-style2.gpl` (GIMP/Pixelorama/Aseprite/Piskel), `.hex`, and a swatch
+  `.png`. Avatar layers are drawn in the three greys at the end of the palette; the app recolours them.
+- **Export convention (what Ming exports):** one PNG per frame in `assets/art/export/`, named exactly by its key
+  (`desk.single.s.png`, `chair.office.n.png`, `device.laptop.png`). Canvas width = tiles wide × 32; canvas height =
+  tiles deep × 32 + 16 px headroom on top for tall things (monitors, plants, people). The bottom edge of the canvas
+  is the bottom edge of the footprint tiles. Transparent background; no shadow baked in. Sub-tile props (devices,
+  desk props) use a tight canvas and are placed by code. A packing script (SIM-024) builds `office.png` + `office.json`
+  from this folder, so nobody edits the atlas or JSON by hand.
 - Licence record: `assets/art/CREDITS.md`, one row per adapted source (section 9).
 - Export: one atlas `public/sprites/office.png` (power-of-two not required, 1 px transparent gap between frames) and
   `public/sprites/office.json`:
