@@ -10,8 +10,11 @@ simap replaces the inactive SeatMGT (Ming, 2026-11-20).
 - Backlog: `work/` (spaceM project-kit).
 
 ## Stack
-- Planned: Node 22 + pnpm, TypeScript; a server with its own PostgreSQL database (spaceM CI/CD type `server-db`).
-- TODO: framework, test runner, ORM / migration tool — decided by the first scaffold ticket.
+- Node 22 + pnpm, TypeScript; one Next.js app (App Router) serves the UI and the API (`/api/*` route handlers) (D1).
+- Same tooling as tudocuatui (D2): `pg` with hand-written SQL (no ORM), tudocuatui's SQL migrator (forward-only),
+  `jose` for Identity tokens, Tailwind CSS v4, oxfmt, Vitest (light unit tests in the first phase).
+- Auth: mmlabs Identity (org-admin-api), token in browser memory, bearer to route handlers (D4); multi-org via Identity
+  organizations (D5). DB: shared self-hosted mmlabs Postgres, database and role `simap` (spaceM CI/CD type `server-db`).
 
 Do not change the stack without Ming's explicit decision.
 
@@ -20,7 +23,10 @@ Do not change the stack without Ming's explicit decision.
 
 ## Rules (reviewer enforces these)
 - R1 TODO: layering and module shape (decided by the scaffold ticket).
-- R2 Every schema change ships with a reviewed migration with a working down/rollback; never edit an applied migration.
+- R2 Every schema change ships with a reviewed forward-only SQL migration (tudocuatui rules: expand then contract, so
+  the previous image keeps working); never edit an applied migration (D3).
+- R6 Every org table has `org_id`; every query of org data is scoped by the verified token's `org` claim and roles come
+  only from `org_roles` (D5).
 - R3 Config from env only; names in `.env.example`, no values; no secrets in code, logs or client bundles.
 - R4 Stay inside the ticket's plan; anything else goes to follow-ups.
 - R5 No PASS without green checks; new logic has tests.
