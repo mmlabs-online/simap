@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | S |
 | Areas | api, ui |
@@ -42,6 +42,6 @@ spec SYS-03; D28.
 - Manual: check entries after a few changes.
 
 ## Notes / answers from Ming
-—
+- Plan approved (2026-11-20, batch 2026-11-20-3) — Ming: "duyệt hết theo đề xuất" (every proposal in the batch round accepted). Split: this ticket = Slice A (API); Slice B → SIM-019.2 (Audit page).
 
 ## Handoff
