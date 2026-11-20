@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | security, api |
@@ -58,6 +58,7 @@ SIM-015.x).
 - Manual: none.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-20, batch 2026-11-20-3) — Ming: "duyệt hết theo đề xuất" (every proposal in the batch round accepted).
 - 2026-11-20: created on Ming's request ("tạo 2 ticket follow-up") from the SIM-010 security review.
 
 ## Handoff
