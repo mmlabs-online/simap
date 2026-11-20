@@ -31,7 +31,7 @@ spec SEA-02..05, DEV-06, REG-03 (seat); D18, D22, D26, D32.
 - Device actions (SIM-013), requests (SIM-014), tag editing (SIM-016).
 
 ## Acceptance criteria
-- [ ] Assigning to an occupied seat asks "Ghế đang có X ngồi. Thay bằng Y?" and on confirm demotes X's primary device.
+- [ ] Assigning to an occupied seat asks "X sits here. Replace with Y?" and on confirm demotes X's primary device.
 - [ ] A cannot-seat seat cannot be assigned (server refuses, UI disables).
 - [ ] The occupant can release their own seat; others cannot.
 - [ ] A seat with no group takes the occupant's group on assign.

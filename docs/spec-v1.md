@@ -1,6 +1,6 @@
 # simap — Spec v1
 
-**Status:** v0.5 (2026-11-20), all open questions answered. Platform, auth, org and data questions answered by Ming (D1–D34 in
+**Status:** v0.6 (2026-11-20), all open questions answered. Platform, auth, org and data questions answered by Ming (D1–D38 in
 `work/decisions.md`); remaining items in [Open questions](#11-open-questions).
 **Owner:** Ming. **Scope source:** this file is the first scope source in `.claude/loop.config.md`; `work/decisions.md`
 records later decisions. If a ticket and this spec disagree, the spec wins and the conflict is flagged.
@@ -158,11 +158,11 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 - [ ] An Identity account that has not joined app `simap` gets the join step (`/auth/apps/simap/join`) when the app's
   join policy allows it. The join runs only after the user clicks (tudocuatui D8 pattern). Joining the app alone gives
   no org access (AUT-06).
-- [ ] Wrong credentials show a clear message in Vietnamese. No message reveals whether the email exists.
+- [ ] Wrong credentials show a clear message. No message reveals whether the email exists.
 - [ ] Sign-out calls Identity `/auth/logout` and drops the access token. The next request to a protected page or API
   is refused.
 - [ ] simap has no sign-up form of its own. The sign-in page links to Identity's sign-up and forgot-password flows
-  and lists accounts already signed in on this browser as "Tiếp tục với <email>" (`/auth/accounts`) (D33).
+  and lists accounts already signed in on this browser as "Continue as <email>" (`/auth/accounts`) (D33).
 
 **AUT-02 Session**
 - [ ] A signed-in user stays signed in across page loads and tabs until the Identity session ends. The access token is
@@ -198,7 +198,7 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 
 **AUT-06 Pick and switch org** (new; D5)
 - [ ] After sign-in the client lists the account's orgs for simap (`GET /auth/orgs`). With one org it enters it
-  directly; with several it shows a picker (D13); with none it shows "Bạn chưa thuộc tổ chức nào" and how to get
+  directly; with several it shows a picker (D13); with none it shows "You are not in any organization yet" and how to get
   access. The chosen org is remembered on the device (an id, not a token).
 - [ ] The shell shows the current org's name and lets a user with several orgs switch; switching re-mints the token
   with the new `org_id` and reloads all data. Nothing from the previous org stays on screen.
@@ -227,7 +227,7 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 **SEA-01 Manage seats** (Admin)
 - [ ] Seats are created and deleted from the layout designer (LAY-02). Each seat belongs to exactly one room.
 - [ ] Deleting a seat that has an occupant or any device is refused with a clear message (seatMGT guard).
-- [ ] An Admin or Manager marks a seat "không xếp chỗ" with a reason (broken, storage…). Such a seat cannot be
+- [ ] An Admin or Manager marks a seat "cannot seat" with a reason (broken, storage…). Such a seat cannot be
   assigned or requested and shows grey with the reason; its status is still derived (D26).
 
 **SEA-02 Derived seat status**
@@ -236,7 +236,7 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 **SEA-03 Assign / remove occupant** (Manager+)
 - [ ] A Manager+ sets a seat's occupant to any member, or clears it.
 - [ ] Clearing the occupant turns the seat's primary device into secondary (invariant 8).
-- [ ] Assigning a different member to an occupied seat asks for confirmation ("Ghế đang có X ngồi. Thay bằng Y?");
+- [ ] Assigning a different member to an occupied seat asks for confirmation ("X sits here. Replace with Y?");
   on confirm it replaces the occupant and demotes the primary (D18).
 - [ ] Only members known to simap can be assigned (D16).
 - [ ] Assigning the current occupant again changes nothing.
@@ -255,13 +255,14 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 ### DEV — Device
 
 **DEV-01 Manage devices**
+- [ ] A device type is picked from a suggested list (PC, Laptop, Monitor, IP phone, Other) or typed freely (D37).
 - [ ] A device has type, inventory number (unique), MAC (unique if set; format checked), name and owner (exactly one
   member).
 - [ ] A User or Manager creates devices only for their own member and edits or deletes only their own devices. An
   Admin can do this for any member. Editing or deleting a device: its owner or an Admin only (D19).
 - [ ] New devices start in inventory. Editing a device cannot change its owner (seatMGT).
 - [ ] Deleting a device that is placed at a seat is blocked: a warning says it must go back to inventory first and
-  offers "Đưa về kho"; delete is allowed once it is in inventory (D31).
+  offers "Move to inventory"; delete is allowed once it is in inventory (D31).
 
 **DEV-02 Placement status**
 - [ ] Every device list and device detail shows "at seat X" or "in inventory". The Devices page filters by
@@ -356,7 +357,7 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 - [ ] Rejecting marks the request rejected. Approving or rejecting a request that is not pending changes nothing.
 - [ ] Manager+ assign directly without a request (SEA-03). Only Users go through the approval flow.
 - [ ] The requester can cancel their own pending request (D24).
-- [ ] "Yêu cầu của tôi" lists the user's requests with their status; a badge counts requests decided since the user
+- [ ] "My requests" lists the user's requests with their status; a badge counts requests decided since the user
   last opened it. No email (D24).
 
 **REG-03 Release own seat / device** (in v1, D22)
@@ -393,11 +394,12 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 **SYS-02 Business-rule checks**
 - [ ] All inputs are validated at the server boundary. Every invariant in section 5 is checked inside the same
   transaction as the write.
-- [ ] Errors are shown to the user in Vietnamese. The error shape carries a code and never a stack trace.
+- [ ] Errors are shown to the user in plain English (copy files, D36). The error shape carries a code and never a stack trace.
 
 **SYS-03 Audit log**
 - [ ] Every change writes an audit row in the same transaction: actor `sub`, action, entity, id, small meta. The row
   holds no secrets and no tokens.
+- [ ] Audit rows are kept indefinitely in v1 (D38).
 - [ ] Admins of the org see an audit-log screen: newest first, filter by actor, entity type and date range,
   paginated (D28).
 
@@ -416,7 +418,7 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 - [ ] The user switches between light and dark, and the choice is kept on the device.
 
 **Visual style:** follow seatMGT's look: its UI kit (Card, Button, Chip, Avatar, RoleBadge, FilledInput,
-EntityFormDialog), seat tiles, room cards, fonts and icons. Copy changes to Vietnamese.
+EntityFormDialog), seat tiles, room cards, fonts and icons. UI copy is English by default (D36).
 
 ### v1 done means
 - Every acceptance criterion above passes, except those waiting on an open question that Ming has deferred.
@@ -442,7 +444,7 @@ EntityFormDialog), seat tiles, room cards, fonts and icons. Copy changes to Viet
 | Seat status | Stored `SeatStatus` column kept in sync by hand | Not stored; derived (invariant 6) |
 | Room metadata | `layoutMeta` JSON (`podCols`, `podRows`, `seatCount`, `floor`, `features`) | Real `floor` field. Seat count is computed. Pod/grid capacity fields are dropped along with the legacy editor. |
 | Seat geometry | Three overlapping sets (`posX/posY`, `col/row/colSpan/rowSpan`, `x/y/rotation/w/h`) | One set, owned by the single layout editor |
-| UI language | English | Vietnamese copy, English code (CLAUDE.md) |
+| UI language | English | English by default, all copy in per-feature copy files so another language can be added (D36) |
 
 **Not carried over:**
 - The legacy layout editors: route `edit-legacy`, redirect `edit-new`, `components/seatmap/_legacy`,
@@ -454,9 +456,10 @@ EntityFormDialog), seat tiles, room cards, fonts and icons. Copy changes to Viet
 
 ## 8. Non-functional requirements
 
-- **Language:** all UI copy and user-facing errors are in Vietnamese with correct diacritics. Code, comments, docs and
-  commits are in English. Text is stored as Unicode NFC.
-- **Time:** stored in UTC, shown in Asia/Ho_Chi_Minh (UTC+7).
+- **Language (D36):** UI copy is **English** by default. All user-facing text lives in copy files (no literals in
+  components) so another language can be added later. People's names and data stay as entered: Vietnamese diacritics
+  must display, sort and search correctly. Text is stored as Unicode NFC. Code, comments, docs and commits in English.
+- **Time (D35):** stored in UTC, shown in Asia/Ho_Chi_Minh (UTC+7) for every org in v1; a per-org time zone is a later candidate.
 - **Security:**
   - Role checks run on the server for every route handler, server action and protected page (SYS-01). The UI only
     hides what the server already refuses.
@@ -549,6 +552,7 @@ All v1 open questions are answered as of 2026-11-20. New questions get the next 
 | Date | Change |
 |---|---|
 | 2026-11-20 | First draft from Ming's `/idea` brief: seatMGT rebuild on Next.js + mmlabs Identity + shared Postgres, deployed like tudocuatui. |
+| 2026-11-20 | v0.6 (D35–D38): UTC+7 for all orgs; English UI copy by default in copy files; suggested device types; audit kept indefinitely. |
 | 2026-11-20 | v0.5 from Ming's answers (D25–D34): no Viewer; cannot-seat flag blocks; CSV export + layout PNG if feasible; audit screen for Admins; room code editable (unique in org, seat codes follow); seat numbers never reused; placed device must go to inventory before delete; seat takes occupant's group; Identity sign-in links + account picker; members are deactivated or removed from the org, never deleted. No open questions left. |
 | 2026-11-20 | v0.4 from Ming's answers (D16–D24): member directory now + Identity members endpoint later; display name; confirm-replace on assign; Manager moves any device; free-form editor; requests in any room, self only, cancellable, in-app status; self-release in v1. |
 | 2026-11-20 | v0.3 from Ming's answers (D9–D15): Super Admin creates orgs; invitations from simap; every member is an Identity org account; several orgs per account; no plan limits; role keys; highest tier wins. Added OQ-38, OQ-39. |

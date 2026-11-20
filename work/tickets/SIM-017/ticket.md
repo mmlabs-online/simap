@@ -39,7 +39,7 @@ spec DSH-01, DSH-02; D34 (warning for deactivated members holding seats).
 
 ## Test plan
 - Unit: normalisation.
-- Manual: search Vietnamese names.
+- Manual: search Vietnamese names (diacritics).
 
 ## Notes / answers from Ming
 —
