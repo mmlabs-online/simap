@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T07:24:39Z |
-| PR | — |
+| Claimed by | — |
+| PR | pending — Ming opens it from the prefilled compare link (main...ticket/SIM-006) |
 
 ## Goal
 People sign in with their mmlabs account on simap's sign-in page and keep a renewed access token in memory, like tudocuatui and ricotdin.
@@ -50,3 +50,9 @@ spec AUT-01, AUT-02, §3 Auth; D4, D7, D33.
 - 2026-11-20 (batch 2026-11-20-2, Q16): Ming: simap hosts its own sign-up and forgot-password pages, as ricotdin does, calling the same org-admin-api auth endpoints (replaces the D33 'link to Identity flows' reading). Plan to be revised; plan approval still pending.
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 6, ~640k tokens (frontend-developer×1 57k, planner×2 141k+99k, implementer×1 114k, reviewer×1 n/a, security auditor×1 97k)
+- Done: slice S1 auth library (identity client, token store, refresh lock, auth channel, apiFetch, validation) ported from tudocuatui; review PASS attempt 1; security 0 🔴 / 0 🟡
+- In progress / next: Ming opens + merges the PR; SIM-006.2 (sign-in UI) next, needs .env.example names + Turnstile hostnames
+- Gotchas: Node 24 has navigator.locks — ported tokenStore tests disable Web Locks (CI Node 22 has none)
