@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P0 |
 | Size | M |
 | Areas | architecture, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-20T03:57Z |
 | PR | — |
 
 ## Goal
@@ -65,6 +65,7 @@ ticket has a layout, commands and checks to build on.
 
 ## Notes / answers from Ming
 Waiting for Ming: plan approval (High tier) — `work/tickets/SIM-001/plan.md`, incl. its 9 *Decisions for Ming* (defaults apply if approved without comment).
+Plan approved — 2026-11-20 (Ming, in chat: "approved"; all 9 *Decisions for Ming* take their defaults).
 
 ## Handoff
 
