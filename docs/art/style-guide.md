@@ -139,6 +139,9 @@ Source column: **draw** = in-house; **adapt** = start from a free pack that pass
 | Avatars | `avatar.body.front/back`, `avatar.hair.{1..3}.front/back`, `avatar.shirt.front/back` | 1×1 cell | layered | draw |
 | Sign-in scene | `scene.signin` (a small office vignette) | about 12×7 tiles | 1 | composed from the above |
 
+Accepted extra keys: the sprite map's `wall.*` tile keys (D55) as the wall set, `window.single` and
+`window.single.top`, and n/e/s/w frames for `device.monitor`, `device.laptop`, `cabinet.filing` and `table.meeting`.
+
 About 45 sprites plus frames. Estimate for Ming (M-5): 3–4 days at 32 px.
 
 ## 8. Files and naming
@@ -160,7 +163,7 @@ About 45 sprites plus frames. Estimate for Ming (M-5): 3–4 days at 32 px.
 {
   "tile": 32,
   "frames": {
-    "desk.single.s": { "x": 0, "y": 0, "w": 64, "h": 40, "anchor": [0, 8], "tiles": [2, 1], "blocks": true },
+    "desk.single.s": { "x": 0, "y": 0, "w": 64, "h": 40, "anchor": [0, -8], "tiles": [2, 1], "blocks": true },
     "chair.office.n": { "x": 66, "y": 0, "w": 22, "h": 24, "anchor": [5, -4], "tiles": [1, 1], "blocks": false }
   },
   "layers": ["floor", "wall", "shadow", "furniture", "avatar", "overlay"]
@@ -168,7 +171,10 @@ About 45 sprites plus frames. Estimate for Ming (M-5): 3–4 days at 32 px.
 ```
 
 - `anchor` = offset in px from the tile's top-left to the sprite's top-left (sprites with a front face overhang their
-  tiles). `blocks` = whether another blocking item may share the tile.
+  tiles). Draw at x = tileX·32 + anchor[0], y = tileY·32 + anchor[1]; an anchor may be negative. `blocks` = whether another blocking item may share the tile.
+- `meta` (optional, written by the packer): `{ generator, version, sources }`, where `sources` maps each key to
+  `export`, `map` or `placeholder`, and `version` is a hash for cache-busting. The atlas size is not in the JSON; the
+  validator takes it from the PNG.
 - Keys are stable: the app code refers only to keys, so replacing `office.png` + `office.json` changes the art without
   code changes. Removing or renaming a key is a code change.
 
@@ -184,8 +190,9 @@ About 45 sprites plus frames. Estimate for Ming (M-5): 3–4 days at 32 px.
 }
 ```
 
-`rect` is `[x, y, w, h]` in source pixels. The script scales by `scale`, places the result bottom-aligned in the
-export canvas (section 8 convention) and packs the atlas. Exported PNGs in `assets/art/export/` (drawn or recoloured
+`rect` is `[x, y, w, h]` in source pixels. The script scales by `scale`, places the result by `anchor` (D55; pack
+sprites overhang their footprint), not bottom-aligned: the manifest anchor is −(map anchor × scale), and a key with no map
+anchor gets [0, 0]. A missing source sheet falls back to the placeholder. The script then packs the atlas. Exported PNGs in `assets/art/export/` (drawn or recoloured
 art) override the map for the same key, so phase 2 replaces sprites one by one.
 
 ## 9. Licence workflow (D45)

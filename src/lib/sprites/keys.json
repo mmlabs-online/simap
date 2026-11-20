@@ -1,0 +1,778 @@
+{
+  "avatar.body.back": {
+    "group": "avatar",
+    "dir": null,
+    "layer": "avatar",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "avatar.body.front": {
+    "group": "avatar",
+    "dir": null,
+    "layer": "avatar",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "avatar.hair.1.back": {
+    "group": "avatar",
+    "dir": null,
+    "layer": "avatar",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "avatar.hair.1.front": {
+    "group": "avatar",
+    "dir": null,
+    "layer": "avatar",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "avatar.hair.2.back": {
+    "group": "avatar",
+    "dir": null,
+    "layer": "avatar",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "avatar.hair.2.front": {
+    "group": "avatar",
+    "dir": null,
+    "layer": "avatar",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "avatar.hair.3.back": {
+    "group": "avatar",
+    "dir": null,
+    "layer": "avatar",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "avatar.hair.3.front": {
+    "group": "avatar",
+    "dir": null,
+    "layer": "avatar",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "avatar.shirt.back": {
+    "group": "avatar",
+    "dir": null,
+    "layer": "avatar",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "avatar.shirt.front": {
+    "group": "avatar",
+    "dir": null,
+    "layer": "avatar",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "cabinet.filing.e": {
+    "group": "cabinet",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "cabinet.filing.n": {
+    "group": "cabinet",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "cabinet.filing.s": {
+    "group": "cabinet",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "cabinet.filing.w": {
+    "group": "cabinet",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "chair.office.e": {
+    "group": "chair",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": false,
+    "shadow": true
+  },
+  "chair.office.n": {
+    "group": "chair",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": false,
+    "shadow": true
+  },
+  "chair.office.s": {
+    "group": "chair",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": false,
+    "shadow": true
+  },
+  "chair.office.w": {
+    "group": "chair",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": false,
+    "shadow": true
+  },
+  "desk.pair.e": {
+    "group": "desk",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": [2, 2],
+    "blocks": true,
+    "shadow": true
+  },
+  "desk.pair.n": {
+    "group": "desk",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": [2, 2],
+    "blocks": true,
+    "shadow": true
+  },
+  "desk.pair.s": {
+    "group": "desk",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": [2, 2],
+    "blocks": true,
+    "shadow": true
+  },
+  "desk.pair.w": {
+    "group": "desk",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": [2, 2],
+    "blocks": true,
+    "shadow": true
+  },
+  "desk.single.e": {
+    "group": "desk",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": [1, 2],
+    "blocks": true,
+    "shadow": true
+  },
+  "desk.single.n": {
+    "group": "desk",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": [2, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "desk.single.s": {
+    "group": "desk",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": [2, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "desk.single.w": {
+    "group": "desk",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": [1, 2],
+    "blocks": true,
+    "shadow": true
+  },
+  "device.laptop.e": {
+    "group": "device",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "device.laptop.n": {
+    "group": "device",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "device.laptop.s": {
+    "group": "device",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "device.laptop.w": {
+    "group": "device",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "device.monitor.dual": {
+    "group": "device",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "device.monitor.e": {
+    "group": "device",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "device.monitor.n": {
+    "group": "device",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "device.monitor.s": {
+    "group": "device",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "device.monitor.w": {
+    "group": "device",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "device.other": {
+    "group": "device",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "device.pc": {
+    "group": "device",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "device.phone": {
+    "group": "device",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "door.e": {
+    "group": "door",
+    "dir": "e",
+    "layer": "wall",
+    "tiles": [2, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "door.n": {
+    "group": "door",
+    "dir": "n",
+    "layer": "wall",
+    "tiles": [1, 2],
+    "blocks": true,
+    "shadow": false
+  },
+  "door.s": {
+    "group": "door",
+    "dir": "s",
+    "layer": "wall",
+    "tiles": [1, 2],
+    "blocks": true,
+    "shadow": false
+  },
+  "door.w": {
+    "group": "door",
+    "dir": "w",
+    "layer": "wall",
+    "tiles": [2, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "elevator": {
+    "group": "circulation",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": [2, 2],
+    "blocks": true,
+    "shadow": false
+  },
+  "floor.carpet": {
+    "group": "floor",
+    "dir": null,
+    "layer": "floor",
+    "tiles": [1, 1],
+    "blocks": false,
+    "shadow": false
+  },
+  "floor.carpet.alt": {
+    "group": "floor",
+    "dir": null,
+    "layer": "floor",
+    "tiles": [1, 1],
+    "blocks": false,
+    "shadow": false
+  },
+  "floor.lavender": {
+    "group": "floor",
+    "dir": null,
+    "layer": "floor",
+    "tiles": [1, 1],
+    "blocks": false,
+    "shadow": false
+  },
+  "floor.wood": {
+    "group": "floor",
+    "dir": null,
+    "layer": "floor",
+    "tiles": [1, 1],
+    "blocks": false,
+    "shadow": false
+  },
+  "label.sign": {
+    "group": "label",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": false,
+    "shadow": false
+  },
+  "lamp.floor": {
+    "group": "lamp",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "marker.blocked": {
+    "group": "marker",
+    "dir": null,
+    "layer": "overlay",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "partition.glass": {
+    "group": "partition",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "plant.large": {
+    "group": "plant",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "plant.small": {
+    "group": "plant",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "prop.keyboard": {
+    "group": "prop",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "prop.mouse": {
+    "group": "prop",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "prop.mug": {
+    "group": "prop",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "prop.papers": {
+    "group": "prop",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "rack.server": {
+    "group": "rack",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "shelf.books": {
+    "group": "shelf",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": [2, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "sofa": {
+    "group": "sofa",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": [2, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "stairs": {
+    "group": "circulation",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": [2, 2],
+    "blocks": true,
+    "shadow": false
+  },
+  "state.cannot": {
+    "group": "state",
+    "dir": null,
+    "layer": "overlay",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "state.mine.tint": {
+    "group": "state",
+    "dir": null,
+    "layer": "overlay",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "state.pending": {
+    "group": "state",
+    "dir": null,
+    "layer": "overlay",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "table.coffee": {
+    "group": "table",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": [2, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "table.meeting.e": {
+    "group": "table",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": [2, 3],
+    "blocks": true,
+    "shadow": true
+  },
+  "table.meeting.n": {
+    "group": "table",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": [3, 2],
+    "blocks": true,
+    "shadow": true
+  },
+  "table.meeting.s": {
+    "group": "table",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": [3, 2],
+    "blocks": true,
+    "shadow": true
+  },
+  "table.meeting.w": {
+    "group": "table",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": [2, 3],
+    "blocks": true,
+    "shadow": true
+  },
+  "wall.base": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.corner.ne": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.corner.ne.face": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.corner.nw": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.corner.nw.face": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.corner.se": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.corner.sw": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.face": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.face.shade": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.front": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.front.end.e": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.front.end.w": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.inner.h.end.w": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.inner.h.end.w.face": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.inner.v": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.inner.v.end": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.side.e": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.side.w": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.side.w.end": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.side.w.start": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.t.e": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.t.s": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.t.s.face": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "wall.top": {
+    "group": "wall",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "whiteboard": {
+    "group": "whiteboard",
+    "dir": null,
+    "layer": "furniture",
+    "tiles": [2, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "window.double": {
+    "group": "window",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [2, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "window.single": {
+    "group": "window",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  },
+  "window.single.top": {
+    "group": "window",
+    "dir": null,
+    "layer": "wall",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": false
+  }
+}
