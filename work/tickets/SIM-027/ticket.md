@@ -11,11 +11,11 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-20T15:35Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
-Before go-live the app sends security headers and a Content-Security-Policy, and the browser API client never follows redirects, so an XSS or a misrouted response cannot expose the in-memory token.
+Before go-live the app sends security headers and a Content-Security-Policy, and the browser API client never follows redirects, which restricts how an XSS or a misrouted response can exfiltrate the in-memory token (CSP cannot stop exfiltration by navigation; Q25).
 
 ## Scope reference
 Ming 2026-11-20 batch 2026-11-20-3 Q14 ("separate security ticket before SIM-021"). Follow-ups: SIM-001 security review (security headers), SIM-003 (CSP nonce/hash for the inline theme script), SIM-006 security-review 💭1 (`redirect: "error"`) and 💭2 (rule: handlers never return 401/403 after a side effect), SIM-006.2 Δ7 (runtime CSP), SIM-004 follow-ups.
@@ -43,5 +43,7 @@ Ming 2026-11-20 batch 2026-11-20-3 Q14 ("separate security ticket before SIM-021
 
 ## Notes / answers from Ming
 - 2026-11-20 (batch 2026-11-20-3): created from Ming's approval ("duyệt hết theo đề xuất").
+
+- Plan approved (2026-11-20, batch 2026-11-20-5): "ok hết" — Q21–Q29 take the defaults (nonce CSP in src/proxy.ts; HSTS max-age only; no report-only; Identity-client redirect → debt; goal reworded; COOP; CSP in dev; Permissions-Policy; Referrer-Policy). High tier: Ming merges.
 
 ## Handoff
