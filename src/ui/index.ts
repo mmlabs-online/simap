@@ -18,3 +18,4 @@ export { SignUpPage } from "./auth/SignUpPage";
 export { ForgotPasswordPage } from "./auth/ForgotPasswordPage";
 export { VerifyEmailPage } from "./auth/VerifyEmailPage";
 export { ResetPasswordPage } from "./auth/ResetPasswordPage";
+export { RoomsPage } from "./rooms/RoomsPage";
