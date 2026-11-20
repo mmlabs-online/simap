@@ -46,7 +46,7 @@ None.
 - format:check, typecheck, check:layers, build: exit 0; test: 651 passed (651).
 
 ### CI evidence (draft PR #23)
-See below (filled after the run).
+CI run 44746052478 on PR head 80f42156d02aba741879d95e1a39967065d7e415: conclusion success. ci job steps all success: typecheck, check:layers, test (Test Files 67 passed), migrate CLI (applied 20261120150000_init, applied 20261120190000_members_profile_confirmed_at, up to date), migrate smoke, schema check, db integration tests (incl. members.db.test.ts), format:check, build. image job success. risk-tier success.
 
 ### Out-of-plan files
 None.
