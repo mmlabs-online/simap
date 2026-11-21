@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T00:55:50Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/28 |
 
 ## Goal
 On `pnpm dev` the app at `http://localhost:3000` opens signed in as Ming without the browser ever calling mmlabs
@@ -83,3 +83,9 @@ Identity, so local development is not blocked by CORS (Identity cannot register 
 - Done: consult (architecture, ui; security has no consult agent), plan.md Status READY covering slice 1 (dev:token script, `pnpm dev` loopback launcher, bearer injection in `withAuth`, README, `.env.example` names).
 - In progress / next: Ming approves plan (M-11) incl. decisions A-G and the split; on approval create SIM-028.1 (browser dev-token mode, AC1 browser half) from `## Split proposal`, then `/run SIM-028`.
 - Gotchas: SIM-027 may add `src/proxy.*` and touches `src/lib/api/fetch.ts` (slice 2 hotspot); `.env*` is unreadable to agents, so `.env.example` names are appended blind; manual e2e needs M-1; `gh` CLI is not installed on this machine.
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 5 this run (implementer×2 80k + 24k, reviewer×2 64k + 29k, security-ai-generated-code-auditor×2 60k + 41k; in/out split not reported). Earlier run: 3 calls (see above).
+- Done: slice 1 implemented (dev:token script, loopback `pnpm dev` launcher, bearer injection in `withAuth`, README, `.env.example` names). Attempt 1 REWORK (attached `-H0.0.0.0` bypass); attempt 2 PASS. PR #28 opened.
+- In progress / next: Ming reviews PR #28. Security attempt 2 left two 🟡 (host flag swallowed by a value-taking option; non-loopback `--inspect`), flagged in the PR as "fix before merge recommended". Then SIM-028.1 (browser dev-token mode).
+- Gotchas: `gh` is installed at `C:\Program Files\GitHub CLI\gh.exe` but not on PATH; Node via fnm (`fnm env`); `.env.example` edited blind.
