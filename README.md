@@ -22,8 +22,8 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
 1. Prerequisites: `.env.local` with `DATABASE_URL` and the Identity issuer/JWKS names the server already reads, and
    the app `simap` registered in org-admin-api (M-1 in `work/ming-todo.md`).
 2. `pnpm dev:token --org <org-uuid>` (or `SIMAP_DEV_ORG`). It asks for the email (or `SIMAP_DEV_EMAIL`) and the
-   password with hidden input; it needs an interactive terminal (PowerShell, Windows Terminal, macOS Terminal; not Git
-   Bash). Example: `$env:SIMAP_DEV_EMAIL = "you@example.com"; pnpm dev:token --org <org-uuid>`. Without an org the
+   password with hidden input; it needs an interactive terminal (PowerShell, Windows Terminal, macOS Terminal; for a direct
+   `pnpm dev:token` not Git Bash, use `scripts/start-dev.sh` there). Example: `$env:SIMAP_DEV_EMAIL = "you@example.com"; pnpm dev:token --org <org-uuid>`. Without an org the
    token is unscoped and every `/api/*` call answers 403 `org_required`.
 3. The token goes to `~/.config/simap/dev-token` (override `SIMAP_DEV_TOKEN_FILE`). On Windows the file mode is
    advisory; your profile directory ACL protects it. The script never prints the password or token.
@@ -48,8 +48,19 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
 
 ## Production database (dev)
 
+**One command:** `scripts/start-dev.sh` (Git Bash, macOS or Linux; PowerShell users run `pnpm dev:prod`) runs
+`pnpm dev:prod` below without any `.env.local`. It asks for the Identity email and password and the database password
+(hidden input; under Git Bash it uses `winpty`), and for the org UUID once when no token on disk names an org. Then it
+waits up to 30 s for `/api/readyz`, checks that the app we started owns the port, and prints the local URL and
+`PRODUCTION DATA: every change is real.` Ctrl-C stops the app and its child processes and leaves the tunnel running.
+A hard kill of the launcher (Task Manager, `SIGKILL`) cannot clean up; the next run then refuses the busy port.
+Before the first run take a `pg_dump` of the `simap` database and keep it outside the repo.
+
 `pnpm dev:prod` runs the local app against the production database through the Cloudflare pg-tunnel (D56). It needs
-an interactive terminal and, in order, stops at the first failure with nothing started:
+an interactive terminal. All read-only checks run first, before any sign-in, tunnel start or prompt: the `.env*`
+refusals (exit 2), the tools (docker CLI and daemon, `next`, `powershell` on Windows, `lsof` and `ps` elsewhere) and
+that the app port is free (the port is always passed explicitly: `--port`, else `PORT`, else 3000). Then, in order, it
+stops at the first failure with nothing started:
 
 1. A fresh dev token with an `org` claim (runs `pnpm dev:token` when the token is missing, expires within 2
    minutes, has no org, or is for another org than `SIMAP_DEV_ORG`; a token still wrong after that stops the run).
@@ -57,11 +68,12 @@ an interactive terminal and, in order, stops at the first failure with nothing s
    app as `SIMAP_DEV_EXPECTED_ORG` (set by `dev:prod` only, never by hand).
 2. The tunnel container (`pg-tunnel-pg-tunnel-1`, override `SIMAP_PG_TUNNEL`): started if stopped, then `127.0.0.1:15432` (override
    `SIMAP_PROD_TUNNEL_PORT`) must answer.
-3. `.env.local` must not set `DATABASE_URL`: comment that line out while using `dev:prod` and restore it for local
-   work. None of `.env.development.local`, `.env.local`, `.env.development` or `.env` may set `SIMAP_DEV_ORG`: set it
+3. None of the four `.env*` files may set `DATABASE_URL` (any letter case): comment that line out while using
+   `dev:prod` and restore it for local work. None of `.env.development.local`, `.env.local`, `.env.development` or `.env` may set `SIMAP_DEV_ORG`: set it
    in the shell (exit 2 otherwise, the value is not printed). Both `pnpm dev` and `dev:prod` also exit 2 if any of those
    four files sets `NEXT_PUBLIC_SIMAP_DEV_PROD` (any letter case). `dev:prod` also exits 2 if one of them sets `MM_IDENTITY_ISSUER` in a letter case other than exactly that (the value is not printed). Then `dev:prod` asks for the password of the database role `simap` with hidden input, on every run.
-4. It starts `next dev -H 127.0.0.1` (same port option as `pnpm dev`) with a banner. The URL and password live only
+4. It starts `next dev -H 127.0.0.1` with a banner, waits for `/api/readyz` (a 200 proves the app reached Postgres
+   through the tunnel, not the schema version or write access), and stops the whole process tree on a failed check. The URL and password live only
    in the app's child environment: never printed, never written to disk. `dev:prod` pins `MM_IDENTITY_ISSUER=https://api.mmlabs.online` in the child, so a `.env*` or shell value is ignored. `dev:prod` itself skips `.env.local`, but the `next dev` child loads it, so set
    any `SIMAP_*` override in the shell. If you run `pnpm dev:token --org <other org>` while it runs, the next API call
    gets 401 with a `[dev-token]` warning (`another org`): run `pnpm dev:token --org <the org in the banner>` again, no

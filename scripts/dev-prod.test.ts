@@ -42,6 +42,17 @@ type Opts = {
   spawnFails?: boolean;
   envThrows?: string;
   envThrowsAt?: number;
+  missingTools?: string[];
+  busy?: boolean;
+  orgAnswer?: string;
+  ready?: boolean[];
+  clockStep?: number;
+  owner?: string;
+  exitEarly?: boolean;
+  exitCode?: number;
+  signalAt?: "spawn" | "ready" | "running";
+  signal?: number;
+  stopLeft?: number[];
 };
 const dockerCalls: string[][] = [];
 
@@ -49,10 +60,18 @@ async function drive(o: Opts = {}) {
   const trace: string[] = [];
   const out: string[] = [];
   const err: string[] = [];
+  const devTokenOrgs: (string | undefined)[] = [];
+  const sleeps: number[] = [];
+  const helperArgs: unknown[] = [];
+  const stops: unknown[] = [];
   type Spawn = { args: string[]; env: Record<string, string | undefined> };
   let spawned = null as Spawn | null;
   const tokens = [...(o.tokens ?? [FRESH])];
   let reads = 0;
+  let onSignal: (code: number) => void = () => {};
+  let clock = 0;
+  let readyCalls = 0;
+  const fire = () => onSignal(o.signal ?? 130);
   const code = await run({
     env: o.env ?? {},
     argv: o.argv ?? [],
@@ -61,15 +80,21 @@ async function drive(o: Opts = {}) {
       trace.push("token check");
       return tokens.length > 1 ? tokens.shift() : (tokens[0] ?? null);
     },
-    runDevToken: async () => (trace.push("dev-token"), o.devTokenCode ?? 0),
+    runDevToken: async (org?: string) => (
+      trace.push("dev-token"),
+      devTokenOrgs.push(org),
+      helperArgs.push(org),
+      o.devTokenCode ?? 0
+    ),
     docker: (a: string[]) => {
       trace.push(`docker ${a[0]}`);
       dockerCalls.push(a);
+      helperArgs.push(a);
       if (a[0] === "inspect") return o.inspect ?? { status: 0, stdout: "true\n" };
       return { status: o.startStatus ?? 0, stdout: "" };
     },
     probe: async () => (trace.push("probe"), o.probeOk ?? true),
-    sleep: async () => {},
+    sleep: async (ms: number) => void sleeps.push(ms),
     readEnvFile: (name: string) => {
       reads += 1;
       if (o.envThrowsAt === reads)
@@ -79,19 +104,59 @@ async function drive(o: Opts = {}) {
       if (name === ".env.local" && o.envLocal) return o.envLocal;
       return o.envFiles?.[name] ?? null;
     },
+    checkTools: () => (trace.push("tools"), o.missingTools ?? []),
+    portBusy: async (p: number) => (trace.push("port"), helperArgs.push(p), o.busy ?? false),
+    promptOrg: async () => (trace.push("org prompt"), o.orgAnswer ?? ""),
     promptPassword: async () => (trace.push("prompt"), o.password ?? PW),
+    onStopSignal: (cb: (code: number) => void) => (onSignal = cb),
+    monoMs: () => (clock += o.clockStep ?? 0),
+    probeReady: async (p: number) => {
+      trace.push("ready");
+      helperArgs.push(p);
+      if (o.signalAt === "ready" && readyCalls === 0) fire();
+      const seq = o.ready ?? [true];
+      return seq[Math.min(readyCalls++, seq.length - 1)];
+    },
     spawnApp: async (a: Spawn) => {
       trace.push("spawn");
       spawned = a;
       if (o.spawnFails) throw new Error(`boom ${a.env.DATABASE_URL}`);
-      return 0;
+      let finish: (c: number) => void = () => {};
+      const exit = new Promise<number>((r) => (finish = r));
+      if (o.exitEarly) finish(o.exitCode ?? 3);
+      if (o.signalAt === "spawn") {
+        fire();
+        await Promise.resolve();
+      }
+      return {
+        rooted: true,
+        exit,
+        stop: async (opt: unknown) => {
+          trace.push("stop");
+          stops.push(opt);
+          finish(0);
+          return o.stopLeft ?? [];
+        },
+        owner: async () => {
+          trace.push("owner");
+          if (o.signalAt === "running") setTimeout(fire, 0);
+          else if (o.signalAt === undefined) finish(o.exitCode ?? 0);
+          return o.owner ?? "owned";
+        },
+      };
     },
     out: (m: string) => out.push(m),
     err: (m: string) => err.push(m),
   });
-  return { code, trace, out, err, spawned };
+  return { code, trace, out, err, spawned, devTokenOrgs, sleeps, helperArgs, stops };
 }
 
+const NOTHING_STARTED = (trace: string[]) =>
+  trace.filter(
+    (t) =>
+      t.startsWith("docker") ||
+      ["prompt", "org prompt", "dev-token", "spawn", "token check", "probe"].includes(t),
+  );
 const NO_APP = ["prompt", "spawn"];
 
 describe("tokenIsFresh", () => {
@@ -213,12 +278,21 @@ describe("run: step order", () => {
     const r = await drive();
     expect(r.code).toBe(0);
     expect(r.trace).toEqual([
+      "env check",
+      "tools",
+      "port",
       "token check",
       "docker inspect",
       "probe",
-      "env check",
       "prompt",
       "spawn",
+      "ready",
+      "owner",
+      "stop",
+    ]);
+    expect(r.out.slice(-2)).toEqual([
+      "[dev:prod] local URL: http://127.0.0.1:3000",
+      "PRODUCTION DATA: every change is real.",
     ]);
     expect(r.out.join("\n")).toContain("production data");
   });
@@ -235,7 +309,11 @@ describe("run: step order", () => {
   it("SIMAP_DEV_ORG: token of another org is refreshed, then runs", async () => {
     const r = await drive({ env: { SIMAP_DEV_ORG: ORG }, tokens: [OTHER_ORG, FRESH] });
     expect(r.code).toBe(0);
-    expect(r.trace.slice(0, 3)).toEqual(["token check", "dev-token", "token check"]);
+    expect(r.trace.filter((t) => t.includes("token"))).toEqual([
+      "token check",
+      "dev-token",
+      "token check",
+    ]);
   });
 
   it("SIMAP_DEV_ORG: case-insensitive match needs no refresh", async () => {
@@ -252,11 +330,14 @@ describe("run: step order", () => {
   });
 
   it("token without org is refreshed; still without org exits 1 with the --org hint", async () => {
-    const ok = await drive({ tokens: [NO_ORG, FRESH] });
+    const ok = await drive({ tokens: [NO_ORG, FRESH], orgAnswer: ORG });
     expect(ok.code).toBe(0);
-    expect(ok.trace).toContain("dev-token");
-    for (const env of [{}, { SIMAP_DEV_ORG: ORG }]) {
-      const r = await drive({ env, tokens: [NO_ORG] });
+    expect(ok.trace.filter((t) => t === "org prompt")).toHaveLength(1);
+    const withEnv = await drive({ env: { SIMAP_DEV_ORG: ORG }, tokens: [NO_ORG, FRESH] });
+    expect(withEnv.code).toBe(0);
+    expect(withEnv.trace).not.toContain("org prompt");
+    for (const env of [{ SIMAP_DEV_ORG: ORG }, {}]) {
+      const r = await drive({ env, tokens: [NO_ORG], orgAnswer: ORG });
       expect(r.code).toBe(1);
       expect(r.err.join("\n")).toContain("pnpm dev:token --org <uuid>");
       expect(r.trace.filter((t) => t.startsWith("docker") || NO_APP.includes(t))).toEqual([]);
@@ -266,7 +347,11 @@ describe("run: step order", () => {
   it("token stale then refreshed", async () => {
     const r = await drive({ tokens: [STALE, FRESH] });
     expect(r.code).toBe(0);
-    expect(r.trace.slice(0, 3)).toEqual(["token check", "dev-token", "token check"]);
+    expect(r.trace.filter((t) => t.includes("token"))).toEqual([
+      "token check",
+      "dev-token",
+      "token check",
+    ]);
   });
 
   it("token still stale or dev-token fails: nothing else runs", async () => {
@@ -371,12 +456,70 @@ describe("run: step order", () => {
     expect(r.code).toBe(0);
   });
 
-  it("DATABASE_URL is still checked in .env.local only", async () => {
-    const r = await drive({ envFiles: { ".env": "DATABASE_URL=postgres://x:y@h/db" } });
-    expect(r.code).toBe(0);
+  it("preflight: DATABASE_URL in each of the four files, any letter case: exit 2, names the file, no value", async () => {
+    for (const name of FILES) {
+      for (const key of ["DATABASE_URL", "database_url"]) {
+        const text = `A=1\nexport ${key}=postgres://x:leak-me@h/db\n`;
+        const r = await drive(
+          name === ".env.local" ? { envLocal: text } : { envFiles: { [name]: text } },
+        );
+        expect(r.code, name).toBe(2);
+        expect(NOTHING_STARTED(r.trace), name).toEqual([]);
+        expect(r.trace).not.toContain("tools");
+        expect(r.err.join("\n")).toContain(name);
+        expect([...r.out, ...r.err].join("\n")).not.toContain("leak-me");
+      }
+    }
   });
 
-  it("non-UUID org claims are no org: no start, not printed", async () => {
+  it("preflight: missing tool exits 1 and names it, nothing started", async () => {
+    const r = await drive({ missingTools: ["docker (CLI and running daemon)"] });
+    expect(r.code).toBe(1);
+    expect(r.err.join("\n")).toContain("docker");
+    expect(NOTHING_STARTED(r.trace)).toEqual([]);
+    expect(r.trace).not.toContain("port");
+  });
+
+  it("preflight: busy port exits 1 and names it, nothing started", async () => {
+    const r = await drive({ busy: true, argv: ["--port", "3456"] });
+    expect(r.code).toBe(1);
+    expect(r.err.join("\n")).toContain("3456");
+    expect(NOTHING_STARTED(r.trace)).toEqual([]);
+  });
+
+  it("preflight: every refusal precedes token, docker and prompts", async () => {
+    for (const o of [
+      { envLocal: "SIMAP_DEV_ORG=x" },
+      { envFiles: { ".env": "mm_identity_issuer=x" } },
+      { envFiles: { ".env": "NEXT_PUBLIC_SIMAP_DEV_PROD=1" } },
+      { envThrows: "EBUSY" },
+    ]) {
+      const r = await drive({ ...o, tokens: [null] });
+      expect(r.code).toBe(2);
+      expect(NOTHING_STARTED(r.trace)).toEqual([]);
+    }
+  });
+
+  it("preflight: the port is always explicit (argv, then PORT, then 3000); invalid PORT exits 1", async () => {
+    const cases: [Opts, string][] = [
+      [{}, "3000"],
+      [{ env: { PORT: "4100" } }, "4100"],
+      [{ env: { PORT: "4100" }, argv: ["--port=4200"] }, "4200"],
+      [{ argv: ["-p", "4300"] }, "4300"],
+    ];
+    for (const [o, port] of cases) {
+      const r = await drive(o);
+      expect(r.spawned!.args).toEqual(["dev", "-H", "127.0.0.1", "--port", port]);
+      expect(r.helperArgs).toContain(Number(port));
+    }
+    for (const PORT of ["abc", "0", "70000"]) {
+      const r = await drive({ env: { PORT } });
+      expect(r.code).toBe(1);
+      expect(r.trace).toEqual([]);
+    }
+  });
+
+  it("non-UUID org claims are no org: no start, not printed, never passed to dev:token", async () => {
     for (const org of [
       " ",
       "\u001b[31mred",
@@ -388,6 +531,7 @@ describe("run: step order", () => {
       const r = await drive({ tokens: [jwt({ exp: NOW + 3600, org })] });
       expect(r.code, org).toBe(1);
       expect(r.trace.filter((t) => t.startsWith("docker") || NO_APP.includes(t))).toEqual([]);
+      expect(r.devTokenOrgs).toEqual([]);
       expect([...r.out, ...r.err].join("\n")).not.toContain("red");
     }
   });
@@ -478,9 +622,11 @@ describe("run: child process", () => {
   });
 
   it("source has no file-write API", () => {
-    const src = readFileSync(new URL("./dev-prod.mjs", import.meta.url), "utf8");
-    for (const api of ["writeFile", "appendFile", "createWriteStream"]) {
-      expect(src).not.toContain(api);
+    for (const file of ["./dev-prod.mjs", "./dev-process.mjs"]) {
+      const src = readFileSync(new URL(file, import.meta.url), "utf8");
+      for (const api of ["writeFile", "appendFile", "createWriteStream"]) {
+        expect(src, file).not.toContain(api);
+      }
     }
   });
 });
@@ -558,7 +704,7 @@ describe("issuer pin", () => {
     expect([...r.out, ...r.err].join("\n")).not.toContain("SECRET-CONTENT");
   });
 
-  it.each([6, 7, 8, 9])(
+  it.each([9, 10, 11, 12])(
     "a read error on read %i (issuer loop) exits 2 before the prompt",
     async (n) => {
       const r = await drive({ envThrowsAt: n });
@@ -566,7 +712,7 @@ describe("issuer pin", () => {
       expect(r.trace).not.toContain("prompt");
       expect(r.trace).not.toContain("spawn");
       const text = [...r.out, ...r.err].join("\n");
-      expect(text).toContain(FILES[n - 6]);
+      expect(text).toContain(FILES[n - 9]);
       expect(text).not.toContain("SECRET-CONTENT");
     },
   );
@@ -611,6 +757,145 @@ describe("issuer pin", () => {
       for (const k of Object.keys(process.env)) delete process.env[k];
       Object.assign(process.env, saved);
       rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("org flow", () => {
+  it("fresh token reused: no prompt, no sign-in", async () => {
+    const r = await drive();
+    expect(r.trace).not.toContain("org prompt");
+    expect(r.trace).not.toContain("dev-token");
+  });
+
+  it("stale token with a valid org passes that org to dev:token, no prompt", async () => {
+    const r = await drive({ tokens: [STALE, FRESH] });
+    expect(r.code).toBe(0);
+    expect(r.devTokenOrgs).toEqual([ORG]);
+    expect(r.trace).not.toContain("org prompt");
+  });
+
+  it("no usable org prompts exactly once and passes the lowercased UUID", async () => {
+    const r = await drive({ tokens: [null, FRESH], orgAnswer: `  ${ORG.toUpperCase()}\n` });
+    expect(r.code).toBe(0);
+    expect(r.trace.filter((t) => t === "org prompt")).toHaveLength(1);
+    expect(r.devTokenOrgs).toEqual([ORG]);
+    expect(r.out.join("\n")).toContain(`org ${ORG}`);
+  });
+
+  it("invalid or empty answer exits 1: no re-prompt, no sign-in, answer not printed", async () => {
+    for (const orgAnswer of ["", "   ", "not-a-uuid-leak-me", ORG.slice(1)]) {
+      const r = await drive({ tokens: [null], orgAnswer });
+      expect(r.code).toBe(1);
+      expect(r.trace.filter((t) => t === "org prompt")).toHaveLength(1);
+      expect(r.trace).not.toContain("dev-token");
+      expect(NOTHING_STARTED(r.trace).filter((t) => t.startsWith("docker"))).toEqual([]);
+      expect([...r.out, ...r.err].join("\n")).not.toContain("leak-me");
+    }
+  });
+
+  it("SIMAP_DEV_ORG set: no prompt, dev:token gets no org argument", async () => {
+    const r = await drive({ env: { SIMAP_DEV_ORG: ORG }, tokens: [null, FRESH] });
+    expect(r.code).toBe(0);
+    expect(r.trace).not.toContain("org prompt");
+    expect(r.devTokenOrgs).toEqual([undefined]);
+  });
+
+  it("a token for a different org than requested exits 1", async () => {
+    const r = await drive({ tokens: [null, OTHER_ORG], orgAnswer: ORG });
+    expect(r.code).toBe(1);
+    expect(r.err.join("\n")).toContain("requested org");
+    expect(r.trace).not.toContain("docker inspect");
+    expect(r.trace).not.toContain("prompt");
+  });
+
+  it("failed sign-in after the org prompt starts nothing", async () => {
+    const r = await drive({ tokens: [null], orgAnswer: ORG, devTokenCode: 1 });
+    expect(r.code).toBe(1);
+    expect(r.trace.filter((t) => t.startsWith("docker") || NO_APP.includes(t))).toEqual([]);
+  });
+});
+
+describe("after start", () => {
+  const noUrl = (r: { out: string[] }) => expect(r.out.join("\n")).not.toContain("PRODUCTION DATA");
+
+  it("readiness timeout stops the child, exit 1, no URL", async () => {
+    const r = await drive({ ready: [false], clockStep: 5000 });
+    expect(r.code).toBe(1);
+    expect(r.trace.at(-1)).toBe("stop");
+    expect(r.trace).not.toContain("owner");
+    expect(r.err.join("\n")).toContain("30 s");
+    noUrl(r);
+  });
+
+  it("503 keeps polling at 2 s, then a 200 proceeds", async () => {
+    const r = await drive({ ready: [false, false, true], clockStep: 100 });
+    expect(r.code).toBe(0);
+    expect(r.trace.filter((t) => t === "ready")).toHaveLength(3);
+    expect(r.sleeps.filter((ms) => ms === 2000)).toHaveLength(2);
+  });
+
+  it("early child exit stops the tree, exit 1, no URL", async () => {
+    const r = await drive({ exitEarly: true, ready: [false] });
+    expect(r.code).toBe(1);
+    expect(r.trace).toContain("stop");
+    noUrl(r);
+  });
+
+  it("owner foreign or unknown stops the child, exit 1, no URL", async () => {
+    for (const owner of ["foreign", "unknown"]) {
+      const r = await drive({ owner });
+      expect(r.code, owner).toBe(1);
+      expect(r.trace.at(-1)).toBe("stop");
+      noUrl(r);
+    }
+  });
+});
+
+describe("stop signal", () => {
+  it("during readiness and while running: stop once, exit 130/143/129, no docker stop", async () => {
+    for (const signalAt of ["ready", "running"] as const) {
+      for (const signal of [130, 143, 129]) {
+        const r = await drive({ signalAt, signal, ready: [false, true] });
+        expect(r.code, `${signalAt} ${signal}`).toBe(signal);
+        expect(r.trace.filter((t) => t === "stop")).toHaveLength(1);
+        expect(r.stops).toEqual([{ grace: true }]);
+        expect(r.trace).not.toContain("docker stop");
+      }
+    }
+  });
+
+  it("arrives before the spawn resolves: the child is still stopped", async () => {
+    const r = await drive({ signalAt: "spawn" });
+    expect(r.code).toBe(130);
+    expect(r.trace.filter((t) => t === "stop")).toHaveLength(1);
+    expect(r.trace).not.toContain("ready");
+  });
+
+  it("an unconfirmed stop exits non-zero and says so", async () => {
+    const r = await drive({ signalAt: "running", stopLeft: [4242] });
+    expect(r.code).toBe(130);
+    const e = await drive({ owner: "foreign", stopLeft: [4242] });
+    expect(e.code).toBe(1);
+    expect(e.err.join("\n")).toContain("could not confirm every child stopped (PIDs: 4242)");
+    const ok = await drive({ exitCode: 0, stopLeft: [7] });
+    expect(ok.code).toBe(1);
+  });
+});
+
+describe("secrecy across every helper call", () => {
+  it("no password, URL or token in out, err or any helper argument", async () => {
+    for (const o of [
+      {},
+      { ready: [false], clockStep: 5000 },
+      { owner: "foreign" },
+      { spawnFails: true },
+    ]) {
+      const r = await drive(o);
+      const seen = JSON.stringify([r.out, r.err, r.helperArgs, r.devTokenOrgs, r.spawned?.args]);
+      for (const s of [PW, encodeURIComponent(PW), buildProdUrl(PW, 15432), FRESH]) {
+        expect(seen).not.toContain(s);
+      }
     }
   });
 });
