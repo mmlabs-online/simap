@@ -74,6 +74,7 @@ Identity, so local development is not blocked by CORS (Identity cannot register 
 ## Notes / answers from Ming
 - 2026-11-21: Ming chose option B (tudocuatui dev-token). Any org-admin-api change → give Ming a prompt.
 - Waiting for Ming: plan approval (High tier)
+- Plan approved (2026-11-21): Ming approved decisions A-G as written in plan.md (incl. the split; SIM-028.1 created on main).
 
 ## Handoff
 

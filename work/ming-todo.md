@@ -38,4 +38,4 @@ Never write a secret value here: name the secret and where Ming puts it.
   Imersa Studios whether the original free sheets may sit in a public source repo (draft question in the 2026-11-20
   art report). Until then, CI and other machines cannot cut the Imersa sprites; the packing script (SIM-024) must fall
   back to placeholders when a source sheet is missing.
-- [ ] M-11 Approve plan for SIM-028: `work/tickets/SIM-028/plan.md` (High tier; decisions A-G under Assumptions, incl. the split into SIM-028 + SIM-028.1). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [x] M-11 (2026-11-21) Approve plan for SIM-028: `work/tickets/SIM-028/plan.md` (High tier; decisions A-G under Assumptions, incl. the split into SIM-028 + SIM-028.1). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
