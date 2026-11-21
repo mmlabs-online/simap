@@ -11,6 +11,7 @@
     "format:check": "oxfmt --check",
     "test": "vitest run",
     "check:layers": "node scripts/check-layers.mjs",
+    "sprites:pack": "node scripts/sprites-pack.mjs",
     "migrate": "node --env-file-if-exists=.env.local db/migrate.js",
     "migrate:smoke": "node --env-file-if-exists=.env.local scripts/migrate-smoke.mjs",
     "test:db": "node --env-file-if-exists=.env.local scripts/test-db.mjs",
