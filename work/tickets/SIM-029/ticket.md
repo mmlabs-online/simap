@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | db, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-21 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-21T03:42:36Z |
 | PR | — |
 
 ## Goal
@@ -64,7 +64,7 @@ being able to migrate, seed or create throwaway databases there.
 - Manual: tunnel up, `pnpm dev:prod`, `/api/readyz` 200; `pnpm seed:dev` with the tunnel URL refused.
 
 ## Notes / answers from Ming
-- Waiting for Ming: plan approval (High tier: the plan edits `.env.example`, names only).
+- 2026-11-21: Plan approved by Ming, with the plan defaults for all 3 decisions: (1) `dev:prod` refuses a `DATABASE_URL` line in `.env.local`, Ming comments it out while using it; (2) hand-run `node db/migrate.js` stays unguarded and is documented in the README; (3) `pnpm migrate` and `migrate:smoke` become local-only.
 - 2026-11-21: `pnpm dev:prod` is simap's one-command equivalent of tudocuatui `scripts/start-dev.sh` (token → tunnel →
   password → app), written in Node for Windows; one Next.js process replaces tudocuatui's API + UI pair.
 
