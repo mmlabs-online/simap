@@ -22,6 +22,10 @@ import {
 } from "./dev.mjs";
 import { JWT_SHAPE, promptPassword, tokenFilePath } from "./dev-token.mjs";
 
+// Same value as src/server/identity/config.ts; a plain Node script cannot import that server-only TS module.
+const ISSUER_PROD = "https://api.mmlabs.online";
+const ISSUER_KEY = "MM_IDENTITY_ISSUER";
+const PINNED_KEYS = new Set(["SIMAP_DEV_EXPECTED_ORG", ISSUER_KEY]);
 const CONTAINER_RE = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
 const MIN_TOKEN_LIFE_S = 120;
 const PG_VARS = [
@@ -74,6 +78,17 @@ export function envFileSetsDatabaseUrl(text) {
   return envFileSetsKey(text, "DATABASE_URL");
 }
 
+/**
+ * True when a line of the .env text sets `key` in a letter case other than `key` itself (same matching as
+ * envFileSetsKey, case-insensitive). On Windows such a line can overwrite a value pinned in the process environment.
+ */
+export function envFileSetsKeyVariant(text, key) {
+  const re = new RegExp(String.raw`^\s*(?:export\s+)?(${key})(?:\s*=|:(?:\s|$))`, "gim");
+  const body = String(text).replace(/\r\n?/g, "\n");
+  for (let m = re.exec(body); m; m = re.exec(body)) if (m[1] !== key) return true;
+  return false;
+}
+
 export function buildProdUrl(password, port) {
   return `postgres://simap:${encodeURIComponent(password)}@127.0.0.1:${port}/simap`;
 }
@@ -82,8 +97,7 @@ function childEnv(env, url, tokenFile, org) {
   const copy = { ...env };
   for (const v of PG_VARS) delete copy[v];
   // Windows env names are case-insensitive: drop every case variant before setting the pin.
-  for (const k of Object.keys(copy))
-    if (k.toUpperCase() === "SIMAP_DEV_EXPECTED_ORG") delete copy[k];
+  for (const k of Object.keys(copy)) if (PINNED_KEYS.has(k.toUpperCase())) delete copy[k];
   return {
     ...devEnv({
       ...copy,
@@ -91,6 +105,7 @@ function childEnv(env, url, tokenFile, org) {
       SIMAP_DB_TARGET: "production",
       SIMAP_DEV_TOKEN_FILE: tokenFile,
       SIMAP_DEV_EXPECTED_ORG: org,
+      [ISSUER_KEY]: ISSUER_PROD,
     }),
     // Browser-only: shows the red "Production data" badge. It grants nothing.
     NEXT_PUBLIC_SIMAP_DEV_PROD: "1",
@@ -194,6 +209,15 @@ export async function run(deps) {
       const text = readEnvFile(name);
       if (text !== null && envFileSetsKey(text, "SIMAP_DEV_ORG")) {
         err(`[dev:prod] ${name} sets SIMAP_DEV_ORG: remove that line and set it in the shell`);
+        return 2;
+      }
+    }
+    for (const name of ENV_FILE_NAMES) {
+      const text = readEnvFile(name);
+      if (text !== null && envFileSetsKeyVariant(text, ISSUER_KEY)) {
+        err(
+          `[dev:prod] ${name} sets ${ISSUER_KEY} in a different letter case: remove that line (dev:prod pins the issuer)`,
+        );
         return 2;
       }
     }

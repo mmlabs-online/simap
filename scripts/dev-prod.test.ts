@@ -1,12 +1,17 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "pg-connection-string";
 import { classifyTarget } from "../db/target.js";
+import { devEnv, ENV_FILE_NAMES } from "./dev.mjs";
 import { isCanonicalUuid } from "../src/lib/validate/uuid";
 import {
   buildProdUrl,
   envFileSetsDatabaseUrl,
   envFileSetsKey,
+  envFileSetsKeyVariant,
   run,
   tokenIsFresh,
   tokenOrg,
@@ -471,6 +476,116 @@ describe("run: child process", () => {
     const src = readFileSync(new URL("./dev-prod.mjs", import.meta.url), "utf8");
     for (const api of ["writeFile", "appendFile", "createWriteStream"]) {
       expect(src).not.toContain(api);
+    }
+  });
+});
+
+const ISSUER = "https://api.mmlabs.online";
+const issuerKeys = (e: Record<string, string | undefined>) =>
+  Object.keys(e).filter((k) => k.toUpperCase() === "MM_IDENTITY_ISSUER");
+const FILES = ENV_FILE_NAMES as string[];
+
+describe("issuer pin", () => {
+  it("child issuer is pinned, replacing inherited case variants", async () => {
+    const envs = [
+      {
+        MM_IDENTITY_ISSUER: "http://localhost:4000",
+        mm_identity_issuer: "http://x",
+        Mm_Identity_Issuer: "http://y",
+      },
+      { mm_identity_issuer: "http://x" },
+      { mm_identity_issuer: "http://x", NODE_ENV: "production" },
+      {},
+    ];
+    for (const env of envs) {
+      const r = await drive({ env });
+      expect(issuerKeys(r.spawned!.env)).toEqual(["MM_IDENTITY_ISSUER"]);
+      expect(r.spawned!.env.MM_IDENTITY_ISSUER).toBe(ISSUER);
+    }
+  });
+
+  it("exact-case issuer line in each .env file does not stop dev:prod", async () => {
+    for (const name of FILES) {
+      const r = await drive({ envFiles: { [name]: "MM_IDENTITY_ISSUER=http://evil.test\n" } });
+      expect(r.code, name).toBe(0);
+      expect(r.trace).toContain("spawn");
+      expect(r.spawned!.env.MM_IDENTITY_ISSUER).toBe(ISSUER);
+    }
+  });
+
+  const VARIANTS = [
+    "mm_identity_issuer=SECRET-ISSUER\n",
+    "Mm_Identity_Issuer: SECRET-ISSUER\n",
+    "export MM_identity_ISSUER =SECRET-ISSUER\n",
+    "A=1\r\nmm_identity_issuer=SECRET-ISSUER\r\n",
+    "﻿mm_identity_issuer=SECRET-ISSUER\n",
+    "mm_identity_issuer\n=SECRET-ISSUER\n",
+  ];
+  const cases = FILES.flatMap((n) => VARIANTS.map((v) => [n, v] as const));
+  it.each(cases)("a case-variant issuer line in %s exits 2 before the prompt: %j", async (n, v) => {
+    const r = await drive({ envFiles: { [n]: v } });
+    expect(r.code).toBe(2);
+    for (const t of NO_APP) expect(r.trace).not.toContain(t);
+    const all = [...r.out, ...r.err].join("\n");
+    expect(all).toContain(n);
+    expect(all).not.toContain("SECRET-ISSUER");
+  });
+
+  it("issuer refusal is not hit by exact case or by other keys", async () => {
+    for (const text of [
+      "MM_IDENTITY_ISSUER=x\n",
+      "# mm_identity_issuer=x\n",
+      "MM_IDENTITY_ISSUER_X=x\n",
+      "XMM_IDENTITY_ISSUER=x\n",
+    ]) {
+      const r = await drive({ envFiles: { ".env": text } });
+      expect(r.code, text).toBe(0);
+    }
+    const both = await drive({
+      envFiles: { ".env": "MM_IDENTITY_ISSUER=x\nmm_identity_issuer=y\n" },
+    });
+    expect(both.code).toBe(2);
+  });
+
+  it("issuer refusal comes after the read-failure handling", async () => {
+    const r = await drive({ envThrows: "EBUSY" });
+    expect(r.code).toBe(2);
+    expect([...r.out, ...r.err].join("\n")).not.toContain("SECRET-CONTENT");
+  });
+
+  it("envFileSetsKeyVariant", () => {
+    const k = "MM_IDENTITY_ISSUER";
+    expect(envFileSetsKeyVariant("mm_identity_issuer=1", k)).toBe(true);
+    expect(envFileSetsKeyVariant("MM_IDENTITY_ISSUER=1\nMm_Identity_Issuer=2", k)).toBe(true);
+    expect(envFileSetsKeyVariant("MM_IDENTITY_ISSUER=1", k)).toBe(false);
+    expect(envFileSetsKeyVariant("", k)).toBe(false);
+  });
+
+  it("plain dev keeps issuer variants", () => {
+    const e = devEnv({ MM_IDENTITY_ISSUER: "x", mm_identity_issuer: "y" });
+    expect(e.MM_IDENTITY_ISSUER).toBe("x");
+    expect(e.mm_identity_issuer).toBe("y");
+  });
+
+  it("@next/env keeps the pinned issuer over every .env file, also after a forced reload", () => {
+    const nextRequire = createRequire(createRequire(import.meta.url).resolve("next/package.json"));
+    const { loadEnvConfig } = nextRequire("@next/env") as {
+      loadEnvConfig: (d: string, dev: boolean, log: object, force?: boolean) => unknown;
+    };
+    const dir = mkdtempSync(join(tmpdir(), "simap-next-env-"));
+    const saved = { ...process.env };
+    try {
+      for (const n of FILES) writeFileSync(join(dir, n), "MM_IDENTITY_ISSUER=http://localhost:1\n");
+      process.env.MM_IDENTITY_ISSUER = ISSUER;
+      const quiet = { info() {}, error() {} };
+      loadEnvConfig(dir, true, quiet, false);
+      expect(process.env.MM_IDENTITY_ISSUER).toBe(ISSUER);
+      loadEnvConfig(dir, true, quiet, true);
+      expect(process.env.MM_IDENTITY_ISSUER).toBe(ISSUER);
+    } finally {
+      for (const k of Object.keys(process.env)) delete process.env[k];
+      Object.assign(process.env, saved);
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });
