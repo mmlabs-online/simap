@@ -937,7 +937,7 @@ describe("stop signal", () => {
         const r = await drive({ signalAt, signal, ready: [false, true] });
         expect(r.code, `${signalAt} ${signal}`).toBe(signal);
         expect(r.trace.filter((t) => t === "stop")).toHaveLength(1);
-        expect(r.stops).toEqual([{ grace: true }]);
+        expect(r.stops).toEqual([{ grace: true, port: expect.any(Number) }]);
         expect(r.trace).not.toContain("docker stop");
       }
     }

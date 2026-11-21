@@ -102,3 +102,21 @@ None.
 
 ### Follow-ups
 Tunnel port identity, minimal helper env, N4/N5 (excluded). A later `.env*` PG* key refusal is by line match only, like the other refusals.
+
+## Attempt 4 — 2026-11-21 (REWORK, escalation option 1)
+
+### Files touched
+- `scripts/dev-process.mjs`: T1 (re-check `exited` after the retry sleep, break before the snapshot); T2/Issue 1 (`winTree` adds each live remembered member plus `descendantsOf`, deduplicated, all recorded in `known`; never from a dead member); Issue 2 (`survivors` starts from `known` PIDs); N6 (an exited root PID is not listed; `0` means "name the port"); item 5 (final app-port check in `stopTree` when `stop({ port })`, 3 tries, `[0]` if a listener remains or the check cannot tell; never kills by port); injectable `snapshot`, `kill`, `listeners`.
+- `scripts/dev-prod.mjs`: passes `port` to `stop`; message omits the PID list when only `0` is returned (names the port).
+- `scripts/dev-process.test.ts`: tests for T1 (injected snapshot, child exits during the retry sleep), the real-tree sequence root -> mid -> leaf (owner, leaf starts a new child, mid exits, stop), final port check (clean, remaining listener, undeterminable); one assertion changed (exited root is no longer listed).
+- `scripts/dev-prod.test.ts`: the `stops` assertion now includes `port`.
+- `README.md`: one line on the remaining limit.
+
+### Checks
+Node 22. typecheck 0; check:layers 0 (234 files); format:check 0; test 0 (1037 passed, 3 skipped); build 0; check:dev-bundle 0; `bash -n scripts/start-dev.sh` 0. With the T1 and T2 fixes reverted, the two new tests fail.
+
+### Net lines
+5 files, +172 / -30 (about +142), of which about 110 are tests.
+
+### Follow-ups
+N4, N5, N7, N8 beyond the port check, tunnel port identity, minimal helper env (unchanged). The POSIX final port check (`lsof`) was not run on a real POSIX host here.

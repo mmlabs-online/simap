@@ -314,10 +314,11 @@ export async function run(deps) {
     });
     const halt = async (code, grace = false) => {
       halted = true;
-      const left = handle ? await handle.stop({ grace }) : [];
+      const left = handle ? await handle.stop({ grace, port: Number(port) }) : [];
       if (left.length) {
+        const pids = left.filter(Boolean);
         err(
-          `[dev:prod] could not confirm every child stopped (PIDs: ${left.join(", ")}). The app may still be running on port ${port}: stop it before continuing`,
+          `[dev:prod] could not confirm every child stopped${pids.length ? ` (PIDs: ${pids.join(", ")})` : ""}. The app may still be running on port ${port}: stop it before continuing`,
         );
         return code || 1;
       }

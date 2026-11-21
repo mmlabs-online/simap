@@ -262,7 +262,7 @@ describe("real tree", () => {
       process.env.SystemRoot = join(tmpdir(), "simap-no-such-root");
       try {
         const left = await app.stop();
-        expect(left).toEqual([app.pid]);
+        expect(left).not.toEqual([]); // the exited root is not listed as a PID to stop by hand
         await sleep(300);
         expect(alive(app.pid!)).toBe(false);
       } finally {
@@ -344,6 +344,114 @@ describe("real tree", () => {
         expect(await app.owner(bystander.port)).toBe("foreign");
         expect(await app.owner(1)).not.toBe("owned");
       });
+    },
+    60_000,
+  );
+
+  it("final port check: clean, remaining listener and undeterminable", async () => {
+    const mk = async (listeners?: (port: number) => number[] | null) =>
+      startApp({
+        cmd: process.execPath,
+        args: ["-e", "setInterval(()=>{},1000)"],
+        env: MIN_ENV,
+        cwd: tmpdir(),
+        ...(listeners ? { listeners } : {}),
+      });
+    const probe = await listen();
+    const busyPort = (probe.address() as net.AddressInfo).port;
+    const freeProbe = await listen();
+    const freePort = (freeProbe.address() as net.AddressInfo).port;
+    await new Promise((r) => freeProbe.close(r));
+    const apps: App[] = [];
+    try {
+      if (hasLsof) {
+        const clean = await mk();
+        apps.push(clean);
+        expect(await clean.stop({ port: freePort })).toEqual([]);
+        const busy = await mk();
+        apps.push(busy);
+        expect(await busy.stop({ port: busyPort })).toEqual([0]);
+        expect(probe.listening).toBe(true); // a listener on the port is never killed
+      }
+      const unknown = await mk(() => null);
+      apps.push(unknown);
+      expect(await unknown.stop({ port: freePort })).toEqual([0]);
+      const none = await mk(() => []);
+      apps.push(none);
+      expect(await none.stop({ port: freePort })).toEqual([]);
+    } finally {
+      for (const a of apps) if (alive(a.pid!)) process.kill(a.pid!);
+      await new Promise((r) => probe.close(r));
+    }
+  }, 60_000);
+
+  it.skipIf(!WIN)(
+    "the child exits during the first-snapshot retry: a reused PID is not adopted or killed",
+    async () => {
+      let n = 0;
+      let app: App | null = null;
+      const killed: number[] = [];
+      app = await startApp({
+        cmd: process.execPath,
+        args: ["-e", "setTimeout(()=>{},40)"],
+        env: MIN_ENV,
+        cwd: tmpdir(),
+        // The first two reads fail; later ones show a different process on the freed PID.
+        snapshot: () =>
+          ++n <= 2
+            ? null
+            : {
+                procs: [{ pid: app!.pid!, ppid: 1, start: 5n }],
+                listeners: [],
+              },
+        kill: (members: { pid: number }[]) => killed.push(...members.map((m) => m.pid)),
+      });
+      try {
+        expect(await app.stop()).not.toEqual([]);
+        expect(killed).toEqual([]);
+      } finally {
+        if (alive(app.pid!)) process.kill(app.pid!);
+      }
+    },
+    60_000,
+  );
+
+  it.skipIf(!hasLsof)(
+    "a new child of a remembered member is stopped after its parent exits",
+    async () => {
+      const dir = mkdtempSync(join(tmpdir(), "simap-tree-"));
+      const [gFile, go1, cFile, go2] = ["g.json", "go1", "c.json", "go2"].map((f) => join(dir, f));
+      const det = "{stdio:'ignore',detached:process.platform==='win32'}";
+      const newChild = `require('child_process').spawn(process.execPath,['-e','setInterval(()=>{},1000)'],${det}).pid`;
+      const leaf = `${LISTENER};let d=0;setInterval(()=>{if(!d&&require('fs').existsSync(process.argv[2])){d=1;require('fs').writeFileSync(process.argv[3],JSON.stringify({pid:${newChild}}))}},100)`;
+      const spawnArgs = "process.argv[1],process.argv[2],process.argv[3],process.argv[4]";
+      const mid = `require('child_process').spawn(process.execPath,['-e',${JSON.stringify(leaf)},process.argv[1],process.argv[2],process.argv[3]],${det});setInterval(()=>{if(require('fs').existsSync(process.argv[4]))process.exit(0)},100)`;
+      const top = `require('child_process').spawn(process.execPath,['-e',${JSON.stringify(mid)},${spawnArgs}],${det});setInterval(()=>{},1000)`;
+      const app = await startApp({
+        cmd: process.execPath,
+        args: ["-e", top, gFile, go1, cFile, go2],
+        env: MIN_ENV,
+        cwd: tmpdir(),
+      });
+      let leafInfo: Info | null = null;
+      let child: Info | null = null;
+      try {
+        leafInfo = await readInfo(gFile);
+        expect(await app.owner(leafInfo.port)).toBe("owned"); // remembers root, mid and leaf
+        writeFileSync(go1, "");
+        child = await readInfo(cFile);
+        writeFileSync(go2, "");
+        await sleep(800); // mid has exited; leaf and its new child run on
+        expect(alive(child.pid)).toBe(true);
+        expect(await app.stop()).toEqual([]);
+        await sleep(300);
+        expect(alive(leafInfo.pid)).toBe(false);
+        expect(alive(child.pid)).toBe(false);
+      } finally {
+        for (const x of [leafInfo, child]) if (x && alive(x.pid)) process.kill(x.pid);
+        await app.stop();
+        rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+      }
     },
     60_000,
   );

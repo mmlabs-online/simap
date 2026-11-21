@@ -245,9 +245,22 @@ function run(cmd, args) {
 /**
  * Starts `cmd args` with stdin closed and output inherited, as the leader of its own process tree.
  * Returns { pid, exit, stop, owner }: `exit` resolves with the exit code; `stop({ grace })` ends the whole tree and
- * resolves with the PIDs it could not confirm stopped (empty = done); `owner(port)` is "owned", "foreign" or "unknown".
+ * resolves with the PIDs it could not confirm stopped (empty = done; 0 = no PID to list, name the port); with `port`,
+ * a final check must also find no listener on it. `owner(port)` is "owned", "foreign" or "unknown".
+ * `snapshot`, `kill` and `listeners` are injectable for tests.
  */
-export async function startApp({ cmd, args, env, cwd }) {
+export async function startApp({
+  cmd,
+  args,
+  env,
+  cwd,
+  snapshot = winSnapshot,
+  kill = winKill,
+  listeners = (port) =>
+    WIN
+      ? (snapshot(port)?.listeners ?? null)
+      : parsePosixListeners(run("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-Fp"])),
+}) {
   const child = spawn(cmd, args, {
     stdio: ["ignore", "inherit", "inherit"],
     env,
@@ -269,24 +282,25 @@ export async function startApp({ cmd, args, env, cwd }) {
     const row = snap?.procs.find((p) => p.pid === child.pid);
     return row ? { pid: child.pid, start: row.start } : null;
   };
-  let root = WIN ? rootOf(winSnapshot(0)) : null;
+  let root = WIN ? rootOf(snapshot(0)) : null;
   // Every tree member (pid:start) seen in any snapshot, so a member whose parent exited is still stopped.
   const known = new Map();
   const keyOf = (m) => `${m.pid}:${m.start}`;
 
   const winTree = (snap) => {
-    const alive = snap.procs.some((p) => p.pid === root.pid && p.start === root.start);
-    const tree = [
-      ...(alive ? [root] : []),
-      ...descendantsOf(snap.procs, { ...root, end: rootEnd }),
-    ];
-    for (const m of tree) known.set(keyOf(m), m);
-    const inTree = new Set(tree.map(keyOf));
-    for (const [k, m] of known) {
-      if (!inTree.has(k) && snap.procs.some((p) => p.pid === m.pid && p.start === m.start))
-        tree.push(m);
+    const live = (m) => snap.procs.some((p) => p.pid === m.pid && p.start === m.start);
+    const tree = new Map();
+    const add = (m) => tree.set(keyOf(m), m);
+    if (live(root)) add(root);
+    descendantsOf(snap.procs, { ...root, end: rootEnd }).forEach(add);
+    // Live remembered members and everything below them; never from a dead member.
+    for (const m of [...known.values()]) {
+      if (!live(m)) continue;
+      add(m);
+      descendantsOf(snap.procs, m).forEach(add);
     }
-    return tree;
+    for (const [k, m] of tree) known.set(k, m);
+    return [...tree.values()];
   };
   // Last resort on the handle Node holds (cannot hit a reused PID) when the process table cannot be read.
   const killRoot = async () => {
@@ -314,16 +328,23 @@ export async function startApp({ cmd, args, env, cwd }) {
   };
 
   let stopping = null;
-  const stopTree = async (grace) => {
-    if (!WIN) return posixStop();
+  const winStop = async (grace) => {
     // While the child is held, its PID is ours: retry the snapshot before any kill to learn the root's identity.
     for (let i = 0; i < 3 && !root && !exited; i++) {
-      if (i) await sleep(300);
-      root = rootOf(winSnapshot(0));
+      if (i) {
+        await sleep(300);
+        if (exited) break; // the PID may be free now: never adopt it
+      }
+      root = rootOf(snapshot(0));
     }
-    let survivors = [child.pid];
+    let survivors = known.size ? [...known.values()].map((m) => m.pid) : [child.pid];
+    // An exited root is not something to stop by hand; if nothing else is listed, 0 means "name the port".
+    const report = () => {
+      const pids = survivors.filter((p) => !(p === child.pid && exited));
+      return pids.length ? pids : [0];
+    };
     const look = () => {
-      const snap = root && winSnapshot(0);
+      const snap = root && snapshot(0);
       if (!snap) return null;
       const left = winTree(snap);
       if (left.length) survivors = left.map((m) => m.pid);
@@ -335,7 +356,7 @@ export async function startApp({ cmd, args, env, cwd }) {
     }
     if (!root) {
       await killRoot();
-      return survivors;
+      return report();
     }
     // A snapshot that fails is never read as "nothing left": kill the root by handle, then try again.
     for (let sweep = 0; sweep < 4; sweep++) {
@@ -346,22 +367,33 @@ export async function startApp({ cmd, args, env, cwd }) {
         continue;
       }
       if (!left.length) return [];
-      if (sweep === 3) return survivors;
-      winKill([...left].reverse());
+      if (sweep === 3) return report();
+      kill([...left].reverse());
       await sleep(300);
     }
-    return survivors;
+    return report();
+  };
+  // Clean only if a final check finds no listener on the app port (never kills by port).
+  const stopTree = async (grace, port) => {
+    const left = WIN ? await winStop(grace) : await posixStop();
+    if (left.length || !Number.isInteger(port)) return left;
+    for (let i = 0; i < 3; i++) {
+      if (listeners(port)?.length === 0) return [];
+      if (i < 2) await sleep(200);
+    }
+    return [0];
   };
 
   return {
     pid: child.pid,
     rooted: WIN ? root !== null : true,
     exit,
-    stop: ({ grace = false } = {}) => (stopping ??= stopTree(grace)),
+    stop: (/** @type {{ grace?: boolean, port?: number }} */ { grace = false, port } = {}) =>
+      (stopping ??= stopTree(grace, port)),
     async owner(port) {
       if (!Number.isInteger(port)) return "unknown";
       if (WIN) {
-        const snap = root ? winSnapshot(port) : null;
+        const snap = root ? snapshot(port) : null;
         return snap
           ? classifyOwner(
               snap.listeners,

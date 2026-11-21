@@ -54,6 +54,7 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
 waits up to 30 s for `/api/readyz`, checks that the app we started owns the port, and prints the local URL and
 `PRODUCTION DATA: every change is real.` Ctrl-C stops the app and its child processes and leaves the tunnel running.
 A hard kill of the launcher (Task Manager, `SIGKILL`) cannot clean up; the next run then refuses the busy port.
+A hidden child that holds no port and was never seen by a snapshot can survive a stop; `stop` reports clean only if nothing still listens on the app port.
 Before the first run take a `pg_dump` of the `simap` database and keep it outside the repo.
 
 `pnpm dev:prod` runs the local app against the production database through the Cloudflare pg-tunnel (D56). It needs
