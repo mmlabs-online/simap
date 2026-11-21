@@ -47,11 +47,12 @@ export type MeResult =
       network?: false;
       status: number;
       code?: ApiErrorCode | string;
-      me?: { tier: Tier; email: string };
+      me?: { tier: Tier; email: string; member?: { displayName: string; needsProfile: boolean } };
     };
 
 export type MeView =
   | { kind: "ready"; tier: Tier; email: string }
+  | { kind: "profile"; tier: Tier; email: string; displayName: string }
   | { kind: "needOrg" }
   | { kind: "noAccess"; code: "forbidden" | "member_deactivated" }
   | { kind: "signedOut"; error: AuthError }
@@ -61,6 +62,14 @@ export type MeView =
 export function viewForMe(result: MeResult): MeView {
   if (result.network) return { kind: "retry", error: { code: "network" } };
   if (result.status === 200 && result.me) {
+    const { member } = result.me;
+    if (member?.needsProfile === true)
+      return {
+        kind: "profile",
+        tier: result.me.tier,
+        email: result.me.email,
+        displayName: member.displayName,
+      };
     return { kind: "ready", tier: result.me.tier, email: result.me.email };
   }
   if (result.status === 401) return { kind: "signedOut", error: { code: "no_access" } };
@@ -102,9 +111,17 @@ export async function readMeResult(res: Response): Promise<MeResult> {
   const obj = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
   const errorCode = (obj.error as { code?: unknown } | null | undefined)?.code;
   const tier = TIERS.find((t) => t === obj.tier);
+  const m =
+    typeof obj.member === "object" && obj.member !== null
+      ? (obj.member as { displayName?: unknown; needsProfile?: unknown })
+      : null;
+  const member =
+    m && typeof m.displayName === "string" && typeof m.needsProfile === "boolean"
+      ? { displayName: m.displayName, needsProfile: m.needsProfile }
+      : undefined;
   const me =
     res.status === 200 && tier && typeof obj.email === "string"
-      ? { tier, email: obj.email }
+      ? { tier, email: obj.email, member }
       : undefined;
   return {
     status: res.status,
