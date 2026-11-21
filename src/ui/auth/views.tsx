@@ -6,6 +6,8 @@ import { hasErrors, validateSignIn, type FieldErrors } from "@/lib/validate/cred
 import { Button } from "../Button";
 import { apiErrorMessage } from "../copy/api";
 import { authCopy, authErrorMessage } from "../copy/auth";
+import { orgCopy } from "../copy/org";
+import type { OrgNotice } from "@/lib/identity/orgs";
 import { AuthLayout } from "./AuthLayout";
 import { Field, linkClass, Notice, ShowPasswordToggle } from "./fields";
 
@@ -224,10 +226,20 @@ export function UnverifiedView({
   );
 }
 
-export function NoOrgView({ email, onSignOut }: { email: string | null; onSignOut: () => void }) {
+export function NoOrgView({
+  email,
+  notice,
+  onSignOut,
+}: {
+  email: string | null;
+  notice?: OrgNotice;
+  onSignOut: () => void;
+}) {
   return (
-    <AuthLayout title={authCopy.noOrg.title}>
-      <Notice kind="info">{authCopy.noOrg.body(email)}</Notice>
+    <AuthLayout title={orgCopy.none.title}>
+      {notice && <Notice kind="info">{orgCopy.notices[notice]}</Notice>}
+      <Notice kind="info">{orgCopy.none.body(email)}</Notice>
+      <p className="text-sm text-on-surface-variant">{orgCopy.none.howTo}</p>
       <Button variant="tonal" onClick={onSignOut}>
         {authCopy.actions.signOut}
       </Button>

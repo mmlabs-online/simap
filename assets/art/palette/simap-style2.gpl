@@ -1,0 +1,65 @@
+GIMP Palette
+Name: simap-style2
+Columns: 8
+#
+ 42  49  64	outline
+217 222 229	carpet
+210 216 224	carpet-alt
+198 205 215	carpet-line
+211 205 234	lavender
+203 196 229	lavender-alt
+188 179 219	lavender-line
+234 223 202	wood-floor
+216 201 174	wood-floor-line
+139 149 167	wall-top
+162 172 188	wall-top-hi
+238 241 245	wall-face
+223 227 234	wall-shade
+152 161 176	wall-base
+191 227 245	glass
+234 247 255	glass-hi
+125 136 150	frame
+246 245 242	desk-top
+255 255 255	white-hi
+216 211 202	desk-front
+195 189 178	desk-front-dk
+140 149 163	leg
+ 47 143 138	chair
+ 35 110 107	chair-dk
+ 79 179 172	chair-hi
+ 58  66  80	chair-base
+ 38  43  51	screen-frame
+ 59 125 212	screen
+106 163 238	screen-hi
+214 232 255	glare
+ 53  59  69	pc
+ 74  81  93	pc-hi
+ 94 224 143	led-green
+ 56 189 248	led-blue
+185 192 202	light-device
+154 162 173	light-device-dk
+227 230 234	keyboard
+198 204 212	keys
+ 78 165 107	leaf
+ 51 122  77	leaf-dk
+124 200 147	leaf-hi
+242 239 233	pot
+214 209 198	pot-dk
+188 196 206	cabinet
+158 167 178	cabinet-dk
+238 241 244	handle
+201 162 122	shelf
+165 128  92	shelf-dk
+ 90 123 214	sofa
+ 68  98 181	sofa-dk
+125 152 227	sofa-hi
+234 217 192	table
+205 185 149	table-dk
+232 106  90	warm-red
+242 193  78	warm-yellow
+ 20 184 166	state-mine
+245 158  11	state-pending
+239  68  68	state-cannot
+200 200 200	avatar-grey-light
+154 154 154	avatar-grey-mid
+108 108 108	avatar-grey-dark

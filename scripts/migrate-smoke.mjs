@@ -6,10 +6,17 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import pg from "pg";
 import { MigrationError, runMigrations } from "../db/migrator.js";
+import { assertDevSeedTarget } from "../db/seeder.js";
 
 const base = process.env.DATABASE_URL;
 if (!base) {
   console.error("DATABASE_URL is not set");
+  process.exit(2);
+}
+try {
+  assertDevSeedTarget({ databaseUrl: base, nodeEnv: process.env.NODE_ENV });
+} catch (e) {
+  console.error(`migrate:smoke refused: ${e instanceof Error ? e.message : "invalid target"}`);
   process.exit(2);
 }
 

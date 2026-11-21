@@ -22,7 +22,13 @@ const scopeFor = (org: string): OrgScope => Object.freeze({ orgId: org }) as Org
 export type MemberGate = (scope: OrgScope, sub: string) => Promise<"active" | "deactivated">;
 
 type Log = (entry: Record<string, unknown>) => void;
-export type AuthDeps = { verifier: IdentityVerifier; memberGate: MemberGate; log: Log };
+export type AuthDeps = {
+  verifier: IdentityVerifier;
+  memberGate: MemberGate;
+  log: Log;
+  /** Dev only (SIM-028): replaces the client Authorization header. Unset in production. */
+  authorization?: (req: Request) => Promise<string | null>;
+};
 
 type RouteContext<P> = { params: Promise<P> };
 
@@ -48,7 +54,9 @@ export function createWithAuth(deps: () => AuthDeps, configLog: Log = logEntry) 
         return apiError(503, "unavailable");
       }
       try {
-        const v = await d.verifier.verify(req.headers.get("authorization"));
+        const v = await d.verifier.verify(
+          d.authorization ? await d.authorization(req) : req.headers.get("authorization"),
+        );
         if (!v.ok) {
           if (v.unavailable) {
             d.log({ event: "jwks_unavailable" });
@@ -100,6 +108,11 @@ function getAuthDeps(): AuthDeps {
         verifier: createIdentityVerifier({ issuer, jwksUrl, log: logEntry }),
         memberGate: allowAll, // SIM-011 replaces this with the org-local deny list.
         log: logEntry,
+        ...(process.env.NODE_ENV === "development" &&
+          process.env.NEXT_PUBLIC_SIMAP_DEV_TOKEN === "1" && {
+            authorization: async (req: Request) =>
+              (await import("./dev-token")).devAuthorization(req),
+          }),
       },
     };
   }

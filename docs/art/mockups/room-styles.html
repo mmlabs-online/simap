@@ -1,0 +1,288 @@
+<title>Simap Room Styles</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Pixelify+Sans:wght@500;700&family=Silkscreen&display=swap">
+<style>
+/* Layout: a single reading column of choice cards; each card holds one live pixel preview. */
+:root{
+  --bg:#f3f4f1; --surface:#ffffff; --fg:#1d2420; --muted:#5d675f; --line:#d9ddd5; --accent:#2f7d63; --accent-ink:#ffffff;
+  --sel:#2f7d63; --chip:#e8ece6;
+  --f-display:"Pixelify Sans", "Inter", system-ui, sans-serif;
+  --f-body:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141917; --surface:#1d2420; --fg:#e7ece8; --muted:#a3ada6; --line:#313a35; --accent:#5cc49f; --accent-ink:#0f1a15; --sel:#5cc49f; --chip:#26302b; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141917; --surface:#1d2420; --fg:#e7ece8; --muted:#a3ada6; --line:#313a35; --accent:#5cc49f; --accent-ink:#0f1a15; --sel:#5cc49f; --chip:#26302b; color-scheme:dark}
+body{background:var(--bg); color:var(--fg); font-family:var(--f-body); font-size:15px; line-height:1.55}
+.wrap{max-width:980px; margin:0 auto; padding-block:28px 120px; padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); display:flex; flex-direction:column; gap:32px}
+h1{font-family:var(--f-display); font-weight:700; font-size:clamp(28px,5vw,40px); line-height:1.1; margin:0; text-wrap:balance}
+h2{font-family:var(--f-display); font-weight:700; font-size:24px; margin:0; text-wrap:balance}
+h3{font-size:17px; margin:0; font-weight:600}
+p{margin:0; max-width:68ch}
+.lead{color:var(--muted)}
+.section{display:flex; flex-direction:column; gap:16px}
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr)); gap:16px}
+.card{background:var(--surface); border:2px solid var(--line); border-radius:6px; padding:14px; display:flex; flex-direction:column; gap:10px; cursor:pointer; min-width:0; text-align:left; font:inherit; color:inherit}
+.card:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+.card[aria-pressed="true"]{border-color:var(--sel); box-shadow:0 0 0 2px var(--sel)}
+.card .top{display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap}
+.tag{font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted)}
+.pick{font-size:12px; font-weight:600; padding:2px 8px; border-radius:99px; background:var(--chip); color:var(--muted)}
+.card[aria-pressed="true"] .pick{background:var(--sel); color:var(--accent-ink)}
+.stage{background:#0d0f0e; border-radius:4px; padding:8px; display:flex; justify-content:center; overflow:hidden}
+canvas.px{display:block; image-rendering:pixelated; image-rendering:crisp-edges; max-width:100%}
+.notes{display:grid; grid-template-columns:auto 1fr; gap:4px 10px; font-size:13.5px; margin:0}
+.notes dt{color:var(--muted)}
+.notes dd{margin:0}
+.legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; color:var(--muted)}
+.legend span b{color:var(--fg); font-weight:600}
+.scroller{overflow-x:auto; border-radius:6px}
+#styles{grid-template-columns:1fr}
+#styles .card{display:grid; grid-template-columns:minmax(0,1fr) 260px; grid-template-rows:auto 1fr; column-gap:16px}
+#styles .card .top{grid-column:1 / -1}
+#styles .card .stage{grid-row:2}
+@media (max-width:760px){#styles .card{display:flex}}
+/* --- UI shell mocks: fixed illustration colours, independent of page theme --- */
+.mock{min-width:600px; display:grid; grid-template-columns:132px 1fr; height:330px; font-size:12px; overflow:hidden}
+.mock nav{display:flex; flex-direction:column; gap:4px; padding:12px 8px}
+.mock nav .brand{font-weight:700; font-size:15px; margin-bottom:10px; padding:0 6px}
+.mock nav a{display:flex; gap:8px; align-items:center; padding:6px; border-radius:4px; color:inherit; text-decoration:none}
+.mock nav img{width:16px; height:16px; image-rendering:pixelated}
+.mock main{display:grid; grid-template-rows:auto 1fr; min-width:0}
+.mock header{display:flex; justify-content:space-between; align-items:center; padding:10px 14px}
+.mock .body{display:grid; grid-template-columns:1fr 168px; gap:10px; padding:0 14px 14px; min-height:0}
+.mock .mapbox{display:flex; align-items:center; justify-content:center; min-height:0; overflow:hidden}
+.mock .panel{display:flex; flex-direction:column; gap:6px; padding:10px}
+.mock .btn{display:inline-block; padding:5px 9px; font-weight:600; text-align:center}
+/* A: clean */
+.mA{background:#f7f8fa; color:#1f2430; font-family:var(--f-body)}
+.mA nav{background:#ffffff; border-right:1px solid #e3e6eb}
+.mA nav a.on{background:#eef3ff; color:#2a55c9}
+.mA nav img{display:none}
+.mA .mapbox{background:#ffffff; border:1px solid #e3e6eb; border-radius:8px}
+.mA .panel{background:#ffffff; border:1px solid #e3e6eb; border-radius:8px}
+.mA .btn{background:#2a55c9; color:#fff; border-radius:6px}
+.mA h4{margin:0; font-size:13px}
+/* B: clean + pixel accents */
+.mB{background:#f4f1ea; color:#232323; font-family:var(--f-body)}
+.mB nav{background:#fffdf8; border-right:2px solid #232323}
+.mB nav .brand, .mB h4, .mB header strong{font-family:"Pixelify Sans",var(--f-body)}
+.mB nav a.on{background:#ffe7a8; outline:2px solid #232323}
+.mB .mapbox{background:#fffdf8; border:2px solid #232323; box-shadow:4px 4px 0 #232323}
+.mB .panel{background:#fffdf8; border:2px solid #232323; box-shadow:4px 4px 0 #232323}
+.mB .btn{background:#ffcf4a; color:#232323; border:2px solid #232323; box-shadow:2px 2px 0 #232323}
+.mB h4{margin:0; font-size:15px}
+/* C: game HUD */
+.mC{background:#141a2b; color:#e8ecff; font-family:"Silkscreen",var(--f-body)}
+.mC nav{background:#1c2440; border-right:4px double #8fa2ff}
+.mC nav a.on{background:#2d3a6b; color:#ffe27a}
+.mC .mapbox{background:#0b0f1c; border:4px double #8fa2ff}
+.mC .panel{background:#1c2440; border:4px double #8fa2ff; font-size:11px}
+.mC .btn{background:#ffe27a; color:#141a2b}
+.mC h4{margin:0; font-size:13px; color:#ffe27a}
+.mC .plain{font-family:var(--f-body); font-size:12px}
+.pros{display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:13.5px}
+.pros div{min-width:0}
+.pros b{display:block; font-size:12px; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); font-weight:600}
+.summary{position:sticky; bottom:0; background:var(--surface); border-top:2px solid var(--line); padding-block:12px calc(12px + env(safe-area-inset-bottom, 0px)); padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.summary .in{max-width:980px; margin:0 auto; display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap}
+.summary code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; background:var(--chip); padding:4px 8px; border-radius:4px; font-size:13px}
+.copy{background:var(--accent); color:var(--accent-ink); border:0; border-radius:4px; padding:8px 14px; font:600 14px var(--f-body); cursor:pointer}
+.copy:focus-visible{outline:3px solid var(--fg); outline-offset:2px}
+.hint{font-size:13px; color:var(--muted)}
+@media (max-width:520px){.pros{grid-template-columns:1fr}}
+</style>
+
+<div class="wrap">
+  <header class="section">
+    <span class="tag">simap · OQ-40e · bản nháp để chọn</span>
+    <h1>Chọn style pixel cho sơ đồ phòng</h1>
+    <p class="lead">Cùng một phòng mẫu <b>C302</b> (15 × 10 ô, ô 16 px) được vẽ theo 4 style. Toàn bộ sprite ở đây do Claude vẽ bằng code làm minh hoạ, không lấy từ gói asset nào. Art thật sẽ được chỉnh từ asset miễn phí theo style anh chọn. Chọn 1 style và 1 kiểu UI rồi bấm “Sao chép lựa chọn” để gửi lại.</p>
+    <div class="legend" aria-label="Chú thích phòng mẫu">
+      <span><b>01</b> có người, PC + màn hình</span>
+      <span><b>02</b> trống</span>
+      <span><b>03</b> ghế của tôi (khung sáng)</span>
+      <span><b>04</b> không xếp chỗ (biển cấm)</span>
+      <span><b>05</b> đang chờ duyệt (dấu !)</span>
+      <span><b>06</b> có người, laptop + điện thoại IP</span>
+      <span><b>07</b> trống, không thiết bị</span>
+      <span><b>08</b> có người, màn hình + PC</span>
+    </div>
+  </header>
+
+  <section class="section" aria-labelledby="s1">
+    <h2 id="s1">1 · Style art</h2>
+    <div class="grid" id="styles"></div>
+  </section>
+
+  <section class="section" aria-labelledby="s2">
+    <h2 id="s2">2 · Kiểu UI quanh sơ đồ</h2>
+    <p class="lead">Spec hiện ghi kiểu B (D41: UI sạch, chỉ điểm nhấn pixel). A và C để so sánh. Sơ đồ trong mock dùng style art anh đang chọn ở trên.</p>
+    <div class="section" id="uis"></div>
+  </section>
+</div>
+
+<div class="summary" role="region" aria-label="Lựa chọn">
+  <div class="in">
+    <div><span class="hint">Lựa chọn hiện tại</span><br><code id="sumText">—</code></div>
+    <div style="display:flex; gap:10px; align-items:center"><span class="hint" id="copied" aria-live="polite"></span><button class="copy" id="copyBtn" type="button">Sao chép lựa chọn</button></div>
+  </div>
+</div>
+
+<script>
+(function(){
+const W=240,H=160;
+const STYLES=[
+ {id:"warm",name:"Gỗ ấm (Cozy)",tag:"Style 1",outline:"#3a2419",floor:"planks",
+  notes:{"Cảm giác":"Ấm, thân thiện, giống game nông trại","Nguồn dễ tìm":"Nhiều gói free nội thất nhà ở; ít đồ văn phòng","Phù hợp":"Văn phòng nhỏ, startup, co-working"},
+  c:{floor:"#b9794a",floor2:"#b9794a",floorDk:"#99603a",wall:"#ead7b7",wallTop:"#c9a57a",wallDk:"#7a4a2c",wood:"#a8673c",deskTop:"#c98a52",deskHi:"#deaa6e",deskEdge:"#8b5530",chair:"#a6423a",chairDark:"#7d2f2b",frame:"#3d3540",screen:"#5fb3a9",glare:"#bfeee6",case:"#54474f",led:"#8fe36b",laptop:"#8a8f99",pot:"#b0583a",leaf:"#5d9b4a",leafDk:"#3e7337",cab:"#9c6a42",cabDk:"#7a4f30",metal:"#e1c27a",rack:"#4a3f45",rackDk:"#2f282d",led2:"#f2c14e",door:"#8a5432",doorDk:"#6b3f25",winFrame:"#7a4a2c",glass:"#9fd3e6",mine:"#ffd35c",cannot:"#d64a3b",pending:"#ffb02e",white:"#fff8ec"}},
+ {id:"modern",name:"Văn phòng hiện đại",tag:"Style 2",outline:"#262c36",floor:"carpet",
+  notes:{"Cảm giác":"Gọn, chuyên nghiệp, sáng","Nguồn dễ tìm":"Có vài gói free “modern office” 16×16","Phù hợp":"Doanh nghiệp, hợp với UI SaaS sạch"},
+  c:{floor:"#c9cfd6",floor2:"#bec5cd",floorDk:"#b2bac3",wall:"#eef1f4",wallTop:"#d5dce3",wallDk:"#7d8896",wood:"#eef1f4",deskTop:"#f4f2ee",deskHi:"#ffffff",deskEdge:"#b9b4ab",chair:"#2f8f8a",chairDark:"#22696a",frame:"#2b2f36",screen:"#4a8fe0",glare:"#b8d8ff",case:"#3a3f47",led:"#57d18c",laptop:"#a7aeb8",pot:"#e8e4dc",leaf:"#4fa36b",leafDk:"#2f7a4c",cab:"#9aa4ae",cabDk:"#7b8590",metal:"#dfe5ea",rack:"#2b2f36",rackDk:"#1b1e23",led2:"#4a8fe0",door:"#a9b4bf",doorDk:"#8995a2",winFrame:"#7d8896",glass:"#bfe3f5",mine:"#2ec4b6",cannot:"#e5484d",pending:"#f5a524",white:"#ffffff"}},
+ {id:"retro",name:"Retro thập niên 90",tag:"Style 3",outline:"#2c2a22",floor:"checker",crt:true,
+  notes:{"Cảm giác":"Hoài cổ, có cá tính, màn hình CRT","Nguồn dễ tìm":"Ít gói free; phải tự vẽ nhiều hơn","Phù hợp":"Nếu muốn simap có bản sắc riêng"},
+  c:{floor:"#d8cfae",floor2:"#bfb48f",floorDk:"#a99e7a",wall:"#a9c4a0",wallTop:"#8fae86",wallDk:"#5f6b4a",wood:"#a9c4a0",deskTop:"#cfc6b0",deskHi:"#e3dcc8",deskEdge:"#8f8670",chair:"#5a6b8c",chairDark:"#435170",frame:"#d9d0b8",screen:"#3f6b4f",glare:"#9ad0a5",case:"#cfc6ae",led:"#e05a3c",laptop:"#b8b09a",pot:"#a8563f",leaf:"#6f9a4f",leafDk:"#4c7438",cab:"#8c9184",cabDk:"#6e7366",metal:"#c9c3ae",rack:"#5c5f55",rackDk:"#3e403a",led2:"#e8c34a",door:"#9a7b55",doorDk:"#7a5f40",winFrame:"#5f6b4a",glass:"#b8d6c9",mine:"#f2d24b",cannot:"#c9442f",pending:"#e8913a",white:"#f6f1df"}},
+ {id:"flat",name:"Phẳng tối giản",tag:"Style 4",outline:null,floor:"flat",
+  notes:{"Cảm giác":"Đơn giản, màu khối, không viền","Nguồn dễ tìm":"Dễ nhất: nhiều gói CC0 kiểu khối phẳng","Phù hợp":"Muốn làm nhanh, dễ tự vẽ thêm"},
+  c:{floor:"#f1ede4",floor2:"#e6e1d5",floorDk:"#e6e1d5",wall:"#5b6c8f",wallTop:"#4a5a7a",wallDk:"#3c4a66",wood:"#5b6c8f",deskTop:"#f6b65a",deskHi:"#f8c77d",deskEdge:"#d9963d",chair:"#4f6fd9",chairDark:"#3f59b3",frame:"#2d3142",screen:"#7fd1e8",glare:"#ffffff",case:"#2d3142",led:"#7be08a",laptop:"#9aa3b5",pot:"#e0704f",leaf:"#5bbf7a",leafDk:"#3f9a5c",cab:"#c9cfdb",cabDk:"#aab2c2",metal:"#ffffff",rack:"#2d3142",rackDk:"#1f2230",led2:"#7fd1e8",door:"#e0a35a",doorDk:"#c2853f",winFrame:"#3c4a66",glass:"#a8e0f0",mine:"#ff7a45",cannot:"#e5484d",pending:"#ff9f1c",white:"#ffffff"}}
+];
+const UIS=[
+ {id:"A",name:"A · UI sạch, pixel chỉ trong sơ đồ",cls:"mA",
+  pros:"Dễ đọc nhất, giống app SaaS quen thuộc. Bảng, form, audit log rõ ràng.",cons:"Sơ đồ pixel trông như “dán” vào, hai phong cách hơi tách rời."},
+ {id:"B",name:"B · UI sạch + điểm nhấn pixel (spec hiện tại)",cls:"mB",
+  pros:"Tiêu đề, icon, khung dùng nét pixel nên ăn nhập với sơ đồ; chữ thân vẫn dễ đọc.",cons:"Cần chọn font pixel và bộ icon pixel; tốn thêm chút công cho UI kit."},
+ {id:"C",name:"C · Giao diện kiểu game (HUD)",cls:"mC",
+  pros:"Ấn tượng, đậm chất game, sơ đồ là trung tâm.",cons:"Font pixel cho mọi chữ khó đọc ở bảng thiết bị, form, audit log; tốn công nhất."}
+];
+// ---------- pixel helpers ----------
+function mk(w,h){const c=document.createElement("canvas");c.width=w;c.height=h;return c}
+function sprite(st,w,h,draw){
+  const c=mk(w+2,h+2),x=c.getContext("2d");
+  const r=(px,py,pw,ph,k)=>{x.fillStyle=k.charAt(0)==="#"?k:(st.c[k]||"#f0f");x.fillRect(px+1,py+1,pw,ph)};
+  draw(r);
+  if(st.outline){
+    const id=x.getImageData(0,0,w+2,h+2),d=id.data,pts=[];
+    const a=(i,j)=>(i<0||j<0||i>=w+2||j>=h+2)?0:d[(j*(w+2)+i)*4+3];
+    for(let j=0;j<h+2;j++)for(let i=0;i<w+2;i++){if(a(i,j)===0&&(a(i-1,j)||a(i+1,j)||a(i,j-1)||a(i,j+1)))pts.push([i,j])}
+    x.fillStyle=st.outline;pts.forEach(p=>x.fillRect(p[0],p[1],1,1));
+  }
+  return c;
+}
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+const SK=["#f2c9a0","#e0a878","#c68a5a","#8d5a3b"],HR=["#2b2118","#5a3a22","#b07a3a","#1f2a44","#7a2f2f"],SH=["#d9534f","#3a7bd5","#2fa36b","#8e5bd6","#f0a03c","#3fb5b0"];
+// ---------- sprites ----------
+const S={
+ desk:(st)=>sprite(st,32,15,r=>{r(0,0,32,10,"deskTop");r(0,0,32,1,"deskHi");r(0,10,32,3,"deskEdge");r(1,13,2,2,"deskEdge");r(29,13,2,2,"deskEdge")}),
+ chair:(st)=>sprite(st,12,12,r=>{r(1,0,10,4,"chairDark");r(0,4,12,6,"chair");r(1,9,10,1,"chairDark");r(2,10,2,2,"chairDark");r(8,10,2,2,"chairDark")}),
+ monitor:(st)=>st.crt?sprite(st,12,11,r=>{r(0,0,12,9,"frame");r(2,1,8,6,"screen");r(3,2,3,1,"glare");r(4,9,4,2,"frame")}):sprite(st,12,10,r=>{r(0,0,12,8,"frame");r(1,1,10,6,"screen");r(2,2,3,1,"glare");r(5,8,2,2,"frame")}),
+ pc:(st)=>sprite(st,5,9,r=>{r(0,0,5,9,"case");r(1,1,3,1,"#00000033");r(3,6,1,1,"led")}),
+ laptop:(st)=>sprite(st,11,7,r=>{r(1,0,9,4,"frame");r(2,1,7,2,"screen");r(0,4,11,3,"laptop");r(4,5,3,1,"#00000033")}),
+ phone:(st)=>sprite(st,6,4,r=>{r(0,0,6,4,"case");r(1,1,2,2,"laptop");r(4,1,1,1,"led")}),
+ plant:(st)=>sprite(st,13,16,r=>{r(4,10,5,6,"pot");r(3,9,7,2,"pot");r(4,1,5,8,"leaf");r(1,3,4,5,"leaf");r(8,3,4,5,"leaf");r(2,6,3,2,"leafDk");r(8,6,3,2,"leafDk");r(5,4,3,3,"leafDk")}),
+ cabinet:(st)=>sprite(st,14,20,r=>{r(0,0,14,20,"cab");r(0,0,14,2,"cabDk");r(1,6,12,1,"cabDk");r(1,12,12,1,"cabDk");r(6,3,2,1,"metal");r(6,9,2,1,"metal");r(6,15,2,1,"metal")}),
+ rack:(st)=>sprite(st,14,24,r=>{r(0,0,14,24,"rack");for(let i=0;i<5;i++){r(2,3+i*4,10,2,"rackDk");r(3,3+i*4,1,1,i%2?"led":"led2")}}),
+ avatar:(st,name)=>{const h=hash(name);const sk=SK[h%4],hr=HR[(h>>>3)%5],sh=SH[(h>>>7)%6];
+   return sprite(st,12,13,r=>{r(3,0,6,1,hr);r(2,1,8,5,hr);r(5,6,2,1,sk);r(1,7,10,5,sh);r(1,11,10,1,"#00000033");r(0,8,1,3,sk);r(11,8,1,3,sk)})},
+ cannot:(st)=>sprite(st,9,9,r=>{r(2,0,5,9,"cannot");r(0,2,9,5,"cannot");r(1,1,7,7,"cannot");r(2,2,5,5,"white");for(let i=0;i<5;i++)r(2+i,2+i,1,1,"cannot")}),
+ pending:(st)=>sprite(st,7,9,r=>{r(0,0,7,7,"pending");r(2,7,2,2,"pending");r(3,1,1,3,"white");r(3,5,1,1,"white")}),
+ arrow:(st)=>sprite(st,5,3,r=>{r(0,0,5,1,"mine");r(1,1,3,1,"mine");r(2,2,1,1,"mine")})
+};
+function put(ctx,c,x,y){ctx.drawImage(c,x-1,y-1)}
+function room(st){
+  const b=mk(W,H),x=b.getContext("2d"),c=st.c,f=(px,py,pw,ph,k)=>{x.fillStyle=c[k]||k;x.fillRect(px,py,pw,ph)};
+  // floor
+  f(0,32,W,H-32,"floor");
+  if(st.floor==="planks"){for(let y=32,row=0;y<H;y+=6,row++){f(0,y,W,1,"floorDk");for(let k=(row*13)%32;k<W;k+=32)f(k,y,1,6,"floorDk")}}
+  if(st.floor==="carpet"){for(let ty=32;ty<H;ty+=16)for(let tx=0;tx<W;tx+=16){f(tx,ty,16,16,((tx+ty)/16)%2?"floor2":"floor");f(tx,ty,16,1,"floorDk");f(tx,ty,1,16,"floorDk")}}
+  if(st.floor==="checker"){for(let ty=32;ty<H;ty+=8)for(let tx=0;tx<W;tx+=8)if(((tx+ty)/8)%2)f(tx,ty,8,8,"floor2")}
+  if(st.floor==="flat"){for(let ty=32;ty<H;ty+=16)f(0,ty,W,1,"floor2");for(let tx=0;tx<W;tx+=16)f(tx,32,1,H-32,"floor2")}
+  // wall
+  f(0,0,W,32,"wall");f(0,0,W,4,"wallTop");
+  if(st.id==="warm"){f(0,18,W,11,"wood");for(let k=4;k<W;k+=8)f(k,18,1,11,"wallDk")}
+  f(0,29,W,3,"wallDk");
+  [44,150].forEach(wx=>{f(wx,7,30,15,"winFrame");f(wx+2,9,12,11,"glass");f(wx+16,9,12,11,"glass");f(wx+3,10,3,1,"white");f(wx+17,10,3,1,"white")});
+  f(206,6,18,26,"doorDk");f(208,8,14,24,"door");f(210,10,10,8,"doorDk");f(219,20,2,2,"metal");
+  // furniture
+  put(x,S.rack(st),3,33);put(x,S.cabinet(st),20,37);put(x,S.plant(st),186,40);put(x,S.plant(st),4,138);put(x,S.plant(st),222,138);
+  const desks=[
+    {x:40,y:60,st:"occ",dev:["monitor","pc"],who:"Lan"},{x:80,y:60,st:"empty",dev:["monitor"]},
+    {x:128,y:60,st:"mine",dev:["monitor","laptopR"],who:"You"},{x:168,y:60,st:"cannot",dev:[]},
+    {x:40,y:108,st:"pending",dev:["monitor"]},{x:80,y:108,st:"occ",dev:["laptop","phone"],who:"Minh"},
+    {x:128,y:108,st:"empty",dev:[]},{x:168,y:108,st:"occ",dev:["monitor","pc"],who:"Huy"}];
+  const D=S.desk(st),CH=S.chair(st),MO=S.monitor(st),PC=S.pc(st),LP=S.laptop(st),PH=S.phone(st);
+  desks.forEach(d=>{
+    put(x,D,d.x,d.y);
+    d.dev.forEach(v=>{if(v==="monitor")put(x,MO,d.x+10,d.y-3);if(v==="pc")put(x,PC,d.x+25,d.y);if(v==="laptop")put(x,LP,d.x+10,d.y+2);if(v==="laptopR")put(x,LP,d.x+22,d.y+2);if(v==="phone")put(x,PH,d.x+3,d.y+4)});
+    put(x,CH,d.x+10,d.y+15);
+    if(d.who)put(x,S.avatar(st,d.who),d.x+10,d.y+9);
+    if(d.st==="mine"){x.strokeStyle=c.mine;x.lineWidth=1;x.strokeRect(d.x-2.5,d.y-6.5,37,36);put(x,S.arrow(st),d.x+14,d.y-13)}
+    if(d.st==="cannot")put(x,S.cannot(st),d.x+12,d.y+1);
+    if(d.st==="pending")put(x,S.pending(st),d.x+24,d.y-11);
+  });
+  return b;
+}
+const cache={};
+function base(st){return cache[st.id]||(cache[st.id]=room(st))}
+function paint(cv,st,maxScale){
+  const box=cv.parentElement,avail=Math.max(120,box.clientWidth-16);
+  const s=Math.max(1,Math.min(maxScale||4,Math.floor(avail/W)));
+  if(cv.width!==W*s){cv.width=W*s;cv.height=H*s}
+  const x=cv.getContext("2d");x.imageSmoothingEnabled=false;x.clearRect(0,0,cv.width,cv.height);x.drawImage(base(st),0,0,W*s,H*s);
+  cv.dataset.scale=s;
+}
+// ---------- tiny pixel icons for UI mocks ----------
+const ICONS={
+ home:["...##...","..####..",".######.","########",".##..##.",".##..##.",".######.","........"],
+ room:["########","#......#","#.##.#.#","#......#","#.##.#.#","#......#","###..###","........"],
+ people:[".##..##.","####.###","####.###",".##..##.","........","######..","######.#","........"],
+ device:["########","#......#","#......#","#......#","########","...##...",".######.","........"],
+ check:["........",".......#","......##","#....##.","##..##..",".####...","..##....","........"]};
+function icon(map,col){const c=mk(8,8),x=c.getContext("2d");x.fillStyle=col;map.forEach((row,j)=>[...row].forEach((ch,i)=>{if(ch==="#")x.fillRect(i,j,1,1)}));return c.toDataURL()}
+// ---------- state ----------
+let sel={style:null,ui:null};
+try{const v=JSON.parse(localStorage.getItem("simap-style-pick")||"null");if(v&&typeof v==="object")sel=Object.assign(sel,v)}catch(e){}
+function save(){try{localStorage.setItem("simap-style-pick",JSON.stringify(sel))}catch(e){}}
+function curStyle(){return STYLES.find(s=>s.id===sel.style)||STYLES[1]}
+// ---------- build style cards ----------
+const sg=document.getElementById("styles");
+STYLES.forEach(st=>{
+  const b=document.createElement("button");b.type="button";b.className="card";b.dataset.id=st.id;
+  b.innerHTML='<div class="top"><div><span class="tag">'+st.tag+'</span><h3>'+st.name+'</h3></div><span class="pick">Chọn</span></div><div class="stage"><canvas class="px" role="img" aria-label="Phòng mẫu theo '+st.name+'"></canvas></div><dl class="notes">'+Object.entries(st.notes).map(([k,v])=>"<dt>"+k+"</dt><dd>"+v+"</dd>").join("")+"</dl>";
+  b.addEventListener("click",()=>{sel.style=st.id;save();sync()});
+  sg.appendChild(b);
+});
+// ---------- build UI mocks ----------
+const ug=document.getElementById("uis");
+UIS.forEach(u=>{
+  const b=document.createElement("button");b.type="button";b.className="card";b.dataset.id=u.id;
+  const col=u.id==="C"?"#e8ecff":"#232323";
+  const nav=[["home","Dashboard"],["room","Rooms"],["people","Members"],["device","Devices"],["check","Approvals"]].map((n,i)=>'<a class="'+(i===1?"on":"")+'"><img alt="" src="'+icon(ICONS[n[0]],i===1&&u.id==="C"?"#ffe27a":col)+'">'+n[1]+"</a>").join("");
+  b.innerHTML='<div class="top"><h3>'+u.name+'</h3><span class="pick">Chọn</span></div>'+
+   '<div class="scroller"><div class="mock '+u.cls+'"><nav><div class="brand">simap</div>'+nav+'</nav><main><header><strong>Room C302 · Floor 3</strong><span class="btn">Edit layout</span></header>'+
+   '<div class="body"><div class="mapbox"><canvas class="px" role="img" aria-label="Sơ đồ trong mock '+u.id+'"></canvas></div><div class="panel"><h4>Seat C302-03</h4><div class="plain">Occupant: You</div><div class="plain">Primary: Monitor · MON-0142</div><div class="plain">Secondary: Laptop · LAP-0310</div><span class="btn" style="margin-top:auto">Release seat</span></div></div></main></div></div>'+
+   '<div class="pros"><div><b>Ưu</b>'+u.pros+'</div><div><b>Nhược</b>'+u.cons+'</div></div>';
+  b.addEventListener("click",e=>{sel.ui=u.id;save();sync()});
+  ug.appendChild(b);
+});
+function sync(){
+  document.querySelectorAll("#styles .card").forEach(c=>{const on=c.dataset.id===sel.style;c.setAttribute("aria-pressed",on);c.querySelector(".pick").textContent=on?"Đã chọn":"Chọn"});
+  document.querySelectorAll("#uis .card").forEach(c=>{const on=c.dataset.id===sel.ui;c.setAttribute("aria-pressed",on);c.querySelector(".pick").textContent=on?"Đã chọn":"Chọn"});
+  const st=STYLES.find(s=>s.id===sel.style),u=UIS.find(x=>x.id===sel.ui);
+  document.getElementById("sumText").textContent="OQ-40e: "+(st?st.tag+" "+st.name:"(chưa chọn style)")+" · UI "+(u?u.id:"(chưa chọn)");
+  render();
+}
+function render(){
+  document.querySelectorAll("#styles canvas").forEach((cv,i)=>paint(cv,STYLES[i],4));
+  document.querySelectorAll("#uis canvas").forEach(cv=>paint(cv,curStyle(),1));
+}
+document.getElementById("copyBtn").addEventListener("click",()=>{
+  const t=document.getElementById("sumText").textContent,msg=document.getElementById("copied");
+  const done=()=>{msg.textContent="Đã sao chép";setTimeout(()=>msg.textContent="",2000)};
+  try{navigator.clipboard.writeText(t).then(done,()=>{selectText();msg.textContent="Bấm Ctrl/Cmd+C để sao chép"})}catch(e){selectText();msg.textContent="Bấm Ctrl/Cmd+C để sao chép"}
+});
+function selectText(){const r=document.createRange();r.selectNodeContents(document.getElementById("sumText"));const s=getSelection();s.removeAllRanges();s.addRange(r)}
+let t;window.addEventListener("resize",()=>{clearTimeout(t);t=setTimeout(render,120)});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(render);
+sync();
+})();
+</script>

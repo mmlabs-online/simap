@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | MERGED |
 | Priority | P0 |
 | Size | M |
 | Areas | ui, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/24 |
 
 ## Goal
 After sign-in a user enters one of their orgs (directly with one, via a picker with several), can switch orgs, and loses a revoked org cleanly; slice S2 of the approved SIM-007 plan.
@@ -41,4 +41,13 @@ After sign-in a user enters one of their orgs (directly with one, via a picker w
 ## Notes / answers from Ming
 - 2026-11-20 (batch 2026-11-20-4): created from the split Ming approved ("duyệt hết theo đề xuất", Q11); Q18 default.
 
+- Plan approved (2026-11-20, batch 2026-11-20-5): "ok hết" — every assumption takes its default.
+- Merge approved (2026-11-20, batch 2026-11-20-5): "ok hết" on the round that asked "cho merge" per Medium ticket.
+
 ## Handoff
+
+### 2026-11-20 — claude — DONE (PR #24, Medium, merge pre-approved in batch 2026-11-20-5)
+- Agent calls: 5, ~460k tokens (frontend-developer×1 48k, planner×1 133k, implementer×1 134k, reviewer×1 81k, security-ai-generated-code-auditor×1 64k; default models)
+- Done: org entry (orgs(), decideOrg, per-tab org, remembered org, authChannel orgId, picker, switcher, shell org name); review attempt 1 PASS; CI green (`risk:medium`); security 0 🔴 2 🟡
+- In progress / next: auto-merge under the batch merge rule, then SIM-007.3 (branches from main after this merges)
+- Gotchas: security 🟡 1 (gate loop on a token without `org` claim) must be fixed before go-live; `/auth/orgs` body shape still unverified (Ming check 1)

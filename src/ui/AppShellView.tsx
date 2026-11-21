@@ -97,12 +97,13 @@ export function AppShellView({
               <span className="ml-2 min-w-0 max-w-[40vw] truncate text-[13px] font-semibold text-on-surface-variant">
                 {session.orgName}
               </span>
-              <IconButton
-                icon="swap_horiz"
-                label={shellCopy.actions.switchOrg}
-                onClick={actions.switchOrg}
-                disabled={!actions.switchOrg}
-              />
+              {actions.switchOrg && (
+                <IconButton
+                  icon="swap_horiz"
+                  label={shellCopy.actions.switchOrg}
+                  onClick={actions.switchOrg}
+                />
+              )}
             </>
           )}
 

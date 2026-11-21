@@ -21,8 +21,8 @@ simap replaces the inactive SeatMGT (Ming, 2026-11-20).
 Do not change the stack without Ming's explicit decision.
 
 ## Commands
-- `pnpm install --frozen-lockfile`, `pnpm dev`, `pnpm start` (runs the standalone server; static assets are served only after `.next/static` is copied next to it, done by the SIM-004 image), `pnpm build`.
-- `pnpm typecheck` (next typegen + tsc), `pnpm check:layers` (R1 import guard), `pnpm format` / `pnpm format:check`
+- `pnpm install --frozen-lockfile`, `pnpm dev` (launcher: binds 127.0.0.1, server adds the dev token), `pnpm dev:token` (signs in to Identity, writes the dev token outside the repo; see README), `pnpm start` (runs the standalone server; static assets are served only after `.next/static` is copied next to it, done by the SIM-004 image), `pnpm build`.
+- `pnpm typecheck` (next typegen + tsc), `pnpm check:layers` (R1 import guard), `pnpm sprites:pack` (builds `public/sprites/office.png/json`; `--no-map` = placeholders only), `pnpm format` / `pnpm format:check`
   (oxfmt), `pnpm test` (Vitest), `pnpm migrate` (applies `db/migrations`, needs `DATABASE_URL`), `pnpm migrate:smoke`
   (scripted migrator check), `pnpm schema:check` (scripted check of the real schema, needs a DB), `pnpm test:db` (DB integration tests in a throwaway database, needs a local `DATABASE_URL`; CI runs it), `pnpm seed:dev` (fake
   data, local DB only), `docker compose -f compose.dev.yml up -d` (local Postgres). There is no lint script (no ESLint, D2). Keep `.claude/loop.config.md` → Checks in sync.

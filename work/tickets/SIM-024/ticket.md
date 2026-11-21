@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, architecture |
 | Gate | none |
 | Depends on | SIM-003 |
-| Needs Ming | Lift D47 (map work waits) |
+| Needs Ming | none (D47 lifted for this ticket by D55) |
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/25 |
 
 ## Goal
 Give the room map a sprite system: an atlas + manifest that follows the style guide, placeholder art for every key,
@@ -21,7 +21,7 @@ replace the placeholders without code changes.
 
 ## Scope reference
 `docs/art/style-guide.md` (sections 2, 3, 6, 7, 8); spec LAY "Visual style", LAY-06; decisions D41, D43, D44, D46,
-D48, D50, D51, D52. Blocked for now by D47 (map work waits) until Ming lifts it.
+D48, D50, D51, D52, D54, D55. D47 is lifted for this ticket only (D55).
 
 ## Scope
 - Manifest format and loader exactly as style guide §8 (`public/sprites/office.json` + `office.png`), with a validator
@@ -33,6 +33,12 @@ D48, D50, D51, D52. Blocked for now by D47 (map work waits) until Ming lifts it.
 - Layered avatar compositor (body/hair/shirt by hash of `sub`, front/back views).
 - State overlays and HTML name tags on hover/focus (style guide §6).
 - A dev-only demo page that renders a sample room from fixture data (no API).
+- Packing script `pnpm sprites:pack`: reads `assets/art/export/*.png` (export convention, style guide §8), computes
+  anchors from the canvas size, and writes `public/sprites/office.png` + `office.json`; fails on unknown keys or wrong
+  canvas sizes. Placeholder art is produced into the same folder first, then packed the same way.
+- The packing script also reads `assets/art/sprite-map.json` (style guide §0, §8b): cuts each key's rect from its
+  source sheet, scales it with nearest-neighbour, bottom-aligns it in the export canvas and packs it. Priority per key:
+  `export/<key>.png` > sprite map > code-drawn placeholder. Missing keys fall back to the placeholder.
 
 ## Out of scope
 - Layout API and DB columns (SIM-015.1). Editor (SIM-015.2). Final art (Ming, M-9).
@@ -56,6 +62,12 @@ D48, D50, D51, D52. Blocked for now by D47 (map work waits) until Ming lifts it.
 - Manual: demo page at 390 px and desktop, light/dark app theme (map art itself is theme-independent).
 
 ## Notes / answers from Ming
-—
+- 2026-11-20: D47 lifted for SIM-024 (D55). Phase-1 art: `assets/art/sprite-map.json` (Imersa free pack, 32 px, scale 1). Place pack sprites by the map's `anchor` ([x, y] in the rect of the footprint's top-left pixel), not by bottom-alignment; accept the map's `wall.*` tile keys as the wall set; source sheets are git-ignored (M-10), so a missing sheet falls back to the placeholder and must not fail the build or CI. Directions: pack front/back/left/right = s/n/w/e. Reference preview: `docs/art/mockups/c302-phase1-preview.png`.
 
 ## Handoff
+
+### 2026-11-20 — claude — DONE
+- Agent calls: 5, about 343k subagent tokens total (frontend-developer×1 38k, software-architect×1 44k, planner×1 94k, implementer×1 105k, reviewer×1 63k; models from agent files, no overrides).
+- Done: slice 1 (atlas pipeline): key registry, manifest validator, PNG codec, placeholder generator, `pnpm sprites:pack`, committed placeholder-only atlas, style guide §7/§8/§8b. Review PASS on attempt 1. PR #25.
+- In progress / next: slice 2 (proposed SIM-024.1): renderer, avatar compositor, name tags, dev demo page; defaults in plan.md "Split proposal".
+- Gotchas: Node is not on the Bash PATH here (`eval "$(fnm env --shell bash)" && fnm use 22`, `corepack pnpm`); no `gh` CLI (PR opened via the browser). Imersa sheets are git-ignored (M-10): the committed atlas is placeholder-only and a test enforces it. `sprite-map.json` was reformatted on main before review.

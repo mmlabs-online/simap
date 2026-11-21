@@ -11,6 +11,7 @@ export const ICON_NAMES = [
   "fact_check",
   "grid_view",
   "group",
+  "history",
   "lan",
   "light_mode",
   "login",

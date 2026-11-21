@@ -21,6 +21,23 @@ const hrefs = (html: string) =>
   );
 
 describe("AppShellView", () => {
+  it("shows the org name; the switch button only when switchOrg is given", () => {
+    const withAction = renderToStaticMarkup(
+      <AppShellView
+        session={{ tier: "user", email: "a@example.invalid", orgName: "Tổ chức" }}
+        pathname="/"
+        actions={{ switchOrg: () => {} }}
+      >
+        <p>x</p>
+      </AppShellView>,
+    );
+    expect(withAction).toContain("Tổ chức");
+    expect(withAction).toContain(shellCopy.actions.switchOrg);
+    const without = render("user");
+    expect(without).toContain("Tổ chức");
+    expect(without).not.toContain(shellCopy.actions.switchOrg);
+  });
+
   it("signed out shows the sign-in placeholder and no nav", () => {
     const html = render(null);
     expect(html).toContain(shellCopy.signedOut.title);
@@ -29,10 +46,10 @@ describe("AppShellView", () => {
     expect(html).not.toContain("child-marker");
   });
 
-  it("admin on /rooms/A1: nav landmark, 5 links, one aria-current", () => {
+  it("admin on /rooms/A1: nav landmark, 6 links, one aria-current", () => {
     const html = render("admin", "/rooms/A1");
     expect(html).toContain(`<nav aria-label="${shellCopy.navLabel}"`);
-    expect(hrefs(html)).toEqual(["/", "/rooms", "/devices", "/members", "/approvals"]);
+    expect(hrefs(html)).toEqual(["/", "/rooms", "/devices", "/members", "/approvals", "/audit"]);
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(
       /<a [^>]*aria-current="page"[^>]*href="\/rooms"/.test(html) ||

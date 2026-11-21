@@ -101,3 +101,15 @@ describe("join", () => {
     expect(toAuthError(401, h(), body("no_access")).code).toBe("unknown");
   });
 });
+
+describe("org errors", () => {
+  it("org_access_denied is accepted from the body and orgId is never taken from it", () => {
+    expect(
+      toAuthError(403, h(), { error: { code: "org_access_denied", details: { org_id: "x" } } }),
+    ).toEqual({ code: "org_access_denied" });
+  });
+
+  it("org_not_supported maps to unknown", () => {
+    expect(toAuthError(422, h(), body("org_not_supported")).code).toBe("unknown");
+  });
+});

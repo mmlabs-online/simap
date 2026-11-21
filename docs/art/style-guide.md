@@ -4,6 +4,22 @@ Status: v1 draft, 2026-11-20. Decisions: D41–D46, D48–D52 (`work/decisions.m
 artifact (style 2, 32 px, UI A). Everything in that mockup is placeholder art drawn by code; it shows the target
 quality, not final sprites.
 
+## 0. Phase 1: reuse packs as they are (D54)
+
+To ship the map sooner, phase 1 uses objects cut from free packs **with their original colours**. Sections 3–5
+(palette, drawing rules) apply in phase 2, when Ming recolours and touches up the art.
+
+Phase 1 rules:
+- Licences still apply (D45, section 9): no pack is used before its licence row is in `assets/art/CREDITS.md`.
+- Prefer **one main pack** for floors, walls, desks and chairs so the room looks consistent; fill gaps from a second
+  pack only when needed.
+- Packs drawn at 16 px are scaled 2× with nearest-neighbour to the 32 px grid (no redraw).
+- Nobody cuts sprites by hand: the pack's original sheet is stored in `assets/art/sources/<pack>/` and
+  `assets/art/sprite-map.json` lists, for each key, the source sheet and the rectangle to cut (plus scale and
+  anchor). The packing script (SIM-024) cuts, scales and packs them.
+- Keys with no source in any accepted pack keep the code-drawn placeholder (for example `rack.server`, `device.phone`,
+  `whiteboard`) until drawn in phase 2.
+
 ## 1. Where the pixel style is used (D52)
 
 | Pixel / game style | Clean UI kit (no pixel art) |
@@ -123,11 +139,22 @@ Source column: **draw** = in-house; **adapt** = start from a free pack that pass
 | Avatars | `avatar.body.front/back`, `avatar.hair.{1..3}.front/back`, `avatar.shirt.front/back` | 1×1 cell | layered | draw |
 | Sign-in scene | `scene.signin` (a small office vignette) | about 12×7 tiles | 1 | composed from the above |
 
+Accepted extra keys: the sprite map's `wall.*` tile keys (D55) as the wall set, `window.single` and
+`window.single.top`, and n/e/s/w frames for `device.monitor`, `device.laptop`, `cabinet.filing` and `table.meeting`.
+
 About 45 sprites plus frames. Estimate for Ming (M-5): 3–4 days at 32 px.
 
 ## 8. Files and naming
 
 - Working files: `assets/art/src/<group>.pxo` (Pixelorama) or `.aseprite`. Not shipped.
+- Palette files: `assets/art/palette/simap-style2.gpl` (GIMP/Pixelorama/Aseprite/Piskel), `.hex`, and a swatch
+  `.png`. Avatar layers are drawn in the three greys at the end of the palette; the app recolours them.
+- **Export convention (what Ming exports):** one PNG per frame in `assets/art/export/`, named exactly by its key
+  (`desk.single.s.png`, `chair.office.n.png`, `device.laptop.png`). Canvas width = tiles wide × 32; canvas height =
+  tiles deep × 32 + 16 px headroom on top for tall things (monitors, plants, people). The bottom edge of the canvas
+  is the bottom edge of the footprint tiles. Transparent background; no shadow baked in. Sub-tile props (devices,
+  desk props) use a tight canvas and are placed by code. A packing script (SIM-024) builds `office.png` + `office.json`
+  from this folder, so nobody edits the atlas or JSON by hand.
 - Licence record: `assets/art/CREDITS.md`, one row per adapted source (section 9).
 - Export: one atlas `public/sprites/office.png` (power-of-two not required, 1 px transparent gap between frames) and
   `public/sprites/office.json`:
@@ -136,7 +163,7 @@ About 45 sprites plus frames. Estimate for Ming (M-5): 3–4 days at 32 px.
 {
   "tile": 32,
   "frames": {
-    "desk.single.s": { "x": 0, "y": 0, "w": 64, "h": 40, "anchor": [0, 8], "tiles": [2, 1], "blocks": true },
+    "desk.single.s": { "x": 0, "y": 0, "w": 64, "h": 40, "anchor": [0, -8], "tiles": [2, 1], "blocks": true },
     "chair.office.n": { "x": 66, "y": 0, "w": 22, "h": 24, "anchor": [5, -4], "tiles": [1, 1], "blocks": false }
   },
   "layers": ["floor", "wall", "shadow", "furniture", "avatar", "overlay"]
@@ -144,9 +171,29 @@ About 45 sprites plus frames. Estimate for Ming (M-5): 3–4 days at 32 px.
 ```
 
 - `anchor` = offset in px from the tile's top-left to the sprite's top-left (sprites with a front face overhang their
-  tiles). `blocks` = whether another blocking item may share the tile.
+  tiles). Draw at x = tileX·32 + anchor[0], y = tileY·32 + anchor[1]; an anchor may be negative. `blocks` = whether another blocking item may share the tile.
+- `meta` (optional, written by the packer): `{ generator, version, sources }`, where `sources` maps each key to
+  `export`, `map` or `placeholder`, and `version` is a hash for cache-busting. The atlas size is not in the JSON; the
+  validator takes it from the PNG.
 - Keys are stable: the app code refers only to keys, so replacing `office.png` + `office.json` changes the art without
   code changes. Removing or renaming a key is a code change.
+
+## 8b. Sprite map (phase 1)
+
+```json
+{
+  "sources": { "2dpig-office": { "file": "assets/art/sources/2dpig-office/sheet.png", "tile": 16 } },
+  "sprites": {
+    "chair.office.s": { "source": "2dpig-office", "rect": [48, 32, 16, 16], "scale": 2, "tiles": [1, 1] },
+    "desk.single.s":  { "source": "2dpig-office", "rect": [0, 64, 32, 24], "scale": 2, "tiles": [2, 1] }
+  }
+}
+```
+
+`rect` is `[x, y, w, h]` in source pixels. The script scales by `scale`, places the result by `anchor` (D55; pack
+sprites overhang their footprint), not bottom-aligned: the manifest anchor is −(map anchor × scale), and a key with no map
+anchor gets [0, 0]. A missing source sheet falls back to the placeholder. The script then packs the atlas. Exported PNGs in `assets/art/export/` (drawn or recoloured
+art) override the map for the same key, so phase 2 replaces sprites one by one.
 
 ## 9. Licence workflow (D45)
 

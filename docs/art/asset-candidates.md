@@ -7,10 +7,10 @@ limited to games. If all three hold, screenshot the licence text to `assets/art/
 
 | # | Pack | Size | Hint from search | Status |
 |---|---|---|---|---|
-| 1 | [Office Pixel Art – Imersa Studios](https://imersastudios.itch.io/office-pixel-art) | 32×32 | free tier needs credit; commercial/modify unknown | to check (best 32 px lead) |
+| 1 | [Office Pixel Art – Imersa Studios](https://imersastudios.itch.io/office-pixel-art) | 32×32 | commercial + apps + edit allowed, credit required (free tier), no redistribution | **accepted 2026-11-20** (free tier; proposed main pack, Ming to confirm) |
 | 2 | [Pixel Office – 2dPig](https://2dpig.itch.io/pixel-office) | ? | snippet says CC0 | to check |
 | 3 | [Indoor office appliances – OpenGameArt](https://opengameart.org/content/indoor-office-appliances) | 32×32 | listed CC0; view angle unknown | to check |
-| 4 | [Modern Office Interior Tileset – comshadow](https://comshadow.itch.io/modern-office-interior-tileset) | ? | no licence seen | to check |
+| 4 | [Modern Office Interior Tileset – comshadow](https://comshadow.itch.io/modern-office-interior-tileset) | ? (RPG Maker MV/MZ) | paid $3.99, "commercial use allowed in game projects", modify not stated, AI-assisted | **rejected 2026-11-20** (games only) |
 | 5 | [Little Bits: Office – adriccustoms](https://adriccustoms.itch.io/little-bits-office) | ? | no licence seen | to check |
 | 6 | [Modern House Pixel Assets – agneskar](https://agneskar.itch.io/m) | 32×32 | "Free Download" only | to check |
 | 7 | [Roguelike Indoor pack – Kenney](https://opengameart.org/content/roguelike-indoor-pack) | 16×16 | CC0 | usable as reference; redraw at 32 px |

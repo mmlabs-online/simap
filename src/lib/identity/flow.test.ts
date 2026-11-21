@@ -67,8 +67,26 @@ describe("viewForMe", () => {
     });
   });
 
-  it("403 org_required -> noOrg", () => {
-    expect(viewForMe({ status: 403, code: "org_required" })).toEqual({ kind: "noOrg" });
+  it("viewForMe: needsProfile true -> profile view carrying tier, email, displayName", () => {
+    const member = { displayName: "ann", needsProfile: true };
+    expect(viewForMe({ status: 200, me: { tier: "user", email: "ann@b.co", member } })).toEqual({
+      kind: "profile",
+      tier: "user",
+      email: "ann@b.co",
+      displayName: "ann",
+    });
+  });
+
+  it("viewForMe: needsProfile false or member absent -> ready", () => {
+    const base = { tier: "user", email: "a@b.co" } as const;
+    const member = { displayName: "a", needsProfile: false };
+    for (const me of [{ ...base, member }, base]) {
+      expect(viewForMe({ status: 200, me })).toEqual({ kind: "ready", ...base });
+    }
+  });
+
+  it("403 org_required -> needOrg", () => {
+    expect(viewForMe({ status: 403, code: "org_required" })).toEqual({ kind: "needOrg" });
   });
 
   it("403 forbidden / member_deactivated -> noAccess(code); unknown 403 and a 200 without a body fail closed", () => {
@@ -131,7 +149,7 @@ describe("meErrorView", () => {
       kind: "noAccess",
       code: "member_deactivated",
     });
-    expect(meErrorView(new ApiAccessError("org_required"), true)).toEqual({ kind: "noOrg" });
+    expect(meErrorView(new ApiAccessError("org_required"), true)).toEqual({ kind: "needOrg" });
     expect(meErrorView(new ApiAccessError("unauthenticated"), true)).toEqual({
       kind: "signedOut",
       error: e("no_access"),
@@ -166,11 +184,21 @@ describe("readMeResult", () => {
     ).toEqual({ status: 200, code: undefined, me: { tier: "admin", email: "a@b.co" } });
   });
 
-  it("readMeResult reads tier and email from the SIM-007 body with member", async () => {
+  it("readMeResult keeps a well-formed member and drops a malformed one", async () => {
     const member = { id: "m", displayName: "a", status: "active", needsProfile: true };
     expect(
       await readMeResult(json({ sub: "s", email: "a@b.co", org: "o", tier: "user", member }, 200)),
-    ).toEqual({ status: 200, code: undefined, me: { tier: "user", email: "a@b.co" } });
+    ).toEqual({
+      status: 200,
+      code: undefined,
+      me: { tier: "user", email: "a@b.co", member: { displayName: "a", needsProfile: true } },
+    });
+    for (const bad of [{ displayName: "a" }, { displayName: 1, needsProfile: true }, "x", null]) {
+      const out = await readMeResult(
+        json({ sub: "s", email: "a@b.co", org: "o", tier: "user", member: bad }, 200),
+      );
+      expect(out).toMatchObject({ me: { tier: "user", member: undefined } });
+    }
   });
 
   it("an error body gives its code; a 200 with an unknown tier has no me", async () => {
@@ -190,6 +218,28 @@ describe("readMeResult", () => {
       status: 502,
       code: undefined,
       me: undefined,
+    });
+  });
+});
+
+describe("org_access_denied", () => {
+  const ORG = "22222222-2222-4222-8222-222222222222";
+  it("with an account and orgId -> pickOrg(error)", () => {
+    const err = e("org_access_denied", { orgId: ORG });
+    expect(viewForTokenError(err, true)).toEqual({ kind: "pickOrg", error: err });
+  });
+
+  it("without an account -> retry(unknown)", () => {
+    expect(viewForTokenError(e("org_access_denied", { orgId: ORG }), false)).toEqual({
+      kind: "retry",
+      error: { code: "unknown" },
+    });
+  });
+
+  it("without orgId -> retry(unknown), never pickOrg", () => {
+    expect(viewForTokenError(e("org_access_denied"), true)).toEqual({
+      kind: "retry",
+      error: { code: "unknown" },
     });
   });
 });

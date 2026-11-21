@@ -1,0 +1,65 @@
+# SIM-028.1: Browser dev-token mode (AuthGate skips Identity under `pnpm dev`)
+
+| Field | Value |
+|---|---|
+| State | BACKLOG |
+| Priority | P1 |
+| Size | M |
+| Areas | ui, security |
+| Gate | plan-approval |
+| Depends on | SIM-028 |
+| Needs Ming | — |
+| Attempts | 0 |
+| Created | 2026-11-21 |
+| Claimed by | — |
+| PR | — |
+
+## Goal
+Under `pnpm dev` (dev-token mode from SIM-028) the browser opens simap signed in and never calls mmlabs Identity, so
+local development works without CORS.
+
+## Scope reference
+- D56; SIM-028 plan `## Split proposal` (slice 2) and its Decisions B and F, approved by Ming 2026-11-21.
+- SIM-028 ticket AC1 (browser half) and AC2 (client-bundle half).
+- D2 (Vitest, no jsdom), D36 (UI copy in `src/ui/copy/`).
+
+## Scope
+- `AuthGate` renders a lazy `DevGate` only when `process.env.NODE_ENV === "development" &&
+  process.env.NEXT_PUBLIC_SIMAP_DEV_TOKEN === "1"`; the Identity gate is otherwise unchanged.
+- `DevGate`: never builds the Identity runtime; `/api/me` through a dev `apiFetch` (no `Authorization`, one send);
+  maps the result to ready / profile / no-access / retry / `DevTokenView` (token invalid → `pnpm dev:token`; no org →
+  `pnpm dev:token --org <uuid>`), each with "Check again"; a 401 mid-session flips to token-invalid.
+- Session `devToken` flag and an amber "Dev token" badge in the shell; sign-out and org switch hidden.
+- `ProfileView` / `NoAccessView` `onSignOut` optional.
+- `pnpm check:dev-bundle`: after `pnpm build`, fails if `.next/static/**` contains dev-token strings.
+
+## Out of scope
+- Server side, token script and launcher (SIM-028). Org switching on a dev token. Adding `check:dev-bundle` to CI
+  (follow-up for the workflow owner).
+
+## Acceptance criteria
+- [ ] With a valid scoped token file, `pnpm dev` + `http://localhost:3000` shows the app signed in, and the browser
+      network log has no request to `api.mmlabs.online`.
+- [ ] Missing / expired token → `DevTokenView` naming `pnpm dev:token`; unscoped token → the `--org` hint; "Check again"
+      recovers after re-running the script without restarting `pnpm dev`.
+- [ ] In dev-token mode the shell shows the "Dev token" badge and no sign-out or org-switch action; the first-visit
+      profile can still be saved.
+- [ ] `pnpm build` then `pnpm check:dev-bundle` passes: no `DevGate`, `[dev-token]`, `pnpm dev:token` or `.config/simap`
+      in `.next/static/**`; the Identity sign-in path is unchanged in production.
+- [ ] All Checks green; new pure logic (`dev-fetch`, `dev-flow`) and views have Vitest tests.
+
+## Technical notes
+- Files (from the SIM-028 split proposal): `src/ui/auth/AuthGate.tsx`, new `src/ui/auth/DevGate.tsx`,
+  new `src/lib/api/dev-fetch.ts`, `src/lib/api/fetch.ts` (export `accessCodeOf`), new `src/lib/identity/dev-flow.ts`,
+  `src/lib/session.ts`, `src/ui/AppShellView.tsx`, `src/ui/org/ProfileView.tsx`, `src/ui/auth/views.tsx`,
+  new `src/ui/copy/dev-token.ts`, `src/ui/copy/shell.ts`, new `scripts/check-dev-bundle.mjs`, `package.json`.
+- Risks: SIM-027 also touches `src/lib/api/fetch.ts`; React StrictMode double effects; manual e2e needs M-1.
+
+## Test plan
+- Unit: `dev-fetch.test.ts`, `dev-flow.test.ts`, `DevTokenView` and optional sign-out render tests, shell badge test.
+- Manual: `pnpm dev:token --org <uuid>`, `pnpm dev`, Chrome network log; `pnpm build && pnpm check:dev-bundle`.
+
+## Notes / answers from Ming
+- 2026-11-21: created from the approved SIM-028 split (Decision G).
+
+## Handoff

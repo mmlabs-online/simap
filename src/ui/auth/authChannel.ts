@@ -9,6 +9,8 @@ export type AuthMessage =
       accessToken: string;
       expiresAt: number;
       at: number;
+      /** The org the token was minted for; `null` = no org. A message without the field (old build) reads as `null`. */
+      orgId: string | null;
     }
   | { v: 1; type: "signedOut"; accountId: string; at: number };
 
@@ -44,6 +46,11 @@ export function parseAuthMessage(raw: unknown, now: number): AuthMessage | null 
   if (m.type !== "token") return null;
   if (typeof m.accessToken !== "string" || !TOKEN_RE.test(m.accessToken)) return null;
   if (!isNum(m.expiresAt) || m.expiresAt <= now || m.expiresAt > now + MAX_LIFETIME_MS) return null;
+  let orgId: string | null = null;
+  if (m.orgId !== undefined && m.orgId !== null) {
+    if (typeof m.orgId !== "string" || !UUID_RE.test(m.orgId)) return null;
+    orgId = m.orgId.toLowerCase();
+  }
   return {
     v: 1,
     type: "token",
@@ -51,6 +58,7 @@ export function parseAuthMessage(raw: unknown, now: number): AuthMessage | null 
     accessToken: m.accessToken,
     expiresAt: m.expiresAt,
     at: m.at,
+    orgId,
   };
 }
 

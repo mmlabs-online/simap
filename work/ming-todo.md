@@ -29,7 +29,15 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [ ] M-8 First release: from a commit on `main`, push branch `release/v0.1.0` (Ming's step, agents never push
   `release/*`); check the `release` run is green, review and merge the `release/simap-v0.1.0` PR on
   `mmlabs-online/deployment`, then check the `deploy-simap` run and `/api/readyz` (needs M-2, M-3, M-6, M-7). (D8)
-- [ ] M-9 Pixel art for the room map (D45, D52): check licences of the candidates in `docs/art/asset-candidates.md`
-  (screenshot to `assets/art/licences/`, row in `assets/art/CREDITS.md`), then adapt or draw the sprites in
-  `docs/art/style-guide.md` §7 and export `public/sprites/office.png/json`. About 3–4 days. Not blocking: SIM-024 ships
-  placeholder art.
+- [ ] M-9 Pixel art, phase 1 (D45, D54): pick 1 main free pack (+1 backup) from `docs/art/asset-candidates.md`, check
+  its licence (screenshot to `assets/art/licences/`, row in `assets/art/CREDITS.md`), and put the pack's original
+  sheet PNG(s) in `assets/art/sources/<pack>/`. No cutting or recolouring: Claude writes `assets/art/sprite-map.json`
+  from the sheets. About half a day. Phase 2 (recolour to the palette, draw missing sprites) later, no deadline.- [ ] M-10 Art sources in a public repo (on hold, Ming 2026-11-20): the Imersa "Office Pixel Art" licence forbids
+  redistributing the asset files, and `mmlabs-online/simap` is public, so `assets/art/sources/imersa-office/` is
+  git-ignored for now (copy steps in `assets/art/CREDITS.md`). Decide later: keep ignored, make the repo private, or ask
+  Imersa Studios whether the original free sheets may sit in a public source repo (draft question in the 2026-11-20
+  art report). Until then, CI and other machines cannot cut the Imersa sprites; the packing script (SIM-024) must fall
+  back to placeholders when a source sheet is missing.
+- [x] M-11 (2026-11-21) Approve plan for SIM-028: `work/tickets/SIM-028/plan.md` (High tier; decisions A-G under Assumptions, incl. the split into SIM-028 + SIM-028.1). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [x] M-12 (2026-11-21, option 1) SIM-028 escalated after 3 attempts (launcher loopback bypasses): pick an option in `work/tickets/SIM-028/escalation.md` (recommended: allowlist `pnpm dev` arguments) and note it in the ticket's *Notes / answers from Ming*. PR #28 stays open, do not merge until then.
+- [x] M-13 (2026-11-21) Approve plan for SIM-029: `work/tickets/SIM-029/plan.md` (High tier: edits `.env.example`; 3 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.

@@ -17,6 +17,7 @@ export type AuthErrorCode =
   | "validation_error"
   | "token_invalid"
   | "email_already_verified"
+  | "org_access_denied"
   /** Client-only: a fresh token still got 401. Never accepted from a server body. */
   | "no_access"
   | "unknown";
@@ -29,6 +30,8 @@ export type AuthError = {
   reasons?: ("too_short" | "too_common")[];
   /** not_member: details.join_available === true (the user may join the app). */
   joinAvailable?: boolean;
+  /** org_access_denied: the org the denied mint named. Set by the client, never read from a server body. */
+  orgId?: string;
 };
 
 /** Email is trimmed; the password is exactly as typed. */
@@ -36,3 +39,6 @@ export type Credentials = { email: string; password: string };
 
 /** An account already signed in on this browser (`GET /accounts`). */
 export type AccountChoice = { accountId: string; email: string };
+
+/** An organization the account may enter for this app (`GET /auth/orgs`). */
+export type OrgChoice = { id: string; name: string };

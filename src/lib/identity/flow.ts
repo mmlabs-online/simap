@@ -10,6 +10,7 @@ export type GateView =
   | { kind: "signIn"; error?: AuthError; relistAccounts?: boolean }
   | { kind: "join"; error?: AuthError }
   | { kind: "unverified" }
+  | { kind: "pickOrg"; error: AuthError }
   | { kind: "retry"; error: AuthError };
 
 const RETRY_CODES: AuthError["code"][] = ["network", "rate_limited", "unknown"];
@@ -25,6 +26,10 @@ export function viewForTokenError(err: AuthError, hasAccount: boolean): GateView
   if (err.code === "not_member" && err.joinAvailable === true && hasAccount)
     return { kind: "join" };
   if (err.code === "email_unverified" && hasAccount) return { kind: "unverified" };
+  if (err.code === "org_access_denied")
+    return hasAccount && err.orgId
+      ? { kind: "pickOrg", error: err }
+      : { kind: "retry", error: { code: "unknown" } };
   if (err.code === "session_invalid") return { kind: "signIn", error: err, relistAccounts: true };
   if (RETRY_CODES.includes(err.code)) return { kind: "retry", error: err };
   if (JOIN_ERROR_CODES.includes(err.code) && hasAccount) return { kind: "join", error: err };
@@ -42,12 +47,13 @@ export type MeResult =
       network?: false;
       status: number;
       code?: ApiErrorCode | string;
-      me?: { tier: Tier; email: string };
+      me?: { tier: Tier; email: string; member?: { displayName: string; needsProfile: boolean } };
     };
 
 export type MeView =
   | { kind: "ready"; tier: Tier; email: string }
-  | { kind: "noOrg" }
+  | { kind: "profile"; tier: Tier; email: string; displayName: string }
+  | { kind: "needOrg" }
   | { kind: "noAccess"; code: "forbidden" | "member_deactivated" }
   | { kind: "signedOut"; error: AuthError }
   | { kind: "retry"; error: AuthError };
@@ -56,11 +62,19 @@ export type MeView =
 export function viewForMe(result: MeResult): MeView {
   if (result.network) return { kind: "retry", error: { code: "network" } };
   if (result.status === 200 && result.me) {
+    const { member } = result.me;
+    if (member?.needsProfile === true)
+      return {
+        kind: "profile",
+        tier: result.me.tier,
+        email: result.me.email,
+        displayName: member.displayName,
+      };
     return { kind: "ready", tier: result.me.tier, email: result.me.email };
   }
   if (result.status === 401) return { kind: "signedOut", error: { code: "no_access" } };
   if (result.status === 403) {
-    if (result.code === "org_required") return { kind: "noOrg" };
+    if (result.code === "org_required") return { kind: "needOrg" };
     if (result.code === "member_deactivated")
       return { kind: "noAccess", code: "member_deactivated" };
     return { kind: "noAccess", code: "forbidden" };
@@ -97,9 +111,17 @@ export async function readMeResult(res: Response): Promise<MeResult> {
   const obj = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
   const errorCode = (obj.error as { code?: unknown } | null | undefined)?.code;
   const tier = TIERS.find((t) => t === obj.tier);
+  const m =
+    typeof obj.member === "object" && obj.member !== null
+      ? (obj.member as { displayName?: unknown; needsProfile?: unknown })
+      : null;
+  const member =
+    m && typeof m.displayName === "string" && typeof m.needsProfile === "boolean"
+      ? { displayName: m.displayName, needsProfile: m.needsProfile }
+      : undefined;
   const me =
     res.status === 200 && tier && typeof obj.email === "string"
-      ? { tier, email: obj.email }
+      ? { tier, email: obj.email, member }
       : undefined;
   return {
     status: res.status,
