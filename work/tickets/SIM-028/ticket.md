@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | architecture, ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T00:36:33Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -73,5 +73,12 @@ Identity, so local development is not blocked by CORS (Identity cannot register 
 
 ## Notes / answers from Ming
 - 2026-11-21: Ming chose option B (tudocuatui dev-token). Any org-admin-api change → give Ming a prompt.
+- Waiting for Ming: plan approval (High tier)
 
 ## Handoff
+
+### 2026-11-21 — claude — BLOCKED
+- Agent calls: 3 (software-architect×1 63k, frontend-developer×1 44k, planner×1 133k; in/out split not reported).
+- Done: consult (architecture, ui; security has no consult agent), plan.md Status READY covering slice 1 (dev:token script, `pnpm dev` loopback launcher, bearer injection in `withAuth`, README, `.env.example` names).
+- In progress / next: Ming approves plan (M-11) incl. decisions A-G and the split; on approval create SIM-028.1 (browser dev-token mode, AC1 browser half) from `## Split proposal`, then `/run SIM-028`.
+- Gotchas: SIM-027 may add `src/proxy.*` and touches `src/lib/api/fetch.ts` (slice 2 hotspot); `.env*` is unreadable to agents, so `.env.example` names are appended blind; manual e2e needs M-1; `gh` CLI is not installed on this machine.
