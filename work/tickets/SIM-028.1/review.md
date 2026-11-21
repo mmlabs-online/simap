@@ -127,3 +127,6 @@ F1, F2, F3 and F5 are verified above. `security-review.md` was updated by anothe
 - Harden `envFileSetsKey`: Next also accepts a lone CR as a line break and a key with `=` on the next line, and the launchers do not refuse these two forms. Parsing with the same rules as `@next/env` would close them, and belongs with the case-variant hardening of `SIMAP_DEV_EXPECTED_ORG` and `DATABASE_URL`.
 - Check `src/server/identity/verify.test.ts:169` for wall-clock flakiness.
 - F4, F6, and `pnpm check:dev-bundle` in CI, `.claude/loop.config.md` and `CLAUDE.md`.
+
+### Rework requested by Ming (added by orchestrator, 2026-11-21)
+Fix in REWORK attempt 3: security Attempt 2 S1 and S2, and add the `.env.example` name (M-18). S3, S4 and the other follow-ups stay out of this PR.
