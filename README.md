@@ -59,9 +59,10 @@ an interactive terminal and, in order, stops at the first failure with nothing s
    `SIMAP_PROD_TUNNEL_PORT`) must answer.
 3. `.env.local` must not set `DATABASE_URL`: comment that line out while using `dev:prod` and restore it for local
    work. None of `.env.development.local`, `.env.local`, `.env.development` or `.env` may set `SIMAP_DEV_ORG`: set it
-   in the shell (exit 2 otherwise, the value is not printed). Then it asks for the password of the database role `simap` with hidden input, on every run.
+   in the shell (exit 2 otherwise, the value is not printed). Both `pnpm dev` and `dev:prod` also exit 2 if any of those
+   four files sets `NEXT_PUBLIC_SIMAP_DEV_PROD` (any letter case). Then `dev:prod` asks for the password of the database role `simap` with hidden input, on every run.
 4. It starts `next dev -H 127.0.0.1` (same port option as `pnpm dev`) with a banner. The URL and password live only
-   in the app's child environment: never printed, never written to disk. `dev:prod` does not load `.env.local`, so set
+   in the app's child environment: never printed, never written to disk. `dev:prod` itself skips `.env.local`, but the `next dev` child loads it, so set
    any `SIMAP_*` override in the shell. If you run `pnpm dev:token --org <other org>` while it runs, the next API call
    gets 401 with a `[dev-token]` warning (`another org`): run `pnpm dev:token --org <the org in the banner>` again, no
    restart needed.

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { assertNodeOptionsSafe, devEnv, nextDevArgs, USAGE } from "./dev.mjs";
+import {
+  assertNodeOptionsSafe,
+  devEnv,
+  ENV_FILE_NAMES,
+  envFileSettingDevProd,
+  nextDevArgs,
+  USAGE,
+} from "./dev.mjs";
 
 const HEAD = ["dev", "-H", "127.0.0.1"];
 
@@ -198,5 +205,22 @@ describe("devEnv", () => {
       A: "1",
     });
     expect(out).toEqual({ A: "1", NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" });
+  });
+});
+
+describe("envFileSettingDevProd", () => {
+  const reader = (files: Record<string, string>) => (name: string) => files[name] ?? null;
+  it("names each of the four files that sets the flag, in any letter case", () => {
+    for (const name of ENV_FILE_NAMES)
+      for (const key of ["NEXT_PUBLIC_SIMAP_DEV_PROD", "next_public_simap_dev_prod"])
+        expect(envFileSettingDevProd(reader({ [name]: `A=1\r\n${key}=0\n` })), name).toBe(name);
+  });
+  it("ignores comments, look-alikes and missing files", () => {
+    expect(envFileSettingDevProd(reader({}))).toBeNull();
+    expect(
+      envFileSettingDevProd(
+        reader({ ".env": "# NEXT_PUBLIC_SIMAP_DEV_PROD=1\nNEXT_PUBLIC_SIMAP_DEV_PROD_X=1\n" }),
+      ),
+    ).toBeNull();
   });
 });

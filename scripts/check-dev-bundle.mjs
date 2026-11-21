@@ -13,6 +13,7 @@ export const FORBIDDEN = [
   "dev-token",
   "dev:token",
   "No usable dev token",
+  "SIMAP_DEV_TOKEN",
   "SIMAP_DEV_PROD",
   "Production data",
   "Dev token",

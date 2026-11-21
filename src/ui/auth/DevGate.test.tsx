@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { devTokenCopy } from "../copy/dev-token";
 import DevGate, { DevTokenView, devBadge } from "./DevGate";
 
@@ -53,5 +53,37 @@ describe("DevGate", () => {
     expect(src("./DevGate.tsx")).toContain(
       'process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_SIMAP_DEV_PROD === "1"',
     );
+  });
+});
+
+describe("DevGate production-data notice", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+  const render = async (prod: boolean) => {
+    vi.resetModules();
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_PUBLIC_SIMAP_DEV_PROD", prod ? "1" : "0");
+    const mod = await import("./DevGate");
+    return html(
+      <mod.default>
+        <p>child-marker</p>
+      </mod.default>,
+    );
+  };
+  it("shows the red notice on a non-ready view when the flag is on", async () => {
+    const out = await render(true);
+    expect(out).toContain(devTokenCopy.prodBadge.label);
+    expect(out).toContain("bg-red-600");
+    expect(out).not.toContain("child-marker");
+  });
+  it("shows no notice when the flag is off", async () => {
+    expect(await render(false)).not.toContain(devTokenCopy.prodBadge.label);
+  });
+  it("wraps every non-ready view, including the profile form", () => {
+    const code = src("./DevGate.tsx");
+    for (const v of ["ProfileView", "DevTokenView", "NoAccessView", "RetryView", "CheckingView"])
+      expect(code).toMatch(new RegExp(`withNotice\\(\\s*<${v}`));
   });
 });

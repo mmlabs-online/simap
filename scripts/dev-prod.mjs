@@ -8,7 +8,15 @@ import net from "node:net";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { tunnelPorts } from "../db/target.js";
-import { assertNodeOptionsSafe, devEnv, nextDevArgs } from "./dev.mjs";
+import {
+  assertNodeOptionsSafe,
+  devEnv,
+  devProdFileMessage,
+  ENV_FILE_NAMES,
+  envFileSetsKey,
+  envFileSettingDevProd,
+  nextDevArgs,
+} from "./dev.mjs";
 import { JWT_SHAPE, promptPassword, tokenFilePath } from "./dev-token.mjs";
 
 const CONTAINER_RE = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
@@ -56,13 +64,7 @@ export function tokenIsFresh(token, nowSec, expectedOrg) {
   return typeof exp === "number" && exp - nowSec > MIN_TOKEN_LIFE_S;
 }
 
-/** True when a line of the .env file sets `key` (plain, indented, `export`, BOM, CRLF). `key` is a constant. */
-export function envFileSetsKey(text, key) {
-  const re = new RegExp(String.raw`^\uFEFF?\s*(?:export\s+)?${key}(?:\s*=|:(?:\s|$))`);
-  return String(text)
-    .split(/\r?\n/)
-    .some((line) => re.test(line));
-}
+export { envFileSetsKey };
 
 /** True when a line of the .env file sets DATABASE_URL. */
 export function envFileSetsDatabaseUrl(text) {
@@ -177,12 +179,17 @@ export async function run(deps) {
       );
       return 2;
     }
-    for (const name of [".env.development.local", ".env.local", ".env.development", ".env"]) {
+    for (const name of ENV_FILE_NAMES) {
       const text = readEnvFile(name);
       if (text !== null && envFileSetsKey(text, "SIMAP_DEV_ORG")) {
         err(`[dev:prod] ${name} sets SIMAP_DEV_ORG: remove that line and set it in the shell`);
         return 2;
       }
+    }
+    const badFile = envFileSettingDevProd(readEnvFile);
+    if (badFile) {
+      err(devProdFileMessage(badFile, "dev:prod"));
+      return 2;
     }
     const password = await ask("Password for database role simap: ");
     if (!password) {

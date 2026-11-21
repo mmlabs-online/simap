@@ -47,3 +47,20 @@ Design note: the badge texts live in `src/ui/copy/dev-token.ts` and travel in `s
 
 ### Scope self-check
 - Could the diff be smaller? No.
+
+## Attempt 2 (rework of review attempt 1: F1, F2, F3, F5)
+
+Files touched:
+- `src/ui/auth/DevGate.tsx`: `ProdNotice` + `withNotice` wrap every non-ready view (profile, token, noAccess, retry, checking) when `prodData`; strings stay in DevGate (F1).
+- `src/ui/auth/DevGate.test.tsx`: render tests (flag on/off via stubbed env + fresh import; every non-ready view wrapped) (F1).
+- `scripts/dev.mjs`: `envFileSetsKey` (now with `ignoreCase`, moved here), `ENV_FILE_NAMES`, `envFileSettingDevProd`, `devProdFileMessage`; `pnpm dev` exits 2 naming the file, value never printed (F2).
+- `scripts/dev-prod.mjs`: imports and re-exports `envFileSetsKey`; exits 2 on the same check before the password prompt (F2).
+- `scripts/dev.test.ts`, `scripts/dev-prod.test.ts`: tests for both launchers (four files, both letter cases, no leak, comment/look-alike lines pass) (F2).
+- `README.md`: corrected the `.env.local` sentence, documented the new refusal (F2, F3).
+- `scripts/check-dev-bundle.mjs`: added `SIMAP_DEV_TOKEN` marker (F5); build still clean, no legitimate production file hit.
+
+Checks (Node 22): typecheck exit 0; check:layers 234 files, no violations; format:check exit 0; test 96 files passed, 946 passed | 3 skipped; build exit 0; check:dev-bundle "no dev-token strings in .next/static".
+
+Out-of-plan files: none beyond the files named in the rework task.
+
+Follow-ups: F4 (`--debug-prerender`), F6, other case-variant keys, CI running check:dev-bundle, `.env.example` (High path, waiting for Ming). In `dev:prod` the new check runs after the token and tunnel steps (next to the SIMAP_DEV_ORG check), before the password prompt, not before the dev:token step. Not verified: the real `next dev` loading `.env*` on Windows (launchers were tested with injected readers only).

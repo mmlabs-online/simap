@@ -50,6 +50,29 @@ const prodData =
 export const devBadge = (prod: boolean): DevBadge =>
   prod ? { ...devTokenCopy.prodBadge, prod: true } : devTokenCopy.badge;
 
+/** Persistent red notice on every screen outside the shell (e.g. the first-visit profile form) under `pnpm dev:prod`. */
+function ProdNotice() {
+  return (
+    <div
+      role="alert"
+      title={devTokenCopy.prodBadge.tooltip}
+      className="fixed inset-x-0 top-0 z-50 border-b border-red-700 bg-red-600 px-3 py-2 text-center text-xs font-extrabold uppercase tracking-[0.06em] text-white"
+    >
+      {devTokenCopy.prodBadge.label}: {devTokenCopy.prodBadge.tooltip}
+    </div>
+  );
+}
+
+const withNotice = (node: ReactNode) =>
+  prodData ? (
+    <>
+      <ProdNotice />
+      {node}
+    </>
+  ) : (
+    node
+  );
+
 /**
  * Gate for `pnpm dev` (SIM-028.1): the server adds the bearer, so the browser never calls Identity. Loaded lazily by
  * `AuthGate` and only in development.
@@ -171,22 +194,22 @@ export default function DevGate({
         </SessionProvider>
       );
     case "profile":
-      return (
+      return withNotice(
         <ProfileView
           initialName={view.displayName}
           email={view.email}
           status={status}
           error={profileError}
           onSubmit={saveProfile}
-        />
+        />,
       );
     case "token":
-      return <DevTokenView reason={view.reason} onCheckAgain={check} />;
+      return withNotice(<DevTokenView reason={view.reason} onCheckAgain={check} />);
     case "noAccess":
-      return <NoAccessView code={view.code} />;
+      return withNotice(<NoAccessView code={view.code} />);
     case "retry":
-      return <RetryView error={view.error} onRetry={check} />;
+      return withNotice(<RetryView error={view.error} onRetry={check} />);
     case "checking":
-      return <CheckingView />;
+      return withNotice(<CheckingView />);
   }
 }
