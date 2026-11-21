@@ -7,8 +7,12 @@ import { buildProdUrl, envFileSetsDatabaseUrl, run, tokenIsFresh } from "./dev-p
 const NOW = 1_800_000_000;
 const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const jwt = (payload: unknown) => `${b64({ alg: "none" })}.${b64(payload)}.sig`;
-const FRESH = jwt({ exp: NOW + 3600 });
-const STALE = jwt({ exp: NOW + 10 });
+const ORG = "0a1b2c3d-0000-4000-8000-00000000000a";
+const OTHER = "0a1b2c3d-0000-4000-8000-00000000000b";
+const FRESH = jwt({ exp: NOW + 3600, org: ORG });
+const STALE = jwt({ exp: NOW + 10, org: ORG });
+const NO_ORG = jwt({ exp: NOW + 3600 });
+const OTHER_ORG = jwt({ exp: NOW + 3600, org: OTHER });
 const PW = "p@ss w/rd%é";
 
 type Opts = {
@@ -70,7 +74,15 @@ describe("tokenIsFresh", () => {
     for (const t of [null, "", "abc", "a.b.c", jwt({}), jwt({ exp: NOW + 120 }), STALE]) {
       expect(tokenIsFresh(t, NOW), String(t)).toBe(false);
     }
-    expect(tokenIsFresh(jwt({ exp: NOW + 121 }), NOW)).toBe(true);
+    expect(tokenIsFresh(jwt({ exp: NOW + 121, org: ORG }), NOW)).toBe(true);
+  });
+
+  it("needs an org claim; with an expected org it must match, ignoring case", () => {
+    expect(tokenIsFresh(NO_ORG, NOW)).toBe(false);
+    expect(tokenIsFresh(jwt({ exp: NOW + 3600, org: 5 }), NOW)).toBe(false);
+    expect(tokenIsFresh(FRESH, NOW, OTHER)).toBe(false);
+    expect(tokenIsFresh(FRESH, NOW, ORG.toUpperCase())).toBe(true);
+    expect(tokenIsFresh(FRESH, NOW, undefined)).toBe(true);
   });
 });
 
@@ -129,6 +141,46 @@ describe("run: step order", () => {
       "spawn",
     ]);
     expect(r.out.join("\n")).toContain("production data");
+  });
+
+  it("banner shows the org id, with or without SIMAP_DEV_ORG, never the token", async () => {
+    for (const env of [{}, { SIMAP_DEV_ORG: ORG }]) {
+      const r = await drive({ env });
+      const text = r.out.join("\n");
+      expect(text).toContain(`org ${ORG}`);
+      expect(text).not.toContain(FRESH);
+    }
+  });
+
+  it("SIMAP_DEV_ORG: token of another org is refreshed, then runs", async () => {
+    const r = await drive({ env: { SIMAP_DEV_ORG: ORG }, tokens: [OTHER_ORG, FRESH] });
+    expect(r.code).toBe(0);
+    expect(r.trace.slice(0, 3)).toEqual(["token check", "dev-token", "token check"]);
+  });
+
+  it("SIMAP_DEV_ORG: case-insensitive match needs no refresh", async () => {
+    const r = await drive({ env: { SIMAP_DEV_ORG: ORG.toUpperCase() } });
+    expect(r.code).toBe(0);
+    expect(r.trace).not.toContain("dev-token");
+  });
+
+  it("SIMAP_DEV_ORG: wrong org after refresh exits 1 before docker and prompt", async () => {
+    const r = await drive({ env: { SIMAP_DEV_ORG: ORG }, tokens: [OTHER_ORG] });
+    expect(r.code).toBe(1);
+    expect(r.err.join("\n")).toContain("does not match SIMAP_DEV_ORG");
+    expect(r.trace.filter((t) => t.startsWith("docker") || NO_APP.includes(t))).toEqual([]);
+  });
+
+  it("token without org is refreshed; still without org exits 1 with the --org hint", async () => {
+    const ok = await drive({ tokens: [NO_ORG, FRESH] });
+    expect(ok.code).toBe(0);
+    expect(ok.trace).toContain("dev-token");
+    for (const env of [{}, { SIMAP_DEV_ORG: ORG }]) {
+      const r = await drive({ env, tokens: [NO_ORG] });
+      expect(r.code).toBe(1);
+      expect(r.err.join("\n")).toContain("pnpm dev:token --org <uuid>");
+      expect(r.trace.filter((t) => t.startsWith("docker") || NO_APP.includes(t))).toEqual([]);
+    }
   });
 
   it("token stale then refreshed", async () => {

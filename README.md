@@ -48,7 +48,9 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
 `pnpm dev:prod` runs the local app against the production database through the Cloudflare pg-tunnel (D56). It needs
 an interactive terminal and, in order, stops at the first failure with nothing started:
 
-1. A fresh dev token (runs `pnpm dev:token` when the token is missing or expires within 2 minutes).
+1. A fresh dev token with an `org` claim (runs `pnpm dev:token` when the token is missing, expires within 2
+   minutes, has no org, or is for another org than `SIMAP_DEV_ORG`; a token still wrong after that stops the run).
+   The banner prints the org id.
 2. The tunnel container (`pg-tunnel-pg-tunnel-1`, override `SIMAP_PG_TUNNEL`): started if stopped, then `127.0.0.1:15432` (override
    `SIMAP_PROD_TUNNEL_PORT`) must answer.
 3. `.env.local` must not set `DATABASE_URL`: comment that line out while using `dev:prod` and restore it for local

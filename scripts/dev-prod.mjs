@@ -26,17 +26,31 @@ const PG_VARS = [
   "PGPASSFILE",
 ];
 
-/** True when the token has a payload `exp` more than 120 s after `nowSec`. */
-export function tokenIsFresh(token, nowSec) {
-  if (typeof token !== "string" || !JWT_SHAPE.test(token.trim())) return false;
+function payloadOf(token) {
+  if (typeof token !== "string" || !JWT_SHAPE.test(token.trim())) return null;
   try {
-    const payload = JSON.parse(
-      Buffer.from(token.trim().split(".")[1], "base64url").toString("utf8"),
-    );
-    return typeof payload?.exp === "number" && payload.exp - nowSec > MIN_TOKEN_LIFE_S;
+    return JSON.parse(Buffer.from(token.trim().split(".")[1], "base64url").toString("utf8"));
   } catch {
-    return false;
+    return null;
   }
+}
+
+/** The token's `org` claim as a non-empty string, or null. */
+export function tokenOrg(token) {
+  const org = payloadOf(token)?.org;
+  return typeof org === "string" && org ? org : null;
+}
+
+/**
+ * True when the token has a payload `exp` more than 120 s after `nowSec` and an `org` claim
+ * (equal to `expectedOrg`, case-insensitive, when that is given).
+ */
+export function tokenIsFresh(token, nowSec, expectedOrg) {
+  const org = tokenOrg(token);
+  if (!org) return false;
+  if (expectedOrg && org.toLowerCase() !== expectedOrg.toLowerCase()) return false;
+  const exp = payloadOf(token)?.exp;
+  return typeof exp === "number" && exp - nowSec > MIN_TOKEN_LIFE_S;
 }
 
 /** True when a line of the .env file sets DATABASE_URL (plain, indented, `export`, BOM, CRLF). */
@@ -96,11 +110,22 @@ export async function run(deps) {
 
     // 1. Token
     const file = tokenFilePath(env);
-    if (!tokenIsFresh(readTokenFile(file), now())) {
-      out("[dev:prod] token missing or expiring: running dev:token");
+    const wantOrg = String(env.SIMAP_DEV_ORG ?? "").trim() || null;
+    let token = readTokenFile(file);
+    if (!tokenIsFresh(token, now(), wantOrg)) {
+      out("[dev:prod] token missing, expiring or for another org: running dev:token");
       const code = await runDevToken();
-      if (code !== 0 || !tokenIsFresh(readTokenFile(file), now())) {
-        err("[dev:prod] no fresh dev token: run pnpm dev:token and retry");
+      token = readTokenFile(file);
+      if (code !== 0 || !tokenIsFresh(token, now(), wantOrg)) {
+        if (code === 0 && !tokenOrg(token)) {
+          err(
+            "[dev:prod] the token has no org: run pnpm dev:token --org <uuid> (or set SIMAP_DEV_ORG) and retry",
+          );
+        } else if (code === 0 && tokenIsFresh(token, now())) {
+          err("[dev:prod] the token org does not match SIMAP_DEV_ORG: nothing started");
+        } else {
+          err("[dev:prod] no fresh dev token: run pnpm dev:token --org <uuid> and retry");
+        }
         return 1;
       }
     }
@@ -142,7 +167,7 @@ export async function run(deps) {
     }
 
     // 4. App
-    out("[dev:prod] production data: every change is real");
+    out(`[dev:prod] production data, org ${tokenOrg(token)}: every change is real`);
     return await spawnApp({
       args,
       env: childEnv(env, buildProdUrl(password, ports.primary), file),

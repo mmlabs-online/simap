@@ -68,3 +68,28 @@ None.
 ### Follow-ups
 - Security 4 (strip all `PG*` case-insensitively, refuse `PG*` in `.env.local`): left as a follow-up.
 - Add `pnpm dev:prod` to the Commands list in `CLAUDE.md`.
+
+## Attempt 3 (REWORK) — 2026-11-21
+
+Fixes security-review Attempt 2 finding 1 (wrong-org token). `dev:token` reads `SIMAP_DEV_ORG` from the inherited env, so the refresh requests that org; with no org anywhere it makes an unscoped token, which `dev:prod` now rejects with a `pnpm dev:token --org <uuid>` hint.
+
+### Files touched
+| File | Required because |
+|---|---|
+| `scripts/dev-prod.mjs` | `tokenOrg`; `tokenIsFresh` needs an org claim and matches `SIMAP_DEV_ORG` case-insensitively; org re-checked after refresh (exit 1 before docker and prompt); banner prints the org id only |
+| `scripts/dev-prod.test.ts` | Mismatch then refresh, mismatch after refresh, no org (and still none), case-insensitive match, banner org; fixtures now carry an org |
+| `README.md` | Step 1 text (org check, banner) |
+
+### Checks (actual)
+- format:check: exit 0
+- typecheck: exit 0
+- check:layers: 223 files, no violations
+- test: 89 files passed, 869 passed | 3 skipped
+- build: exit 0
+- test:db: not run (CI)
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+Unchanged (heapsnapshot, PG* stripping, lone-CR .env forms, CLAUDE.md Commands entry).
