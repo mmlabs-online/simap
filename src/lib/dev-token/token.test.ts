@@ -11,6 +11,8 @@ import {
 
 const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64url");
 const jwt = (exp: number) => `${b64({ alg: "ES256" })}.${b64({ exp })}.sig_-x`;
+const jwtOrg = (org: unknown) =>
+  `${b64({ alg: "ES256" })}.${b64({ exp: 1_700_000_000 + 3600, org })}.sig_-x`;
 const NOW = 1_700_000_000_000;
 const GOOD = jwt(NOW / 1000 + 3600);
 
@@ -100,6 +102,44 @@ describe("devAuthorizationFor", () => {
   });
 });
 
+describe("devAuthorizationFor pin (SIM-030)", () => {
+  const A = "0b6f3c0e-7a1d-4c3e-8f21-5d9a2b7c1e44";
+  const B = "1c7a4d1f-8b2e-4d4f-9a32-6eab3c8d2f55";
+  const tok = (org: unknown) => ({ status: "ok", token: jwtOrg(org) }) as const;
+
+  it("pin: same org returns the header", () => {
+    expect(devAuthorizationFor(req(), tok(A), A)).toEqual({
+      header: `Bearer ${jwtOrg(A)}`,
+      reason: "ok",
+    });
+  });
+
+  it("pin: comparison ignores case", () => {
+    expect(devAuthorizationFor(req(), tok(A.toLowerCase()), A.toUpperCase()).reason).toBe("ok");
+    expect(devAuthorizationFor(req(), tok(A.toUpperCase()), A.toLowerCase()).reason).toBe("ok");
+  });
+
+  it("pin: other, missing and non-string org are wrong_org", () => {
+    for (const org of [B, undefined, 5, null, "", ` ${A} `]) {
+      expect(devAuthorizationFor(req(), tok(org), A), String(org)).toEqual({
+        header: null,
+        reason: "wrong_org",
+      });
+    }
+  });
+
+  it("pin: request refusal and token status still come first", () => {
+    expect(devAuthorizationFor(req({ host: "evil.example" }), tok(B), A).reason).toBe("host");
+    expect(devAuthorizationFor(req(), { status: "expired" }, A).reason).toBe("expired");
+  });
+
+  it("no pin: any org passes as before", () => {
+    for (const pin of [undefined, null, ""]) {
+      expect(devAuthorizationFor(req(), tok(B), pin).reason).toBe("ok");
+    }
+  });
+});
+
 describe("warningFor / createWarnOnce", () => {
   const reasons: Reason[] = [
     "missing",
@@ -109,6 +149,7 @@ describe("warningFor / createWarnOnce", () => {
     "host",
     "origin",
     "cross_site",
+    "wrong_org",
   ];
 
   it("names pnpm dev:token or the refusal and never the token", () => {

@@ -48,6 +48,7 @@ export function devAuthorization(req: Request): string | null {
   const { header, reason } = devAuthorizationFor(
     input,
     readDevTokenFile(tokenFilePath(process.env), Date.now()),
+    process.env.SIMAP_DEV_EXPECTED_ORG,
   );
   warn(reason);
   return header;

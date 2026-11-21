@@ -5,8 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { devAuthorization, readDevTokenFile, tokenFilePath } from "./dev-token";
 
 const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64url");
-const jwt = (expSec: number) => `${b64({ alg: "ES256" })}.${b64({ exp: expSec })}.sig`;
-const future = () => jwt(Math.floor(Date.now() / 1000) + 3600);
+const jwt = (expSec: number, org?: string) =>
+  `${b64({ alg: "ES256" })}.${b64({ exp: expSec, ...(org ? { org } : {}) })}.sig`;
+const future = (org?: string) => jwt(Math.floor(Date.now() / 1000) + 3600, org);
+
+const ORG_A = "0b6f3c0e-7a1d-4c3e-8f21-5d9a2b7c1e44";
+const ORG_B = "1c7a4d1f-8b2e-4d4f-9a32-6eab3c8d2f55";
 
 let dir: string;
 let file: string;
@@ -65,5 +69,33 @@ describe("devAuthorization", () => {
     expect(devAuthorization(apiReq())).toBeNull();
     expect(warn).toHaveBeenCalledTimes(1);
     expect(String(warn.mock.calls[0][0])).toContain("pnpm dev:token");
+  });
+
+  it("pin: other-org file gets no header and warns once without the token", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubEnv("SIMAP_DEV_EXPECTED_ORG", ORG_A);
+    const t = future(ORG_B);
+    writeFileSync(file, t);
+    expect(devAuthorization(apiReq())).toBeNull();
+    expect(devAuthorization(apiReq())).toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain("another org");
+    expect(String(warn.mock.calls[0][0])).not.toContain(t);
+  });
+
+  it("pin: swap B to A recovers on the next request, no restart", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubEnv("SIMAP_DEV_EXPECTED_ORG", ORG_A);
+    writeFileSync(file, future(ORG_B));
+    expect(devAuthorization(apiReq())).toBeNull();
+    const a = future(ORG_A) + "x";
+    writeFileSync(file, a);
+    expect(devAuthorization(apiReq())).toBe(`Bearer ${a}`);
+  });
+
+  it("no pin: behaves as before", () => {
+    const t = future(ORG_B);
+    writeFileSync(file, t);
+    expect(devAuthorization(apiReq())).toBe(`Bearer ${t}`);
   });
 });
