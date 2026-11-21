@@ -375,3 +375,6 @@ Not assessed here: `security-review.md` has an uncommitted Attempt 4 update from
 - Add a `run()` test for the port-only message (`[0]`, no `PIDs:` text).
 - `dev-prod.mjs:389`: the `finally` stop passes no port and ignores the result; that path already exits 1.
 - N4, N5, N7, N8, tunnel port identity, minimal helper env (unchanged).
+
+### Rework requested by Ming (added by orchestrator, 2026-11-21)
+Second escalation, option 1, REWORK attempt 5: security Attempt 4 U1 (same defect as the reviewer's Attempt 4 blocker) and the flaky T1 test. N9, N10 and other notes stay follow-ups.
