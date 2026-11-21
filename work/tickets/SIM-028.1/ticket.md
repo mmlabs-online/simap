@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | REWORK |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, security |
 | Gate | plan-approval |
 | Depends on | SIM-028 |
 | Needs Ming | — |
-| Attempts | 2 |
+| Attempts | 3 |
 | Created | 2026-11-21 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-21T12:04:06Z |
 | PR | https://github.com/mmlabs-online/simap/pull/33 |
 
 ## Goal
@@ -60,6 +60,7 @@ local development works without CORS.
 - Manual: `pnpm dev:token --org <uuid>`, `pnpm dev`, Chrome network log; `pnpm build && pnpm check:dev-bundle`.
 
 ## Notes / answers from Ming
+- 2026-11-21: Ming approved one extra rework beyond the limit of 2: fix security Attempt 3 S5 in PR #34 (force `NODE_ENV=development` in `devEnv`). S6, S7 and other follow-ups stay out.
 - 2026-11-21: Ming merged PR #33 at head `4d07c7e`, before attempt 3 reached the branch. S1, S2 and the `.env.example` name are not in that merge; they ship in the fixes PR from `ticket/SIM-028.1-fixes`.
 - 2026-11-21: Ming decided M-18: add `NEXT_PUBLIC_SIMAP_DEV_PROD` to `.env.example` (High-path edit approved, name only, as a comment line so a copied file is not refused by the launchers), and fix security Attempt 2 S1 and S2 in this PR.
 - 2026-11-21: Plan approved by Ming. Decision 1 = C: `scripts/dev-prod.mjs` sets `NEXT_PUBLIC_SIMAP_DEV_PROD=1` and the browser shows a distinct red "Production data" badge (in scope for this ticket). Decision 2 = default: a mid-session 403 `org_required` flips to the `--org` hint. Decision 3 = default: README "Local development" steps 7-8 are edited in this ticket.

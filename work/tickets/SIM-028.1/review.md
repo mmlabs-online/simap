@@ -193,3 +193,6 @@ None recorded at the time of this review. `security-review.md` showed as modifie
 - S3, S4, F4, F6 and case-variant hardening of other keys.
 - Check `src/server/identity/verify.test.ts:169` for wall-clock flakiness (passed in this run).
 - `pnpm check:dev-bundle` in CI, `.claude/loop.config.md` and `CLAUDE.md`.
+
+### Rework requested by Ming (added by orchestrator, 2026-11-21)
+Fix in REWORK attempt 4 on `ticket/SIM-028.1-fixes` (PR #34): security Attempt 3 S5 only.
