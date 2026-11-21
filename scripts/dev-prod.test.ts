@@ -53,6 +53,7 @@ type Opts = {
   signalAt?: "spawn" | "ready" | "running";
   signal?: number;
   stopLeft?: number[];
+  db?: { ok: boolean; code?: string } | "throws";
 };
 const dockerCalls: string[][] = [];
 
@@ -108,6 +109,11 @@ async function drive(o: Opts = {}) {
     portBusy: async (p: number) => (trace.push("port"), helperArgs.push(p), o.busy ?? false),
     promptOrg: async () => (trace.push("org prompt"), o.orgAnswer ?? ""),
     promptPassword: async () => (trace.push("prompt"), o.password ?? PW),
+    checkDb: async () => {
+      trace.push("db check");
+      if (o.db === "throws") throw new Error(`boom ${PW}`);
+      return o.db ?? { ok: true };
+    },
     onStopSignal: (cb: (code: number) => void) => (onSignal = cb),
     monoMs: () => (clock += o.clockStep ?? 0),
     probeReady: async (p: number) => {
@@ -285,6 +291,7 @@ describe("run: step order", () => {
       "docker inspect",
       "probe",
       "prompt",
+      "db check",
       "spawn",
       "ready",
       "owner",
@@ -295,6 +302,54 @@ describe("run: step order", () => {
       "PRODUCTION DATA: every change is real.",
     ]);
     expect(r.out.join("\n")).toContain("production data");
+  });
+
+  it("full flow without .env files, including sign-in", async () => {
+    const r = await drive({ tokens: [null, FRESH], orgAnswer: ORG });
+    expect(r.code).toBe(0);
+    expect(r.trace).toEqual([
+      "env check",
+      "tools",
+      "port",
+      "token check",
+      "org prompt",
+      "dev-token",
+      "token check",
+      "docker inspect",
+      "probe",
+      "prompt",
+      "db check",
+      "spawn",
+      "ready",
+      "owner",
+      "stop",
+    ]);
+    expect(r.out.slice(-2)).toEqual([
+      "[dev:prod] local URL: http://127.0.0.1:3000",
+      "PRODUCTION DATA: every change is real.",
+    ]);
+  });
+
+  it("db login check: 28P01 or any failure exits 1 with a fixed message, no app, no retry", async () => {
+    const failures = [
+      { ok: false, code: "28P01" },
+      { ok: false, code: "ECONNREFUSED" },
+      { ok: false },
+      "throws",
+    ] as const;
+    for (const db of failures) {
+      const r = await drive({ db });
+      expect(r.code).toBe(1);
+      expect(r.trace.filter((t) => t === "db check")).toHaveLength(1);
+      expect(r.trace).not.toContain("spawn");
+      expect(r.err).toHaveLength(1);
+      const all = [...r.out, ...r.err].join("\n");
+      expect(all).toContain("nothing started");
+      expect(all).not.toContain(PW);
+      expect(all).not.toContain("boom");
+    }
+    const auth = await drive({ db: { ok: false, code: "28P01" } });
+    expect(auth.err[0]).toContain("rejected the password");
   });
 
   it("banner shows the org id, with or without SIMAP_DEV_ORG, never the token", async () => {

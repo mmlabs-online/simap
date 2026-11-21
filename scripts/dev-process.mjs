@@ -14,8 +14,11 @@ const INT = /^[0-9]+$/;
 
 // ---- pure parsers and rules ----
 
-/** Parses the Windows snapshot ("P pid ppid filetime", "L pid", then "END"); null when malformed or cut short. */
-export function parseWindowsSnapshot(text) {
+/**
+ * Parses the Windows snapshot ("P pid ppid filetime", "L pid", then "END"); null when malformed or cut short, or, when
+ * `selfPid` is given, when the table does not contain that process (a failed read still prints END).
+ */
+export function parseWindowsSnapshot(text, selfPid) {
   const procs = [];
   const listeners = [];
   let end = false;
@@ -30,7 +33,8 @@ export function parseWindowsSnapshot(text) {
     } else if (f[0] === "L" && f.length === 2 && INT.test(f[1])) listeners.push(Number(f[1]));
     else return null;
   }
-  return end ? { procs, listeners } : null;
+  if (!end || (selfPid !== undefined && !procs.some((p) => p.pid === selfPid))) return null;
+  return { procs, listeners };
 }
 
 /** lsof -Fp output: one "p<pid>" line per listener. Empty is an empty list; anything else malformed is null. */
@@ -59,7 +63,8 @@ export function parsePosixPs(text) {
 /**
  * Descendants of `root` ({pid, start}) in a process table of {pid, ppid, start}. A process counts as a child of a member
  * when its ppid is the member's PID, it started no earlier than the member, and, if that PID now belongs to a different
- * process (PID reuse), it started before that process. Orphans of a dead root are kept; cycles end.
+ * process (PID reuse), it started before that process. Orphans of a dead root are kept, but if `root.end` (FILETIME of
+ * its exit) is set, a direct child that started after it is a child of a reused PID and is dropped. Cycles end.
  */
 export function descendantsOf(table, root) {
   const found = [];
@@ -71,6 +76,7 @@ export function descendantsOf(table, root) {
     for (const p of table) {
       const key = `${p.pid}:${p.start}`;
       if (seen.has(key) || p.ppid !== m.pid || p.start < m.start) continue;
+      if (m.end !== undefined && p.start > m.end) continue;
       if (holder && holder.start !== m.start && p.start >= holder.start) continue;
       seen.add(key);
       found.push(p);
@@ -146,7 +152,9 @@ export async function portBusy(port) {
 export function probeReady(port, timeoutMs) {
   return new Promise((done) => {
     const agent = new http.Agent({ keepAlive: false });
-    const finish = (v) => (agent.destroy(), done(v));
+    // `timeout` below is only a socket idle limit; this timer is the hard total limit (a server can trickle bytes).
+    const hard = setTimeout(() => (req.destroy(), finish(false)), timeoutMs);
+    const finish = (v) => (clearTimeout(hard), agent.destroy(), done(v));
     const req = http.get(
       { host: "127.0.0.1", port, path: "/api/readyz", agent, timeout: timeoutMs },
       (res) => {
@@ -196,7 +204,7 @@ function winSnapshot(port) {
       ? `Get-NetTCPConnection -State Listen -LocalPort ${n}|ForEach-Object{'L '+$_.OwningProcess};`
       : "") +
     "'END'";
-  return parseWindowsSnapshot(powershell(script));
+  return parseWindowsSnapshot(powershell(script), process.pid);
 }
 
 // Opens each process (the handle pins it), compares its start time with the recorded one (CIM and the process agree within 10 microseconds), and only then kills it.
@@ -208,12 +216,24 @@ function winKill(members) {
   );
 }
 
+// FILETIME (100 ns ticks since 1601) of now.
+const fileTimeNow = () => BigInt(Date.now() + 11644473600000) * 10000n;
+
+// Only ESRCH means the group is gone; EPERM means it exists.
 function posixAlive(pid) {
   try {
     process.kill(-pid, 0);
     return true;
+  } catch (e) {
+    return e.code !== "ESRCH";
+  }
+}
+
+function posixSignal(pid, sig) {
+  try {
+    process.kill(-pid, sig);
   } catch {
-    return false;
+    // ESRCH: gone already. Anything else: posixAlive decides, so the stop is never reported as confirmed.
   }
 }
 
@@ -239,39 +259,58 @@ export async function startApp({ cmd, args, env, cwd }) {
     child.once("error", () => fail(new Error("spawn failed")));
   });
   let exited = false;
+  let rootEnd;
   const exit = new Promise((done) =>
-    child.once("exit", (code) => ((exited = true), done(code ?? 1))),
+    child.once("exit", (code) => ((exited = true), (rootEnd = fileTimeNow()), done(code ?? 1))),
   );
   const rootAt = WIN ? winSnapshot(0)?.procs.find((p) => p.pid === child.pid) : null;
   const root = rootAt ? { pid: child.pid, start: rootAt.start } : null;
 
   const winTree = (snap) => {
-    const alive = root && snap.procs.some((p) => p.pid === root.pid && p.start === root.start);
-    return [...(alive ? [root] : []), ...descendantsOf(snap.procs, root)];
+    const alive = snap.procs.some((p) => p.pid === root.pid && p.start === root.start);
+    return [...(alive ? [root] : []), ...descendantsOf(snap.procs, { ...root, end: rootEnd })];
+  };
+  // Last resort on the handle Node holds (cannot hit a reused PID) when the process table cannot be read.
+  const killRoot = async () => {
+    if (exited) return;
+    child.kill();
+    await Promise.race([exit, sleep(2000)]);
+  };
+
+  const posixStop = async () => {
+    if (!posixAlive(child.pid)) return [];
+    posixSignal(child.pid, "SIGTERM");
+    for (let i = 0; i < 30 && posixAlive(child.pid); i++) await sleep(100);
+    if (posixAlive(child.pid)) {
+      posixSignal(child.pid, "SIGKILL");
+      for (let i = 0; i < 20 && posixAlive(child.pid); i++) await sleep(100);
+    }
+    return posixAlive(child.pid) ? [child.pid] : [];
   };
 
   let stopping = null;
   const stopTree = async (grace) => {
-    if (!WIN) {
-      if (posixAlive(child.pid)) {
-        process.kill(-child.pid, "SIGTERM");
-        for (let i = 0; i < 30 && posixAlive(child.pid); i++) await sleep(100);
-        if (posixAlive(child.pid)) process.kill(-child.pid, "SIGKILL");
-      }
-      return [];
-    }
+    if (!WIN) return posixStop();
     if (grace) await Promise.race([exit, sleep(1500)]);
-    let left = [];
-    for (let sweep = 0; sweep < 3; sweep++) {
-      const snap = root ? winSnapshot(0) : null;
-      if (!snap) return [child.pid];
-      left = winTree(snap);
+    if (!root) {
+      await killRoot();
+      return [child.pid];
+    }
+    // A snapshot that fails is never read as "nothing left": kill the root by handle, then try again.
+    for (let sweep = 0; sweep < 4; sweep++) {
+      const snap = winSnapshot(0);
+      if (!snap) {
+        await killRoot();
+        await sleep(300);
+        continue;
+      }
+      const left = winTree(snap);
       if (!left.length) return [];
+      if (sweep === 3) return left.map((m) => m.pid);
       winKill([...left].reverse());
       await sleep(300);
     }
-    const snap = winSnapshot(0);
-    return snap ? winTree(snap).map((m) => m.pid) : [child.pid];
+    return [child.pid];
   };
 
   return {

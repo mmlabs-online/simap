@@ -1,5 +1,6 @@
 // `pnpm dev:prod` (SIM-029, D56): runs the local app against the production database through the Cloudflare pg-tunnel.
-// Steps, stopping at the first failure with nothing started: token, tunnel, .env.local check and hidden password, app.
+// Steps, stopping at the first failure with nothing started: read-only preflight (.env refusals, tools, port), token,
+// tunnel, hidden password and one login check, app.
 // The password lives only in memory and in the app's child environment. It is never printed or stored.
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -279,6 +280,23 @@ export async function run(deps) {
       return 1;
     }
 
+    // One login check before the app starts, so a wrong password costs one production login, never a retry loop.
+    let dbOk = false;
+    let authFailed = false;
+    try {
+      const r = await deps.checkDb({ password, port: ports.primary });
+      dbOk = r?.ok === true;
+      authFailed = r?.code === "28P01";
+    } catch {}
+    if (!dbOk) {
+      err(
+        authFailed
+          ? "[dev:prod] the database rejected the password for role simap: nothing started"
+          : "[dev:prod] could not log in to the production database through the tunnel: nothing started",
+      );
+      return 1;
+    }
+
     // 5. App: start, wait for readiness, check ownership. Every way out stops the whole child tree (never the tunnel).
     const org = tokenOrg(token);
     out(`[dev:prod] production data, org ${org}: every change is real`);
@@ -306,7 +324,7 @@ export async function run(deps) {
     const exited = handle.exit.then((c) => ((exitCode = c), "exit"));
     if (signalCode !== null) return await halt(signalCode, true);
     if (handle.rooted === false) {
-      err("[dev:prod] could not identify the app process: stopped");
+      err("[dev:prod] could not identify the app process: stopping it");
       return await halt(1);
     }
     const t0 = deps.monoMs();
@@ -315,7 +333,7 @@ export async function run(deps) {
       const left = READY_MS - (deps.monoMs() - t0);
       if (left <= 0) {
         err(
-          "[dev:prod] the app did not become ready in 30 s (database password or tunnel?): stopped",
+          "[dev:prod] the app did not become ready in 30 s (database password or tunnel?): stopping it",
         );
         return await halt(1);
       }
@@ -344,7 +362,7 @@ export async function run(deps) {
       }
     }
     if ((await handle.owner(Number(port))) !== "owned") {
-      err(`[dev:prod] port ${port} is not owned by the app we started: stopped`);
+      err(`[dev:prod] port ${port} is not owned by the app we started: stopping it`);
       return await halt(1);
     }
     out(`[dev:prod] local URL: http://127.0.0.1:${port}`);
@@ -371,6 +389,29 @@ function probePort(port) {
     socket.once("timeout", () => (socket.destroy(), done(false)));
     socket.once("error", () => (socket.destroy(), done(false)));
   });
+}
+
+/** One login with the password, nothing else: connect, then close. Resolves { ok } or { ok: false, code } (pg error code). */
+async function checkDb({ password, port }) {
+  const { Client } = createRequire(import.meta.url)("pg");
+  const client = new Client({
+    host: "127.0.0.1",
+    port,
+    user: "simap",
+    password,
+    database: "simap",
+    ssl: false,
+    connectionTimeoutMillis: 5000,
+  });
+  client.on("error", () => {});
+  try {
+    await client.connect();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, code: typeof e?.code === "string" ? e.code : undefined };
+  } finally {
+    await client.end().catch(() => {});
+  }
 }
 
 function spawnNext({ args, env }) {
@@ -420,6 +461,7 @@ async function main() {
       checkTools: () => checkTools(root),
       portBusy,
       probeReady,
+      checkDb,
       monoMs: () => performance.now(),
       onStopSignal: (cb) => {
         for (const [sig, code] of Object.entries(SIGNAL_CODES)) process.on(sig, () => cb(code));

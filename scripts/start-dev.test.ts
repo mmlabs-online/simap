@@ -55,6 +55,14 @@ describe.skipIf(!usable)("start-dev.sh", () => {
     expect(r.stderr).toContain("node not found");
   });
 
+  it("cd ignores CDPATH, so nothing extra is printed", () => {
+    rmSync(log, { force: true });
+    const r = wrapper([], { PATH: pathWith(dir), STUB_TTY: "0", CDPATH: dir });
+    expect(r.status).toBe(0);
+    expect(r.stdout).toBe("");
+    expect(readFileSync(log, "utf8").trim()).toBe("scripts/dev-prod.mjs");
+  });
+
   it("bash -n passes", () => {
     const r = spawnSync(BASH, ["-n", "scripts/start-dev.sh"], { cwd: ROOT, encoding: "utf8" });
     expect(r.stderr).toBe("");

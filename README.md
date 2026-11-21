@@ -58,7 +58,10 @@ Before the first run take a `pg_dump` of the `simap` database and keep it outsid
 
 `pnpm dev:prod` runs the local app against the production database through the Cloudflare pg-tunnel (D56). It needs
 an interactive terminal. All read-only checks run first, before any sign-in, tunnel start or prompt: the `.env*`
-refusals (exit 2), the tools (docker CLI and daemon, `next`, `powershell` on Windows, `lsof` and `ps` elsewhere) and
+refusals (exit 2: none of the four files may set `DATABASE_URL`, any letter case, so comment that line out while using
+`dev:prod` and restore it for local work; none may set `SIMAP_DEV_ORG`, set it in the shell; `pnpm dev` and `dev:prod`
+both refuse `NEXT_PUBLIC_SIMAP_DEV_PROD` in any letter case, and `dev:prod` refuses `MM_IDENTITY_ISSUER` in a letter
+case other than exactly that; values are never printed), the tools (docker CLI and daemon, `next`, `powershell` on Windows, `lsof` and `ps` elsewhere) and
 that the app port is free (the port is always passed explicitly: `--port`, else `PORT`, else 3000). Then, in order, it
 stops at the first failure with nothing started:
 
@@ -68,10 +71,8 @@ stops at the first failure with nothing started:
    app as `SIMAP_DEV_EXPECTED_ORG` (set by `dev:prod` only, never by hand).
 2. The tunnel container (`pg-tunnel-pg-tunnel-1`, override `SIMAP_PG_TUNNEL`): started if stopped, then `127.0.0.1:15432` (override
    `SIMAP_PROD_TUNNEL_PORT`) must answer.
-3. None of the four `.env*` files may set `DATABASE_URL` (any letter case): comment that line out while using
-   `dev:prod` and restore it for local work. None of `.env.development.local`, `.env.local`, `.env.development` or `.env` may set `SIMAP_DEV_ORG`: set it
-   in the shell (exit 2 otherwise, the value is not printed). Both `pnpm dev` and `dev:prod` also exit 2 if any of those
-   four files sets `NEXT_PUBLIC_SIMAP_DEV_PROD` (any letter case). `dev:prod` also exits 2 if one of them sets `MM_IDENTITY_ISSUER` in a letter case other than exactly that (the value is not printed). Then `dev:prod` asks for the password of the database role `simap` with hidden input, on every run.
+3. The password of the database role `simap`, asked with hidden input on every run. One login check follows before
+   the app starts: a wrong password (`28P01`) or an unreachable database stops the run with a fixed message, no retry.
 4. It starts `next dev -H 127.0.0.1` with a banner, waits for `/api/readyz` (a 200 proves the app reached Postgres
    through the tunnel, not the schema version or write access), and stops the whole process tree on a failed check. The URL and password live only
    in the app's child environment: never printed, never written to disk. `dev:prod` pins `MM_IDENTITY_ISSUER=https://api.mmlabs.online` in the child, so a `.env*` or shell value is ignored. `dev:prod` itself skips `.env.local`, but the `next dev` child loads it, so set

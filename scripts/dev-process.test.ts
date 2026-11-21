@@ -25,6 +25,13 @@ describe("parsers", () => {
     const good = parseWindowsSnapshot("P 10 4 133\r\nP 11 10 134\nL 11\nEND\n");
     expect(good).toEqual({ procs: [P(10, 4, 133), P(11, 10, 134)], listeners: [11] });
     expect(parseWindowsSnapshot("END")).toEqual({ procs: [], listeners: [] });
+    // A failed read still prints END: valid only when it contains the launcher's own PID.
+    expect(parseWindowsSnapshot("END", 10)).toBeNull();
+    expect(parseWindowsSnapshot("P 11 4 133\nEND", 10)).toBeNull();
+    expect(parseWindowsSnapshot("P 10 4 133\nEND", 10)).toEqual({
+      procs: [P(10, 4, 133)],
+      listeners: [],
+    });
     for (const bad of ["", null, "P 10 4 133\n", "P 10 x 133\nEND", "Q 1\nEND", "END\nP 1 2 3"]) {
       expect(parseWindowsSnapshot(bad), String(bad)).toBeNull();
     }
@@ -58,6 +65,14 @@ describe("descendantsOf", () => {
 
   it("includes an orphan of a dead root", () => {
     expect(pids([P(11, 10, 110)])).toEqual([11]);
+  });
+
+  it("drops a direct child of a dead root that started after the root's exit (PID reuse)", () => {
+    // pid 10 died at 200, was reused by Y, Y started Z (510) and exited: Z is not ours; orphan 11 (110) is.
+    const dead = { ...root, end: 200n };
+    const ids = (t: ReturnType<typeof P>[]) => descendantsOf(t, dead).map((p) => p.pid);
+    expect(ids([P(11, 10, 510)])).toEqual([]);
+    expect(ids([P(11, 10, 110), P(12, 11, 120), P(13, 10, 510)])).toEqual([11, 12]);
   });
 
   it("terminates on a cycle", () => {
@@ -123,6 +138,22 @@ describe("probeReady", () => {
       s.close();
     }
   });
+
+  it("a server that trickles bytes still ends within the hard limit", async () => {
+    const { s, port } = await serve((_req, res) => {
+      res.writeHead(200);
+      const t = setInterval(() => res.write(" "), 100);
+      res.on("close", () => clearInterval(t));
+    });
+    try {
+      const t0 = Date.now();
+      expect(await probeReady(port, 1000)).toBe(false);
+      expect(Date.now() - t0).toBeLessThan(3000);
+    } finally {
+      s.closeAllConnections();
+      s.close();
+    }
+  }, 15_000);
 
   it("a closed port is not ready", async () => {
     const s = await listen();
@@ -216,6 +247,31 @@ describe("real tree", () => {
       expect(alive(grand.pid)).toBe(false);
     });
   }, 60_000);
+
+  it.skipIf(!WIN)(
+    "snapshot unreadable: the real child is still killed and the stop reports it unconfirmed",
+    async () => {
+      const app = await startApp({
+        cmd: process.execPath,
+        args: ["-e", "setInterval(()=>{},1000)"],
+        env: MIN_ENV,
+        cwd: tmpdir(),
+      });
+      expect(app.rooted).toBe(true);
+      const saved = process.env.SystemRoot;
+      process.env.SystemRoot = join(tmpdir(), "simap-no-such-root");
+      try {
+        const left = await app.stop();
+        expect(left).toEqual([app.pid]);
+        await sleep(300);
+        expect(alive(app.pid!)).toBe(false);
+      } finally {
+        process.env.SystemRoot = saved;
+        if (alive(app.pid!)) process.kill(app.pid!);
+      }
+    },
+    60_000,
+  );
 
   it.skipIf(!hasLsof)(
     "owner: owned for the grandchild's port, foreign for a bystander's",
