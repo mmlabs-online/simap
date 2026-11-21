@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | PLANNING |
 | Priority | P1 |
 | Size | M |
 | Areas | architecture, ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-21 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-21T01:21:04Z |
 | PR | https://github.com/mmlabs-online/simap/pull/28 |
 
 ## Goal
