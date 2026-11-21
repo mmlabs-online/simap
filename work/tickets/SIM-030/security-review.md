@@ -67,3 +67,48 @@ No 🔴 or 🟡 findings. Two 🟢 notes follow. One Windows assumption was conf
 ### Orchestrator check (2026-11-21)
 - 🟢 1 one-line check run in PowerShell on Node 22: printed `true`, so the verdict stays PASS.
 - `git diff origin/main...HEAD -- src/server/http/with-auth.ts`: empty.
+
+## Attempt 2
+
+Verdict: PASS
+
+No 🔴, 🟡 or 🟢 findings. The line 51 change cannot disable the org pin while `dev:prod` runs. This comes from reading the code: I did not run the app or inspect compiled output.
+
+**Scenario checked: shell `NODE_ENV=production` with `pnpm dev:prod`**
+
+1. **The launcher does not change `NODE_ENV`.** `scripts/dev-prod.mjs:76-89` and `scripts/dev.mjs:47-49` pass it through, so the Next process inherits `production`.
+2. **Next keeps the shell value at runtime.** `next/dist/bin/next:80` and `next/dist/server/lib/router-server.js:126-129` only set it when unset. `bin/next:63-72` just prints a warning for `dev`.
+3. **The compiled value is still `development`.**
+   - `next/dist/cli/next-dev.js:354` passes `isDev: true`, which `start-server.js:164` forwards as `dev`.
+   - `hot-reloader-turbopack.js:302` hardcodes `dev = true` and passes it to `createDefineEnv` at lines 367-371.
+   - `next/dist/build/define-env.js:76` then defines `process.env.NODE_ENV` as `development`, ignoring the shell value.
+4. **Nothing in the project overrides that define.**
+   - `next.config.ts` sets no `env`, `compiler.define` or `allowDevelopmentBuild`.
+   - The `NEXT_PUBLIC_*` and config env spreads (`define-env.js:60-61`) come before line 76, so line 76 wins.
+   - `compiler.define` and `defineServer` throw on a built-in key (`define-env.js:214-229`).
+5. **Result:** `src/server/http/with-auth.ts:111` folds to true and `src/server/http/dev-token.ts:51` reads the pin from the runtime env.
+
+**Could the dev-token path run with the pin undefined?**
+
+That needs line 111 to see `development` while line 51 sees `production` in the same server.
+
+- **Both inlined (expected):** they agree, as above.
+- **Neither inlined:** both read `production`, the guard is false and `authorization` is never installed. A client header then goes through normal verification, so this fails closed.
+- **Only one inlined:** I found no route to this. `dev-token.ts` is loaded only from `with-auth.ts:114`, in the same Node server compile, and `src` has no edge runtime declaration.
+- **`NODE_ENV` changing at runtime:** `src` has no write to `process.env.NODE_ENV`.
+
+**Other checks**
+
+- **Production build:** line 76 inlines `production`, so the guard is false and line 51 folds to `undefined`. The `Dockerfile:19` runtime value matches.
+- **Plain `pnpm dev`:** no pin is set, so behaviour is unchanged (`src/lib/dev-token/token.ts:95`).
+- **Pin comparison:** `token.ts:95` is unchanged in logic. A wrong or missing org claim still withholds the token when a pin is set.
+- **Related runtime read:** `src/server/identity/config.ts:24` reads the non-inlined `env.NODE_ENV`. With a shell `production`, a localhost or non-production issuer gets a 503. This is stricter and does not weaken the pin.
+- **Secrets:** the change adds no logging or new output. I did not read any `.env*` file or the real token file.
+
+**Limits**
+
+- Turbopack's native define application was not read. The conclusion does not depend on it, because the non-inlined case fails closed.
+- I did not inspect `.next` output, per the rule against reading build output.
+- The webpack path was not traced. `scripts/dev.mjs:19-33` does not allow a `--webpack` flag, and `define-env.js:76` is shared by both bundlers.
+
+**Follow-ups:** none new.

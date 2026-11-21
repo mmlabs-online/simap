@@ -58,3 +58,72 @@ Needs M-3 and the real tunnel (not verified by the reviewer):
 
 ### Blockers from review agents
 - None. security-review.md Attempt 1 is PASS with no 🔴 or 🟡. Its Windows check was run and printed `true`.
+
+## Attempt 2 — 2026-11-21
+Verdict: REWORK
+
+No code rework is requested. The only open item is AC7's wording, which is a decision for Ming (Issue 1).
+
+### Checks (run by reviewer)
+Run at `2b88384`, working tree clean.
+- `pnpm format:check` — exit 0; "All matched files use the correct format" (270 files).
+- `pnpm typecheck && pnpm check:layers` — exit 0; "check-layers: 223 files, no violations".
+- `pnpm test` — exit 0; Test Files 89 passed (89); Tests 886 passed, 3 skipped (889). Matches impl-log.
+- `pnpm build` — exit 0; `.next/BUILD_ID` written 05:06:28Z, after this review's run started at 05:06:10Z.
+- `pnpm test:db` — not run (CI-only, needs Postgres); this ticket changes no schema or query.
+
+### Attempt 1 issue
+The requested fix is in place at `src/server/http/dev-token.ts:51`, and it removed the name from all compiled code. In the built chunk the argument is folded to `c=void 0`. Issue 1 of Attempt 1 is fixed in code, but the literal AC7 scan still prints one file.
+
+### AC7 scan (fresh build)
+| Scope | Result |
+|---|---|
+| `rg -l SIMAP_DEV_EXPECTED_ORG .next/static .next/server` (the AC7 command) | **1 hit**: `.next/server/chunks/[root-of-the-server]__027k0ohra5rgo._.js.map` |
+| Same scan, excluding `*.map` | no hit |
+| `.next/static` | no hit; contains 0 `.map` files |
+| `.next/standalone`, following symlinks | no hit |
+| `public` | no hit |
+
+- The hit is the map's embedded original source for `src/server/http/dev-token.ts` (one occurrence).
+- **That map does not ship in the standalone output.** The matching `.js` is in `.next/standalone/.next/server/chunks/` and is byte-identical (`cmp` exit 0), but its `.js.map` is not there. The other 24 maps under standalone do not contain the name.
+- The `Dockerfile` runtime stage copies `.next/standalone`, `.next/static`, `public` and the `db` files, not `.next/server`, so the map should not reach the image. No image was built in this review.
+- The chunk's `sourceMappingURL` comment remains, and in standalone it points to a file that is not there.
+
+### Acceptance criteria
+- [x] AC1 Other-org file: no header, one `wrong_org` warning without the token, 401 — evidence: `dev-token.test.ts` › "pin: other-org file gets no header and warns once without the token"; `token.test.ts` › "pin: other, missing and non-string org are wrong_org"; `with-auth.test.ts` passes.
+- [x] AC2 Fresh org A token works on the next request, any letter case — evidence: `dev-token.test.ts` › "pin: swap B to A recovers on the next request, no restart"; `token.test.ts` › "pin: comparison ignores case". An uppercase claim is then refused by the verifier, as Ming approved (Decision 1).
+- [x] AC3 Child gets the checked org and a `.env*` value cannot replace it — evidence: `dev-prod.test.ts` › "child gets the checked org as the pin", "pin is the org checked at startup, after a dev:token refresh too", "pin replaces an inherited value in any letter case". The `@next/env` check from Attempt 1 still applies: this rework did not touch that path.
+- [x] AC4 Four `.env*` files refuse with exit 2 before the prompt, value not printed — evidence: `dev-prod.test.ts` › "each of the four .env files setting SIMAP_DEV_ORG: exit 2, no prompt, value not printed".
+- [x] AC5 Non-UUID `org` is no org — evidence: `dev-prod.test.ts` › "non-UUID org claims are no org: no start, not printed", and the `tokenOrg` parity test.
+- [x] AC6 Plain `pnpm dev` unchanged and Checks green — evidence: `token.test.ts` › "no pin: any org passes as before"; `dev-token.test.ts` › "no pin: behaves as before"; Checks above.
+- [ ] AC7 (plan) `rg -l "SIMAP_DEV_EXPECTED_ORG" .next/static .next/server` prints nothing — **FAILED as written, on the source map only**, see Issue 1. The second half holds: `src/server/http/with-auth.ts` has no diff against `origin/main`.
+
+### Issues
+#### Issue 1 — 🔴 blocker — AC7 wording does not match what it protects (decision for Ming)
+- **Where**: `work/tickets/SIM-030/plan.md:43`; the hit is in `.next/server/chunks/[root-of-the-server]__027k0ohra5rgo._.js.map`.
+- **Expected**: The AC7 command prints nothing.
+- **Actual**: It prints the source map above. No compiled code and no standalone file contains the name, so the pin has no effect in `next build` output and this is not a security exposure.
+- **Fix instruction**: **Implementer: change nothing. Do not obfuscate the name, compute the env key, or strip maps.** Ming chooses one:
+  1. **Amend AC7 (reviewer's recommendation).** Accurate wording:
+     > After `pnpm build`, `SIMAP_DEV_EXPECTED_ORG` appears in no compiled file under `.next/static` or `.next/server` and nowhere in `.next/standalone`. A build-only source map under `.next/server` may embed the original source.
+
+     Verification: `rg -uu -l -g '!*.map' SIMAP_DEV_EXPECTED_ORG .next/static .next/server` and `rg -uu -L -l SIMAP_DEV_EXPECTED_ORG .next/static .next/standalone` both print nothing. Both were run on this build and printed nothing, so AC7 passes at this commit once Ming approves the wording.
+  2. **Keep AC7 as written.** The dev-token module must then leave the production bundle, which is a separate change to the build or import path and needs its own plan.
+
+### Rules (CLAUDE.md)
+No violations found. R1: `check:layers` is green. R3: no name in client or standalone output, and no token or org value in the warning. R4: Attempt 2 changed only `dev-token.ts:51`, as Attempt 1 instructed, plus work files. R5: blocked only by AC7 above. R6: org scope still comes from the verified token, and `with-auth.ts` is unchanged.
+
+### Blockers from review agents
+None. `security-review.md` Attempt 2 is PASS with no 🔴, 🟡 or 🟢 findings. It covers the High-path change in `65a91b7` by reading code; it did not run the app or inspect compiled output.
+
+### Ming verification after merge
+Needs M-3 and the real tunnel (not verified by the reviewer):
+1. Run `pnpm dev:prod` for org A.
+2. In a second terminal run `pnpm dev:token --org B`. The next `/api/me` is 401 with one `[dev-token]` warning.
+3. Run `pnpm dev:token --org A`. The next `/api/me` is 200 without a restart.
+
+### Nits (do not block)
+- `ticket.md` still shows `Attempts | 1` in the field table; the orchestrator owns that field.
+
+### Follow-ups (out of scope)
+- Keep the dev-token module out of the production bundle altogether, so neither the dead chunk nor its source map is emitted.

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | S |
 | Areas | security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T04:58:10Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -65,6 +65,7 @@ production data.
 
 ## Notes / answers from Ming
 - 2026-11-21: Plan approved by Ming, with the plan defaults for both decisions: (1) the verifier stays strict, so a token with an uppercase `org` claim gets a 401; (2) `SIMAP_DEV_EXPECTED_ORG` is not added to `.env.example` and is documented in the README.
+- Waiting for Ming: AC7 wording (review.md Attempt 2). Option 1, recommended: allow a build-only source map under `.next/server`. Option 2: keep AC7 as written, which needs a separate plan to take the dev-token module out of the production bundle.
 - 2026-11-21: Ming asked for this ticket after the SIM-029 Attempt 3 security review.
 
 ## Handoff
@@ -74,3 +75,9 @@ production data.
 - Done: plan (`Status: READY`). No consult: the `security` area has no consult agent.
 - In progress / next: Ming approves `plan.md` and its 2 decisions (uppercase `org` claim stays refused by the verifier; `SIMAP_DEV_EXPECTED_ORG` is not added to `.env.example`); then `/run SIM-030`.
 - Gotchas: the org claim is used only to withhold a token; `with-auth` still verifies the token. Live check needs M-3 and the real tunnel.
+
+### 2026-11-21 — claude — BLOCKED
+- Agent calls: 7, tokens 347k plus reviewer Attempt 2 (usage not reported when this entry was written) (planner×1 75k, implementer×2 87k, reviewer×2 63k + pending, security-ai-generated-code-auditor×2 122k; in/out split not reported)
+- Done: org pin, `wrong_org`, four-file `SIMAP_DEV_ORG` refusal, UUID-only `tokenOrg`. Security Attempt 2 PASS. Reviewer Attempt 2 REWORK only on the literal AC7 scan, with no code change requested; AC1-AC6 pass.
+- In progress / next: Ming picks the AC7 wording. No rework was spent, because no code change can satisfy option 1. With option 1, the ticket goes to DONE and a PR.
+- Gotchas: do not obfuscate the env name, compute the key or strip maps to pass the scan.
