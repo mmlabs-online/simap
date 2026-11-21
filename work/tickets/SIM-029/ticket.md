@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | REWORK |
 | Priority | P1 |
 | Size | M |
 | Areas | db, security |
 | Gate | plan-approval |
 | Depends on | SIM-028 |
 | Needs Ming | — |
-| Attempts | 1 |
+| Attempts | 2 |
 | Created | 2026-11-21 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-21T04:22:06Z |
 | PR | https://github.com/mmlabs-online/simap/pull/29 |
 
 ## Goal
@@ -65,6 +65,7 @@ being able to migrate, seed or create throwaway databases there.
 
 ## Notes / answers from Ming
 - 2026-11-21: Plan approved by Ming, with the plan defaults for all 3 decisions: (1) `dev:prod` refuses a `DATABASE_URL` line in `.env.local`, Ming comments it out while using it; (2) hand-run `node db/migrate.js` stays unguarded and is documented in the README; (3) `pnpm migrate` and `migrate:smoke` become local-only.
+- 2026-11-21: Ming asked to fix the wrong-org token on PR #29 (security-review.md Attempt 2, finding 🟡 1). Other follow-ups stay out of this rework.
 - 2026-11-21: `pnpm dev:prod` is simap's one-command equivalent of tudocuatui `scripts/start-dev.sh` (token → tunnel →
   password → app), written in Node for Windows; one Next.js process replaces tudocuatui's API + UI pair.
 
