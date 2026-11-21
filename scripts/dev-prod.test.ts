@@ -2,7 +2,15 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parse } from "pg-connection-string";
 import { classifyTarget } from "../db/target.js";
-import { buildProdUrl, envFileSetsDatabaseUrl, run, tokenIsFresh } from "./dev-prod.mjs";
+import { isCanonicalUuid } from "../src/lib/validate/uuid";
+import {
+  buildProdUrl,
+  envFileSetsDatabaseUrl,
+  envFileSetsKey,
+  run,
+  tokenIsFresh,
+  tokenOrg,
+} from "./dev-prod.mjs";
 
 const NOW = 1_800_000_000;
 const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64url");
@@ -24,6 +32,7 @@ type Opts = {
   startStatus?: number;
   probeOk?: boolean;
   envLocal?: string | null;
+  envFiles?: Record<string, string>;
   password?: string;
   spawnFails?: boolean;
 };
@@ -53,7 +62,11 @@ async function drive(o: Opts = {}) {
     },
     probe: async () => (trace.push("probe"), o.probeOk ?? true),
     sleep: async () => {},
-    readEnvLocal: () => (trace.push("env check"), o.envLocal ?? null),
+    readEnvFile: (name: string) => {
+      if (!trace.includes("env check")) trace.push("env check");
+      if (name === ".env.local" && o.envLocal) return o.envLocal;
+      return o.envFiles?.[name] ?? null;
+    },
     promptPassword: async () => (trace.push("prompt"), o.password ?? PW),
     spawnApp: async (a: Spawn) => {
       trace.push("spawn");
@@ -108,6 +121,51 @@ describe("envFileSetsDatabaseUrl", () => {
       "OTHER=DATABASE_URL=1",
     ]) {
       expect(envFileSetsDatabaseUrl(t), t).toBe(false);
+    }
+  });
+});
+
+describe("envFileSetsKey", () => {
+  it("matches every assignment form, for both keys", () => {
+    for (const key of ["DATABASE_URL", "SIMAP_DEV_ORG"]) {
+      for (const t of [
+        `${key}=x`,
+        `  ${key} = x`,
+        `export ${key}=x`,
+        `\uFEFF${key}=x`,
+        `${key}: x`,
+        `export ${key}: x`,
+        `${key}:`,
+        `A=1\r\n${key}=x\r\n`,
+      ]) {
+        expect(envFileSetsKey(t, key), t).toBe(true);
+      }
+      for (const t of [`# ${key}=x`, `${key}_X=1`, `${key}_X: 1`, "", `OTHER=${key}=1`]) {
+        expect(envFileSetsKey(t, key), t).toBe(false);
+      }
+    }
+  });
+});
+
+describe("tokenOrg", () => {
+  it("agrees with isCanonicalUuid", () => {
+    const orgs: unknown[] = [
+      ORG,
+      ORG.toUpperCase(),
+      "00000000-0000-0000-0000-000000000000",
+      ` ${ORG}`,
+      `${ORG}\n`,
+      " ",
+      "\u001b[31mx",
+      "not-a-uuid",
+      "",
+      5,
+      null,
+    ];
+    for (const org of orgs) {
+      expect(tokenOrg(jwt({ exp: NOW + 3600, org })) !== null, String(org)).toBe(
+        isCanonicalUuid(org),
+      );
     }
   });
 });
@@ -245,6 +303,48 @@ describe("run: step order", () => {
     expect([...r.out, ...r.err].join("\n")).not.toContain("leak-me");
   });
 
+  it("each of the four .env files setting SIMAP_DEV_ORG: exit 2, no prompt, value not printed", async () => {
+    for (const name of [".env.local", ".env.development.local", ".env.development", ".env"]) {
+      const text = "A=1\nSIMAP_DEV_ORG=leak-me-org\n";
+      const r = await drive(
+        name === ".env.local" ? { envLocal: text } : { envFiles: { [name]: text } },
+      );
+      expect(r.code, name).toBe(2);
+      expect(
+        r.trace.filter((t) => NO_APP.includes(t)),
+        name,
+      ).toEqual([]);
+      expect(r.err.join("\n")).toContain(name);
+      expect([...r.out, ...r.err].join("\n")).not.toContain("leak-me-org");
+    }
+  });
+
+  it("commented or look-alike SIMAP_DEV_ORG lines do not refuse", async () => {
+    const r = await drive({ envLocal: "# SIMAP_DEV_ORG=x\nSIMAP_DEV_ORG_X=1\n" });
+    expect(r.code).toBe(0);
+  });
+
+  it("DATABASE_URL is still checked in .env.local only", async () => {
+    const r = await drive({ envFiles: { ".env": "DATABASE_URL=postgres://x:y@h/db" } });
+    expect(r.code).toBe(0);
+  });
+
+  it("non-UUID org claims are no org: no start, not printed", async () => {
+    for (const org of [
+      " ",
+      "\u001b[31mred",
+      "not-a-uuid",
+      ORG.toUpperCase(),
+      "00000000-0000-0000-0000-000000000000",
+      ` ${ORG} `,
+    ]) {
+      const r = await drive({ tokens: [jwt({ exp: NOW + 3600, org })] });
+      expect(r.code, org).toBe(1);
+      expect(r.trace.filter((t) => t.startsWith("docker") || NO_APP.includes(t))).toEqual([]);
+      expect([...r.out, ...r.err].join("\n")).not.toContain("red");
+    }
+  });
+
   it("empty password exits 1 without spawning", async () => {
     const r = await drive({ password: "" });
     expect(r.code).toBe(1);
@@ -272,6 +372,27 @@ describe("run: child process", () => {
     for (const v of ["PGPASSWORD", "PGHOST", "PGPORT"]) expect(env[v]).toBeUndefined();
     expect(r.spawned!.args).toEqual(["dev", "-H", "127.0.0.1", "--port", "3001"]);
     expect(r.spawned!.args.join(" ")).not.toContain(PW);
+  });
+
+  it("child gets the checked org as the pin", async () => {
+    const r = await drive();
+    expect(r.spawned!.env.SIMAP_DEV_EXPECTED_ORG).toBe(ORG);
+  });
+
+  it("pin is the org checked at startup, after a dev:token refresh too", async () => {
+    const r = await drive({ env: { SIMAP_DEV_ORG: ORG }, tokens: [OTHER_ORG, FRESH] });
+    expect(r.spawned!.env.SIMAP_DEV_EXPECTED_ORG).toBe(ORG);
+  });
+
+  it("pin replaces an inherited value in any letter case", async () => {
+    const r = await drive({
+      env: { SIMAP_DEV_EXPECTED_ORG: OTHER, simap_dev_expected_org: OTHER },
+    });
+    const keys = Object.keys(r.spawned!.env).filter(
+      (k) => k.toUpperCase() === "SIMAP_DEV_EXPECTED_ORG",
+    );
+    expect(keys).toEqual(["SIMAP_DEV_EXPECTED_ORG"]);
+    expect(r.spawned!.env.SIMAP_DEV_EXPECTED_ORG).toBe(ORG);
   });
 
   it("passes the resolved token file to the child", async () => {

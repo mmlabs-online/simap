@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | S |
 | Areas | security |
 | Gate | plan-approval |
 | Depends on | SIM-029 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-21 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/30 |
 
 ## Goal
 A running `pnpm dev:prod` stays on the org it checked at startup, so a token change in another terminal or a stray
@@ -64,6 +64,26 @@ production data.
   warning; `pnpm dev:token --org A`, next call is 200 without a restart. Needs M-3 and the real tunnel.
 
 ## Notes / answers from Ming
+- 2026-11-21: Plan approved by Ming, with the plan defaults for both decisions: (1) the verifier stays strict, so a token with an uppercase `org` claim gets a 401; (2) `SIMAP_DEV_EXPECTED_ORG` is not added to `.env.example` and is documented in the README.
+- 2026-11-21: Ming chose option 1 for AC7. New wording: After `pnpm build`, `SIMAP_DEV_EXPECTED_ORG` appears in no compiled file under `.next/static` or `.next/server` and nowhere in `.next/standalone`. A build-only source map under `.next/server` may embed the original source. The `with-auth.ts` no-diff half of AC7 is unchanged.
 - 2026-11-21: Ming asked for this ticket after the SIM-029 Attempt 3 security review.
 
 ## Handoff
+
+### 2026-11-21 — claude — BLOCKED
+- Agent calls: 1 (planner×1; token usage not reported when this entry was written)
+- Done: plan (`Status: READY`). No consult: the `security` area has no consult agent.
+- In progress / next: Ming approves `plan.md` and its 2 decisions (uppercase `org` claim stays refused by the verifier; `SIMAP_DEV_EXPECTED_ORG` is not added to `.env.example`); then `/run SIM-030`.
+- Gotchas: the org claim is used only to withhold a token; `with-auth` still verifies the token. Live check needs M-3 and the real tunnel.
+
+### 2026-11-21 — claude — BLOCKED
+- Agent calls: 7, tokens 347k plus reviewer Attempt 2 (usage not reported when this entry was written) (planner×1 75k, implementer×2 87k, reviewer×2 63k + pending, security-ai-generated-code-auditor×2 122k; in/out split not reported)
+- Done: org pin, `wrong_org`, four-file `SIMAP_DEV_ORG` refusal, UUID-only `tokenOrg`. Security Attempt 2 PASS. Reviewer Attempt 2 REWORK only on the literal AC7 scan, with no code change requested; AC1-AC6 pass.
+- In progress / next: Ming picks the AC7 wording. No rework was spent, because no code change can satisfy option 1. With option 1, the ticket goes to DONE and a PR.
+- Gotchas: do not obfuscate the env name, compute the key or strip maps to pass the scan.
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 8, tokens 393k plus reviewer Attempt 3 (usage not reported when this entry was written) (planner×1 75k, implementer×2 87k, reviewer×3 109k + pending, security-ai-generated-code-auditor×2 122k; in/out split not reported)
+- Done: org pin for the running server, `wrong_org`, four-file `SIMAP_DEV_ORG` refusal, UUID-only `tokenOrg`. Reviewer Attempt 3 PASS against Ming's AC7 wording; security Attempt 2 PASS.
+- In progress / next: Ming merges the PR. The live check needs M-3 and the real tunnel.
+- Gotchas: a build-only source map under `.next/server` holds the variable name by design (AC7). `plan.md` row 7 keeps the old AC7 command; the ticket Notes hold the approved wording.

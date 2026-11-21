@@ -35,10 +35,13 @@ function payloadOf(token) {
   }
 }
 
-/** The token's `org` claim as a non-empty string, or null. */
+// Same pattern as the verifier (src/lib/validate/uuid.ts); a plain Node script cannot import that TS file.
+const CANONICAL_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+/** The token's `org` claim when it is a lowercase canonical UUID, else null. */
 export function tokenOrg(token) {
   const org = payloadOf(token)?.org;
-  return typeof org === "string" && org ? org : null;
+  return typeof org === "string" && CANONICAL_UUID.test(org) ? org : null;
 }
 
 /**
@@ -53,31 +56,41 @@ export function tokenIsFresh(token, nowSec, expectedOrg) {
   return typeof exp === "number" && exp - nowSec > MIN_TOKEN_LIFE_S;
 }
 
-/** True when a line of the .env file sets DATABASE_URL (plain, indented, `export`, BOM, CRLF). */
-export function envFileSetsDatabaseUrl(text) {
+/** True when a line of the .env file sets `key` (plain, indented, `export`, BOM, CRLF). `key` is a constant. */
+export function envFileSetsKey(text, key) {
+  const re = new RegExp(String.raw`^\uFEFF?\s*(?:export\s+)?${key}(?:\s*=|:(?:\s|$))`);
   return String(text)
     .split(/\r?\n/)
-    .some((line) => /^﻿?\s*(?:export\s+)?DATABASE_URL(?:\s*=|:(?:\s|$))/.test(line));
+    .some((line) => re.test(line));
+}
+
+/** True when a line of the .env file sets DATABASE_URL. */
+export function envFileSetsDatabaseUrl(text) {
+  return envFileSetsKey(text, "DATABASE_URL");
 }
 
 export function buildProdUrl(password, port) {
   return `postgres://simap:${encodeURIComponent(password)}@127.0.0.1:${port}/simap`;
 }
 
-function childEnv(env, url, tokenFile) {
+function childEnv(env, url, tokenFile, org) {
   const copy = { ...env };
   for (const v of PG_VARS) delete copy[v];
+  // Windows env names are case-insensitive: drop every case variant before setting the pin.
+  for (const k of Object.keys(copy))
+    if (k.toUpperCase() === "SIMAP_DEV_EXPECTED_ORG") delete copy[k];
   return devEnv({
     ...copy,
     DATABASE_URL: url,
     SIMAP_DB_TARGET: "production",
     SIMAP_DEV_TOKEN_FILE: tokenFile,
+    SIMAP_DEV_EXPECTED_ORG: org,
   });
 }
 
 /** All I/O comes through `deps`, so tests can drive it. Returns the exit code. */
 export async function run(deps) {
-  const { env, argv, now, readTokenFile, runDevToken, docker, probe, sleep, readEnvLocal } = deps;
+  const { env, argv, now, readTokenFile, runDevToken, docker, probe, sleep, readEnvFile } = deps;
   const { promptPassword: ask, spawnApp, out, err } = deps;
   try {
     let args;
@@ -119,7 +132,7 @@ export async function run(deps) {
       if (code !== 0 || !tokenIsFresh(token, now(), wantOrg)) {
         if (code === 0 && !tokenOrg(token)) {
           err(
-            "[dev:prod] the token has no org: run pnpm dev:token --org <uuid> (or set SIMAP_DEV_ORG) and retry",
+            "[dev:prod] the token has no valid org: run pnpm dev:token --org <uuid> (or set SIMAP_DEV_ORG) and retry",
           );
         } else if (code === 0 && tokenIsFresh(token, now())) {
           err("[dev:prod] the token org does not match SIMAP_DEV_ORG: nothing started");
@@ -153,12 +166,19 @@ export async function run(deps) {
     }
 
     // 3. .env.local and password
-    const envText = readEnvLocal();
+    const envText = readEnvFile(".env.local");
     if (envText !== null && envFileSetsDatabaseUrl(envText)) {
       err(
         "[dev:prod] .env.local sets DATABASE_URL: comment that line out while using dev:prod, restore it for local work",
       );
       return 2;
+    }
+    for (const name of [".env.development.local", ".env.local", ".env.development", ".env"]) {
+      const text = readEnvFile(name);
+      if (text !== null && envFileSetsKey(text, "SIMAP_DEV_ORG")) {
+        err(`[dev:prod] ${name} sets SIMAP_DEV_ORG: remove that line and set it in the shell`);
+        return 2;
+      }
     }
     const password = await ask("Password for database role simap: ");
     if (!password) {
@@ -167,10 +187,11 @@ export async function run(deps) {
     }
 
     // 4. App
-    out(`[dev:prod] production data, org ${tokenOrg(token)}: every change is real`);
+    const org = tokenOrg(token);
+    out(`[dev:prod] production data, org ${org}: every change is real`);
     return await spawnApp({
       args,
-      env: childEnv(env, buildProdUrl(password, ports.primary), file),
+      env: childEnv(env, buildProdUrl(password, ports.primary), file, org),
     });
   } catch {
     err("[dev:prod] unexpected error");
@@ -230,9 +251,9 @@ async function main() {
       },
       probe: probePort,
       sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
-      readEnvLocal: () => {
+      readEnvFile: (name) => {
         try {
-          return readFileSync(resolve(root, ".env.local"), "utf8");
+          return readFileSync(resolve(root, name), "utf8");
         } catch {
           return null;
         }

@@ -41,6 +41,8 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [x] M-11 (2026-11-21) Approve plan for SIM-028: `work/tickets/SIM-028/plan.md` (High tier; decisions A-G under Assumptions, incl. the split into SIM-028 + SIM-028.1). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
 - [x] M-12 (2026-11-21, option 1) SIM-028 escalated after 3 attempts (launcher loopback bypasses): pick an option in `work/tickets/SIM-028/escalation.md` (recommended: allowlist `pnpm dev` arguments) and note it in the ticket's *Notes / answers from Ming*. PR #28 stays open, do not merge until then.
 - [x] M-13 (2026-11-21) Approve plan for SIM-029: `work/tickets/SIM-029/plan.md` (High tier: edits `.env.example`; 3 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [x] M-16 (2026-11-21; called M-14 in the SIM-030 review) Approve plan for SIM-030: `work/tickets/SIM-030/plan.md` (High tier: edits `src/server/http/dev-token.ts`; 2 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [x] M-15 (2026-11-21, option 1) SIM-030 AC7: choose the wording in `work/tickets/SIM-030/review.md` Attempt 2 (recommended: allow a build-only source map under `.next/server`) and note it in the ticket's *Notes / answers from Ming*.
 - [ ] M-14 Before SIM-021 go-live, check SIM-027 (security headers and CSP) in a browser. In Chrome with DevTools
   Console open, on the built app (local `pnpm start` or the first deploy): `/sign-in` (sign in with password, Turnstile
   widget shows and passes), `/sign-up` and `/forgot-password` (Turnstile renders; these pages keep

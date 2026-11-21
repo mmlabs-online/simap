@@ -12,7 +12,8 @@ export type Reason =
   | "path"
   | "host"
   | "origin"
-  | "cross_site";
+  | "cross_site"
+  | "wrong_org";
 
 export type DevRequest = {
   pathname: string;
@@ -24,14 +25,24 @@ export type DevRequest = {
 const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 const LOOPBACK = /^(localhost|127\.0\.0\.1|\[::1\])(:\d{1,5})?$/i;
 
-function expOf(token: string): number | null {
+function payloadOf(token: string): Record<string, unknown> | null {
   try {
     const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
     const payload = JSON.parse(atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4)));
-    return typeof payload?.exp === "number" ? payload.exp : null;
+    return payload && typeof payload === "object" ? payload : null;
   } catch {
     return null;
   }
+}
+
+function expOf(token: string): number | null {
+  const exp = payloadOf(token)?.exp;
+  return typeof exp === "number" ? exp : null;
+}
+
+function orgOf(token: string): string | null {
+  const org = payloadOf(token)?.org;
+  return typeof org === "string" ? org : null;
 }
 
 /** `raw` is the token file content, or null when the file could not be read. */
@@ -68,14 +79,22 @@ export function requestRefusal(req: DevRequest): "path" | "host" | "origin" | "c
   return null;
 }
 
-/** The client Authorization is not an input, so it can never be returned. */
+/**
+ * The client Authorization is not an input, so it can never be returned.
+ * When `expectedOrg` is set, a token whose (unverified) `org` claim differs is withheld; the claim only ever
+ * withholds, and the server still verifies the token it receives.
+ */
 export function devAuthorizationFor(
   req: DevRequest,
   result: TokenResult,
+  expectedOrg?: string | null,
 ): { header: string | null; reason: Reason } {
   const refusal = requestRefusal(req);
   if (refusal) return { header: null, reason: refusal };
   if (result.status !== "ok") return { header: null, reason: result.status };
+  if (expectedOrg && orgOf(result.token)?.toLowerCase() !== expectedOrg.toLowerCase()) {
+    return { header: null, reason: "wrong_org" };
+  }
   return { header: `Bearer ${result.token}`, reason: "ok" };
 }
 
@@ -95,6 +114,8 @@ export function warningFor(reason: Reason): string | null {
       return "[dev-token] request refused (Origin is not a loopback http origin)";
     case "cross_site":
       return "[dev-token] request refused (not same-origin)";
+    case "wrong_org":
+      return "[dev-token] token is for another org than this server was started with - run pnpm dev:token --org <the org in the dev:prod banner>";
   }
 }
 
