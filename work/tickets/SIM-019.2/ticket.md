@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P2 |
 | Size | S |
 | Areas | ui |
@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-21T00:50Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/27 |
 
 ## Goal
 Org admins browse and filter the audit log on an Audit page; slice B of the approved SIM-019 plan.
@@ -43,3 +43,9 @@ Org admins browse and filter the audit log on an Audit page; slice B of the appr
 - Merge approved (2026-11-20, batch 2026-11-20-5): "ok hết" on the round that asked "cho merge" per Medium ticket.
 
 ## Handoff
+
+### 2026-11-21 — claude — DONE (PR #27, Medium, merge pre-approved in batch 2026-11-20-5)
+- Agent calls: 3, ~ (planner×1 sonnet 55k, implementer×1 70k, reviewer×1 default) — see batch usage
+- Done: audit-log page (`/audit`, admin-only nav entry, filters with UTC+7 day range, paging, meta list); review attempt 1 PASS; CI green (`risk:medium`); no review-trigger agent matched
+- In progress / next: auto-merge under the batch merge rule, then SIM-027
+- Gotchas: load-more / filter-reset logic in `useAudit` has no direct test (no DOM test library, B6) — follow-up: extract a pure reducer
