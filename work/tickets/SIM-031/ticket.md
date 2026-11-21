@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | REWORK |
 | Priority | P1 |
 | Size | S |
 | Areas | security |
 | Gate | none |
 | Depends on | SIM-028.1 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-21 |
 | Claimed by | claude@2026-11-21T12:41:29Z |
 | PR | — |
