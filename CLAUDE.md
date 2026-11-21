@@ -31,12 +31,16 @@ Do not change the stack without Ming's explicit decision.
 - R1 UI and page code never imports server code; route handlers under `src/app/api/**` are the only entry into
   `src/server/**` (D4). Layers: api (`src/app/api/**`) → server, lib; pages (`src/app/**`) → ui, lib; ui (`src/ui/**`) →
   lib; server (`src/server/**`, each non-test file starts with `import "server-only"`) → server, lib; lib
-  (`src/lib/**`, pure code, validators in `src/lib/validate/`) → lib. Imports across layers use the `@/` alias.
+  (`src/lib/**`, pure code, validators in `src/lib/validate/`) → lib; proxy (`src/proxy.ts`) → lib. Imports across layers use the `@/` alias.
   `pnpm check:layers` enforces this.
 - R2 Every schema change ships with a reviewed forward-only SQL migration (tudocuatui rules: expand then contract, so
   the previous image keeps working); never edit an applied migration (D3).
 - R6 Every org table has `org_id`; every query of org data is scoped by the verified token's `org` claim and roles come
   only from `org_roles` (D5).
+- R7 Route handlers return 401/403 auth codes (`unauthenticated`, `forbidden`, `member_deactivated`,
+  `org_required`) only from the auth wrapper, before any side effect; never after a write or other side effect. Domain
+  refusals use 409/422 (e.g. `not_allowed`). (`apiFetch` re-sends once on 401/403, so a late 401/403 can repeat a
+  write.)
 - R3 Config from env only; names in `.env.example`, no values; no secrets in code, logs or client bundles.
 - R4 Stay inside the ticket's plan; anything else goes to follow-ups.
 - R5 No PASS without green checks; new logic has tests.

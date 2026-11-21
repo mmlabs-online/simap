@@ -1,5 +1,5 @@
 // R1 import guard (CLAUDE.md). Node built-ins only. Run: `pnpm check:layers`.
-// Layers: api (src/app/api) -> server, lib | pages (src/app) -> ui, lib | ui -> lib | server -> lib | lib -> nothing.
+// Layers: proxy (src/proxy.ts) -> lib | api (src/app/api) -> server, lib | pages (src/app) -> ui, lib | ui -> lib | server -> lib | lib -> nothing.
 // Every layer may also import itself. Also: non-test files in src/server start with `import "server-only"`.
 // Known gap: non-literal dynamic imports (import(variable)) are not seen.
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -7,6 +7,7 @@ import { posix, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const ALLOWED = {
+  proxy: ["proxy", "lib"],
   api: ["api", "server", "lib"],
   pages: ["pages", "ui", "lib"],
   ui: ["ui", "lib"],
@@ -26,6 +27,7 @@ const SERVER_ONLY = /^\s*(?:(?:\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)\s*)*import\s+["']s
 
 /** @param {string} p posix path starting with `src/` @returns {keyof typeof ALLOWED | null} */
 function layerOf(p) {
+  if (/^src\/proxy(?:\.test)?\.[cm]?[jt]sx?$/.test(p)) return "proxy";
   if (p.startsWith("src/app/api/")) return "api";
   if (p.startsWith("src/app/")) return "pages";
   for (const l of ["ui", "server", "lib"]) if (p.startsWith(`src/${l}/`)) return l;

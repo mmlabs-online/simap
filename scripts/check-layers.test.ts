@@ -76,6 +76,17 @@ describe("check-layers findViolations", () => {
     expect(findViolations([f("src/server/README.md", "# x")])).toEqual([]);
   });
 
+  it("lets src/proxy.ts import lib only", () => {
+    expect(findViolations([f("src/proxy.ts", 'import { a } from "@/lib/x";')])).toEqual([]);
+    const v = findViolations([
+      f(
+        "src/proxy.ts",
+        'import a from "@/server/x";\nimport b from "@/ui/x";\nimport c from "@/app/x";',
+      ),
+    ]);
+    expect(v).toHaveLength(3);
+  });
+
   it("ignores src/test and non-code files", () => {
     expect(
       findViolations([
