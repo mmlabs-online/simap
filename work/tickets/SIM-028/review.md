@@ -95,3 +95,62 @@ None. security-review.md reports no blockers. The orchestrator fills in any new 
 
 ### Follow-ups (out of scope)
 - Same as Attempt 1: add the `.next/static` scan to CI (SIM-028.1).
+
+## Attempt 3 — 2026-11-21
+Verdict: REWORK
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format."
+- `pnpm typecheck`: exit 0. `pnpm check:layers`: exit 0, "check-layers: 223 files, no violations".
+- `pnpm test`: exit 0, "Test Files 86 passed (86); Tests 810 passed | 3 skipped (813)". This matches impl-log. `scripts/dev.test.ts` alone: 9 passed.
+- `pnpm build`: exit 0. AC2 bundle scan `grep -rlE "dev-token|dev:token|\.config/simap|SIMAP_DEV" .next/static` found nothing (exit 1).
+- `pnpm test:db`: CI-only, not run (no DB change).
+
+### Security-review Attempt 2, finding 1 (host flag taken as another option's value)
+Fixed. `scripts/dev.mjs` `nextDevArgs` now always returns `[..., "-H", "127.0.0.1"]` last, and `hasHost` is gone. User host flags are still validated.
+I fed the launcher output to Next's bundled `next/dist/compiled/commander`, with the same `dev` option shape as `node_modules/next/dist/bin/next:203` (scratch script outside the repo). The final `options.hostname` was `127.0.0.1` for all of these:
+- `[]`, `--port 4000`, `-H localhost`, `--hostname=::1`, `-- -H localhost`
+- `--experimental-https-key --hostname=localhost`, `--experimental-https-cert -Hlocalhost`
+- `--experimental-upload-trace -H localhost`, `--experimental-https-ca --hostname localhost`, `-p -H localhost`
+
+These were refused: `-H 0.0.0.0`, `-H0.0.0.0`, `--experimental-https-key --inspect=0.0.0.0:1`. Tests: `scripts/dev.test.ts:19-27` covers the three cases security-review asked for and passes.
+
+### Security-review Attempt 2, finding 2 (non-loopback inspector)
+- **Args: fixed.** The commander run shows these are accepted: `--inspect` (true), `--inspect 9229`, `--inspect 127.0.0.1:9229` and `--inspect=localhost:9229`. These are refused: `--inspect 0.0.0.0:9229`, `--inspect=0.0.0.0`, `--inspect 0.0.0.0` and `--inspect somedir`. The launcher reads an optional value the same way commander does: it takes the next token unless that token starts with `-`. Tests: `scripts/dev.test.ts:29-55`.
+- **NODE_OPTIONS: not fully fixed. See Issue 1.** `--inspect*` with a non-loopback value is refused (`--inspect=0.0.0.0`, `--inspect-brk=…`, `--inspect-port=…`, `--inspect-wait=…`, `--inspect 0.0.0.0`). Node's alias `--debug-port` is not checked.
+
+### Acceptance criteria
+- [x] 1 (slice 1), 2, 4, 5, 6: unchanged since Attempt 1. The same tests are still green, and the bundle scan was re-run above.
+- [ ] 3 Loopback only. The dev server bind is fixed (see above), but the inspector is not fully covered. See Issue 1.
+
+Ming verification after merge: the 5 items listed in Attempt 1 still apply. Carry them into the PR.
+
+### Issues
+#### Issue 1 — 🟡 should-fix (Ming asked for it before merge, so it blocks this rework) — security
+- **Where:** `scripts/dev.mjs:22` (`/^--inspect[\w-]*(?:=(.*))?$/`).
+- **Expected:** a non-loopback inspector address in `NODE_OPTIONS` is refused under any spelling Node accepts.
+- **Actual:** `assertNodeOptionsSafe({ NODE_OPTIONS: "--inspect --debug-port=0.0.0.0:9229" })` is accepted.
+  - `--debug-port` is Node's alias for `--inspect-port`, and Node 22 allows it in `NODE_OPTIONS`. I checked this on loopback: `NODE_OPTIONS="--inspect --debug-port=127.0.0.1:9339" node -e "…inspector.url()"` printed `ws://127.0.0.1:9339/…`, so Node uses the alias's host.
+  - `devEnv` passes `NODE_OPTIONS` on unchanged, so the long-lived Next parent process opens its inspector on 0.0.0.0:9229.
+  - `next-dev.js:378-389` rewrites only `inspect` / `inspect-brk` for the forked child and keeps `debug-port`.
+- **Fix instruction:**
+  - Change the regex at l.22 to `/^--(?:inspect[\w-]*|debug-port)(?:=(.*))?$/`.
+  - In `scripts/dev.test.ts:90-96`, add `"--inspect --debug-port=0.0.0.0:9229"` and `"--debug-port=0.0.0.0"` to the refuse list.
+  - In the accept list, add `"--inspect --debug-port=127.0.0.1:9230"`.
+  - Nothing else.
+
+### Rules (CLAUDE.md)
+- R1, R3, R4, R5: no violations. R2 and R6 do not apply.
+- Scope: commit 317418d touches `README.md`, `scripts/dev.mjs`, `scripts/dev.test.ts`, `scripts/dev-token.test.ts` and `impl-log.md`. All are in the plan's file list; `README.md` is listed there too, so impl-log's "out-of-plan" entry is not needed. No High path changed in this attempt.
+
+### Blockers from review agents
+None new. The orchestrator fills in any new ones.
+
+### Nits (do not block)
+- A user's loopback choice (`-H localhost`, `--hostname=::1`) is now always overridden by the trailing `-H 127.0.0.1`. README step 4 says so, and the result is safe. The keep-and-validate branches could be simplified later.
+- The `<repo>/..foo/t` regression test from the Attempt 2 nit is added (`scripts/dev-token.test.ts:117-119`). Done.
+- `assertNodeOptionsSafe` refuses a quoted loopback value such as `--inspect="127.0.0.1:9229"`. This fails safe.
+
+### Follow-ups (out of scope)
+- A launcher check cannot protect `pnpm` or the launcher's own Node process: Node opens a `NODE_OPTIONS` inspector at startup, before any script code runs. Mention in README that `NODE_OPTIONS` must not set a non-loopback inspector.
+- Same as earlier attempts: add the `.next/static` scan to CI (SIM-028.1).

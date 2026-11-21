@@ -107,3 +107,33 @@
 ### Follow-ups (out of scope)
 - Symlink-aware `assertOutsideRepo`.
 - Fail closed when the dev-token flag appears in `.env*` files; extend the AC2 bundle grep to `.next/server` and `.next/standalone`.
+## Attempt 3
+
+## Security re-review: SIM-028, attempt 3 (read-only)
+
+**Verdict:** one 🟡 still open. Because `-H 127.0.0.1` is now always the last argument, a user argument placed before it can stop commander from reading it as the host. The `--inspect` CLI finding is closed; `NODE_OPTIONS` is mostly closed (two spellings, 🟢). Traced Next 16.4.6 `bin/next`, `cli/next-dev.js`, `server/lib/utils.js` and bundled `compiled/commander/index.js` by reading; nothing run.
+
+### Findings
+
+**🟡 should-fix: the forced `-H 127.0.0.1` at the end can be pushed out of option parsing, and Next then binds all interfaces**
+- **Where:** `scripts/dev.mjs:33` strips only a leading `--`; `dev.mjs:58-59` passes any other `--` through; `dev.mjs:62-64` appends `-H 127.0.0.1` after all user args.
+- **Bypass A (trailing `--`):** `pnpm dev . --` → `next dev . -- -H 127.0.0.1`. Commander's root `parseOptions` sees `--` while the destination is `operands`, so `-H` and `127.0.0.1` become operands; `dev` only option-parses `unknown`, so `options.hostname === undefined`. `_allowExcessArguments` is true by default and Next does not turn it off for `dev` (`bin/next:203`). `next-dev.js:305` → `host = undefined` → listen on `::` / 0.0.0.0 with `NEXT_PUBLIC_SIMAP_DEV_TOKEN=1`.
+- **Bypass B (value-taking option last, with a directory):** `pnpm dev . --experimental-https-key` → `next dev . --experimental-https-key -H 127.0.0.1`; `-H` becomes the key path, `127.0.0.1` an ignored operand, hostname undefined. Same for `--experimental-https-cert`, `--experimental-https-ca`, `--experimental-upload-trace` (`bin/next:203,207`). Without a directory, `127.0.0.1` becomes the project dir and Next exits (fails safe). `-p` last fails safe (`parseValidPositiveInteger("-H")` throws).
+- **Exploit:** a LAN client sending `curl -H "Host: localhost" http://<pc-ip>:3000/api/me` gets Ming's production identity.
+- **Fix:** `return ["dev", "-H", "127.0.0.1", ...out]` (forced bind directly after `dev`); optionally refuse any `--` left after the leading one; update the comment at l.62-63 and README l.30.
+- **Tests:** for `[".", "--"]`, `["--", ".", "--"]`, `[".", "--experimental-https-key"]`, `[".", "--experimental-https-ca"]`, `[".", "--experimental-upload-trace"]`, assert `args.slice(0, 3)` is `["dev", "-H", "127.0.0.1"]` or the call is refused. The current `LAST` assertions (l.4, l.19-27) pass for all of these.
+
+**🟢 closed:** attempt-2 🟡 #1 (host flag swallowed as another option's value), superseded by the finding above.
+
+**🟢 closed:** attempt-2 🟡 #2 on the CLI (`dev.mjs:44-52`). Side note: `--inspect=[::1]:9229` is accepted by the launcher but Next's `getParsedDebugAddress` (`server/lib/utils.js:211-216`) gives port NaN and refuses to start, so the `dev.test.ts:36` accepted case is unusable (not a security issue).
+
+**🟢 hardening: `assertNodeOptionsSafe` misses quoted and `--debug-port` spellings** (`scripts/dev.mjs:20-22`)
+- Quotes are not removed before matching; Node and Next (`tokenizeArgs`, `utils.js:161-194`) remove them, so `NODE_OPTIONS='"--inspect=0.0.0.0:9229"'` or `--ins"pect"=0.0.0.0:9229` passes and the dev child listens on `0.0.0.0:9230` (`next-dev.js:378-386`).
+- `--debug-port` (Node alias for `--inspect-port`) is not matched: `NODE_OPTIONS="--inspect --debug-port=0.0.0.0:9229"` (Node HostPort merge behaviour from memory, not checked in source).
+- Only 🟢: NODE_OPTIONS comes from the developer's own shell, and `pnpm` and the launcher open the inspector from NODE_OPTIONS before the check runs, so the check only shortens exposure. README should say it is best-effort.
+- Cheap fix: strip `"`, treat `_` as `-`, match `^--(inspect|debug-port)[\w-]*`, add tests.
+
+**🟢 checked and safe:** short clusters with `H` refused (`dev.mjs:53-57`); empty `--hostname=` refused; `HOST`/`HOSTNAME` not read, `PORT` port only; spawn passes no `execArgv`; non-space whitespace splits more than Node (fails safe).
+
+### Follow-ups (out of scope)
+- Symlink-aware `assertOutsideRepo`; fail closed when the dev-token flag is in a `.env*` file; extend the AC2 bundle grep to `.next/server` and `.next/standalone`.

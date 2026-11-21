@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | ESCALATED |
 | Priority | P1 |
 | Size | M |
 | Areas | architecture, ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 2 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T01:12:14Z |
+| Claimed by | — |
 | PR | https://github.com/mmlabs-online/simap/pull/28 |
 
 ## Goal
@@ -90,3 +90,9 @@ Identity, so local development is not blocked by CORS (Identity cannot register 
 - Done: slice 1 implemented (dev:token script, loopback `pnpm dev` launcher, bearer injection in `withAuth`, README, `.env.example` names). Attempt 1 REWORK (attached `-H0.0.0.0` bypass); attempt 2 PASS. PR #28 opened.
 - In progress / next: Ming reviews PR #28. Security attempt 2 left two 🟡 (host flag swallowed by a value-taking option; non-loopback `--inspect`), flagged in the PR as "fix before merge recommended". Then SIM-028.1 (browser dev-token mode).
 - Gotchas: `gh` is installed at `C:\Program Files\GitHub CLI\gh.exe` but not on PATH; Node via fnm (`fnm env`); `.env.example` edited blind.
+
+### 2026-11-21 — claude — ESCALATED
+- Agent calls: 3 this run (implementer×1 37k, reviewer×1 47k, security-ai-generated-code-auditor×1 58k; in/out split not reported).
+- Done: attempt 3 fixed both attempt-2 🟡 as reported (`-H 127.0.0.1` appended last; `--inspect` and `NODE_OPTIONS` checks). Checks green (86 files, 810 tests).
+- In progress / next: reviewer REWORK (`--debug-port` in `NODE_OPTIONS`); security 🟡 new bypass (trailing `--` or a value-taking option as last arg turns the appended `-H` into an operand/value). Max reworks reached → escalation.md; Ming picks an option (M-12). PR #28 stays open, not to be merged before that.
+- Gotchas: the launcher's blocklist approach to Next CLI args keeps leaking; recommended fix is an allowlist (`--port` only) with `-H 127.0.0.1` right after `dev`.
