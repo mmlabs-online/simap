@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import http from "node:http";
 import net from "node:net";
 import { tmpdir } from "node:os";
@@ -268,6 +268,69 @@ describe("real tree", () => {
       } finally {
         process.env.SystemRoot = saved;
         if (alive(app.pid!)) process.kill(app.pid!);
+      }
+    },
+    60_000,
+  );
+
+  it("a member whose parent exits during the grace wait is still stopped", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "simap-tree-"));
+    const gFile = join(dir, "g.json");
+    const go = join(dir, "go");
+    const spawnLeaf = `require('child_process').spawn(process.execPath,['-e',${JSON.stringify(LISTENER)},process.argv[1]],{stdio:'ignore',detached:process.platform==='win32'})`;
+    const mid = `${spawnLeaf};setInterval(()=>{if(require('fs').existsSync(process.argv[2]))process.exit(0)},100)`;
+    const top = `require('child_process').spawn(process.execPath,['-e',${JSON.stringify(mid)},process.argv[1],process.argv[2]],{stdio:'ignore',detached:process.platform==='win32'});setInterval(()=>{},1000)`;
+    const app = await startApp({
+      cmd: process.execPath,
+      args: ["-e", top, gFile, go],
+      env: MIN_ENV,
+      cwd: tmpdir(),
+    });
+    let leaf: Info | null = null;
+    try {
+      leaf = await readInfo(gFile);
+      // The first snapshot is taken before stop() returns its promise; only then does the middle process exit.
+      const stopped = app.stop({ grace: true });
+      writeFileSync(go, "");
+      expect(await stopped).toEqual([]);
+      await sleep(300);
+      expect(alive(leaf.pid)).toBe(false);
+      expect(alive(app.pid!)).toBe(false);
+    } finally {
+      if (leaf && alive(leaf.pid)) process.kill(leaf.pid);
+      await app.stop();
+      rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+    }
+  }, 60_000);
+
+  it.skipIf(!WIN)(
+    "first snapshot unreadable: it is retried before any kill and the grandchild is stopped",
+    async () => {
+      const dir = mkdtempSync(join(tmpdir(), "simap-tree-"));
+      const gFile = join(dir, "g.json");
+      const saved = process.env.SystemRoot;
+      process.env.SystemRoot = join(tmpdir(), "simap-no-such-root");
+      let app: App | null = null;
+      let grand: Info | null = null;
+      try {
+        app = await startApp({
+          cmd: process.execPath,
+          args: ["-e", rootScript(false), gFile],
+          env: MIN_ENV,
+          cwd: tmpdir(),
+        });
+        expect(app.rooted).toBe(false);
+        grand = await readInfo(gFile);
+        process.env.SystemRoot = saved;
+        expect(await app.stop()).toEqual([]);
+        await sleep(300);
+        expect(alive(app.pid!)).toBe(false);
+        expect(alive(grand.pid)).toBe(false);
+      } finally {
+        process.env.SystemRoot = saved;
+        if (grand && alive(grand.pid)) process.kill(grand.pid);
+        if (app && alive(app.pid!)) process.kill(app.pid!);
+        rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
       }
     },
     60_000,

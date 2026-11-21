@@ -258,59 +258,99 @@ export async function startApp({ cmd, args, env, cwd }) {
     child.once("spawn", ok);
     child.once("error", () => fail(new Error("spawn failed")));
   });
+  // A later kill error must never become an uncaught exception.
+  child.on("error", () => {});
   let exited = false;
   let rootEnd;
   const exit = new Promise((done) =>
     child.once("exit", (code) => ((exited = true), (rootEnd = fileTimeNow()), done(code ?? 1))),
   );
-  const rootAt = WIN ? winSnapshot(0)?.procs.find((p) => p.pid === child.pid) : null;
-  const root = rootAt ? { pid: child.pid, start: rootAt.start } : null;
+  const rootOf = (snap) => {
+    const row = snap?.procs.find((p) => p.pid === child.pid);
+    return row ? { pid: child.pid, start: row.start } : null;
+  };
+  let root = WIN ? rootOf(winSnapshot(0)) : null;
+  // Every tree member (pid:start) seen in any snapshot, so a member whose parent exited is still stopped.
+  const known = new Map();
+  const keyOf = (m) => `${m.pid}:${m.start}`;
 
   const winTree = (snap) => {
     const alive = snap.procs.some((p) => p.pid === root.pid && p.start === root.start);
-    return [...(alive ? [root] : []), ...descendantsOf(snap.procs, { ...root, end: rootEnd })];
+    const tree = [
+      ...(alive ? [root] : []),
+      ...descendantsOf(snap.procs, { ...root, end: rootEnd }),
+    ];
+    for (const m of tree) known.set(keyOf(m), m);
+    const inTree = new Set(tree.map(keyOf));
+    for (const [k, m] of known) {
+      if (!inTree.has(k) && snap.procs.some((p) => p.pid === m.pid && p.start === m.start))
+        tree.push(m);
+    }
+    return tree;
   };
   // Last resort on the handle Node holds (cannot hit a reused PID) when the process table cannot be read.
   const killRoot = async () => {
     if (exited) return;
-    child.kill();
+    try {
+      child.kill();
+    } catch {}
     await Promise.race([exit, sleep(2000)]);
   };
 
+  // True once the group is gone (ESRCH). After that it is never probed or signalled again.
+  const waitGone = async (n) => {
+    for (let i = 0; i < n; i++) {
+      if (!posixAlive(child.pid)) return true;
+      await sleep(100);
+    }
+    return !posixAlive(child.pid);
+  };
   const posixStop = async () => {
     if (!posixAlive(child.pid)) return [];
     posixSignal(child.pid, "SIGTERM");
-    for (let i = 0; i < 30 && posixAlive(child.pid); i++) await sleep(100);
-    if (posixAlive(child.pid)) {
-      posixSignal(child.pid, "SIGKILL");
-      for (let i = 0; i < 20 && posixAlive(child.pid); i++) await sleep(100);
-    }
-    return posixAlive(child.pid) ? [child.pid] : [];
+    if (await waitGone(30)) return [];
+    posixSignal(child.pid, "SIGKILL");
+    return (await waitGone(20)) ? [] : [child.pid];
   };
 
   let stopping = null;
   const stopTree = async (grace) => {
     if (!WIN) return posixStop();
-    if (grace) await Promise.race([exit, sleep(1500)]);
+    // While the child is held, its PID is ours: retry the snapshot before any kill to learn the root's identity.
+    for (let i = 0; i < 3 && !root && !exited; i++) {
+      if (i) await sleep(300);
+      root = rootOf(winSnapshot(0));
+    }
+    let survivors = [child.pid];
+    const look = () => {
+      const snap = root && winSnapshot(0);
+      if (!snap) return null;
+      const left = winTree(snap);
+      if (left.length) survivors = left.map((m) => m.pid);
+      return left;
+    };
+    if (grace) {
+      look();
+      await Promise.race([exit, sleep(1500)]);
+    }
     if (!root) {
       await killRoot();
-      return [child.pid];
+      return survivors;
     }
     // A snapshot that fails is never read as "nothing left": kill the root by handle, then try again.
     for (let sweep = 0; sweep < 4; sweep++) {
-      const snap = winSnapshot(0);
-      if (!snap) {
+      const left = look();
+      if (!left) {
         await killRoot();
         await sleep(300);
         continue;
       }
-      const left = winTree(snap);
       if (!left.length) return [];
-      if (sweep === 3) return left.map((m) => m.pid);
+      if (sweep === 3) return survivors;
       winKill([...left].reverse());
       await sleep(300);
     }
-    return [child.pid];
+    return survivors;
   };
 
   return {

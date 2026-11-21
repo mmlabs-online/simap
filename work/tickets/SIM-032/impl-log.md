@@ -76,3 +76,29 @@ None.
 
 ### Scope self-check
 Only reviewer Issues 1-7 and S4/S5 were addressed; no real process other than test-created fake children was started or stopped; no `.env*` values, token file, port 15432 or tunnel container touched.
+
+## Attempt 3 (REWORK 3) — 2026-11-21
+Status: committed.
+
+### Files touched (all in the plan)
+- `scripts/dev-process.mjs`: `known` map of `pid:start` fed by every tree read (`winTree`), a snapshot before the grace wait, live remembered members killed through `winKill` (no traversal from dead members); failed first snapshot is retried up to 3 times while the child is held, before any kill, and `root` is assigned from it; `child.kill()` only after those fail; last known survivors returned when later snapshots fail; permanent no-op `error` listener and guarded `killRoot`; POSIX stop never probes or signals the group after `ESRCH` (`waitGone`).
+- `scripts/dev-prod.mjs`: unconfirmed stop message adds "The app may still be running on port N: stop it before continuing"; `checkDb` races `client.end()` against 2 s then destroys the stream; every `/^PG/i` key removed from the child env (replaces `PG_VARS`) and from `process.env` in `main()` before the login check; new `envFilePgKey` and a `.env*` preflight refusal in all four files (file and key only).
+- Tests: `scripts/dev-process.test.ts` (root -> mid -> leaf, mid exits in the grace wait; Windows real grandchild with a failing first snapshot), `scripts/dev-prod.test.ts` (PG* child env incl. lowercase, `.env*` refusal x4 with no value in output, port in the unconfirmed message).
+- Pre-fix proof: both new real-process tests fail on the Attempt 2 `dev-process.mjs`.
+
+### Checks (Node 22)
+- `pnpm typecheck`, `check:layers` (234 files, no violations), `format:check`, `build`, `check:dev-bundle` (no dev-token strings), `bash -n scripts/start-dev.sh`: exit 0
+- `pnpm test`: Test Files 98 passed (98), Tests 1034 passed | 3 skipped (1037)
+- shellcheck not installed, not downloaded. `pnpm test:db` not run (CI).
+
+### Size
+This attempt, non-test code: +84 / -33 = +51 net (`dev-process.mjs` +57/-17, `dev-prod.mjs` +27/-16). Cumulative vs `main` about 575 net non-test lines. I did not merge the signal/exit handling in `dev-prod.mjs`.
+
+### Out-of-plan files
+None.
+
+### Not verified
+`checkDb` 2 s close timer has no automated test (the function is not exported); real PowerShell timing of the first snapshot; POSIX real-tree behaviour (CI).
+
+### Follow-ups
+Tunnel port identity, minimal helper env, N4/N5 (excluded). A later `.env*` PG* key refusal is by line match only, like the other refusals.

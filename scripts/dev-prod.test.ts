@@ -9,6 +9,7 @@ import { devEnv, ENV_FILE_NAMES } from "./dev.mjs";
 import { isCanonicalUuid } from "../src/lib/validate/uuid";
 import {
   buildProdUrl,
+  envFilePgKey,
   envFileSetsDatabaseUrl,
   envFileSetsKey,
   envFileSetsKeyVariant,
@@ -598,6 +599,26 @@ describe("run: step order", () => {
   });
 });
 
+describe("PG* variables in .env files", () => {
+  it("finds the key in any letter case, and only a real assignment", () => {
+    expect(envFilePgKey("A=1\nexport pgoptions=-c x")).toBe("pgoptions");
+    expect(envFilePgKey("PGHOST: h")).toBe("PGHOST");
+    expect(envFilePgKey("# PGHOST=h\nOTHER_PGHOST=1\nPG_NOT=\n")).toBe("PG_NOT");
+    expect(envFilePgKey("DATABASE_URL=x\nPORT=3")).toBeNull();
+  });
+
+  it("is refused in every .env file, naming only the file and key", async () => {
+    for (const n of ENV_FILE_NAMES) {
+      const r = await drive({ envFiles: { [n]: "pgoptions=SECRET-VALUE" } });
+      expect(r.code, n).toBe(2);
+      expect(r.err.join("\n")).toContain(`${n} sets pgoptions`);
+      expect(r.err.join("\n")).not.toContain("SECRET-VALUE");
+      expect(r.trace).not.toContain("dev-token");
+      expect(r.trace).not.toContain("spawn");
+    }
+  });
+});
+
 describe("run: child process", () => {
   it("env and argv", async () => {
     const r = await drive({
@@ -605,6 +626,8 @@ describe("run: child process", () => {
         PGPASSWORD: "x",
         PGHOST: "h",
         PGPORT: "1",
+        pgoptions: "-c search_path=x",
+        PGAPPNAME: "x",
         SIMAP_PROD_TUNNEL_PORT: "16000",
         KEEP: "1",
       },
@@ -615,7 +638,7 @@ describe("run: child process", () => {
     expect(env.SIMAP_DB_TARGET).toBe("production");
     expect(env.NEXT_PUBLIC_SIMAP_DEV_TOKEN).toBe("1");
     expect(env.KEEP).toBe("1");
-    for (const v of ["PGPASSWORD", "PGHOST", "PGPORT"]) expect(env[v]).toBeUndefined();
+    expect(Object.keys(env).filter((k) => /^PG/i.test(k))).toEqual([]);
     expect(r.spawned!.args).toEqual(["dev", "-H", "127.0.0.1", "--port", "3001"]);
     expect(r.spawned!.args.join(" ")).not.toContain(PW);
   });
@@ -933,6 +956,9 @@ describe("stop signal", () => {
     const e = await drive({ owner: "foreign", stopLeft: [4242] });
     expect(e.code).toBe(1);
     expect(e.err.join("\n")).toContain("could not confirm every child stopped (PIDs: 4242)");
+    expect(e.err.join("\n")).toContain(
+      "may still be running on port 3000: stop it before continuing",
+    );
     const ok = await drive({ exitCode: 0, stopLeft: [7] });
     expect(ok.code).toBe(1);
   });

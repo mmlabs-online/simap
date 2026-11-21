@@ -30,18 +30,8 @@ const ISSUER_KEY = "MM_IDENTITY_ISSUER";
 const PINNED_KEYS = new Set(["SIMAP_DEV_EXPECTED_ORG", ISSUER_KEY]);
 const CONTAINER_RE = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
 const MIN_TOKEN_LIFE_S = 120;
-const PG_VARS = [
-  "PGHOST",
-  "PGHOSTADDR",
-  "PGPORT",
-  "PGUSER",
-  "PGPASSWORD",
-  "PGDATABASE",
-  "PGSSLMODE",
-  "PGSERVICE",
-  "PGSERVICEFILE",
-  "PGPASSFILE",
-];
+// Every PG* variable (any letter case) changes how pg connects, so none reaches the app or the login check.
+const PG_KEY = /^PG/i;
 
 function payloadOf(token) {
   if (typeof token !== "string" || !JWT_SHAPE.test(token.trim())) return null;
@@ -91,15 +81,22 @@ export function envFileSetsKeyVariant(text, key) {
   return false;
 }
 
+/** The first PG* key (any letter case) the .env text sets, else null. Same matching as envFileSetsKey. */
+export function envFilePgKey(text) {
+  const body = String(text).replace(/\r\n?/g, "\n");
+  const m = /^\s*(?:export\s+)?(PG[A-Za-z0-9_]*)(?:\s*=|:(?:\s|$))/im.exec(body);
+  return m ? m[1] : null;
+}
+
 export function buildProdUrl(password, port) {
   return `postgres://simap:${encodeURIComponent(password)}@127.0.0.1:${port}/simap`;
 }
 
 function childEnv(env, url, tokenFile, org) {
   const copy = { ...env };
-  for (const v of PG_VARS) delete copy[v];
   // Windows env names are case-insensitive: drop every case variant before setting the pin.
-  for (const k of Object.keys(copy)) if (PINNED_KEYS.has(k.toUpperCase())) delete copy[k];
+  for (const k of Object.keys(copy))
+    if (PG_KEY.test(k) || PINNED_KEYS.has(k.toUpperCase())) delete copy[k];
   return {
     ...devEnv({
       ...copy,
@@ -194,6 +191,14 @@ export async function run(deps) {
         err(
           `[dev:prod] ${n} sets ${ISSUER_KEY} in a different letter case: remove that line (dev:prod pins the issuer)`,
         );
+        return 2;
+      }
+    }
+    for (const n of ENV_FILE_NAMES) {
+      const text = readEnvFile(n);
+      const key = text === null ? null : envFilePgKey(text);
+      if (key) {
+        err(`[dev:prod] ${n} sets ${key}: remove that line (dev:prod removes every PG* variable)`);
         return 2;
       }
     }
@@ -311,7 +316,9 @@ export async function run(deps) {
       halted = true;
       const left = handle ? await handle.stop({ grace }) : [];
       if (left.length) {
-        err(`[dev:prod] could not confirm every child stopped (PIDs: ${left.join(", ")})`);
+        err(
+          `[dev:prod] could not confirm every child stopped (PIDs: ${left.join(", ")}). The app may still be running on port ${port}: stop it before continuing`,
+        );
         return code || 1;
       }
       return code;
@@ -410,7 +417,9 @@ async function checkDb({ password, port }) {
   } catch (e) {
     return { ok: false, code: typeof e?.code === "string" ? e.code : undefined };
   } finally {
-    await client.end().catch(() => {});
+    // A stalled tunnel must not hang the close: give it 2 s, then drop the socket.
+    await Promise.race([client.end().catch(() => {}), new Promise((r) => setTimeout(r, 2000))]);
+    client.connection?.stream?.destroy();
   }
 }
 
@@ -428,6 +437,8 @@ async function main() {
     process.exit(1);
   }
   const root = fileURLToPath(new URL("..", import.meta.url));
+  // pg reads PG* from process.env when its config leaves a value unset (the login check); the app gets a clean copy too.
+  for (const k of Object.keys(process.env)) if (PG_KEY.test(k)) delete process.env[k];
   process.exit(
     await run({
       env: process.env,
