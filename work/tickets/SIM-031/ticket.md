@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-21 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/35 |
 
 ## Goal
 A running `pnpm dev:prod` accepts tokens only from the production Identity, so a stray `.env*` issuer and a token from
