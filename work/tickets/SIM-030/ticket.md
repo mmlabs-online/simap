@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-21 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-21T04:58:10Z |
 | PR | — |
 
 ## Goal
@@ -64,7 +64,7 @@ production data.
   warning; `pnpm dev:token --org A`, next call is 200 without a restart. Needs M-3 and the real tunnel.
 
 ## Notes / answers from Ming
-- Waiting for Ming: plan approval (High tier: the plan edits `src/server/http/dev-token.ts`).
+- 2026-11-21: Plan approved by Ming, with the plan defaults for both decisions: (1) the verifier stays strict, so a token with an uppercase `org` claim gets a 401; (2) `SIMAP_DEV_EXPECTED_ORG` is not added to `.env.example` and is documented in the README.
 - 2026-11-21: Ming asked for this ticket after the SIM-029 Attempt 3 security review.
 
 ## Handoff
