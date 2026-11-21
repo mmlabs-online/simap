@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | db, security |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-028 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T03:25:25Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -64,7 +64,14 @@ being able to migrate, seed or create throwaway databases there.
 - Manual: tunnel up, `pnpm dev:prod`, `/api/readyz` 200; `pnpm seed:dev` with the tunnel URL refused.
 
 ## Notes / answers from Ming
+- Waiting for Ming: plan approval (High tier: the plan edits `.env.example`, names only).
 - 2026-11-21: `pnpm dev:prod` is simap's one-command equivalent of tudocuatui `scripts/start-dev.sh` (token → tunnel →
   password → app), written in Node for Windows; one Next.js process replaces tudocuatui's API + UI pair.
 
 ## Handoff
+
+### 2026-11-21 — claude — BLOCKED
+- Agent calls: 2, tokens 124k total (database-optimizer×1 43k, planner×1 81k; in/out split not reported)
+- Done: consult and plan (`Status: READY`). Gate raised to plan-approval because the plan touches `.env.example`.
+- In progress / next: Ming approves `plan.md` and answers its 3 decisions (`.env.local` conflict, hand-run `node db/migrate.js` stays unguarded, `pnpm migrate` and `migrate:smoke` become local-only); then `/run SIM-029`.
+- Gotchas: `pg` reads the port with `parseInt`, so `PGPORT=15432abc` reaches the tunnel. Tests must use closed port 1, never 15432 (the real tunnel may be listening). Live `/api/readyz` needs M-3.
