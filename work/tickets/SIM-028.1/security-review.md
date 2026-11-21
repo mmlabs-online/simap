@@ -170,3 +170,43 @@ return { ...copy, NODE_ENV: "development", NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" };
 - I assumed the launchers run from the repo root, as `pnpm dev` does. Running the script directly from another directory would make Next read a different set of `.env` files.
 - As instructed, I did not read `.env*` files, the real dev-token file or `.next` output, so I do not know whether a `.env.test*` file exists or whether any local file sets this flag.
 - Not re-reported, as agreed: S3, S4, F4, F6, `.env.example`, and case-variant hardening of other keys.
+
+## Attempt 4
+
+Verdict: PASS
+
+SIM-028.1 security review, attempt 4. S5 is closed: no inherited `NODE_ENV` variant reaches the `next dev` child in either launcher. There are no 🔴 or 🟡 findings. Forcing the value has one small side effect on the issuer check (N1), which can be a follow-up. All of this comes from reading the code; I ran nothing.
+
+### Findings
+
+🟢 **N1. A shell with `NODE_ENV=production` no longer gets the strict issuer check under the launchers**
+- Where: `d:\project\simap-game-ui\scripts\dev.mjs:56-58`, `d:\project\simap-game-ui\scripts\dev-prod.mjs:87-97`, `d:\project\simap-game-ui\src\server\identity\config.ts:24,31-34`.
+- Cause: `loadIdentityConfig` reads `env.NODE_ENV` from the object passed at `with-auth.ts:103`. The bundler does not inline that form, so it saw the real shell value. Before this change, that shell required exactly `https://api.mmlabs.online`. Now the launcher's `development` value also allows another `https://<host>` or `http://localhost:<port>`.
+- Scenario: the shell has `NODE_ENV=production`, `.env.local` has `MM_IDENTITY_ISSUER=http://localhost:4000`, and the token file holds a token from that local Identity for the same org. `pnpm dev:prod` used to fail on every API request. It now accepts the token and works against the production database under that token's identity.
+- Severity: low. It needs the DB password at the prompt and a matching token file, and the server takes the token only from that file (`with-auth.ts:58`). A shell without `NODE_ENV` already behaved this way before this change, so the underlying gap is older: `dev:prod` never pins the issuer.
+- Fix (follow-up, outside S5): in `childEnv`, drop every letter-case variant of `MM_IDENTITY_ISSUER`, then set `MM_IDENTITY_ISSUER: "https://api.mmlabs.online"`. Next does not override a key already in the environment. Add a `dev-prod.test.ts` case with an inherited lowercase variant.
+
+### Answers
+
+1. **S5: closed for inherited values.**
+   - `devEnv` deletes every key whose uppercase form is `NODE_ENV`, then sets one `NODE_ENV: "development"` (`dev.mjs:54-58`).
+   - Plain `pnpm dev` spawns with that env (`dev.mjs:142`). `childEnv` spreads `devEnv` and adds only the production-data flag afterwards (`dev-prod.mjs:87-97`).
+   - `@next/env` picks `.env.test*` only when `process.env.NODE_ENV === "test"`. With `development` and `dev=true`, it loads `.env.development.local`, `.env.local`, `.env.development` and `.env`, matching `ENV_FILE_NAMES` (`dev.mjs:100`).
+   - A Windows `.env.local` line `node_env=test` can change the runtime value after the first load, but it does not change the file list. A forced reload calls `replaceProcessEnv` with the startup snapshot before choosing files, and the Next worker is forked from that snapshot (`initialEnv`, `next-dev.js:362`).
+
+2. **Does forcing weaken anything?**
+   - **Dev-token activation: no new activation found.** `define-env.js:76` inlines `process.env.NODE_ENV` as `development` under `next dev` for every compiler variant, so the guard at `with-auth.ts:111` already folded to true with a shell `NODE_ENV=production`. The impl-log's wording suggests that shell turned the guard off; by my reading it did not.
+   - **Issuer check: yes, only in the case in N1.**
+   - **Org pin: not weakened.** `dev-token.ts:51` uses the inlined form, so the pin is still read. If the value were not inlined, forcing `development` would make the pin apply, which is stricter.
+   - **`next build` and `pnpm start`: unaffected.** `devEnv` is called only from the two launchers and works on a copy. `build` runs `next build`, `start` runs the standalone server, and the Dockerfile and deploy compose still set `NODE_ENV=production`.
+
+3. **Regressions in the changed lines: none beyond N1.** The new tests cover `test`, `production`, a lowercase variant, and a single resulting key through both `devEnv` and `run`.
+
+### What I checked and my limits
+
+- Read: the ticket, attempt 3 review, impl-log Attempt 4, both launchers, the relevant test sections, `config.ts`, `dev-token.ts`, `with-auth.ts`, `devAuthorizationFor`, `proxy.ts`, `runtime.ts`, and the relevant parts of Next 16.4.6 (`@next/env`, CLI, `next-dev.js`, `router-server.js`, `setup-dev-bundler.js`, `define-env.js`).
+- **I ran no tests, build, checks, `git diff` or live launcher**, because this session had read and search tools only. I reviewed the current files, so "changed lines" relies on the impl-log's file list. Its green results are its own claim.
+- Not confirmed in a running Turbopack server: the inlining of `NODE_ENV` in server code, and the Windows case-insensitive override.
+- A `NODE_OPTIONS --require` preload could change `NODE_ENV` inside the child. That is already local code execution, so I did not treat it as an inherited variant.
+- As instructed, I did not read `.env*` files, the real dev-token file or `.next` output, so I do not know what local `.env*` files set.
+- Not re-reported, as agreed: S3, S4, S6, S7, F4, F6, and case-variant hardening of other keys.

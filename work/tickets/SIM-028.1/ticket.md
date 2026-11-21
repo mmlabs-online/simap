@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, security |
@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 3 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T12:04:06Z |
-| PR | https://github.com/mmlabs-online/simap/pull/33 |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/33 (merged), https://github.com/mmlabs-online/simap/pull/34 |
 
 ## Goal
 Under `pnpm dev` (dev-token mode from SIM-028) the browser opens simap signed in and never calls mmlabs Identity, so
@@ -85,3 +85,9 @@ local development works without CORS.
 - Done: S1, S2 and the commented `.env.example` name (M-18). Reviewer Attempt 3 PASS. Security Attempt 3 wrote REWORK with no 🔴 (S5 is 🟡), so under the loop rule the ticket passes. Both allowed reworks are used.
 - In progress / next: Ming does M-19 (check the `.env.example` lines; decide S5), then merges PR #33. Live checks need M-1 and M-3.
 - Gotchas: agents could not read `.env.example`; only its 3-line addition is confirmed. S5 needs `NODE_ENV=test` in the shell plus a `.env.test*` file.
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 14, tokens 983k (frontend-developer×1 56k, planner×1 123k, implementer×4 231k, reviewer×4 260k, security-ai-generated-code-auditor×4 313k; in/out split not reported)
+- Done: S5 fixed with Ming's approved extra rework. Reviewer Attempt 4 PASS; security Attempt 4 PASS.
+- In progress / next: Ming checks the `.env.example` lines (M-19) and merges PR #34; the ticket becomes MERGED then. Live checks need M-1 and M-3.
+- Gotchas: security N1 (`dev:prod` does not pin the Identity issuer) is a follow-up and should be fixed before `dev:prod` is used on real data.
