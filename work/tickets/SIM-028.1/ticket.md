@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 2 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T11:50:07Z |
+| Claimed by | — |
 | PR | https://github.com/mmlabs-online/simap/pull/33 |
 
 ## Goal
@@ -77,3 +77,9 @@ local development works without CORS.
 - Done: browser dev-token mode, red "Production data" badge and notice for `dev:prod`, `.env*` refusal of the flag, `pnpm check:dev-bundle`. Reviewer Attempt 2 PASS. Security Attempt 2 wrote REWORK with no 🔴 (S1, S2 are 🟡), so under the loop rule the ticket passes; both are raised to Ming on the PR.
 - In progress / next: Ming decides M-18 (`.env.example`) and whether S1/S2 are fixed before merge, then merges. Live browser checks need a real token (M-1); the `dev:prod` badge also needs M-3.
 - Gotchas: `verify.test.ts:169` failed once in six full runs (wall-clock test, no diff under `src/server`, cause not established). The branch merges `main` instead of rebasing, because a force-push was blocked.
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 11, tokens 775k plus reviewer Attempt 3 (usage not reported when this entry was written) (frontend-developer×1 56k, planner×1 123k, implementer×3 203k, reviewer×3 150k + pending, security-ai-generated-code-auditor×3 243k; in/out split not reported)
+- Done: S1, S2 and the commented `.env.example` name (M-18). Reviewer Attempt 3 PASS. Security Attempt 3 wrote REWORK with no 🔴 (S5 is 🟡), so under the loop rule the ticket passes. Both allowed reworks are used.
+- In progress / next: Ming does M-19 (check the `.env.example` lines; decide S5), then merges PR #33. Live checks need M-1 and M-3.
+- Gotchas: agents could not read `.env.example`; only its 3-line addition is confirmed. S5 needs `NODE_ENV=test` in the shell plus a `.env.test*` file.
