@@ -149,3 +149,85 @@ Every failure path calls `stop` or reports non-zero. The gap is that the unconfi
 - Worker survival in R1 is reasoned from Next's source. `impl-log.md` records that in the sandbox a Windows grandchild died with its parent unless detached, so real behaviour needs a test outside that sandbox.
 - I did not read any `.env*` file, the real dev-token file or `.next` output.
 - Tunnel port identity, minimal helper env, SIM-028.1 S4, F4 and F6 were not re-reported.
+
+## Attempt 3
+
+Verdict: REWORK
+
+Security review of SIM-032, attempt 3. There is 1 blocker, in the new first-snapshot retry: after the child exits, its freed PID can be adopted as our root. That can kill an unrelated process and report the app as stopped. The fix is two lines. R2, R3 and N3 are closed, and R1 is closed except for this path. I read the code only and ran nothing.
+
+### Findings
+
+#### 🔴 T1. The retry can adopt a reused PID as the root
+- **Where:** `d:\project\simap-game-ui\scripts\dev-process.mjs:320-323`, with `rootOf` at `:268-271`; reached from `d:\project\simap-game-ui\scripts\dev-prod.mjs:333-335` or `:332`.
+- **Cause:** `!exited` is checked before `await sleep(300)`, but the snapshot runs after it with no second check. The sleep is the first time the event loop can deliver the child's exit, and Node then releases the handle that pins the PID.
+- **Scenario:**
+  1. The Next CLI crashes at startup, or Ctrl-C reaches it, while the snapshot at `:272` runs. `spawnSync` blocks the loop, so `exited` stays false. The row is missing or the snapshot fails, so `root` is null.
+  2. `halt` calls `stopTree`. Try `i=0` also finds no row, still with `exited === false`.
+  3. Try `i=1` passes the check and sleeps. The exit event fires, `exited` becomes true and the PID is free.
+  4. Windows gives that PID to an unrelated process F, or to the helper PowerShell. Line 322 finds the row and sets `root` to it.
+- **Impact:**
+  - **Unrelated process killed:** F is `alive` at `:278`, so `winKill` at `:350` kills it. Its identity check passes because the recorded identity is F's own.
+  - **False "stopped":** the real orphan worker does not match the adopted root. The next clean sweep returns `[]` at `:348`, so no "could not confirm" warning prints while the worker can keep serving on production credentials.
+- **Fix:**
+  ```js
+  for (let i = 0; i < 3 && !root && !exited; i++) {
+    if (i) {
+      await sleep(300);
+      if (exited) break;
+    }
+    root = rootOf(winSnapshot(0));
+  }
+  ```
+  `spawnSync` blocks the loop, so the handle stays held from this check through `rootOf`. After `break`, `root` is null and the existing path reports unconfirmed with the port.
+- **Test gap:** the test at `d:\project\simap-game-ui\scripts\dev-process.test.ts:306-337` keeps the child alive through the retry. Add a case where the child exits during the retry sleep and a later snapshot shows a different process on that PID. It must not be killed, and `stop` must return non-empty. This likely needs an injectable snapshot function.
+
+#### 🟡 T2. Children of a live remembered member are not traversed
+- **Where:** `d:\project\simap-game-ui\scripts\dev-process.mjs:281-288`.
+- **Scenario:** root -> M -> K is remembered, then M exits, so K is reachable only through `known`. K starts child C after the last read. `winTree` adds K but not C. K is killed, C is orphaned under a dead PID, and the next sweep returns `[]`. C keeps the production env while the stop is reported as clean.
+- **Why not 🔴:** it needs a mid-tree exit and a new spawn inside a window of about 1.5 s, and Next's port-holding worker is a direct child of the CLI.
+- **Fix:** after adding live remembered members, also add `descendantsOf(snap.procs, m)` for each of them, and record the results in `known`. These are verified live rows, so this does not traverse from a dead member.
+
+#### 🟢 Notes
+- **N6. Stale PID in the warning:** when the child has exited and `root` is null, `survivors` is still `[child.pid]` (`dev-process.mjs:324`, `:336-338`). Ming could stop that PID by hand after it was reused. Say the PID has exited, or name only the port in this case.
+- **N7. Exception path drops the result:** `dev-prod.mjs:388` discards what `stop()` returns, so an unexpected throw after spawn prints no PIDs or port. I found no reachable throw. Print the same unconfirmed message there.
+- **N8. Residual fork race:** a child forked between a read and its parent's kill stays invisible. A final listener check on the app port before reporting success would catch the case that matters most.
+
+### Answers to your questions
+
+**1. Earlier findings**
+
+| Item | Status | Evidence |
+|---|---|---|
+| R1 | Closed except T1 | Retry before kill, `known`, last survivors, port in message |
+| R2 | Closed | `dev-prod.mjs:421-422` |
+| R3 | Closed | `dev-prod.mjs:34`, `:98-99`, `:197-204`, `:441` |
+| N3 | Closed | `dev-process.mjs:262`, `:294-296` |
+
+**2. Remembered members**
+- An entry is killed only if its PID and start time still match, and `winKill` re-checks through a held process handle. A correctly recorded `pid:start` cannot hit a reused PID.
+- The exception is T1, where the wrong identity is recorded as root.
+- No traversal starts from a dead remembered member. The only dead seed is the root, limited by `root.end`.
+
+**3. Retried first snapshot**
+- Adoption at `:272` is safe because the exit cannot have been processed yet. Adoption at `:322` after a sleep is not (T1).
+- The retry is bounded to 3 tries, at most about 61 s (3 x 20 s plus 2 x 300 ms).
+- Ctrl-C during it is only recorded while `spawnSync` blocks. It may also kill the helper, which counts as a failed try. If it ends the child, it leads into T1.
+
+**4. Unconfirmed stop**
+Every `halt` path with a non-empty result prints the PIDs and port and exits non-zero (`code || 1`). The exceptions are T1 (a false empty result), N6 and N7.
+
+**5. `PG*` removal**
+- **App child:** every case variant is removed from the copied env.
+- **`checkDb`:** keys are deleted from `process.env` in `main()` before `pg` is lazily loaded. `db/target.js` and the `dev*.mjs` scripts do not import `pg` at the top level.
+- **`.env*` refusal:** it matches the `@next/env` 16.4.6 line parser for export, spacing, colon form, BOM and case. Keys such as `PG.X` parse but are not `pg` settings.
+- **`dev-token` and docker:** `dev-token` reads no `PG*` variable. The docker calls are only `inspect` and `start`, so removal does not affect them.
+
+**6. Regressions:** T1 is new in this attempt. T2 is a gap in the new `known` logic.
+
+### Limits
+- I did not run tests, PowerShell, `winpty`, Ctrl-C, Next, Postgres or the tunnel. Check results are the implementer's, from `impl-log.md`.
+- T1 relies on Node closing the child handle when it delivers `exit`. That is from my knowledge of Node, not from reading its source here. How quickly Windows reuses a PID was not observed.
+- Console-close behaviour is unverified, and a long stop may not finish before Windows ends the process.
+- I did not read any `.env*` file, the real dev-token file or `.next` output.
+- Tunnel port identity, minimal helper env, N4, N5, SIM-028.1 S4, F4 and F6 were not re-reported.

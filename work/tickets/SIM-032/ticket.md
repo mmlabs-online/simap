@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | ESCALATED |
 | Priority | P1 |
 | Size | M |
 | Areas | security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 2 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T13:06:34Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -78,3 +78,9 @@ command signs in, connects through the tunnel, starts the app, and prints the lo
 - 2026-11-21: Ming supplied the one-command brief after finding the `.env` variables too many to fill in.
 
 ## Handoff
+
+### 2026-11-21 — claude — ESCALATED
+- Agent calls: 10, tokens 826k plus reviewer Attempt 3 (usage not reported when this entry was written) (planner×1 103k, implementer×3 268k, reviewer×3 189k + pending, security-ai-generated-code-auditor×3 267k; in/out split not reported)
+- Done: wrapper, preflight before sign-in, org flow, readiness with a hard deadline, single database login check, `PG*` handling. Checks green (1034 tests). All work is on `ticket/SIM-032`; no PR.
+- In progress / next: Ming picks an option in `escalation.md` (M-20). Open: 🔴 T1 and reviewer Issue 1.
+- Gotchas: do not run `scripts/start-dev.sh` on production from this branch: stop can report success while a process survives. Winpty, real Ctrl-C, sign-in, tunnel and `/api/readyz` are unverified.

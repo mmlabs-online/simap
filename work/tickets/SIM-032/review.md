@@ -210,3 +210,83 @@ From `security-review.md` Attempt 2. Fix these in REWORK attempt 3, together wit
 - 🟢 N3: a permanent `error` listener and a guarded `killRoot`.
 
 Not in attempt 3: N4, N5, tunnel port identity and minimal helper env.
+
+## Attempt 3 — 2026-11-21
+Verdict: REWORK
+
+Reviewed at `cb3135f`.
+
+### Checks (run by reviewer)
+Node v22.23.5, on `ticket/SIM-032`.
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck` — exit 0
+- `pnpm check:layers` — exit 0, "check-layers: 234 files, no violations"
+- `pnpm test` — exit 0, Test Files 98 passed (98), Tests 1034 passed | 3 skipped (1037)
+- `pnpm build` — exit 0
+- `pnpm check:dev-bundle` — exit 0, "no dev-token strings in .next/static"
+- `bash -n scripts/start-dev.sh` — exit 0
+- `pnpm test:db` — not run, left to CI as instructed. shellcheck — unavailable, not downloaded (AC7 allows this).
+
+The implementer's reported check results match this run.
+
+### Attempt 2 issues and review-agent blockers
+| Issue | Result | Evidence |
+|---|---|---|
+| 1 mid-tree exit during or before stop | PARTLY FIXED | Root -> mid -> leaf is fully stopped in both timings (real fake tree). A remembered survivor's newer child is missed: Issue 1 below |
+| 2 / R1 failed first snapshot | FIXED | First snapshot unreadable, later ones work: `rooted false`, stop `[]`, root, mid and leaf gone |
+| R1 last known survivors | PARTLY FIXED | When every stop snapshot fails, only the dead root is reported while mid and leaf live: Issue 2 below |
+| R1 unconfirmed message with port | FIXED | `dev-prod.mjs:320`, test `dev-prod.test.ts:960` |
+| 3 POSIX `ESRCH` | FIXED | Real stop logic with `process.kill` stubbed: `ESRCH` first gives calls `0`; after SIGTERM gives `0,SIGTERM,0`, with no later probe or SIGKILL. `EPERM` stays unconfirmed after SIGKILL |
+| R2 bounded `checkDb` close | FIXED | Real source against fake Postgres on ephemeral loopback ports: normal 37 ms; server ignoring Terminate and close 2012 ms, `ok`, socket closed; `28P01` 2 ms; silent server 5015 ms. One connection each |
+| R3 `PG*` removal and refusal | FIXED | `dev-prod.mjs:98-99`, `:197-204`, `:441`; tests from `dev-prod.test.ts:602`, including lowercase keys |
+| N3 error listener, guarded `killRoot` | FIXED | `dev-process.mjs:262`, `:292-298`; a late child `error` event caused no uncaught exception |
+
+### Acceptance criteria
+- [x] AC1 Full flow — `dev-prod.test.ts:307`, passes.
+- [x] AC2 Preflight refusals — tests pass; `PG*` refusal names file and key only.
+- [x] AC3 Failed sign-in starts nothing — tests pass.
+- [x] AC4 Org flow — tests pass.
+- [ ] AC5 Failed readiness stops the child — NOT MET in the Issue 1 case (same stop path).
+- [ ] AC6 Ctrl-C leaves no child — NOT MET, Issue 1. The tunnel part is met.
+- [x] AC7 No secret in output, argv or a repo file — fixed messages; Checks green.
+
+Ming verification after merge (not verified here; carry on the PR):
+1. Take a `pg_dump` of `simap`, kept outside the repo, before the first run.
+2. In Git Bash (mintty), run `scripts/start-dev.sh` with no token file: email, password and DB password hidden, URL, warning, red badge, `/api/readyz` = 200.
+3. Ctrl-C: port free, no `next dev` node process remains, `pg-tunnel-pg-tunnel-1` still running.
+4. Repeat once in PowerShell or Windows Terminal.
+
+### Issues
+#### Issue 1 — 🔴 blocker — stop confirms success while a child of a remembered survivor runs
+- **Where**: `scripts/dev-process.mjs:277-290` (`winTree` adds live `known` members but not their descendants).
+- **Expected**: AC5 and AC6: every process in the tree is stopped, and `[]` is returned only when that is true.
+- **Actual**: Root -> mid -> leaf, `owner()`, leaf starts a new child, mid exits, `stop()`. Result in 3 of 3 runs: `stop []`, new child alive. Control with mid still running: new child stopped. That process inherits the production `DATABASE_URL`, and the launcher reports a clean stop.
+- **Fix instruction**: In `winTree`, for each `known` member still in the table with the same PID and start, add it and `descendantsOf(snap.procs, member)` to the tree (deduplicated by `pid:start`), then record the whole tree in `known`. Do not traverse from dead members. Add a real-tree test for the sequence above. A scratch copy with this change stopped the new child in 3 of 3 runs, and the mid-exit and failed-snapshot scenarios still passed.
+
+#### Issue 2 — 🟡 should-fix — unconfirmed stop omits the known survivors
+- **Where**: `scripts/dev-process.mjs:324`.
+- **Expected**: Security R1: keep the last known survivors when a stop cannot be confirmed.
+- **Actual**: After `owner()` saw root, mid and leaf, with every stop snapshot failing, stop returned only the root PID. The root was dead; mid and leaf were alive. The exit is still non-zero and the message names the port, so this is not a false success.
+- **Fix instruction**: Initialise `survivors` from the `known` PIDs when `known` is not empty, else `[child.pid]`. Extend a failed-snapshot test to assert that the live members are listed.
+
+### Examined and accepted
+- **Scope (R4)**: every changed file is in the plan; no High path, `package.json` or lockfile change.
+- **Size**: not a verdict factor, as instructed.
+
+### Rules (CLAUDE.md)
+- R5: not satisfied until Issue 1 is fixed.
+- R1, R2, R3, R4, R6, R7: no violations found.
+
+### Nits (do not block)
+- `dev-prod.mjs:371-375`: a root exit or signal during the blocking owner check can still print the URL just before the stop (carried).
+- `dev-process.mjs:220`: `rootEnd` has millisecond resolution (carried).
+
+### Not verified
+- Real `winpty` path, real Ctrl-C in mintty or a Windows console, and the stdin handoff from the org prompt to `dev-token`.
+- Real `next dev` process shape, so how often Issue 1 occurs with real Next workers is unknown; the defect is shown with a fake tree.
+- Real sign-in, tunnel, production login and `/api/readyz` (forbidden here).
+- POSIX real-tree behaviour on this machine (CI covers Linux; the POSIX stop sequence was run with a stubbed `process.kill`). `pnpm test:db` (CI).
+
+### Follow-ups (out of scope)
+- Known limit of parent-PID tracking on Windows: if a middle process exits before any full snapshot has seen its child, that child cannot be found and stop returns `[]` (reproduced with a fake tree). Closing this needs a different mechanism, such as a Windows Job Object; Ming should decide whether it is worth it.
+- Tunnel port identity check and a minimal helper env, as already excluded by the orchestrator.
