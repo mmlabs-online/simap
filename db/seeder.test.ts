@@ -7,16 +7,42 @@ describe("assertDevSeedTarget", () => {
   it("accepts localhost, 127.0.0.1 and ::1", () => {
     for (const h of ["localhost", "127.0.0.1", "[::1]"]) {
       expect(() =>
-        assertDevSeedTarget({ databaseUrl: url(h), nodeEnv: "development" }),
+        assertDevSeedTarget({ databaseUrl: url(h), nodeEnv: "development", env: {} }),
       ).not.toThrow();
     }
   });
 
+  it("refuses a production target on loopback", () => {
+    for (const [u, env] of [
+      ["postgres://u:secret-pw@127.0.0.1:15432/simap", {}],
+      [url("127.0.0.1"), { SIMAP_DB_TARGET: "production" }],
+    ] as const) {
+      let message = "";
+      try {
+        assertDevSeedTarget({ databaseUrl: u, nodeEnv: undefined, env });
+      } catch (err) {
+        message = (err as Error).message;
+      }
+      expect(message).toMatch(/target is production/);
+      expect(message).not.toContain("secret-pw");
+    }
+  });
+
+  it("keeps the local compose URL working", () => {
+    expect(() =>
+      assertDevSeedTarget({
+        databaseUrl: "postgres://simap@127.0.0.1:5432/simap",
+        nodeEnv: undefined,
+        env: {},
+      }),
+    ).not.toThrow();
+  });
+
   it("refuses any other host", () => {
     for (const h of ["10.0.0.5", "db.internal", "localhost.example.com", "127.0.0.1.evil.net"]) {
-      expect(() => assertDevSeedTarget({ databaseUrl: url(h), nodeEnv: undefined })).toThrow(
-        /not local/,
-      );
+      expect(() =>
+        assertDevSeedTarget({ databaseUrl: url(h), nodeEnv: undefined, env: {} }),
+      ).toThrow(/not local/);
     }
   });
 
@@ -24,7 +50,11 @@ describe("assertDevSeedTarget", () => {
     for (const q of ["host=10.0.0.5", "hostaddr=10.0.0.5", "host=localhost"]) {
       let message = "";
       try {
-        assertDevSeedTarget({ databaseUrl: `${url("localhost")}?${q}`, nodeEnv: undefined });
+        assertDevSeedTarget({
+          databaseUrl: `${url("localhost")}?${q}`,
+          nodeEnv: undefined,
+          env: {},
+        });
       } catch (err) {
         message = (err as Error).message;
       }
@@ -40,7 +70,7 @@ describe("assertDevSeedTarget", () => {
     ]) {
       let message = "";
       try {
-        assertDevSeedTarget({ databaseUrl: u, nodeEnv: undefined });
+        assertDevSeedTarget({ databaseUrl: u, nodeEnv: undefined, env: {} });
       } catch (err) {
         message = (err as Error).message;
       }
@@ -51,24 +81,24 @@ describe("assertDevSeedTarget", () => {
 
   it("refuses NODE_ENV=production even on localhost", () => {
     expect(() =>
-      assertDevSeedTarget({ databaseUrl: url("localhost"), nodeEnv: "production" }),
+      assertDevSeedTarget({ databaseUrl: url("localhost"), nodeEnv: "production", env: {} }),
     ).toThrow(/production/);
   });
 
   it("refuses a missing or unparsable DATABASE_URL without echoing it", () => {
-    expect(() => assertDevSeedTarget({ databaseUrl: undefined, nodeEnv: undefined })).toThrow(
-      /missing or invalid/,
-    );
+    expect(() =>
+      assertDevSeedTarget({ databaseUrl: undefined, nodeEnv: undefined, env: {} }),
+    ).toThrow(/missing or invalid/);
     let message = "";
     try {
-      assertDevSeedTarget({ databaseUrl: "not a url secret-pw", nodeEnv: undefined });
+      assertDevSeedTarget({ databaseUrl: "not a url secret-pw", nodeEnv: undefined, env: {} });
     } catch (err) {
       message = (err as Error).message;
     }
     expect(message).toMatch(/missing or invalid/);
     expect(message).not.toContain("secret-pw");
     try {
-      assertDevSeedTarget({ databaseUrl: url("10.0.0.5"), nodeEnv: undefined });
+      assertDevSeedTarget({ databaseUrl: url("10.0.0.5"), nodeEnv: undefined, env: {} });
     } catch (err) {
       expect((err as Error).message).not.toContain("secret-pw");
     }

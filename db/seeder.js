@@ -3,14 +3,16 @@
 // production database: assertDevSeedTarget refuses any non-local host (including host/hostaddr overrides, parsed
 // with the same parser pg uses) and NODE_ENV=production. schema-check.mjs uses the same guard.
 import { parse } from "pg-connection-string";
+import { classifyTarget } from "./target.js";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 
 /**
- * Throws when the target is not a local dev database. Messages never contain the URL.
- * @param {{ databaseUrl: string | undefined, nodeEnv: string | undefined }} input
+ * Throws when the target is not a local dev database or is the production tunnel (db/target.js).
+ * Messages never contain the URL.
+ * @param {{ databaseUrl: string | undefined, nodeEnv: string | undefined, env?: Record<string, string | undefined> }} input
  */
-export function assertDevSeedTarget({ databaseUrl, nodeEnv }) {
+export function assertDevSeedTarget({ databaseUrl, nodeEnv, env = process.env }) {
   if (nodeEnv === "production") throw new Error("refusing to seed: NODE_ENV is production");
   if (!databaseUrl) throw new Error("refusing to seed: DATABASE_URL is missing or invalid");
   let u;
@@ -28,6 +30,9 @@ export function assertDevSeedTarget({ databaseUrl, nodeEnv }) {
     throw new Error("refusing to seed: DATABASE_URL is missing or invalid");
   }
   if (cfg.hostaddr || !cfg.host || !LOCAL_HOSTS.has(cfg.host)) throw notLocal;
+  if (classifyTarget({ databaseUrl, env }).production) {
+    throw new Error("refusing: database target is production");
+  }
 }
 
 /** Two fake orgs with fixed ids. */

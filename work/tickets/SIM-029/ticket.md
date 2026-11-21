@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | db, security |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-028 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 2 |
 | Created | 2026-11-21 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/29 |
 
 ## Goal
 Let Ming run the local app against the production database through the Cloudflare pg-tunnel without any dev script
@@ -64,7 +64,27 @@ being able to migrate, seed or create throwaway databases there.
 - Manual: tunnel up, `pnpm dev:prod`, `/api/readyz` 200; `pnpm seed:dev` with the tunnel URL refused.
 
 ## Notes / answers from Ming
+- 2026-11-21: Plan approved by Ming, with the plan defaults for all 3 decisions: (1) `dev:prod` refuses a `DATABASE_URL` line in `.env.local`, Ming comments it out while using it; (2) hand-run `node db/migrate.js` stays unguarded and is documented in the README; (3) `pnpm migrate` and `migrate:smoke` become local-only.
+- 2026-11-21: Ming asked to fix the wrong-org token on PR #29 (security-review.md Attempt 2, finding 🟡 1). Other follow-ups stay out of this rework.
 - 2026-11-21: `pnpm dev:prod` is simap's one-command equivalent of tudocuatui `scripts/start-dev.sh` (token → tunnel →
   password → app), written in Node for Windows; one Next.js process replaces tudocuatui's API + UI pair.
 
 ## Handoff
+
+### 2026-11-21 — claude — BLOCKED
+- Agent calls: 2, tokens 124k total (database-optimizer×1 43k, planner×1 81k; in/out split not reported)
+- Done: consult and plan (`Status: READY`). Gate raised to plan-approval because the plan touches `.env.example`.
+- In progress / next: Ming approves `plan.md` and answers its 3 decisions (`.env.local` conflict, hand-run `node db/migrate.js` stays unguarded, `pnpm migrate` and `migrate:smoke` become local-only); then `/run SIM-029`.
+- Gotchas: `pg` reads the port with `parseInt`, so `PGPORT=15432abc` reaches the tunnel. Tests must use closed port 1, never 15432 (the real tunnel may be listening). Live `/api/readyz` needs M-3.
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 8, tokens 518k total (database-optimizer×1 43k, planner×1 81k, implementer×2 119k, reviewer×2 121k, security-ai-generated-code-auditor×2 154k; in/out split not reported)
+- Done: production-target classifier, guards on the five dev scripts, `pnpm dev:prod`, README. Reviewer Attempt 2 PASS; no 🔴 remains. The security Attempt 2 verdict line is REWORK on a 🟡.
+- In progress / next: Ming decides on security 🟡 1 (wrong-org token) and checks the `.env.example` lines, then merges. Live `/api/readyz` needs M-3 and the real tunnel.
+- Gotchas: agents cannot read `.env.example`. `pnpm test:db` runs in CI only. Follow-ups are listed in the PR.
+
+### 2026-11-21 — claude — DONE (wrong-org rework)
+- Agent calls: 3 this round, 11 total, tokens 672k total (this round: implementer×1 38k, reviewer×1 54k, security-ai-generated-code-auditor×1 63k; in/out split not reported)
+- Done: `dev:prod` requires a token org, matches it to `SIMAP_DEV_ORG`, re-checks after refresh and names the org in the banner. Reviewer Attempt 3 PASS, security Attempt 3 PASS (no 🔴).
+- In progress / next: Ming decides on the two remaining 🟡 (token file swapped while the app runs; `SIMAP_DEV_ORG` only in `.env.local`), checks the `.env.example` lines, merges PR #29.
+- Gotchas: until the swap is fixed, do not run `dev:token` for another org while `dev:prod` is open.
