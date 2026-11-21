@@ -41,3 +41,11 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [x] M-11 (2026-11-21) Approve plan for SIM-028: `work/tickets/SIM-028/plan.md` (High tier; decisions A-G under Assumptions, incl. the split into SIM-028 + SIM-028.1). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
 - [x] M-12 (2026-11-21, option 1) SIM-028 escalated after 3 attempts (launcher loopback bypasses): pick an option in `work/tickets/SIM-028/escalation.md` (recommended: allowlist `pnpm dev` arguments) and note it in the ticket's *Notes / answers from Ming*. PR #28 stays open, do not merge until then.
 - [x] M-13 (2026-11-21) Approve plan for SIM-029: `work/tickets/SIM-029/plan.md` (High tier: edits `.env.example`; 3 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [ ] M-14 Before SIM-021 go-live, check SIM-027 (security headers and CSP) in a browser. In Chrome with DevTools
+  Console open, on the built app (local `pnpm start` or the first deploy): `/sign-in` (sign in with password, Turnstile
+  widget shows and passes), `/sign-up` and `/forgot-password` (Turnstile renders; these pages keep
+  `<meta name="referrer" content="no-referrer">` from SIM-006.3), `/rooms` after sign-in (data loads, icons render),
+  toggle light/dark and reload (no flash, theme script ran). Expect **zero** "Content Security Policy" violations in the
+  console. If Turnstile reports a `connect-src` violation for `challenges.cloudflare.com`, report it (fix: add that
+  origin to `connect-src`, small follow-up). After the first deploy: confirm `Strict-Transport-Security` reaches the
+  browser through the Cloudflare Tunnel (M-2) and that Cloudflare adds no second, conflicting HSTS or CSP header.

@@ -110,6 +110,8 @@ got=$(status "$NAME" "$asset")
 if [ "$got" != 200 ]; then echo "::error::smoke failed: $asset is $got, expected 200"; exit 1; fi
 got=$(status "$NAME" /_next/static/does-not-exist.js)
 if [ "$got" != 404 ]; then echo "::error::smoke failed: a missing static file is $got, expected 404"; exit 1; fi
+docker exec -i -e CHECK_HEADERS_URL=http://127.0.0.1:3000 "$NAME" node --input-type=module - < scripts/check-headers.mjs \
+  || { echo "::error::security headers check failed"; exit 1; }
 health=starting
 for _ in $(seq 1 30); do
   health=$(docker inspect -f '{{.State.Health.Status}}' "$NAME")
