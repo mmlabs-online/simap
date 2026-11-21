@@ -4,7 +4,7 @@
 |---|---|
 | State | BACKLOG |
 | Priority | P1 |
-| Size | S |
+| Size | M |
 | Areas | db, security |
 | Gate | none |
 | Depends on | SIM-028 |
@@ -29,8 +29,16 @@ being able to migrate, seed or create throwaway databases there.
 - `pnpm migrate`, `seed:dev`, `test:db`, `schema:check`, `migrate:smoke` refuse a production target (exit 2, value never
   printed), even though the host is `127.0.0.1`. The production image's migrate entry (`node db/migrate.js` in the
   container) keeps working.
-- `pnpm dev:prod`: checks the tunnel answers on `127.0.0.1:15432`, refuses when `.env.local` sets `DATABASE_URL`, asks for
-  the `simap` role password with hidden input, then starts `pnpm dev` with `DATABASE_URL` only in the child env.
+- `pnpm dev:prod` (`scripts/dev-prod.mjs`, cross-platform Node; the simap counterpart of tudocuatui
+  `scripts/start-dev.sh`), in order, stopping at the first failure with nothing started:
+  1. dev token: if the token file is missing, malformed or expires within 2 minutes, run the `dev:token` script
+     (SIM-028); stop unless a fresh token is on disk afterwards.
+  2. tunnel: if the Docker container (default `pg-tunnel-pg-tunnel-1`, override `SIMAP_PG_TUNNEL`) is not running,
+     `docker start` it; then check `127.0.0.1:15432` answers.
+  3. refuse when `.env.local` sets `DATABASE_URL` (line check only, value never read into output); ask for the `simap`
+     role password with hidden input, URL-encode it, keep it only in the child env.
+  4. start the SIM-028 launcher (`next dev -H 127.0.0.1`, dev-token mode) with that env, print a "production data:
+     every change is real" banner; Ctrl-C stops the child and leaves the terminal usable.
 - README: production-DB section with the guardrails.
 
 ## Out of scope
@@ -41,6 +49,9 @@ being able to migrate, seed or create throwaway databases there.
       `SIMAP_DB_TARGET=production`; tests cover each entry.
 - [ ] The container migrate path (`NODE_ENV=production`, image entry) is unaffected; a test proves it.
 - [ ] `pnpm dev:prod` never writes the password or URL to disk or stdout and refuses when `.env.local` has `DATABASE_URL`.
+- [ ] `pnpm dev:prod` stops before asking for the password when the token step or the tunnel step fails, and with a
+      valid token and tunnel starts the app bound to `127.0.0.1` (`/api/readyz` 200); tests cover the step order with
+      the token, Docker and child-process calls injected.
 - [ ] All Checks green.
 
 ## Technical notes
@@ -53,5 +64,7 @@ being able to migrate, seed or create throwaway databases there.
 - Manual: tunnel up, `pnpm dev:prod`, `/api/readyz` 200; `pnpm seed:dev` with the tunnel URL refused.
 
 ## Notes / answers from Ming
+- 2026-11-21: `pnpm dev:prod` is simap's one-command equivalent of tudocuatui `scripts/start-dev.sh` (token → tunnel →
+  password → app), written in Node for Windows; one Next.js process replaces tudocuatui's API + UI pair.
 
 ## Handoff
