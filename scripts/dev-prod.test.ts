@@ -41,6 +41,7 @@ type Opts = {
   password?: string;
   spawnFails?: boolean;
   envThrows?: string;
+  envThrowsAt?: number;
 };
 const dockerCalls: string[][] = [];
 
@@ -51,6 +52,7 @@ async function drive(o: Opts = {}) {
   type Spawn = { args: string[]; env: Record<string, string | undefined> };
   let spawned = null as Spawn | null;
   const tokens = [...(o.tokens ?? [FRESH])];
+  let reads = 0;
   const code = await run({
     env: o.env ?? {},
     argv: o.argv ?? [],
@@ -69,6 +71,9 @@ async function drive(o: Opts = {}) {
     probe: async () => (trace.push("probe"), o.probeOk ?? true),
     sleep: async () => {},
     readEnvFile: (name: string) => {
+      reads += 1;
+      if (o.envThrowsAt === reads)
+        throw Object.assign(new Error("SECRET-CONTENT"), { code: "EBUSY" });
       if (!trace.includes("env check")) trace.push("env check");
       if (o.envThrows) throw Object.assign(new Error("SECRET-CONTENT"), { code: o.envThrows });
       if (name === ".env.local" && o.envLocal) return o.envLocal;
@@ -553,6 +558,19 @@ describe("issuer pin", () => {
     expect([...r.out, ...r.err].join("\n")).not.toContain("SECRET-CONTENT");
   });
 
+  it.each([6, 7, 8, 9])(
+    "a read error on read %i (issuer loop) exits 2 before the prompt",
+    async (n) => {
+      const r = await drive({ envThrowsAt: n });
+      expect(r.code).toBe(2);
+      expect(r.trace).not.toContain("prompt");
+      expect(r.trace).not.toContain("spawn");
+      const text = [...r.out, ...r.err].join("\n");
+      expect(text).toContain(FILES[n - 6]);
+      expect(text).not.toContain("SECRET-CONTENT");
+    },
+  );
+
   it("envFileSetsKeyVariant", () => {
     const k = "MM_IDENTITY_ISSUER";
     expect(envFileSetsKeyVariant("mm_identity_issuer=1", k)).toBe(true);
@@ -570,18 +588,25 @@ describe("issuer pin", () => {
   it("@next/env keeps the pinned issuer over every .env file, also after a forced reload", () => {
     const nextRequire = createRequire(createRequire(import.meta.url).resolve("next/package.json"));
     const { loadEnvConfig } = nextRequire("@next/env") as {
-      loadEnvConfig: (d: string, dev: boolean, log: object, force?: boolean) => unknown;
+      loadEnvConfig: (
+        d: string,
+        dev: boolean,
+        log: object,
+        force?: boolean,
+      ) => { loadedEnvFiles: { path: string }[] };
     };
     const dir = mkdtempSync(join(tmpdir(), "simap-next-env-"));
     const saved = { ...process.env };
     try {
       for (const n of FILES) writeFileSync(join(dir, n), "MM_IDENTITY_ISSUER=http://localhost:1\n");
-      process.env.MM_IDENTITY_ISSUER = ISSUER;
+      Object.assign(process.env, { NODE_ENV: "development", MM_IDENTITY_ISSUER: ISSUER });
       const quiet = { info() {}, error() {} };
-      loadEnvConfig(dir, true, quiet, false);
-      expect(process.env.MM_IDENTITY_ISSUER).toBe(ISSUER);
-      loadEnvConfig(dir, true, quiet, true);
-      expect(process.env.MM_IDENTITY_ISSUER).toBe(ISSUER);
+      const want = [...FILES].sort();
+      for (const force of [false, true]) {
+        const { loadedEnvFiles } = loadEnvConfig(dir, true, quiet, force);
+        expect(loadedEnvFiles.map((f) => f.path).sort()).toEqual(want);
+        expect(process.env.MM_IDENTITY_ISSUER).toBe(ISSUER);
+      }
     } finally {
       for (const k of Object.keys(process.env)) delete process.env[k];
       Object.assign(process.env, saved);

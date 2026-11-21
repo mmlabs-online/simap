@@ -22,3 +22,26 @@ None. `scripts/dev.mjs` unchanged.
 
 ### Scope self-check
 Only the three planned files changed.
+
+## Attempt 2 (rework)
+
+### Files touched
+- `scripts/dev-prod.test.ts` (test only). Required because review Issues 1 and 2.
+  - Issue 1: the `@next/env` test now sets `NODE_ENV=development` with the pin, asserts `loadedEnvFiles` equals the four
+    files after the initial load and the forced reload, and restores `process.env` in `finally` (temp dir only).
+    `loadedEnvFiles` holds file names relative to the dir, so the test compares against `FILES`.
+  - Issue 2: new `envThrowsAt` drive option (throws on a chosen read number); `it.each([6, 7, 8, 9])` covers the four
+    issuer-loop reads: code 2, matching file name in output, no prompt/spawn, no `SECRET-CONTENT`.
+
+### Checks
+- typecheck, check:layers, format:check, build, check:dev-bundle: exit 0
+- test: Test Files 96 passed; Tests 988 passed | 3 skipped
+
+### Out-of-plan files
+None. No product code changed.
+
+### Follow-ups
+- Same as attempt 1 (optional `iss` check in `tokenIsFresh`).
+
+### Scope self-check
+Only `scripts/dev-prod.test.ts` and this log changed.
