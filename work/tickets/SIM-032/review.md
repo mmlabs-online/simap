@@ -290,3 +290,6 @@ Ming verification after merge (not verified here; carry on the PR):
 ### Follow-ups (out of scope)
 - Known limit of parent-PID tracking on Windows: if a middle process exits before any full snapshot has seen its child, that child cannot be found and stop returns `[]` (reproduced with a fake tree). Closing this needs a different mechanism, such as a Windows Job Object; Ming should decide whether it is worth it.
 - Tunnel port identity check and a minimal helper env, as already excluded by the orchestrator.
+
+### Rework requested by Ming (added by orchestrator, 2026-11-21)
+Escalation option 1, REWORK attempt 4: security Attempt 3 T1 and T2 (same defect as reviewer Issue 1), reviewer Issue 2, security N6, and a final app-port check before a stop is reported clean. Other notes stay follow-ups.

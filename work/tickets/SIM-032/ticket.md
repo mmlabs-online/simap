@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | ESCALATED |
+| State | REWORK |
 | Priority | P1 |
 | Size | M |
 | Areas | security |
 | Gate | none |
 | Depends on | SIM-031 |
 | Needs Ming | — |
-| Attempts | 2 |
+| Attempts | 3 |
 | Created | 2026-11-21 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-21T14:11:33Z |
 | PR | — |
 
 ## Goal
@@ -75,6 +75,7 @@ command signs in, connects through the tunnel, starts the app, and prints the lo
   warning, the red badge and `/api/readyz`; press Ctrl-C and confirm the app stops and the tunnel keeps running.
 
 ## Notes / answers from Ming
+- 2026-11-21: Ming chose escalation option 1 (M-20): one more small rework beyond the limit of 2. Fix T1 and reviewer Issue 1, report known survivors, and report a clean stop only if the app port has no listener. Document the remaining fork race.
 - 2026-11-21: Ming supplied the one-command brief after finding the `.env` variables too many to fill in.
 
 ## Handoff
