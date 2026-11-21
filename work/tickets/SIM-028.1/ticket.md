@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-21 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-21T10:04:09Z |
 | PR | — |
 
 ## Goal
@@ -60,7 +60,7 @@ local development works without CORS.
 - Manual: `pnpm dev:token --org <uuid>`, `pnpm dev`, Chrome network log; `pnpm build && pnpm check:dev-bundle`.
 
 ## Notes / answers from Ming
-- Waiting for Ming: plan approval (ticket Gate; the plan touches no High path) and its 3 decisions.
+- 2026-11-21: Plan approved by Ming. Decision 1 = C: `scripts/dev-prod.mjs` sets `NEXT_PUBLIC_SIMAP_DEV_PROD=1` and the browser shows a distinct red "Production data" badge (in scope for this ticket). Decision 2 = default: a mid-session 403 `org_required` flips to the `--org` hint. Decision 3 = default: README "Local development" steps 7-8 are edited in this ticket.
 - 2026-11-21: created from the approved SIM-028 split (Decision G).
 
 ## Handoff

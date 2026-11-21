@@ -51,4 +51,4 @@ Never write a secret value here: name the secret and where Ming puts it.
   console. If Turnstile reports a `connect-src` violation for `challenges.cloudflare.com`, report it (fix: add that
   origin to `connect-src`, small follow-up). After the first deploy: confirm `Strict-Transport-Security` reaches the
   browser through the Cloudflare Tunnel (M-2) and that Cloudflare adds no second, conflicting HSTS or CSP header.
-- [ ] M-17 Approve plan for SIM-028.1: `work/tickets/SIM-028.1/plan.md` (ticket Gate; 3 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [x] M-17 Approve plan for SIM-028.1: `work/tickets/SIM-028.1/plan.md` (ticket Gate; 3 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
