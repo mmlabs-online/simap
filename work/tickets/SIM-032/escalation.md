@@ -40,3 +40,24 @@ port with production credentials, is never checked at the end.
 ## Recommendation
 Option 1. It closes both open defects with a small diff and adds a direct check of the guarantee that protects
 production. A Job Object can be a later ticket if a real run shows surviving processes.
+
+
+---
+
+# Second escalation — 2026-11-21
+
+Ming chose option 1 above (one extra rework, attempt 4). T1, T2, Issue 2 and root-PID N6 are verified fixed.
+
+## What failed in attempt 4
+| Finding | Source | Evidence |
+|---|---|---|
+| 🔴 U1: a failed listener query reads as "port is free", so a stop can be reported clean while the app still serves | Security Attempt 4, reviewer Attempt 4 | Reviewer reproduced it with a simulated cmdlet failure and a real listener. A natural failure was not triggered |
+| Should-fix: the new T1 test is flaky under load (8 of 12 with 32 CPU spinners, 12 of 12 idle) | Reviewer Attempt 4 | Test defect; product behaviour is correct |
+
+## Options for Ming
+1. **One more very small rework.** Decide "port free" with the real bind probe `portBusy`, which already fails closed and never kills, and fix the flaky test. The reviewer checked this fix in a scratch copy: `[0]` with a failing query and a live listener, `[]` on a free port.
+2. **Use a Windows Job Object.** Strongest guarantee, but needs a re-plan and new native code.
+3. **Stop here and keep `pnpm dev:prod` on `main`.** None of the SIM-032 improvements ship.
+
+## Recommendation
+Option 1. The fix replaces a query that can fail silently with a direct test of the port, and it has already worked in a scratch copy.

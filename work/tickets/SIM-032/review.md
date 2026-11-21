@@ -293,3 +293,85 @@ Ming verification after merge (not verified here; carry on the PR):
 
 ### Rework requested by Ming (added by orchestrator, 2026-11-21)
 Escalation option 1, REWORK attempt 4: security Attempt 3 T1 and T2 (same defect as reviewer Issue 1), reviewer Issue 2, security N6, and a final app-port check before a stop is reported clean. Other notes stay follow-ups.
+
+## Attempt 4 — 2026-11-21
+Verdict: REWORK
+
+Reviewed at `ae897a2` (code from `64717cc`), Ming's approved extra rework (escalation option 1).
+
+### Checks (run by reviewer)
+Node v22.23.5, on `ticket/SIM-032`.
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck` — exit 0
+- `pnpm check:layers` — exit 0, "check-layers: 234 files, no violations"
+- `pnpm test` — exit 0, Test Files 98 passed (98), Tests 1037 passed | 3 skipped (1040)
+- `pnpm build` — exit 0
+- `pnpm check:dev-bundle` — exit 0, "no dev-token strings in .next/static"
+- `bash -n scripts/start-dev.sh` — exit 0
+- `pnpm test:db` — not run, left to CI as instructed. shellcheck — unavailable, not downloaded (AC7 allows this).
+
+The implementer's reported check results match this run.
+
+### Approved scope
+| Item | Result | Evidence |
+|---|---|---|
+| T1 retry cannot adopt a reused PID | FIXED | `dev-process.mjs:333-339`; the test passes when the child exits during the retry sleep, and nothing is killed. The test itself is load-sensitive: Issue 2 |
+| Reviewer Issue 1 / T2 | FIXED | Attempt 3 reproduction, real fake tree, 5 of 5: `stop []`, leaf and new child gone |
+| Reviewer Issue 2 | FIXED | Tree seen once, every stop snapshot failing: stop lists the live child `[29812]` |
+| N6 exited root not listed | FIXED | Same run: root PID not listed, root dead |
+| Final port check, listener remains | MET | Listener outside the tree: stop `[0]`, listener untouched |
+| Final port check, undeterminable | NOT MET | Issue 1 |
+| Nothing killed for holding the port | MET | No kill path uses the port result; the foreign listener survived every run |
+| `[0]` sentinel | SAFE | Only `dev-prod.mjs:317-321` consumes it, and `filter(Boolean)` removes it from the message. It never reaches `kill`: injected kill saw only the app PID. No test asserts the port-only message (Follow-ups) |
+| README limit line | MET | `README.md:57` |
+
+### Acceptance criteria
+- [x] AC1 Full flow — `dev-prod.test.ts`, passes.
+- [x] AC2 Preflight refusals — tests pass.
+- [x] AC3 Failed sign-in starts nothing — tests pass.
+- [x] AC4 Org flow — tests pass.
+- [ ] AC5 Failed readiness stops the child and exits non-zero — NOT MET when the listener query fails: Issue 1 (same stop path).
+- [ ] AC6 Ctrl-C leaves no child — NOT MET under Ming's option 1 condition (clean only if the port has no listener): Issue 1. The tunnel part is met.
+- [x] AC7 No secret in output, argv or a repo file — fixed messages; Checks green.
+
+Ming verification after merge (not verified here; carry on the PR):
+1. Take a `pg_dump` of `simap`, kept outside the repo, before the first run.
+2. In Git Bash (mintty), run `scripts/start-dev.sh` with no token file: email, password and DB password hidden, URL, warning, red badge, `/api/readyz` = 200.
+3. Ctrl-C: port free, no `next dev` node process remains, `pg-tunnel-pg-tunnel-1` still running.
+4. Repeat once in PowerShell or Windows Terminal.
+
+### Issues
+#### Issue 1 — 🔴 blocker — a failed listener query is reported as a clean stop
+- **Where**: `scripts/dev-process.mjs:204` with `:259-262` and `:381`; POSIX equivalent at `:242`.
+- **Expected**: Option 1: clean only when the port has no listener; a remaining or undeterminable listener gives a non-zero exit naming the port.
+- **Actual**: The Windows script runs `Get-NetTCPConnection` under `$ErrorActionPreference='SilentlyContinue'`, then prints `END`. A failed query therefore looks the same as "no listener": `listeners` is `[]` and stop returns `[]`. Reproduced with a scratch copy changing only that cmdlet name to a failing command, with a real listener on the port: stop `[]`, listener still up. The unmodified code returns `[0]` for the same listener. The injected `() => null` test does not cover this, because the real query never returns null here. A natural cmdlet failure was not reproduced (removing the module path did not disable it). On POSIX, `run()` accepts `lsof` status 1, which is both "no match" and an error (by reading; not run).
+- **Fix instruction**: Make the default final check use the existing fail-closed `portBusy`: `listeners = async (port) => ((await portBusy(port)) ? null : [])`, and at `:381` use `if ((await listeners(port))?.length === 0) return [];`. Keep `owner()` unchanged. Add a test where the port is held and the process-table read succeeds with no `L` line, expecting `[0]`. A scratch copy with this change returned `[0]` with the failing query and a live listener, and `[]` on a free port.
+
+#### Issue 2 — 🟡 should-fix — the new T1 test fails under CPU load
+- **Where**: `scripts/dev-process.test.ts`, "the child exits during the first-snapshot retry".
+- **Expected**: The test passes regardless of machine load.
+- **Actual**: 12 of 12 passed idle; 8 of 12 passed with 32 CPU spinners (`expected [ 31964, 31964, 31964 ] to deeply equal []`). The test assumes the child exits within the 300 ms sleep. When it is still alive, adopting it is correct, so this is a test defect and not a product defect.
+- **Fix instruction**: Make the order deterministic: on the second injected snapshot, wait (bounded, about 10 s) until the child PID is gone before returning `null`, so the exit lands during the retry sleep. Repeat the test under load.
+
+### Rules (CLAUDE.md)
+- R5: not satisfied until Issue 1 is fixed.
+- R1, R2, R3, R4, R6, R7: no violations found. Every changed file is in the plan; no High path changed.
+
+### Blockers from review agents
+Not assessed here: `security-review.md` has an uncommitted Attempt 4 update from a parallel run, which this review did not read. The orchestrator merges its findings.
+
+### Nits (do not block)
+- `dev-prod.mjs:371-375`: a root exit or signal during the blocking owner check can still print the URL just before the stop (carried).
+- `dev-process.mjs:220`: `rootEnd` has millisecond resolution (carried).
+- `dev-process.mjs:340`: when every stop snapshot fails, the listed PIDs may include members that already exited.
+
+### Not verified
+- Real `winpty`, real Ctrl-C in mintty or a Windows console, and the stdin handoff from the org prompt to `dev-token`.
+- Real `next dev` process shape, sign-in, tunnel, production login and `/api/readyz` (forbidden here).
+- POSIX final port check on a real host. `pnpm test:db` (CI).
+
+### Follow-ups (out of scope)
+- Accepted limit (option 1): a hidden child holding no port that no snapshot saw can survive. A Windows Job Object would close it if a real run shows survivors.
+- Add a `run()` test for the port-only message (`[0]`, no `PIDs:` text).
+- `dev-prod.mjs:389`: the `finally` stop passes no port and ignores the result; that path already exits 1.
+- N4, N5, N7, N8, tunnel port identity, minimal helper env (unchanged).

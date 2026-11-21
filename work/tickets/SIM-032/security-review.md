@@ -231,3 +231,82 @@ Every `halt` path with a non-empty result prints the PIDs and port and exits non
 - Console-close behaviour is unverified, and a long stop may not finish before Windows ends the process.
 - I did not read any `.env*` file, the real dev-token file or `.next` output.
 - Tunnel port identity, minimal helper env, N4, N5, SIM-028.1 S4, F4 and F6 were not re-reported.
+
+## Attempt 4
+
+Verdict: REWORK
+
+Security review of SIM-032, attempt 4. There is 1 blocker: the new final port check reads a failed listener query as "no listener", so a stop can be reported clean while the app still serves on production credentials. T1, T2 and root-PID N6 are closed. The fix is about 3 lines plus one test. I read the code only and ran nothing.
+
+### Findings
+
+#### 🔴 U1. A failed listener query counts as "port is free"
+- **Where:** `d:\project\simap-game-ui\scripts\dev-process.mjs:201`, `:204`, `:206`, `:261`, `:381`. POSIX variant: `:242`, `:262`.
+- **Cause on Windows:**
+  - The script sets `$ErrorActionPreference='SilentlyContinue'`, runs `Get-NetTCPConnection`, then always prints `END`.
+  - "No matching connection" and a real failure (NetTCPIP module fails to load, `root/StandardCimv2` provider error) therefore produce the same output: no `L` lines, `END`, exit 0.
+  - The self-PID guard at `:36` does not help, because the process list comes from a separate query (`Win32_Process`) that can still succeed.
+  - The result is `listeners: []`, and `:381` returns `[]`, which means clean.
+- **Scenario:**
+  1. Root -> M -> W, where W holds the app port. M exits before any snapshot saw W, which is the fork race option 1 documents.
+  2. Ming presses Ctrl-C. The sweeps kill what they know, and the next sweep returns empty.
+  3. The final check is the only remaining protection, and `Get-NetTCPConnection` fails silently.
+  4. `stop` returns `[]`, `halt` prints no warning, and the launcher exits with the plain signal code (130). W keeps serving with the production `DATABASE_URL` and the dev token.
+- **Why 🔴:** it needs a hidden survivor plus a query failure, so it is not frequent. But this check is the guarantee Ming approved in option 1 ("report a clean stop only if the app port has no listener"), and here an undeterminable result fails open.
+- **POSIX variant:** `lsof` exits 1 both for "no match" and for errors. `run` accepts status 1 (`:242`), so empty stdout becomes `[]`.
+- **Test gap:** `dev-process.test.ts:379-381` only injects `() => []` on a free port. No test has an empty listener result while the port is really held.
+- **Fix:** require an independent check before reporting clean. `portBusy` (`:146`) already fails closed, never kills, and covers the app's bind, because `-H 127.0.0.1` is always passed (`dev.mjs:33`).
+  ```js
+  // startApp parameter: busy = portBusy
+  for (let i = 0; i < 3; i++) {
+    if (listeners(port)?.length === 0 && !(await busy(port))) return [];
+    if (i < 2) await sleep(200);
+  }
+  return [0];
+  ```
+  Add a test with `listeners: () => []` and a real listener on the port. It must return `[0]` and leave that listener running.
+
+#### 🟢 Notes
+- **N9. Stale non-root PIDs can still be printed** (`dev-process.mjs:340`, `:343`, `:350`). Only the exited root is filtered. If W is killed, its PID is reused, and the last snapshot fails, the warning lists that PID and says to stop it. Nothing is killed automatically, but Ming could stop the wrong process by hand. Wording such as "last seen PIDs, verify before stopping" is enough.
+- **N10. The port check is point-in-time.** A hidden process that binds after the check is not caught. This falls under the accepted option 1 limit, but the README line at `README.md:57` could say "at the time of the stop".
+
+### Answers to your questions
+
+**1. T1, T2, N6 and freed-PID adoption**
+- **T1 closed.** `rootOf` runs only at `:285` and `:338`. At `:338`, `exited` is re-checked after the sleep (`:336`), and `spawnSync` blocks the event loop until the row is read.
+- **T2 closed** (`:297-301`). Traversal starts only from members whose PID and start time match a live row.
+- **N6 closed for the root** (`:343`). The non-root residual is N9.
+- **`known` cannot adopt a freed PID,** because `live()` compares PID and start time, and `winKill` re-checks identity through a held handle.
+- **Injectable paths:** production wiring passes none of them (`dev-prod.mjs:430`).
+
+**2. Final port check**
+
+| Case | Result |
+|---|---|
+| IPv4, IPv6 and wildcard binds | Covered, because the query filters by port only (from cmdlet knowledge, not run) |
+| Wrong port | Not reachable: `validPort` allows 1-65535, so port 0 cannot skip the query |
+| Helper timeout, non-zero exit, malformed or cut-short output | `null`, then `[0]`: fails closed |
+| **Failed `Get-NetTCPConnection`** | **`[]`: fails open (U1)** |
+| **`lsof` error with exit 1 and empty output** | **`[]`: fails open (U1)** |
+| Kills anything | No, it only reads |
+
+**3. `[0]` sentinel:** safe. It is only ever a return value. `kill` receives member objects from `look()`, and `halt` removes 0 with `filter(Boolean)` before printing (`dev-prod.mjs:319`).
+
+**4. Stop reporting:** every `halt` path, including Ctrl-C, prints a warning and exits non-zero when the result is non-empty (`code || 1`). The exception is the false empty result in U1. The `finally` path is the known N7.
+
+**5. Injectable parameters:** reachable only from tests. `spawnNext` passes a fixed set of fields, `run` deps are built in `main`, and argv goes through the port-only allowlist. No env value maps to them.
+
+**6. Regressions:** U1 is the only blocking issue in the changed lines. `dev-prod.mjs` changes are limited to passing `port` and the message.
+
+### What I checked
+- `scripts/dev-process.mjs` and `scripts/dev-prod.mjs` in full.
+- `validPort` and `nextDevArgs` in `scripts/dev.mjs`.
+- The final-port and T1 tests in `scripts/dev-process.test.ts`.
+- `ticket.md`, `escalation.md`, Attempt 3 of `security-review.md`, and Attempt 4 of `impl-log.md`.
+
+### Limits
+- I ran no tests, PowerShell, `lsof`, Ctrl-C, Next, Postgres or the tunnel. Check results are the implementer's, from `impl-log.md`.
+- U1 is reasoned from the script and standard PowerShell error handling. I did not reproduce a `Get-NetTCPConnection` failure, and I cannot say how often one occurs on Ming's machine.
+- The PID-pinning reasoning relies on my knowledge of Node and Windows handle behaviour.
+- I did not read any `.env*` file, the real dev-token file or `.next` output.
+- N4, N5, N7, tunnel port identity, minimal helper env, SIM-028.1 S4, F4 and F6 were not re-reported.

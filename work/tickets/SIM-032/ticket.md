@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | ESCALATED |
 | Priority | P1 |
 | Size | M |
 | Areas | security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 3 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T14:11:33Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -85,3 +85,9 @@ command signs in, connects through the tunnel, starts the app, and prints the lo
 - Done: wrapper, preflight before sign-in, org flow, readiness with a hard deadline, single database login check, `PG*` handling. Checks green (1034 tests). All work is on `ticket/SIM-032`; no PR.
 - In progress / next: Ming picks an option in `escalation.md` (M-20). Open: 🔴 T1 and reviewer Issue 1.
 - Gotchas: do not run `scripts/start-dev.sh` on production from this branch: stop can report success while a process survives. Winpty, real Ctrl-C, sign-in, tunnel and `/api/readyz` are unverified.
+
+### 2026-11-21 — claude — ESCALATED
+- Agent calls: 13, tokens 1017k plus reviewer Attempt 4 (usage not reported when this entry was written) (planner×1 103k, implementer×4 321k, reviewer×4 261k + pending, security-ai-generated-code-auditor×4 332k; in/out split not reported)
+- Done: T1, T2, Issue 2, root-PID N6 and the README limit line. Checks green (1037 tests). All work is on `ticket/SIM-032`; no PR.
+- In progress / next: Ming picks an option in the second section of `escalation.md` (M-21). Open: 🔴 U1 and the flaky T1 test.
+- Gotchas: do not run `scripts/start-dev.sh` on production from this branch: a failed listener query can report a clean stop while the app still serves.
