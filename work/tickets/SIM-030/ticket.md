@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | REVIEW |
 | Priority | P1 |
 | Size | S |
 | Areas | security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-21 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-21T05:14:40Z |
 | PR | — |
 
 ## Goal
@@ -65,7 +65,7 @@ production data.
 
 ## Notes / answers from Ming
 - 2026-11-21: Plan approved by Ming, with the plan defaults for both decisions: (1) the verifier stays strict, so a token with an uppercase `org` claim gets a 401; (2) `SIMAP_DEV_EXPECTED_ORG` is not added to `.env.example` and is documented in the README.
-- Waiting for Ming: AC7 wording (review.md Attempt 2). Option 1, recommended: allow a build-only source map under `.next/server`. Option 2: keep AC7 as written, which needs a separate plan to take the dev-token module out of the production bundle.
+- 2026-11-21: Ming chose option 1 for AC7. New wording: After `pnpm build`, `SIMAP_DEV_EXPECTED_ORG` appears in no compiled file under `.next/static` or `.next/server` and nowhere in `.next/standalone`. A build-only source map under `.next/server` may embed the original source. The `with-auth.ts` no-diff half of AC7 is unchanged.
 - 2026-11-21: Ming asked for this ticket after the SIM-029 Attempt 3 security review.
 
 ## Handoff
