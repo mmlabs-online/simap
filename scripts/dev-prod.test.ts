@@ -319,6 +319,31 @@ describe("run: step order", () => {
     }
   });
 
+  it("each of the four .env files setting NEXT_PUBLIC_SIMAP_DEV_PROD in any case: exit 2 before the prompt, value not printed", async () => {
+    for (const name of [".env.local", ".env.development.local", ".env.development", ".env"]) {
+      for (const key of ["NEXT_PUBLIC_SIMAP_DEV_PROD", "next_public_simap_dev_prod"]) {
+        const text = ["A=1", `export ${key}=leak-me-flag`, ""].join("\n");
+        const r = await drive(
+          name === ".env.local" ? { envLocal: text } : { envFiles: { [name]: text } },
+        );
+        expect(r.code, name).toBe(2);
+        expect(
+          r.trace.filter((t) => NO_APP.includes(t)),
+          name,
+        ).toEqual([]);
+        expect(r.err.join("\n")).toContain(name);
+        expect([...r.out, ...r.err].join("\n")).not.toContain("leak-me-flag");
+      }
+    }
+  });
+
+  it("a commented or look-alike NEXT_PUBLIC_SIMAP_DEV_PROD line does not refuse", async () => {
+    const r = await drive({
+      envLocal: "# NEXT_PUBLIC_SIMAP_DEV_PROD=1\nNEXT_PUBLIC_SIMAP_DEV_PROD_X=1\n",
+    });
+    expect(r.code).toBe(0);
+  });
+
   it("commented or look-alike SIMAP_DEV_ORG lines do not refuse", async () => {
     const r = await drive({ envLocal: "# SIMAP_DEV_ORG=x\nSIMAP_DEV_ORG_X=1\n" });
     expect(r.code).toBe(0);
@@ -372,6 +397,15 @@ describe("run: child process", () => {
     for (const v of ["PGPASSWORD", "PGHOST", "PGPORT"]) expect(env[v]).toBeUndefined();
     expect(r.spawned!.args).toEqual(["dev", "-H", "127.0.0.1", "--port", "3001"]);
     expect(r.spawned!.args.join(" ")).not.toContain(PW);
+  });
+
+  it("child gets the production-data flag, replacing any inherited case variant", async () => {
+    const r = await drive({ env: { next_public_simap_dev_prod: "0" } });
+    const keys = Object.keys(r.spawned!.env).filter(
+      (k) => k.toUpperCase() === "NEXT_PUBLIC_SIMAP_DEV_PROD",
+    );
+    expect(keys).toEqual(["NEXT_PUBLIC_SIMAP_DEV_PROD"]);
+    expect(r.spawned!.env.NEXT_PUBLIC_SIMAP_DEV_PROD).toBe("1");
   });
 
   it("child gets the checked org as the pin", async () => {

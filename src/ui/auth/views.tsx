@@ -252,14 +252,16 @@ export function NoAccessView({
   onSignOut,
 }: {
   code: "forbidden" | "member_deactivated";
-  onSignOut: () => void;
+  onSignOut?: () => void;
 }) {
   return (
     <AuthLayout title={authCopy.noAccess.title}>
       <Notice kind="error">{apiErrorMessage(code)}</Notice>
-      <Button variant="tonal" onClick={onSignOut}>
-        {authCopy.actions.signOut}
-      </Button>
+      {onSignOut && (
+        <Button variant="tonal" onClick={onSignOut}>
+          {authCopy.actions.signOut}
+        </Button>
+      )}
     </AuthLayout>
   );
 }

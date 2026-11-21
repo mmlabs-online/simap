@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import {
   initialView,
@@ -54,11 +54,28 @@ type View =
 
 const MAX_LISTED_ACCOUNTS = 5;
 
+// Dev-token mode (SIM-028.1): one inline literal, so Next drops the import (and DevGate) from the production build.
+const DevGate =
+  process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_SIMAP_DEV_TOKEN === "1"
+    ? lazy(() => import("./DevGate"))
+    : null;
+
+/** `pnpm dev` uses the dev-token gate (no Identity calls); every other build uses the Identity gate. */
+export function AuthGate(props: { children: ReactNode; onReady?: () => void }) {
+  if (DevGate)
+    return (
+      <Suspense fallback={<CheckingView />}>
+        <DevGate {...props} />
+      </Suspense>
+    );
+  return <IdentityGate {...props} />;
+}
+
 /**
  * Renders `children` only while signed in and allowed; every other state shows a sign-in screen in place (the URL
  * never changes). The runtime is created in an effect, so server rendering never builds a token store.
  */
-export function AuthGate({ children, onReady }: { children: ReactNode; onReady?: () => void }) {
+function IdentityGate({ children, onReady }: { children: ReactNode; onReady?: () => void }) {
   const [rt, setRt] = useState<AuthRuntime | null>(null);
   useEffect(() => setRt(getAuthRuntime()), []);
   if (!rt) return <CheckingView />;

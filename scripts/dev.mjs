@@ -1,8 +1,9 @@
 // `pnpm dev` launcher (SIM-028): runs `next dev` bound to loopback with the dev-token flag set.
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 export const USAGE =
   "[dev] usage: pnpm dev [--port <n> | -p <n> | --port=<n>]. pnpm dev always binds 127.0.0.1 and accepts no other next dev option (it adds a bearer token); use pnpm exec next dev for other options (no dev token).";
@@ -44,9 +45,42 @@ export function assertNodeOptionsSafe(env) {
   }
 }
 
+// Sets the dev-token flag. An inherited production-data flag (any letter case on Windows) is dropped, so plain
+// `pnpm dev` never shows the red badge; only dev:prod sets it again, after this call.
 export function devEnv(env) {
-  return { ...env, NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" };
+  const copy = { ...env };
+  for (const k of Object.keys(copy))
+    if (k.toUpperCase() === "NEXT_PUBLIC_SIMAP_DEV_PROD") delete copy[k];
+  return { ...copy, NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" };
 }
+
+/** True when a line of the .env file sets `key` (plain, indented, `export`, BOM, CRLF). `key` is a constant. */
+export function envFileSetsKey(text, key, ignoreCase = false) {
+  const re = new RegExp(
+    String.raw`^﻿?\s*(?:export\s+)?${key}(?:\s*=|:(?:\s|$))`,
+    ignoreCase ? "i" : "",
+  );
+  return String(text)
+    .split(/\r?\n/)
+    .some((line) => re.test(line));
+}
+
+export const ENV_FILE_NAMES = [".env.development.local", ".env.local", ".env.development", ".env"];
+
+/**
+ * Name of the first .env file that sets the production-data flag in any letter case, else null. Next loads these files
+ * after the launcher builds the environment, so a line there could fake or suppress the red badge.
+ */
+export function envFileSettingDevProd(readEnvFile) {
+  for (const name of ENV_FILE_NAMES) {
+    const text = readEnvFile(name);
+    if (text !== null && envFileSetsKey(text, "NEXT_PUBLIC_SIMAP_DEV_PROD", true)) return name;
+  }
+  return null;
+}
+
+export const devProdFileMessage = (name, tag) =>
+  `[${tag}] ${name} sets NEXT_PUBLIC_SIMAP_DEV_PROD: remove that line (only dev:prod sets it, in the environment)`;
 
 function main() {
   let args;
@@ -56,6 +90,18 @@ function main() {
   } catch (e) {
     console.error(e.message);
     process.exit(1);
+  }
+  const root = fileURLToPath(new URL("..", import.meta.url));
+  const bad = envFileSettingDevProd((name) => {
+    try {
+      return readFileSync(resolve(root, name), "utf8");
+    } catch {
+      return null;
+    }
+  });
+  if (bad) {
+    console.error(devProdFileMessage(bad, "dev"));
+    process.exit(2);
   }
   const next = createRequire(import.meta.url).resolve("next/dist/bin/next");
   const child = spawn(process.execPath, [next, ...args], {

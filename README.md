@@ -38,10 +38,13 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
 6. `pnpm exec next dev` runs a plain server without a dev token. Use it also for any other `next dev` option (`--inspect`, `--webpack`, HTTPS, another directory). Never put `NEXT_PUBLIC_SIMAP_DEV_TOKEN` in a
    `.env*` file. Requests without `Sec-Fetch-Site` (curl, local processes) count as same-origin, so any local process
    can use the dev identity.
-7. Until the browser dev mode lands (SIM-028.1) the UI still shows the Identity sign-in: test with
-   `curl -i http://localhost:3000/api/me`.
-8. After `pnpm build`, check that no dev-token code is in the client bundle: `rg -l "dev-token|dev:token|\.config/simap" .next/static`
-   must print nothing.
+7. With a valid token, `pnpm dev` opens the app signed in at `http://localhost:3000` with an amber "Dev token" badge
+   and no sign-out or org switch; app routes never call Identity from the browser. `pnpm dev:prod` shows a red
+   "Production data" badge instead (it only labels the session and grants nothing); plain `pnpm dev` never shows it. If
+   the token is missing, expired or has no org, the app names the command to run, and "Check again" picks up the new
+   token without a restart. The sign-up, password and email-link pages still call Identity and fail under CORS in dev.
+8. After `pnpm build`, run `pnpm check:dev-bundle`: it fails if dev-token code, the dev:prod flag or a badge label is in
+   the client bundle.
 
 ## Production database (dev)
 
@@ -56,9 +59,10 @@ an interactive terminal and, in order, stops at the first failure with nothing s
    `SIMAP_PROD_TUNNEL_PORT`) must answer.
 3. `.env.local` must not set `DATABASE_URL`: comment that line out while using `dev:prod` and restore it for local
    work. None of `.env.development.local`, `.env.local`, `.env.development` or `.env` may set `SIMAP_DEV_ORG`: set it
-   in the shell (exit 2 otherwise, the value is not printed). Then it asks for the password of the database role `simap` with hidden input, on every run.
+   in the shell (exit 2 otherwise, the value is not printed). Both `pnpm dev` and `dev:prod` also exit 2 if any of those
+   four files sets `NEXT_PUBLIC_SIMAP_DEV_PROD` (any letter case). Then `dev:prod` asks for the password of the database role `simap` with hidden input, on every run.
 4. It starts `next dev -H 127.0.0.1` (same port option as `pnpm dev`) with a banner. The URL and password live only
-   in the app's child environment: never printed, never written to disk. `dev:prod` does not load `.env.local`, so set
+   in the app's child environment: never printed, never written to disk. `dev:prod` itself skips `.env.local`, but the `next dev` child loads it, so set
    any `SIMAP_*` override in the shell. If you run `pnpm dev:token --org <other org>` while it runs, the next API call
    gets 401 with a `[dev-token]` warning (`another org`): run `pnpm dev:token --org <the org in the banner>` again, no
    restart needed.

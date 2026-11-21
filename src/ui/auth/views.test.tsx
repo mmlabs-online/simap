@@ -101,6 +101,12 @@ describe("other views", () => {
     expect(out).toContain(authCopy.actions.signOut);
   });
 
+  it("NoAccessView without onSignOut has the message and no button", () => {
+    const out = html(<NoAccessView code="forbidden" />);
+    expect(out).toContain("You don&#x27;t have permission");
+    expect(out).not.toContain("<button");
+  });
+
   it("UnverifiedView has Check again and Use another account", () => {
     const out = html(<UnverifiedView email={null} onCheckAgain={noop} onUseOtherAccount={noop} />);
     expect(out).toContain(authCopy.unverified.checkAgain);
