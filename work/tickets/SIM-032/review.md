@@ -110,3 +110,103 @@ From `security-review.md` Attempt 1. Fix these in REWORK attempt 2, together wit
 - 🟢 N1 and N2: same defects as reviewer blocker 3 and the POSIX stop should-fix.
 
 Not in attempt 2: tunnel port identity and minimal helper env are follow-ups.
+
+## Attempt 2
+Verdict: REWORK
+
+Reviewed at `3f19f50`, 2026-11-21.
+
+### Checks (run by reviewer)
+Node v22.23.5, on `ticket/SIM-032`.
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck` — exit 0
+- `pnpm check:layers` — exit 0, "check-layers: 234 files, no violations"
+- `pnpm test` — exit 0, Test Files 98 passed (98), Tests 1030 passed | 3 skipped (1033)
+- `pnpm build` — exit 0
+- `pnpm check:dev-bundle` — exit 0, "no dev-token strings in .next/static"
+- `bash -n scripts/start-dev.sh` — exit 0
+- `pnpm test:db` — not run, left to CI as instructed. shellcheck — unavailable, not downloaded (AC7 allows this).
+
+The implementer's reported check results match this run.
+
+### Attempt 1 issues
+| Issue | Result | Evidence |
+|---|---|---|
+| 1 / S1 failed snapshot | PARTLY FIXED | Root is killed by handle (`dev-process.mjs:274-278`, test `:252`). A failed first snapshot still leaves descendants running: Issue 2 below |
+| 2 / S2 empty snapshot | FIXED | `parseWindowsSnapshot(text, selfPid)` at `:36`, used at `:207` |
+| 3 / N1 hard 30 s deadline | FIXED | Total timer at `dev-process.mjs:156`; trickling-server test `:142` |
+| 4 / S3 PID-reuse bound | FIXED | `:79`; scratch run: child started after the root's exit is dropped, orphan started before it is kept |
+| 5 AC1 full-flow test | FIXED | `dev-prod.test.ts:307`, exact trace plus last two output lines |
+| 6 / N2 POSIX stop | PARTLY FIXED | `EPERM`, `ESRCH` and confirmation after `SIGKILL` are fixed; the group is re-probed after `ESRCH`: Issue 3 below |
+| 7 comment and README order | FIXED | `dev-prod.mjs:2-3`; README preflight paragraph and step 3 |
+| S4-W `CDPATH` | FIXED | `start-dev.sh:5`; `start-dev.test.ts:58` |
+| S5 single login check | FIXED | See below |
+
+**Pre-fix proof.** The current `dev-process.test.ts` was run in a scratch copy against the `a7e61b2` version of `dev-process.mjs`: 4 failed, 12 passed. The failures are the snapshot parser, the PID-reuse rule, the trickling server and `snapshot unreadable: the real child is still killed...`. All pass on the current code.
+
+**Login check.** The real `checkDb` source was run against fake Postgres servers on ephemeral loopback ports. Every case made exactly 1 connection and the server saw it close: wrong password (`28P01`, 3 ms), other error (`53300`), success, server ignoring Terminate, silent server (5.0 s), stall after the password (5.0 s). A refused port returned `ECONNREFUSED`. `run()` maps every failure to a fixed message with no app start (`dev-prod.mjs:284-298`, tests around `dev-prod.test.ts:343`).
+
+### Acceptance criteria
+- [x] AC1 Full flow — `dev-prod.test.ts:307`.
+- [x] AC2 Preflight refusals — unchanged from Attempt 1, tests still pass.
+- [x] AC3 Failed sign-in starts nothing — unchanged, tests still pass.
+- [x] AC4 Org flow — unchanged, tests still pass.
+- [ ] AC5 Failed readiness stops the child — PARTLY MET. Deadline, early exit and owner paths pass; the stop can leave a descendant (Issues 1 and 2).
+- [ ] AC6 Ctrl-C leaves no child — NOT MET, Issue 1 reproduced on the Ctrl-C grace path. The tunnel part is met.
+- [x] AC7 No secret in output, argv or a repo file — the login check uses fixed messages and passes the password only in the `pg` client config. Checks are green.
+
+Ming verification after merge (not verified here; carry on the PR):
+1. Take a `pg_dump` of `simap`, kept outside the repo, before the first run.
+2. In Git Bash (mintty), run `scripts/start-dev.sh` with no token file: email, password and DB password hidden, URL, warning, red badge, `/api/readyz` = 200.
+3. Ctrl-C: port free, no `next dev` node process remains, `pg-tunnel-pg-tunnel-1` still running.
+4. Repeat once in PowerShell or Windows Terminal.
+
+### Issues
+#### Issue 1 — 🔴 blocker — stop reports success while a descendant is still running
+- **Where**: `scripts/dev-process.mjs:292-314` (first snapshot at `:301` comes after the grace wait at `:294`; nothing is remembered between snapshots); `descendantsOf` at `:69-87`.
+- **Expected**: AC6: Ctrl-C leaves no child, and a stop is confirmed only when the tree is gone.
+- **Actual**: A process whose parent has exited is unreachable unless that parent is the root. With a fake tree root → mid → leaf, a full snapshot was taken, `stop({ grace: true })` started and mid exited during the grace period. Result: `stop() unconfirmed [] ... mid alive: false leaf alive: true`. The launcher would report a clean stop while a process that inherited the production `DATABASE_URL` keeps running. The same result occurs when mid exits shortly before the stop. Control with no early exit: both stopped.
+- **Fix instruction**: In `startApp`, keep a `known` map of `pid:start` for tree members. Add to it from every successful Windows tree read: the owner check, a new snapshot at the start of `stopTree` **before** the grace wait, and each sweep. In each sweep, `left` is the current tree plus `known` entries still in the table with the same PID and start. Kill them through `winKill` (it re-checks identity). Do not traverse from a dead `known` member, so the PID-reuse rule stays intact. Add a real-tree test: root → mid → leaf, `owner()`, `stop({ grace: true })`, mid exits during the grace wait, then assert the leaf is gone and the stop returns `[]`.
+
+#### Issue 2 — 🔴 blocker — a failed first snapshot leaves the app's descendants running
+- **Where**: `scripts/dev-process.mjs:266-267`, `:295-298`.
+- **Expected**: Attempt 1 S1: after the handle kill, retry the snapshot so the worker holding the port is also found and stopped.
+- **Actual**: With `root` null, `stopTree` kills the root and returns without another snapshot. Reproduced with only the first snapshot failing and later ones working: `rooted false`, `stop() unconfirmed [<root pid>]`, `leaf alive: true`. The exit is non-zero, but the reported PID is the dead root, not the survivor.
+- **Fix instruction**: In `stopTree`, when `root` is null and `!exited`, retry the snapshot **before** killing and take the root's `start` from it (Node's held handle means that PID is still our child). If that works, continue with the normal sweeps. If it fails, use `killRoot()` and report unconfirmed as now. Make `root` assignable for this. Add a Windows real-tree test: unreadable snapshot during `startApp`, restored before `stop()`, whole tree gone and `[]` returned.
+
+#### Issue 3 — 🟡 should-fix — POSIX stop probes the group again after `ESRCH`
+- **Where**: `scripts/dev-process.mjs:283-285`.
+- **Expected**: Plan §5: "After the first `ESRCH`, never signal that group again."
+- **Actual**: When the poll loop ends because the group is gone, `:284` probes again, and a `true` result sends `SIGKILL`. If the PID was reused as a new group leader in that gap, an unrelated group is killed. The window is very small. Found by reading; not reproduced.
+- **Fix instruction**: Record the first "gone" result in a local variable, return `[]` immediately, and send `SIGKILL` only if no probe has reported the group gone.
+
+### Examined and accepted
+- **Size**: confirmed +583/-59 = 524 net non-test lines (537 with README). Not a verdict factor. Nothing large is clearly removable; the only easy saving is the repeated signal/exit handling at `dev-prod.mjs:345-349` and `:357-361` (about 5 lines). The fixes above add a small amount. A split would still separate the launcher from its stop guarantees.
+- **Scope (R4)**: every changed file is in the plan; no High path changed; `package.json` and the lockfile are unchanged (`pg` is an existing dependency).
+
+### Rules (CLAUDE.md)
+- R5: not satisfied until Issues 1 and 2 are fixed (the stop logic has an untested failing path).
+- R1, R2, R3, R4, R6, R7: no violations found.
+
+### Nits (do not block)
+- `dev-prod.mjs:364-369`: a root exit or signal during the blocking owner check can still print the URL just before the stop (carried from Attempt 1).
+- `dev-process.mjs:220`: `rootEnd` has millisecond resolution, so a direct child started in the same millisecond as the root's exit could be dropped.
+
+### Not verified
+- Real `winpty` path and real Ctrl-C in mintty or a Windows console.
+- Windows console stdin handoff from the raw-mode org prompt to the `dev-token` child.
+- Real `next dev` process shape, so how often Issue 1 occurs with real Next workers is unknown; the defect itself is shown with a fake tree.
+- Real sign-in, tunnel, production login and `/api/readyz` (forbidden here).
+- POSIX real-tree behaviour on this Windows machine (CI covers Linux). `pnpm test:db` (CI).
+
+### Follow-ups (out of scope)
+- Tunnel port identity check and a minimal helper env, as already excluded by the orchestrator.
+
+### Blockers from review agents (added by orchestrator, 2026-11-21)
+From `security-review.md` Attempt 2. Fix these in REWORK attempt 3, together with the reviewer's issues above:
+- 🔴 R1: same defect as reviewer blocker 2. Also keep the last known survivors, and say the app may still be running on port N when a stop is unconfirmed.
+- 🟡 R2: bound the `checkDb` close with a timer.
+- 🟡 R3: remove every `PG*` key (any letter case) from the child and check environments, and refuse those keys in the `.env*` preflight.
+- 🟢 N3: a permanent `error` listener and a guarded `killRoot`.
+
+Not in attempt 3: N4, N5, tunnel port identity and minimal helper env.

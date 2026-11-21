@@ -62,3 +62,90 @@ Security review of SIM-032, attempt 1. There are 2 blockers, both in the Windows
 - Console-close behaviour under `winpty`/mintty is unverified and stays on Ming's manual list.
 - I did not read any `.env*` file, the real dev-token file or `.next` output.
 - SIM-028.1 S4, F4 and F6 were not re-reported as findings.
+
+## Attempt 2
+
+Verdict: REWORK
+
+Security review of SIM-032, attempt 2. There is 1 blocker: S1 is only partly closed, so a failed process snapshot can still leave the Next.js server running on production credentials. The new `checkDb` is sound on secrets, target and login count, with 2 should-fix items. I read the code only and ran nothing.
+
+### Findings
+
+#### 🔴 R1. S1 is partly open: the fallback kills the Next parent and can orphan the server that holds the port
+- **Where:** `d:\project\simap-game-ui\scripts\dev-process.mjs:266-267`, `:295-298`, `:302-305`, `:313`; reached from `d:\project\simap-game-ui\scripts\dev-prod.mjs:326-328`.
+- **Why it happens:**
+  - `child` is the Next CLI. The HTTP server is a forked process (`node_modules\next\dist\cli\next-dev.js:393`).
+  - The CLI's cleanup is a `process.on('exit')` handler (`next-dev.js:205-206`). `child.kill()` on Windows is TerminateProcess, so I expect that handler not to run.
+  - I found no `disconnect` handler in `start-server.js` or `router-server.js`, so the worker should keep serving after its parent dies.
+- **Scenario:**
+  1. The first snapshot hits the 20 s PowerShell timeout on a busy machine, so `root` is null. Next has had time to fork.
+  2. `stopTree` calls `killRoot()` and returns `[child.pid]` with no retry, although attempt 1 asked for one.
+  3. The CLI dies and the worker keeps listening with the production `DATABASE_URL` and the dev-token identity.
+  4. Ming sees "could not confirm" with the PID of the dead parent, not the live worker, so the message gives them nothing to act on.
+- **Same gap with a known root:** if all 4 sweeps fail, line 313 returns only `child.pid`, dropping any PIDs seen in an earlier sweep.
+- **Test gap:** the test at `d:\project\simap-game-ui\scripts\dev-process.test.ts:251-274` uses a child with no grandchild and starts with `rooted === true`, so it cannot catch this.
+- **Fix:**
+  1. When `root` is null and `!exited`, retry the snapshot a bounded number of times **before** any kill. While `!exited`, Node's handle pins the PID, so a row with `pid === child.pid` is ours. Record its start time and use the normal sweep.
+  2. Call `killRoot()` only after those retries fail.
+  3. Keep the last known `left` and return it if later snapshots fail.
+  4. In the unconfirmed case, say the app may still be running on port N and must be stopped before continuing.
+  5. Add a Windows test with a real grandchild and a failing first snapshot.
+
+#### 🟡 R2. `checkDb` close has no deadline
+- **Where:** `d:\project\simap-game-ui\scripts\dev-prod.mjs:413`.
+- **Risk:** `connectionTimeoutMillis` is cleared on login success and on a server error (`pg\lib\client.js:377`, `:406`). `client.end()` then waits for the socket `close` event with no timer (`client.js:826-834`).
+- **Scenario:** the tunnel stalls right after the login reply. The launcher hangs at the check with a socket open and no message. It fails safe: no app has started, and Ctrl-C still ends it because no signal handler is registered yet.
+- **Fix:** race `client.end()` against a timer of about 2 s, then call `client.connection.stream.destroy()`.
+
+#### 🟡 R3. `PGOPTIONS` and other `PG*` values still reach the production session
+- **Where:** `d:\project\simap-game-ui\scripts\dev-prod.mjs:33-44`, `:100`, `:397-405`.
+- **Risk:** `pg` reads `PGOPTIONS`, `PGREPLICATION`, `PGCLIENT_ENCODING`, `PGBINARY`, `PGSSLNEGOTIATION` and `PGAPPNAME` when the config leaves them unset (`pg\lib\connection-parameters.js:9-23`, `:83`, `:104`, `:114-119`). `PGOPTIONS` is sent at startup (`client.js:567-569`). None of them is in `PG_VARS`.
+- **Scenario:** a leftover `PGOPTIONS=-c search_path=...` in the shell or a `.env*` file makes the app read and write a different schema on production. A value in `.env*` reaches only the app, because Next loads it there, so the login check does not exercise the same session settings.
+- **Windows detail:** line 100 deletes exact names from a plain object copy, so `pgsslmode` survives and Windows then treats it as `PGSSLMODE`.
+- **Fix:** remove every key matching `/^PG/i` from the child env and from the launcher's `process.env` before `checkDb`. Refuse those keys in the `.env*` preflight, naming only the file and key.
+
+#### 🟢 Notes
+- **N3. Repeated kill error:** `child.once("error")` at `dev-process.mjs:259` handles one event. A second non-ESRCH `child.kill()` error would throw through `stop`, and Ming would see "unexpected error" with no warning that the app may be up. Use a permanent no-op `error` listener and a `try/catch` in `killRoot`. This relies on my knowledge of Node's `kill` behaviour.
+- **N4. POSIX PID reuse:** `posixStop` signals `-pid` after the child may already be reaped (`dev-process.mjs:281-282`). A new group leader with the same PID could receive the signal. The window is very small and this is not Ming's Windows path.
+- **N5. Clock step:** `root.end` uses the wall clock (`dev-process.mjs:220`). A backward clock step in the seconds around root exit could weaken the F/G rule. I accept this.
+
+### Answers to your questions
+
+**1. Status of earlier findings**
+
+| Item | Status | Evidence |
+|---|---|---|
+| S1 | **Partly open (R1)** | Kill now happens, but the worker can survive and the wrong PID is reported |
+| S2 | Closed | Snapshot needs the launcher's own PID (`dev-process.mjs:36`, `:207`) |
+| S3 | Closed | `root.end` rule (`:79`); non-root members are always live rows |
+| S4-W | Closed | `start-dev.sh:5` |
+| S5 | Closed | One check, no retry, no app on failure (`dev-prod.mjs:284-298`) |
+| N1 | Closed | Hard timer (`dev-process.mjs:156`) |
+| N2 | Closed | Only ESRCH means gone; polls after SIGKILL (`:223-238`, `:284-288`) |
+
+Every failure path calls `stop` or reports non-zero. The gap is that the unconfirmed report in R1 names the wrong process.
+
+**2. `child.kill()` and `root.end`**
+- The kill cannot hit a foreign process. It goes through Node's held handle and is skipped after `exit`.
+- The `root.end` rule holds, because the time is recorded in the exit callback while the handle still pins the PID.
+- A root that exits before the first snapshot gives `root = null`, which stops and reports unconfirmed. No foreign process is touched, but any orphan is not found (R1).
+
+**3. `checkDb`**
+- **Secrets:** the password is not in argv, logs or errors. Only `e.code` is kept, and messages are fixed. No URL is built for the check.
+- **Target:** host, port, user, database and password are explicit and truthy, so `PGHOST`, `PGPORT`, `PGUSER`, `PGDATABASE` and `PGPASSWORD` are ignored.
+- **`.pgpass`:** read only when the password is null (`client.js:295-306`), which cannot happen here.
+- **`PGSSLMODE`:** ignored because `ssl: false` is explicit.
+- **Other `PG*` values:** these change session settings, not the target (R3).
+- **Closing:** closed on connect failure and on timeout, because the timeout destroys the stream. Only the stalled-peer wait is unbounded (R2).
+- **Login count:** exactly one attempt per run.
+- **`ssl:false`:** consistent with the app, whose URL has no SSL parameter and whose inherited `PGSSLMODE` is removed. An exact-case `.env*` value or a case variant can still differ (R3).
+
+**4. Same target?** Yes for host, port, user, database and password. Both use `127.0.0.1`, `ports.primary` and `simap`. The password round-trips through `encodeURIComponent` and `pg-connection-string`. Only session options can differ (R3).
+
+**5. Regressions:** none beyond R2 and R3, which come with or are exposed by the new check. `pg-native` is not installed, so `NODE_PG_FORCE_NATIVE` fails closed.
+
+### Limits
+- I did not run the tests, PowerShell, `winpty`, Ctrl-C, Next, Postgres or the tunnel.
+- Worker survival in R1 is reasoned from Next's source. `impl-log.md` records that in the sandbox a Windows grandchild died with its parent unless detached, so real behaviour needs a test outside that sandbox.
+- I did not read any `.env*` file, the real dev-token file or `.next` output.
+- Tunnel port identity, minimal helper env, SIM-028.1 S4, F4 and F6 were not re-reported.
