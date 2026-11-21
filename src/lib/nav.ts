@@ -1,7 +1,14 @@
 import type { IconName } from "./icons";
 import { atLeastTier, type Tier } from "./tier";
 
-export type NavId = "dashboard" | "rooms" | "devices" | "members" | "approvals" | "roomEditor";
+export type NavId =
+  | "dashboard"
+  | "rooms"
+  | "devices"
+  | "members"
+  | "approvals"
+  | "audit"
+  | "roomEditor";
 
 export type NavItem = {
   id: NavId;
@@ -24,6 +31,7 @@ const NAV_ITEMS: readonly NavItem[] = [
     minTier: "manager",
     placement: "rail",
   },
+  { id: "audit", href: "/audit", icon: "history", minTier: "admin", placement: "rail" },
   {
     id: "roomEditor",
     href: "/rooms/[roomCode]/edit",
