@@ -49,7 +49,7 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
 an interactive terminal and, in order, stops at the first failure with nothing started:
 
 1. A fresh dev token (runs `pnpm dev:token` when the token is missing or expires within 2 minutes).
-2. The tunnel container (`pg-tunnel`, override `SIMAP_PG_TUNNEL`): started if stopped, then `127.0.0.1:15432` (override
+2. The tunnel container (`pg-tunnel-pg-tunnel-1`, override `SIMAP_PG_TUNNEL`): started if stopped, then `127.0.0.1:15432` (override
    `SIMAP_PROD_TUNNEL_PORT`) must answer.
 3. `.env.local` must not set `DATABASE_URL`: comment that line out while using `dev:prod` and restore it for local
    work. Then it asks for the password of the database role `simap` with hidden input, on every run.

@@ -23,6 +23,7 @@ type Opts = {
   password?: string;
   spawnFails?: boolean;
 };
+const dockerCalls: string[][] = [];
 
 async function drive(o: Opts = {}) {
   const trace: string[] = [];
@@ -42,6 +43,7 @@ async function drive(o: Opts = {}) {
     runDevToken: async () => (trace.push("dev-token"), o.devTokenCode ?? 0),
     docker: (a: string[]) => {
       trace.push(`docker ${a[0]}`);
+      dockerCalls.push(a);
       if (a[0] === "inspect") return o.inspect ?? { status: 0, stdout: "true\n" };
       return { status: o.startStatus ?? 0, stdout: "" };
     },
@@ -79,11 +81,20 @@ describe("envFileSetsDatabaseUrl", () => {
       "  DATABASE_URL = x",
       "export DATABASE_URL=x",
       "﻿DATABASE_URL=x",
+      "DATABASE_URL: x",
+      "export DATABASE_URL: x",
+      "DATABASE_URL:",
       "A=1\r\nDATABASE_URL=x\r\n",
     ]) {
       expect(envFileSetsDatabaseUrl(t), t).toBe(true);
     }
-    for (const t of ["# DATABASE_URL=x", "DATABASE_URL_X=1", "", "OTHER=DATABASE_URL=1"]) {
+    for (const t of [
+      "# DATABASE_URL=x",
+      "DATABASE_URL_X=1",
+      "DATABASE_URL_X: 1",
+      "",
+      "OTHER=DATABASE_URL=1",
+    ]) {
       expect(envFileSetsDatabaseUrl(t), t).toBe(false);
     }
   });
@@ -150,11 +161,23 @@ describe("run: step order", () => {
     }
   });
 
+  it("tunnel container: default name, SIMAP_PG_TUNNEL overrides", async () => {
+    const inspectArgs = (name: string) => ["inspect", "-f", "{{.State.Running}}", name];
+    dockerCalls.length = 0;
+    await drive();
+    expect(dockerCalls[0]).toEqual(inspectArgs("pg-tunnel-pg-tunnel-1"));
+    dockerCalls.length = 0;
+    await drive({ env: { SIMAP_PG_TUNNEL: "other-tunnel" } });
+    expect(dockerCalls[0]).toEqual(inspectArgs("other-tunnel"));
+  });
+
   it("invalid settings exit before any docker call", async () => {
     for (const o of [
       { env: { SIMAP_PG_TUNNEL: "a b; rm" } },
       { env: { SIMAP_PROD_TUNNEL_PORT: "abc" } },
       { env: { NODE_OPTIONS: "--inspect=9229" } },
+      { env: { NODE_OPTIONS: "--report-uncaught-exception" } },
+      { env: { NODE_OPTIONS: "--experimental-report" } },
       { argv: ["--turbo"] },
     ]) {
       const r = await drive(o);
@@ -197,6 +220,13 @@ describe("run: child process", () => {
     for (const v of ["PGPASSWORD", "PGHOST", "PGPORT"]) expect(env[v]).toBeUndefined();
     expect(r.spawned!.args).toEqual(["dev", "-H", "127.0.0.1", "--port", "3001"]);
     expect(r.spawned!.args.join(" ")).not.toContain(PW);
+  });
+
+  it("passes the resolved token file to the child", async () => {
+    const fromEnv = await drive({ env: { SIMAP_DEV_TOKEN_FILE: "/x/tok" } });
+    expect(fromEnv.spawned!.env.SIMAP_DEV_TOKEN_FILE).toBe("/x/tok");
+    const dflt = await drive();
+    expect(dflt.spawned!.env.SIMAP_DEV_TOKEN_FILE).toMatch(/simap[\\/]dev-token$/);
   });
 
   it("secrecy on success and on spawn failure", async () => {

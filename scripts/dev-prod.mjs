@@ -43,17 +43,22 @@ export function tokenIsFresh(token, nowSec) {
 export function envFileSetsDatabaseUrl(text) {
   return String(text)
     .split(/\r?\n/)
-    .some((line) => /^﻿?\s*(?:export\s+)?DATABASE_URL\s*=/.test(line));
+    .some((line) => /^﻿?\s*(?:export\s+)?DATABASE_URL(?:\s*=|:(?:\s|$))/.test(line));
 }
 
 export function buildProdUrl(password, port) {
   return `postgres://simap:${encodeURIComponent(password)}@127.0.0.1:${port}/simap`;
 }
 
-function childEnv(env, url) {
+function childEnv(env, url, tokenFile) {
   const copy = { ...env };
   for (const v of PG_VARS) delete copy[v];
-  return devEnv({ ...copy, DATABASE_URL: url, SIMAP_DB_TARGET: "production" });
+  return devEnv({
+    ...copy,
+    DATABASE_URL: url,
+    SIMAP_DB_TARGET: "production",
+    SIMAP_DEV_TOKEN_FILE: tokenFile,
+  });
 }
 
 /** All I/O comes through `deps`, so tests can drive it. Returns the exit code. */
@@ -63,10 +68,18 @@ export async function run(deps) {
   try {
     let args;
     let ports;
-    const name = env.SIMAP_PG_TUNNEL || "pg-tunnel";
+    const name = env.SIMAP_PG_TUNNEL || "pg-tunnel-pg-tunnel-1";
     try {
       assertNodeOptionsSafe(env);
       args = nextDevArgs(argv);
+      const opts = String(env.NODE_OPTIONS ?? "")
+        .toLowerCase()
+        .replace(/[^a-z]/g, "");
+      if (opts.includes("report")) {
+        throw new Error(
+          "[dev:prod] NODE_OPTIONS must not contain report options (the report would include the password)",
+        );
+      }
     } catch (e) {
       err(e.message.replace(/^\[dev\]/, "[dev:prod]"));
       return 1;
@@ -132,7 +145,7 @@ export async function run(deps) {
     out("[dev:prod] production data: every change is real");
     return await spawnApp({
       args,
-      env: childEnv(env, buildProdUrl(password, ports.primary)),
+      env: childEnv(env, buildProdUrl(password, ports.primary), file),
     });
   } catch {
     err("[dev:prod] unexpected error");

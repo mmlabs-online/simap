@@ -42,3 +42,29 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No; test tables account for most of it.
 - Diff size: see `git show --stat`. `Dockerfile`, `db/migrate.js`, `db/migrator.js`, `deploy/`, `db/migrations/` unchanged.
+
+## Attempt 2 (REWORK) — 2026-11-21
+
+Fixes review Issues 1 and 2 and security findings 1, 2, 3, 5.
+
+### Files touched
+| File | Required because |
+|---|---|
+| `scripts/dev-prod.mjs` | Default container `pg-tunnel-pg-tunnel-1` (Issue 1, sec 1); `.env.local` regex also matches `DATABASE_URL: x` (Issue 2, sec 3); resolved token file passed to the child as `SIMAP_DEV_TOKEN_FILE` (sec 2); refuse `report` in `NODE_OPTIONS` (sec 5) |
+| `scripts/dev-prod.test.ts` | One test per fix: default and overridden inspect argv; colon-form cases and look-alikes; token file in child env (env value and default path); `--report-uncaught-exception` and `--experimental-report` refused before docker |
+| `README.md` | Default container name |
+
+### Checks (actual)
+- format:check: exit 0
+- typecheck: exit 0
+- check:layers: 223 files, no violations
+- test: 89 files passed, 863 passed | 3 skipped
+- build: exit 0
+- test:db: not run (CI)
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+- Security 4 (strip all `PG*` case-insensitively, refuse `PG*` in `.env.local`): left as a follow-up.
+- Add `pnpm dev:prod` to the Commands list in `CLAUDE.md`.
