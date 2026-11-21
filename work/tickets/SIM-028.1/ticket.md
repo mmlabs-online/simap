@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T10:04:09Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -70,3 +70,9 @@ local development works without CORS.
 - Done: consult and plan (`Status: READY`).
 - In progress / next: Ming approves `plan.md` and its 3 decisions (how `dev:prod` shows production data in the browser; mid-session 403 `org_required` flips to the `--org` hint; edit README steps 7-8); then `/run SIM-028.1`.
 - Gotchas: whether Next drops the lazy `DevGate` chunk from the production build is unproven; plan step 1 tests it first. Live browser checks need M-1 and a real token.
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 8, tokens 662k (frontend-developer×1 56k, planner×1 123k, implementer×2 152k, reviewer×2 150k, security-ai-generated-code-auditor×2 181k; in/out split not reported)
+- Done: browser dev-token mode, red "Production data" badge and notice for `dev:prod`, `.env*` refusal of the flag, `pnpm check:dev-bundle`. Reviewer Attempt 2 PASS. Security Attempt 2 wrote REWORK with no 🔴 (S1, S2 are 🟡), so under the loop rule the ticket passes; both are raised to Ming on the PR.
+- In progress / next: Ming decides M-18 (`.env.example`) and whether S1/S2 are fixed before merge, then merges. Live browser checks need a real token (M-1); the `dev:prod` badge also needs M-3.
+- Gotchas: `verify.test.ts:169` failed once in six full runs (wall-clock test, no diff under `src/server`, cause not established). The branch merges `main` instead of rebasing, because a force-push was blocked.

@@ -45,3 +45,68 @@ SIM-028.1 security review, attempt 1. Dev mode cannot activate in a normal produ
 - A tab left open across a switch from `pnpm dev` to `dev:prod` reloads when HMR reconnects (`web-socket.js:81-84`). Until then it still shows the old badge.
 - This session had read and search tools only, so **I ran no checks, build, tests or `git diff`**. The bundle result, the Windows override in F2 and "only `export` changed" in `fetch.ts` are not confirmed by execution.
 - As instructed, I did not read `.env*` files, the real dev-token file or `.next` output, so I do not know whether any local `.env*` file currently sets these flags.
+
+## Attempt 2
+
+Verdict: REWORK
+
+SIM-028.1 security review, attempt 2. F1 and F5 are fixed. F2 is only partly fixed: the `.env*` refusal misses forms that Next's loader accepts, and it fails open on read errors. Either gap can bring back the case F2 was meant to stop, an amber badge while connected to production. There are no 🔴 findings: the badge grants no access, and both gaps need an unusual file or a transient error.
+
+### Findings
+
+🟡 **S1. The refusal parses `.env` differently from Next, so three forms get through**
+- Where: `d:\project\simap-game-ui\scripts\dev.mjs:58-66`. Next's parser is in `d:\project\simap-game-ui\node_modules\.pnpm\@next+env@16.4.6\node_modules\@next\env\dist\index.js`.
+- Cause: the launcher splits on `\r?\n` and tests each line. Next first converts `\r\n?` to `\n`, then runs one multiline regex whose `\s*=` can cross newlines and whose `^` also matches after U+2028/2029.
+- Forms Next accepts and the launcher misses:
+  - Lone CR: `A=1\rnext_public_simap_dev_prod=0`
+  - Key and `=` on separate lines: `next_public_simap_dev_prod\n=0`
+  - Line separator after a comment: `# note\u2028next_public_simap_dev_prod=0`
+- Scenario: on Windows, `dev:prod` passes the check, Next loads the lowercase key, and per the override path from attempt 1 it replaces the launcher's `1`. The browser shows amber against production. With the uppercase key under plain `pnpm dev`, the same forms fake the red badge on any OS.
+- Fix: replace the body of `envFileSetsKey`. `\s` already covers the BOM. A multiline quoted value containing the key now refuses, which is the safe direction.
+```js
+const re = new RegExp(
+  String.raw`^\s*(?:export\s+)?${key}(?:\s*=|:(?:\s|$))`,
+  ignoreCase ? "im" : "m",
+);
+return re.test(String(text).replace(/\r\n?/g, "\n"));
+```
+- Tests: add the three forms above to `scripts/dev.test.ts`.
+
+🟡 **S2. A read error other than a missing file counts as "file absent" (fails open)**
+- Where: `d:\project\simap-game-ui\scripts\dev.mjs:95-101` and `d:\project\simap-game-ui\scripts\dev-prod.mjs:265-271`. Both use a bare `catch { return null; }`.
+- Scenario: an editor or antivirus briefly holds `.env.local` on Windows (`EBUSY`/`EPERM`). The launcher treats it as absent and continues. Next reads the file when it starts, which under `dev:prod` can be much later because the password prompt sits in between. The flag line then applies unchecked. In `dev-prod.mjs` the same reader also backs the `DATABASE_URL` and `SIMAP_DEV_ORG` refusals, so they fail open too.
+- Fix: share one reader that returns `null` only for `ENOENT` and throws otherwise. `dev.mjs` `main` catches it and exits 2 with a fixed message naming the file. In `dev-prod.mjs`, return 2 the same way rather than relying on the outer `unexpected error` path. Never print the error object or file content. Add a test with a reader that throws `EBUSY`.
+
+🟢 **S3. The check runs after the token and tunnel steps: not a data risk, but it has a cost**
+- Where: `d:\project\simap-game-ui\scripts\dev-prod.mjs:130-193`.
+- The ordering does not weaken the badge guarantee: the check still runs before the DB password prompt and before the app starts.
+- A run that will be refused can still ask for the Identity password, rewrite the token file and start the tunnel container. The refusal leaves that tunnel running, so the production DB port stays open on loopback. This also contradicts "stops at the first failure with nothing started" (`README.md:52`).
+- Fix: move the three `.env*` checks above step 1. They need only `readEnvFile`.
+
+🟢 **S4. The check runs only at startup**
+- Where: `setup-dev-bundler.js:308-314,649-664` in Next. It watches the same four files, reloads them and updates `defineEnv`.
+- Scenario: adding the flag to `.env.local` during the password prompt or while the app runs bypasses the refusal. This needs a local edit during the session.
+- Fix: a follow-up is enough, for example re-check right after the prompt and have `dev:prod` watch the four files and stop the app on a violation.
+
+### Answers
+
+1. **F1: fixed.**
+   - All five non-ready views are wrapped (`DevGate.tsx:196-213`), including the profile form, the only write outside the shell.
+   - Every `ready` session gets `devBadge(prodData)` (`:129-133`), and the shell renders it whenever a session exists (`AppShellView.tsx:95-111`). It does not depend on `orgName`.
+   - Two moments show no notice, and neither can write: the `Suspense` fallback (`AuthGate.tsx:67`) and the `CheckingView` child on `/sign-in` while it redirects (`SignInRoute.tsx:11-13`).
+   - The notice strings live only in `DevGate.tsx` and `copy/dev-token.ts`, and only `DevGate` imports that copy outside tests, so they stay in the lazy chunk.
+2. **F2: partly fixed.**
+   - Covered: all four files (same list as Next), any letter case, `export`, leading spaces, BOM and CRLF.
+   - The value is never printed, and the check runs before the DB password prompt.
+   - Not covered: the forms in S1 and read errors in S2. Ordering is in S3.
+3. **F5: fixed.** `SIMAP_DEV_TOKEN` is in `FORBIDDEN` (`check-dev-bundle.mjs:16`). The substring match also catches `NEXT_PUBLIC_SIMAP_DEV_TOKEN`, and the existing test loops over every marker.
+4. **Regressions:** none found in the changed lines beyond S1 and S2. Importing `dev.mjs` from `dev-prod.mjs` is safe because `main` is guarded.
+
+### What I checked and my limits
+
+- Read: the ticket, attempt 1 review, impl-log, both launchers, `check-dev-bundle.mjs`, `DevGate.tsx`, the relevant parts of `AuthGate.tsx` and `AppShellView.tsx`, `SignInRoute.tsx`, the copy file, the related tests, the README section, and the Next 16.4.6 env loader and dev watcher.
+- This session had read and search tools only, so **I ran no checks, build, tests or `git diff`**. S1 comes from tracing both regexes by hand, and the proposed regex is not executed. The Windows override is still from reading the loader. The impl-log's green check results are its own claim.
+- No live browser check, so I did not confirm how the fixed notice looks or whether it overlaps the form.
+- The public pages outside `AuthGate` (`/sign-up`, `/forgot-password`, `/reset-password`, `/verify-email`) were not reviewed. They do not render `DevGate` or the shell.
+- As instructed, I did not read `.env*` files, the real dev-token file or `.next` output, so I do not know whether any local `.env*` file currently sets this flag.
+- Not re-reported, as agreed: `.env.example`, F4, F6 and case-variant hardening of other keys.
