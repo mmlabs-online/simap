@@ -73,3 +73,33 @@ None.
 
 ### Scope self-check
 - Smallest diff: yes; only the two findings, the optional nit, and the README line.
+
+## Attempt 4 (amended plan, after escalation)
+
+Implements only `## Amendment (2026-11-21, escalation option 1)` of plan.md (allowlist launcher).
+
+### Files touched
+- `scripts/dev.mjs`: `nextDevArgs` is now an allowlist parser (`--port <n>`, `-p <n>`, `--port=<n>`, at most once, port `/^[1-9][0-9]{0,4}$/` and <= 65535); it returns `["dev","-H","127.0.0.1"]` plus `"--port", n`. `assertNodeOptionsSafe` refuses `inspect|debug` after lowercasing and dropping non-letters. `ALLOWED`, `REFUSED`, `REFUSED_INSPECT`, `INSPECT_OK`, `inspectValueOk` removed; `USAGE` exported. `devEnv`, `main()` unchanged. Required by the amendment.
+- `scripts/dev.test.ts`: `nextDevArgs` / `assertNodeOptionsSafe` blocks replaced with the plan's tables; `devEnv` block kept.
+- `README.md`: step 4 first sentence replaced, one sentence appended to step 6 (plan wording).
+
+### pnpm argv check (pnpm 10.34.9)
+Temporary script (removed, `package.json` restored) printing `process.argv.slice(2)`: `pnpm dev --port 3001` -> `["--port","3001"]`; `pnpm dev -p 3001` -> `["-p","3001"]`. No leading `--`; design unchanged. No port bound.
+
+### Local refusal check (no server started)
+- `node scripts/dev.mjs -- --port 3001`, `--help`, `. --`: each printed the USAGE line, exit=1.
+- `NODE_OPTIONS=--debug-port=0.0.0.0:9229 node scripts/dev.mjs`: NODE_OPTIONS message, exit=1.
+
+### Checks
+- format:check exit 0; typecheck exit 0; check:layers "223 files, no violations"; build exit 0.
+- test exit 0: 86 files passed; 812 passed | 3 skipped (815).
+- AC2 `.next/static` scan and the optional commander check not re-run.
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+None new.
+
+### Scope self-check
+- Smallest diff: yes; launcher, its test and README only. `.claude/settings.json` and `work/backlog.md` untouched.

@@ -4,64 +4,44 @@ import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const ALLOWED = new Set(["127.0.0.1", "localhost", "::1"]);
-const REFUSED =
-  "[dev] the dev server must listen on 127.0.0.1, localhost or ::1 (it adds a bearer token)";
-const REFUSED_INSPECT =
-  "[dev] --inspect must be a bare port or 127.0.0.1|localhost|[::1]:<port> (the inspector is unauthenticated)";
-const INSPECT_OK = /^(\d+|(127\.0\.0\.1|localhost|\[::1\]):\d+)$/;
+export const USAGE =
+  "[dev] usage: pnpm dev [--port <n> | -p <n> | --port=<n>]. pnpm dev always binds 127.0.0.1 and accepts no other next dev option (it adds a bearer token); use pnpm exec next dev for other options (no dev token).";
+const BAD_PORT = "[dev] invalid port: use 1-65535";
 
-function inspectValueOk(value) {
-  return value === undefined || value === "" || INSPECT_OK.test(value);
-}
-
-// Refuse a non-loopback inspector address in NODE_OPTIONS (Next copies it to the dev child).
-export function assertNodeOptionsSafe(env) {
-  const tokens = (env.NODE_OPTIONS ?? "").split(/\s+/).filter(Boolean);
-  for (let i = 0; i < tokens.length; i++) {
-    const m = /^--inspect[\w-]*(?:=(.*))?$/.exec(tokens[i]);
-    if (!m) continue;
-    let value = m[1];
-    if (value === undefined && tokens[i + 1] !== undefined && !tokens[i + 1].startsWith("-")) {
-      value = tokens[i + 1];
-    }
-    if (!inspectValueOk(value)) throw new Error(REFUSED_INSPECT);
+function validPort(value) {
+  if (value === undefined || !/^[1-9][0-9]{0,4}$/.test(value) || Number(value) > 65535) {
+    throw new Error(BAD_PORT);
   }
+  return value;
 }
 
+// Allowlist: only a port is accepted; the argv for next is built here from literals plus the validated port.
 export function nextDevArgs(argv) {
-  const args = argv[0] === "--" ? argv.slice(1) : [...argv];
-  const out = [];
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a === "-H" || a === "--hostname") {
-      const host = args[++i];
-      if (host === undefined || !ALLOWED.has(host)) throw new Error(REFUSED);
-      out.push(a, host);
-    } else if (a.startsWith("--hostname=")) {
-      if (!ALLOWED.has(a.slice("--hostname=".length))) throw new Error(REFUSED);
-      out.push(a);
-    } else if (a === "--inspect") {
-      const next = args[i + 1];
-      const value = next !== undefined && !next.startsWith("-") ? args[++i] : undefined;
-      if (!inspectValueOk(value)) throw new Error(REFUSED_INSPECT);
-      out.push(a);
-      if (value !== undefined) out.push(value);
-    } else if (a.startsWith("--inspect=")) {
-      if (!inspectValueOk(a.slice("--inspect=".length))) throw new Error(REFUSED_INSPECT);
-      out.push(a);
-    } else if (/^-[^-]/.test(a) && a.includes("H")) {
-      // Attached forms: -H<host>, -H=<host>, and short-flag clusters containing H.
-      const value = a.slice(a.indexOf("H") + 1).replace(/^=/, "");
-      if (!ALLOWED.has(value)) throw new Error(REFUSED);
-      out.push(a);
-    } else {
-      out.push(a);
-    }
+  let port;
+  let seen = false;
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    let value;
+    if (a === "--port" || a === "-p") value = argv[++i];
+    else if (a.startsWith("--port=")) value = a.slice("--port=".length);
+    else throw new Error(USAGE);
+    if (seen) throw new Error(USAGE);
+    seen = true;
+    port = validPort(value);
   }
-  // Always last: commander keeps the final value, so a host flag swallowed as another
-  // option's value (e.g. --experimental-https-key --hostname=x) cannot unbind loopback.
-  return ["dev", ...out, "-H", "127.0.0.1"];
+  return ["dev", "-H", "127.0.0.1", ...(seen ? ["--port", port] : [])];
+}
+
+// Refuse inspect/debug in any spelling: Next copies NODE_OPTIONS to the dev child and the inspector is unauthenticated.
+export function assertNodeOptionsSafe(env) {
+  const squashed = String(env.NODE_OPTIONS ?? "")
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+  if (/inspect|debug/.test(squashed)) {
+    throw new Error(
+      "[dev] NODE_OPTIONS must not contain inspect or debug options (the Node inspector would expose the dev token); unset it, or use pnpm exec next dev",
+    );
+  }
 }
 
 export function devEnv(env) {

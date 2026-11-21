@@ -27,11 +27,15 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
    token is unscoped and every `/api/*` call answers 403 `org_required`.
 3. The token goes to `~/.config/simap/dev-token` (override `SIMAP_DEV_TOKEN_FILE`). On Windows the file mode is
    advisory; your profile directory ACL protects it. The script never prints the password or token.
-4. `pnpm dev` binds `127.0.0.1` (always passed last) and refuses any other `-H` and a non-loopback `--inspect` (also in `NODE_OPTIONS`). The file is read on every request: when `/api/*` answers
+4. `pnpm dev` always runs `next dev -H 127.0.0.1` and accepts only a port (`pnpm dev --port 3001`, `-p 3001` or
+   `--port=3001`); any other argument, including `--`, is refused. It also refuses to start when `NODE_OPTIONS`
+   mentions `inspect` or `debug` (any spelling, so an unrelated value such as a `debug-hook.js` path is refused too).
+   This check is best-effort: `pnpm` and the launcher's own Node process start before it runs and already honour
+   `NODE_OPTIONS`, so never put an inspector address in `NODE_OPTIONS` while using a dev token. The file is read on every request: when `/api/*` answers
    401 (one `[dev-token]` warning names the cause), re-run `pnpm dev:token`; no restart. Token lifetime is whatever
    Identity returns (printed by the script).
 5. After 3 failed sign-ins Identity asks for Turnstile: sign in once at `https://simap.mmlabs.online`, then retry.
-6. `pnpm exec next dev` runs a plain server without a dev token. Never put `NEXT_PUBLIC_SIMAP_DEV_TOKEN` in a
+6. `pnpm exec next dev` runs a plain server without a dev token. Use it also for any other `next dev` option (`--inspect`, `--webpack`, HTTPS, another directory). Never put `NEXT_PUBLIC_SIMAP_DEV_TOKEN` in a
    `.env*` file. Requests without `Sec-Fetch-Site` (curl, local processes) count as same-origin, so any local process
    can use the dev identity.
 7. Until the browser dev mode lands (SIM-028.1) the UI still shows the Identity sign-in: test with
