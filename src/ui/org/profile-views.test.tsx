@@ -25,6 +25,13 @@ describe("ProfileView", () => {
     expect(out).not.toContain("aria-invalid");
   });
 
+  it("no onSignOut: no sign-out button; with it: button", () => {
+    expect(html(<ProfileView {...base} onSignOut={undefined} />)).not.toContain(
+      authCopy.actions.signOut,
+    );
+    expect(html(<ProfileView {...base} />)).toContain(authCopy.actions.signOut);
+  });
+
   it("shows error text with role alert and aria-invalid; submitting state disables the button", () => {
     const err = html(<ProfileView {...base} error="invalid" />);
     expect(err).toContain(profileCopy.errors.invalid);

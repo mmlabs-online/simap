@@ -26,7 +26,7 @@ export function ProfileView({
   status: "idle" | "submitting";
   error?: ProfileError | null;
   onSubmit: (name: string) => void;
-  onSignOut: () => void;
+  onSignOut?: () => void;
 }) {
   const [name, setName] = useState(initialName);
   const [local, setLocal] = useState<"required" | "invalid" | null>(null);
@@ -85,9 +85,11 @@ export function ProfileView({
           {submitting ? profileCopy.saving : profileCopy.submit}
         </Button>
       </form>
-      <Button variant="text" onClick={onSignOut}>
-        {authCopy.actions.signOut}
-      </Button>
+      {onSignOut && (
+        <Button variant="text" onClick={onSignOut}>
+          {authCopy.actions.signOut}
+        </Button>
+      )}
     </AuthLayout>
   );
 }

@@ -190,4 +190,13 @@ describe("devEnv", () => {
   it("sets the dev-token flag and keeps the rest", () => {
     expect(devEnv({ A: "1" })).toEqual({ A: "1", NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" });
   });
+
+  it("drops an inherited production-data flag in any letter case (plain dev never shows it)", () => {
+    const out = devEnv({
+      NEXT_PUBLIC_SIMAP_DEV_PROD: "1",
+      next_public_simap_dev_prod: "1",
+      A: "1",
+    });
+    expect(out).toEqual({ A: "1", NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" });
+  });
 });

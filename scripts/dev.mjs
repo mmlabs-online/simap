@@ -44,8 +44,13 @@ export function assertNodeOptionsSafe(env) {
   }
 }
 
+// Sets the dev-token flag. An inherited production-data flag (any letter case on Windows) is dropped, so plain
+// `pnpm dev` never shows the red badge; only dev:prod sets it again, after this call.
 export function devEnv(env) {
-  return { ...env, NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" };
+  const copy = { ...env };
+  for (const k of Object.keys(copy))
+    if (k.toUpperCase() === "NEXT_PUBLIC_SIMAP_DEV_PROD") delete copy[k];
+  return { ...copy, NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" };
 }
 
 function main() {

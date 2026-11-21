@@ -38,10 +38,13 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
 6. `pnpm exec next dev` runs a plain server without a dev token. Use it also for any other `next dev` option (`--inspect`, `--webpack`, HTTPS, another directory). Never put `NEXT_PUBLIC_SIMAP_DEV_TOKEN` in a
    `.env*` file. Requests without `Sec-Fetch-Site` (curl, local processes) count as same-origin, so any local process
    can use the dev identity.
-7. Until the browser dev mode lands (SIM-028.1) the UI still shows the Identity sign-in: test with
-   `curl -i http://localhost:3000/api/me`.
-8. After `pnpm build`, check that no dev-token code is in the client bundle: `rg -l "dev-token|dev:token|\.config/simap" .next/static`
-   must print nothing.
+7. With a valid token, `pnpm dev` opens the app signed in at `http://localhost:3000` with an amber "Dev token" badge
+   and no sign-out or org switch; app routes never call Identity from the browser. `pnpm dev:prod` shows a red
+   "Production data" badge instead (it only labels the session and grants nothing); plain `pnpm dev` never shows it. If
+   the token is missing, expired or has no org, the app names the command to run, and "Check again" picks up the new
+   token without a restart. The sign-up, password and email-link pages still call Identity and fail under CORS in dev.
+8. After `pnpm build`, run `pnpm check:dev-bundle`: it fails if dev-token code, the dev:prod flag or a badge label is in
+   the client bundle.
 
 ## Production database (dev)
 

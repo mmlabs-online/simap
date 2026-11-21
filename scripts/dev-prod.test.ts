@@ -374,6 +374,15 @@ describe("run: child process", () => {
     expect(r.spawned!.args.join(" ")).not.toContain(PW);
   });
 
+  it("child gets the production-data flag, replacing any inherited case variant", async () => {
+    const r = await drive({ env: { next_public_simap_dev_prod: "0" } });
+    const keys = Object.keys(r.spawned!.env).filter(
+      (k) => k.toUpperCase() === "NEXT_PUBLIC_SIMAP_DEV_PROD",
+    );
+    expect(keys).toEqual(["NEXT_PUBLIC_SIMAP_DEV_PROD"]);
+    expect(r.spawned!.env.NEXT_PUBLIC_SIMAP_DEV_PROD).toBe("1");
+  });
+
   it("child gets the checked org as the pin", async () => {
     const r = await drive();
     expect(r.spawned!.env.SIMAP_DEV_EXPECTED_ORG).toBe(ORG);

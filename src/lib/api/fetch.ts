@@ -18,7 +18,7 @@ export type GetToken = (rejected?: string) => Promise<string | null>;
 
 const ACCESS_CODES: readonly string[] = ["org_required", "forbidden", "member_deactivated"];
 
-async function accessCodeOf(res: Response): Promise<ApiAccessCode> {
+export async function accessCodeOf(res: Response): Promise<ApiAccessCode> {
   try {
     const code = ((await res.clone().json()) as { error?: { code?: unknown } } | null)?.error?.code;
     if (typeof code === "string" && ACCESS_CODES.includes(code)) return code as ApiAccessCode;

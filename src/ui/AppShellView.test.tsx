@@ -1,7 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import type { DevBadge } from "@/lib/session";
 import type { Tier } from "@/lib/tier";
 import { AppShellView } from "./AppShellView";
+import { devTokenCopy } from "./copy/dev-token";
 import { shellCopy } from "./copy/shell";
 
 const render = (tier: Tier | null, pathname = "/") =>
@@ -36,6 +38,35 @@ describe("AppShellView", () => {
     const without = render("user");
     expect(without).toContain("Tổ chức");
     expect(without).not.toContain(shellCopy.actions.switchOrg);
+  });
+
+  it("devToken: badge shown, sign-out and switch absent; prod variant is red and says so", () => {
+    const shell = (devToken?: DevBadge) =>
+      renderToStaticMarkup(
+        <AppShellView
+          session={{ tier: "user", email: "a@example.invalid", devToken }}
+          pathname="/"
+          actions={{ switchOrg: () => {}, signOut: () => {} }}
+        >
+          <p>x</p>
+        </AppShellView>,
+      );
+    const dev = shell(devTokenCopy.badge);
+    expect(dev).toContain(devTokenCopy.badge.label);
+    expect(dev).toContain("bg-amber-300");
+    expect(dev).not.toContain(shellCopy.actions.signOut);
+    const prod = shell({ ...devTokenCopy.prodBadge, prod: true });
+    expect(prod).toContain("Production data");
+    expect(prod).toContain("bg-red-600");
+    expect(prod).not.toContain(devTokenCopy.badge.label);
+    expect(prod).not.toContain(shellCopy.actions.signOut);
+  });
+
+  it("no devToken: no badge, sign-out still rendered", () => {
+    const html = render("user");
+    expect(html).not.toContain(devTokenCopy.badge.label);
+    expect(html).not.toContain("bg-amber-300");
+    expect(html).toContain(shellCopy.actions.signOut);
   });
 
   it("signed out shows the sign-in placeholder and no nav", () => {

@@ -97,6 +97,18 @@ export function AppShellView({
               <span className="ml-2 min-w-0 max-w-[40vw] truncate text-[13px] font-semibold text-on-surface-variant">
                 {session.orgName}
               </span>
+              {session.devToken && (
+                <span
+                  title={session.devToken.tooltip}
+                  className={`inline-flex flex-none items-center whitespace-nowrap rounded-[8px] border px-2 py-[3px] text-[10px] font-extrabold uppercase tracking-[0.06em] ${
+                    session.devToken.prod
+                      ? "border-red-700 bg-red-600 text-white"
+                      : "border-amber-500 bg-amber-300 text-amber-950"
+                  }`}
+                >
+                  {session.devToken.label}
+                </span>
+              )}
               {actions.switchOrg && (
                 <IconButton
                   icon="swap_horiz"
@@ -122,12 +134,14 @@ export function AppShellView({
                 onClick={actions.refreshPermissions}
                 disabled={!actions.refreshPermissions}
               />
-              <IconButton
-                icon="logout"
-                label={shellCopy.actions.signOut}
-                onClick={actions.signOut}
-                disabled={!actions.signOut}
-              />
+              {!session.devToken && (
+                <IconButton
+                  icon="logout"
+                  label={shellCopy.actions.signOut}
+                  onClick={actions.signOut}
+                  disabled={!actions.signOut}
+                />
+              )}
               <div className="flex items-center gap-2 flex-none">
                 <span title={session.email}>
                   <Avatar name={session.email.split("@")[0]} size={40} />

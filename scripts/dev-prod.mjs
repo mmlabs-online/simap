@@ -79,13 +79,17 @@ function childEnv(env, url, tokenFile, org) {
   // Windows env names are case-insensitive: drop every case variant before setting the pin.
   for (const k of Object.keys(copy))
     if (k.toUpperCase() === "SIMAP_DEV_EXPECTED_ORG") delete copy[k];
-  return devEnv({
-    ...copy,
-    DATABASE_URL: url,
-    SIMAP_DB_TARGET: "production",
-    SIMAP_DEV_TOKEN_FILE: tokenFile,
-    SIMAP_DEV_EXPECTED_ORG: org,
-  });
+  return {
+    ...devEnv({
+      ...copy,
+      DATABASE_URL: url,
+      SIMAP_DB_TARGET: "production",
+      SIMAP_DEV_TOKEN_FILE: tokenFile,
+      SIMAP_DEV_EXPECTED_ORG: org,
+    }),
+    // Browser-only: shows the red "Production data" badge. It grants nothing.
+    NEXT_PUBLIC_SIMAP_DEV_PROD: "1",
+  };
 }
 
 /** All I/O comes through `deps`, so tests can drive it. Returns the exit code. */
