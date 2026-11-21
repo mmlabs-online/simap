@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | REWORK |
 | Priority | P1 |
 | Size | M |
 | Areas | architecture, ui, security |
 | Gate | plan-approval |
 | Depends on | SIM-006.2, SIM-007.2 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-21 |
 | Claimed by | claude@2026-11-21T00:55:50Z |
 | PR | — |
