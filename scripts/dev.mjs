@@ -54,15 +54,43 @@ export function devEnv(env) {
   return { ...copy, NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" };
 }
 
-/** True when a line of the .env file sets `key` (plain, indented, `export`, BOM, CRLF). `key` is a constant. */
+/**
+ * True when the .env text sets `key`, parsed the way @next/env does: CR and CRLF become LF, then one multiline match
+ * (key and "=" may sit on separate lines; "^" also follows U+2028/2029). "\s" covers the BOM. `key` is a constant.
+ */
 export function envFileSetsKey(text, key, ignoreCase = false) {
   const re = new RegExp(
-    String.raw`^﻿?\s*(?:export\s+)?${key}(?:\s*=|:(?:\s|$))`,
-    ignoreCase ? "i" : "",
+    String.raw`^\s*(?:export\s+)?${key}(?:\s*=|:(?:\s|$))`,
+    ignoreCase ? "im" : "m",
   );
-  return String(text)
-    .split(/\r?\n/)
-    .some((line) => re.test(line));
+  return re.test(String(text).replace(/\r\n?/g, "\n"));
+}
+
+/** Thrown when an .env file exists but cannot be read; carries only the file name, never the cause or content. */
+export class EnvReadFailure extends Error {
+  constructor(name) {
+    super("cannot read " + name);
+    this.envFile = name;
+  }
+}
+
+export const envReadMessage = (name, tag) =>
+  `[${tag}] cannot read ${name}: close whatever holds it and retry (nothing started)`;
+
+/**
+ * Reader for .env files under root: null only when the file is missing (ENOENT); anything else throws EnvReadFailure.
+ * @param {string} root
+ * @param {(path: string, encoding: "utf8") => string} [read]
+ */
+export function makeEnvReader(root, read = readFileSync) {
+  return (name) => {
+    try {
+      return read(resolve(root, name), "utf8");
+    } catch (e) {
+      if (e && e.code === "ENOENT") return null;
+      throw new EnvReadFailure(name);
+    }
+  };
 }
 
 export const ENV_FILE_NAMES = [".env.development.local", ".env.local", ".env.development", ".env"];
@@ -92,13 +120,14 @@ function main() {
     process.exit(1);
   }
   const root = fileURLToPath(new URL("..", import.meta.url));
-  const bad = envFileSettingDevProd((name) => {
-    try {
-      return readFileSync(resolve(root, name), "utf8");
-    } catch {
-      return null;
-    }
-  });
+  let bad;
+  try {
+    bad = envFileSettingDevProd(makeEnvReader(root));
+  } catch (e) {
+    if (!(e instanceof EnvReadFailure)) throw e;
+    console.error(envReadMessage(e.envFile, "dev"));
+    process.exit(2);
+  }
   if (bad) {
     console.error(devProdFileMessage(bad, "dev"));
     process.exit(2);

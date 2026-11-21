@@ -4,6 +4,8 @@ import {
   devEnv,
   ENV_FILE_NAMES,
   envFileSettingDevProd,
+  makeEnvReader,
+  EnvReadFailure,
   nextDevArgs,
   USAGE,
 } from "./dev.mjs";
@@ -222,5 +224,38 @@ describe("envFileSettingDevProd", () => {
         reader({ ".env": "# NEXT_PUBLIC_SIMAP_DEV_PROD=1\nNEXT_PUBLIC_SIMAP_DEV_PROD_X=1\n" }),
       ),
     ).toBeNull();
+  });
+  it("matches the forms Next accepts: lone CR, key and = on separate lines, key after U+2028", () => {
+    for (const t of [
+      "A=1\rnext_public_simap_dev_prod=0",
+      "next_public_simap_dev_prod\n=0",
+      "# note\u2028next_public_simap_dev_prod=0",
+    ])
+      expect(envFileSettingDevProd(reader({ ".env.local": t })), t).toBe(".env.local");
+  });
+  it("still passes a commented key and look-alikes", () => {
+    for (const t of ["# NEXT_PUBLIC_SIMAP_DEV_PROD=\n", "NEXT_PUBLIC_SIMAP_DEV_PROD_X=1\r"])
+      expect(envFileSettingDevProd(reader({ ".env": t })), t).toBeNull();
+  });
+});
+
+describe("makeEnvReader", () => {
+  const failing = (code: string) => () => {
+    throw Object.assign(new Error("secret content"), { code });
+  };
+  it("returns null only for ENOENT", () => {
+    expect(makeEnvReader("/r", failing("ENOENT"))(".env")).toBeNull();
+    expect(makeEnvReader("/r", () => "A=1")(".env")).toBe("A=1");
+  });
+  it("throws a content-free EnvReadFailure naming the file otherwise", () => {
+    let caught: unknown;
+    try {
+      makeEnvReader("/r", failing("EBUSY"))(".env.local");
+    } catch (e) {
+      caught = e;
+    }
+    expect(caught).toBeInstanceOf(EnvReadFailure);
+    expect((caught as EnvReadFailure).envFile).toBe(".env.local");
+    expect(String((caught as Error).message)).not.toContain("secret");
   });
 });

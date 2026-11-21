@@ -64,3 +64,19 @@ Checks (Node 22): typecheck exit 0; check:layers 234 files, no violations; forma
 Out-of-plan files: none beyond the files named in the rework task.
 
 Follow-ups: F4 (`--debug-prerender`), F6, other case-variant keys, CI running check:dev-bundle, `.env.example` (High path, waiting for Ming). In `dev:prod` the new check runs after the token and tunnel steps (next to the SIMAP_DEV_ORG check), before the password prompt, not before the dev:token step. Not verified: the real `next dev` loading `.env*` on Windows (launchers were tested with injected readers only).
+
+## Attempt 3 (rework of security review attempt 2: S1, S2, plus approved .env.example line)
+
+Files touched
+- `scripts/dev.mjs`: `envFileSetsKey` now normalises `\r\n?` to `\n` and uses a multiline regex (S1); new `EnvReadFailure`, `envReadMessage`, `makeEnvReader` (null only for ENOENT, else throws a content-free error) and `main` exits 2 with a fixed message (S2).
+- `scripts/dev-prod.mjs`: uses the shared reader; `run` converts any read failure in the `.env*` checks (DATABASE_URL, SIMAP_DEV_ORG, flag) to exit 2 with the fixed message, before the password prompt.
+- `scripts/dev.test.ts`, `scripts/dev-prod.test.ts`: tests for lone CR, key and `=` on separate lines, key after U+2028, commented/look-alike keys, reader with EBUSY, and `run` with EBUSY (exit 2, no prompt, no spawn, no content in the message).
+
+S1 verification: the proposed regex was run on in-memory strings against a copy of the `@next/env` 16.4.6 parse regex; both agree on all three forms, BOM, `export`, `:` form, `# NEXT_PUBLIC_SIMAP_DEV_PROD=` and `_X` look-alikes. Case-sensitive callers (DATABASE_URL, SIMAP_DEV_ORG) stay case-sensitive.
+
+Checks: typecheck exit 0; check:layers 234 files no violations; format:check all matched; test 96 files passed, 951 passed | 3 skipped; build exit 0; check:dev-bundle no dev-token strings.
+
+Out-of-plan files
+- `.env.example` (High path, approved by Ming, M-18): appended a comment and a commented `# NEXT_PUBLIC_SIMAP_DEV_PROD=` line with a shell append. Not opened or reordered by me.
+
+Follow-ups: S3 (move the `.env*` checks above the token step), S4 (re-check after the prompt / watch files), F4, F6 and case-variant hardening of other keys remain open.
