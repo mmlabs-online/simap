@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | S |
 | Areas | security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T04:33:52Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -64,6 +64,13 @@ production data.
   warning; `pnpm dev:token --org A`, next call is 200 without a restart. Needs M-3 and the real tunnel.
 
 ## Notes / answers from Ming
+- Waiting for Ming: plan approval (High tier: the plan edits `src/server/http/dev-token.ts`).
 - 2026-11-21: Ming asked for this ticket after the SIM-029 Attempt 3 security review.
 
 ## Handoff
+
+### 2026-11-21 — claude — BLOCKED
+- Agent calls: 1 (planner×1; token usage not reported when this entry was written)
+- Done: plan (`Status: READY`). No consult: the `security` area has no consult agent.
+- In progress / next: Ming approves `plan.md` and its 2 decisions (uppercase `org` claim stays refused by the verifier; `SIMAP_DEV_EXPECTED_ORG` is not added to `.env.example`); then `/run SIM-030`.
+- Gotchas: the org claim is used only to withhold a token; `with-auth` still verifies the token. Live check needs M-3 and the real tunnel.
