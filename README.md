@@ -27,7 +27,7 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
    token is unscoped and every `/api/*` call answers 403 `org_required`.
 3. The token goes to `~/.config/simap/dev-token` (override `SIMAP_DEV_TOKEN_FILE`). On Windows the file mode is
    advisory; your profile directory ACL protects it. The script never prints the password or token.
-4. `pnpm dev` binds `127.0.0.1` and refuses any other `-H`. The file is read on every request: when `/api/*` answers
+4. `pnpm dev` binds `127.0.0.1` (always passed last) and refuses any other `-H` and a non-loopback `--inspect` (also in `NODE_OPTIONS`). The file is read on every request: when `/api/*` answers
    401 (one `[dev-token]` warning names the cause), re-run `pnpm dev:token`; no restart. Token lifetime is whatever
    Identity returns (printed by the script).
 5. After 3 failed sign-ins Identity asks for Turnstile: sign in once at `https://simap.mmlabs.online`, then retry.

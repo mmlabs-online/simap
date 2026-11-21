@@ -114,6 +114,9 @@ describe("token file", () => {
     const repo = join(dir, "repo");
     expect(() => assertOutsideRepo(join(repo, "a", "t"), repo)).toThrow(/inside the repository/);
     expect(() => assertOutsideRepo(repo, repo)).toThrow(/inside the repository/);
+    expect(() => assertOutsideRepo(join(repo, "..foo", "t"), repo)).toThrow(
+      /inside the repository/,
+    );
     expect(() => assertOutsideRepo(join(dir, "home", ".config", "simap", "t"), repo)).not.toThrow();
     expect(() =>
       assertOutsideRepo(join(repo, "a").toUpperCase(), repo.toLowerCase(), "win32"),

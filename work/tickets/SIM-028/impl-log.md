@@ -54,3 +54,22 @@ None.
 
 ### Scope self-check
 - Smallest diff: yes, one branch plus tests and two small hardening edits.
+
+## Attempt 3 (REWORK)
+
+### Fixed (security-review attempt 2, two 🟡)
+- `scripts/dev.mjs` `nextDevArgs`: `-H 127.0.0.1` is now always appended after all user arguments (commander keeps the last value); `hasHost` removed. User host flags are still validated and refused when non-loopback. Required because a host flag swallowed as another option's value (`--experimental-https-key --hostname=localhost`) used to suppress the default.
+- Check with Next's bundled `next/dist/compiled/commander` (same dev option shape as `bin/next`, temporary script, removed): final `options.hostname` was `127.0.0.1` for `--experimental-https-key --hostname=localhost`, `--experimental-https-cert -Hlocalhost`, `--experimental-upload-trace -H localhost`, `[]` and `--port 4000`.
+- `--inspect`: `nextDevArgs` accepts `--inspect`, `--inspect <v>`, `--inspect=<v>` only when the value is absent, a bare port, or `127.0.0.1|localhost|[::1]:<port>`; refuses otherwise. New pure `assertNodeOptionsSafe(env)` refuses `--inspect*` (incl. `-brk`, `-port`) with a non-loopback value in `NODE_OPTIONS`; called in `main()` before spawning.
+- Tests (`scripts/dev.test.ts`): last-arg cases above, host-flag-as-value cases, `--inspect` accept/refuse, NODE_OPTIONS accept/refuse; existing keep-cases updated for the trailing `-H`. Nit: `scripts/dev-token.test.ts` regression for `<repo>/..foo/t`.
+- README "Local development" launcher line updated.
+
+### Checks
+- format:check: exit 0; typecheck: exit 0; check:layers: "223 files, no violations"; build: exit 0.
+- test: exit 0; 86 files passed; 810 passed | 3 skipped (813).
+
+### Out-of-plan files
+- `README.md` (one line, behaviour text), as the task allowed.
+
+### Scope self-check
+- Smallest diff: yes; only the two findings, the optional nit, and the README line.
