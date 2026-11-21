@@ -43,6 +43,25 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
 8. After `pnpm build`, check that no dev-token code is in the client bundle: `rg -l "dev-token|dev:token|\.config/simap" .next/static`
    must print nothing.
 
+## Production database (dev)
+
+`pnpm dev:prod` runs the local app against the production database through the Cloudflare pg-tunnel (D56). It needs
+an interactive terminal and, in order, stops at the first failure with nothing started:
+
+1. A fresh dev token (runs `pnpm dev:token` when the token is missing or expires within 2 minutes).
+2. The tunnel container (`pg-tunnel`, override `SIMAP_PG_TUNNEL`): started if stopped, then `127.0.0.1:15432` (override
+   `SIMAP_PROD_TUNNEL_PORT`) must answer.
+3. `.env.local` must not set `DATABASE_URL`: comment that line out while using `dev:prod` and restore it for local
+   work. Then it asks for the password of the database role `simap` with hidden input, on every run.
+4. It starts `next dev -H 127.0.0.1` (same port option as `pnpm dev`) with a banner. The URL and password live only
+   in the app's child environment: never printed, never written to disk. `dev:prod` does not load `.env.local`, so set
+   any `SIMAP_*` override in the shell.
+
+Guardrails: `pnpm migrate`, `seed:dev`, `test:db`, `schema:check` and `migrate:smoke` exit 2 on a production target
+(port 15432 or `SIMAP_PROD_TUNNEL_PORT`, `?port=`, `PGPORT`, or `SIMAP_DB_TARGET` other than empty/`local`/`dev`);
+`pnpm migrate` and `migrate:smoke` also refuse any non-local host. `node db/migrate.js` is the production image
+entry and is deliberately unguarded: never run it from a laptop.
+
 Deployed to the mmlabs home server through `mmlabs-online/deployment` like the other mmlabs apps: see
 [Release and deploy](#release-and-deploy).
 

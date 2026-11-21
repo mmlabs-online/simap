@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:token": "node scripts/dev-token.mjs",
+    "dev:prod": "node scripts/dev-prod.mjs",
     "build": "next build",
     "start": "node .next/standalone/server.js",
     "typecheck": "next typegen && tsc --noEmit",
@@ -13,7 +14,7 @@
     "test": "vitest run",
     "check:layers": "node scripts/check-layers.mjs",
     "sprites:pack": "node scripts/sprites-pack.mjs",
-    "migrate": "node --env-file-if-exists=.env.local db/migrate.js",
+    "migrate": "node --env-file-if-exists=.env.local scripts/migrate-dev.mjs",
     "migrate:smoke": "node --env-file-if-exists=.env.local scripts/migrate-smoke.mjs",
     "test:db": "node --env-file-if-exists=.env.local scripts/test-db.mjs",
     "schema:check": "node --env-file-if-exists=.env.local scripts/schema-check.mjs",

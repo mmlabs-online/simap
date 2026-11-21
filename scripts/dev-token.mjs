@@ -11,7 +11,7 @@ const BASE = "https://api.mmlabs.online/api/v1";
 const APP = "simap";
 const ORIGIN = "https://simap.mmlabs.online";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+export const JWT_SHAPE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
 const EXPIRES_MAX = 86400;
 const USAGE = "usage: pnpm dev:token [--org <uuid>]";
 
@@ -215,9 +215,9 @@ function promptEmail() {
   return new Promise((res) => rl.question("Email: ", (a) => (rl.close(), res(a.trim()))));
 }
 
-function promptPassword() {
+export function promptPassword(label = "Password: ") {
   const stdin = process.stdin;
-  process.stdout.write("Password: ");
+  process.stdout.write(label);
   return new Promise((res) => {
     let value = "";
     stdin.setRawMode(true);
