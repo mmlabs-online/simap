@@ -80,3 +80,69 @@ Left to the orchestrator. `security-review.md` appeared during this review and w
 ### Ming verification after merge
 - Under `pnpm dev:prod` with M-3 and the real tunnel, a valid production token still reaches `/api/me`.
 - A `.env.local` line `mm_identity_issuer=...` makes `dev:prod` exit 2 before the password prompt.
+
+## Attempt 2 — 2026-11-21
+Verdict: PASS
+
+Both Attempt 1 issues are fixed. The rework changes only `scripts/dev-prod.test.ts` and `impl-log.md`.
+
+### Checks (run by reviewer)
+Node v22.23.5, Windows.
+- `pnpm format:check` — exit 0
+- `pnpm typecheck` — exit 0
+- `pnpm check:layers` — exit 0; 234 files, no violations
+- `pnpm test` — exit 0; Test Files 96 passed (96); Tests 988 passed | 3 skipped (991). Matches impl-log.
+- `pnpm build` — exit 0
+- `pnpm check:dev-bundle` — exit 0; "no dev-token strings in .next/static"
+- `pnpm test:db` — not run (left to CI by the orchestrator)
+
+### Acceptance criteria
+- [x] Child has exactly one issuer key with the production value, whatever the shell passes — evidence:
+      `scripts/dev-prod.mjs` has no diff since Attempt 1 (verified there); test "child issuer is pinned, replacing
+      inherited case variants" green.
+- [x] An exact-case key in any of the four files cannot replace the pin, and `dev:prod` still starts — evidence: test
+      "@next/env keeps the pinned issuer over every .env file, also after a forced reload" (`scripts/dev-prod.test.ts:588`)
+      asserts all four `loadedEnvFiles` and the pin on both loads. A reviewer `readFileSync` trace of this test recorded
+      `.env.development.local`, `.env.local`, `.env.development`, `.env` from the temp directory, twice. A before/after
+      comparison of `process.env` around the test showed it restored. Test "exact-case issuer line in each .env file does
+      not stop dev:prod" green.
+- [x] A case variant in any of the four files exits 2 before the prompt, names the file, never prints the value —
+      evidence: test "a case-variant issuer line in %s exits 2 before the prompt" green. Read failures in the issuer loop:
+      `it.each([6, 7, 8, 9])` (`scripts/dev-prod.test.ts:561`). Reviewer in-memory mutation that swallows read errors only
+      in the issuer loop: exactly these 4 tests failed (4 failed | 66 passed), so each one reaches that loop.
+- [x] Plain `pnpm dev` passes issuer settings through unchanged — evidence: `scripts/dev.mjs` and `src/**` have no diff
+      against `origin/main`; test "plain dev keeps issuer variants" green.
+- [x] All Checks are green and the new logic has tests — evidence: Checks above.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R4: rework commit `13c1381` changes only `scripts/dev-prod.test.ts` and
+`work/tickets/SIM-031/impl-log.md`; the branch's non-work files are the three planned files; no High path changed.
+R5: see Checks. R3: no value printed. R1, R2, R6, R7: not touched.
+
+### Blockers from review agents
+None. `security-review.md` Attempt 1 is PASS with two low-severity follow-ups. An uncommitted Attempt 2 section appeared
+in that file during this review, also PASS with no blocker; it was not written by this reviewer.
+
+### Nits (do not block)
+- `scripts/dev-prod.test.ts:569` uses a substring match for the file name, so `.env` (read 9) matches any file name.
+  Security review Attempt 2 N1 gives an exact-match replacement.
+
+### Follow-ups (out of scope)
+- Optional `iss` check in `tokenIsFresh` (from impl-log).
+- Security Attempt 1 N1: optional committed `win32` test of a variant line through real `@next/env` with forced reload.
+- Security Attempt 1 N2: with a stale token, the Identity password prompt and possibly the tunnel start come before the
+  refusal. The database password prompt is still after it. Moving the read-only `.env*` checks ahead of step 1 would
+  close this.
+
+### Not verified
+- Linux behaviour of `@next/env` was not run locally.
+- Reload was exercised through `loadEnvConfig(..., forceReload = true)`, not a running `next dev` server.
+- `pnpm test:db` (CI).
+- `pnpm dev:prod` was not run for real.
+
+### Ming verification after merge
+- Under `pnpm dev:prod` with M-3 and the real tunnel, a valid production token still reaches `/api/me`.
+- A `.env.local` line `mm_identity_issuer=...` makes `dev:prod` exit 2 before the password prompt.

@@ -46,3 +46,58 @@ No 🔴 or 🟡 findings. By code reading, a running `pnpm dev:prod` uses only `
 - The manual check of a valid production token reaching `/api/me` through the real tunnel is still open for Ming.
 - I did not assess a hostile local shell or `NODE_OPTIONS` beyond the existing guards, or TLS-weakening variables such as `NODE_TLS_REJECT_UNAUTHORIZED` set through `.env*`. Those do not change the issuer, but the TLS case could affect trust in the JWKS fetch and may merit its own review.
 - I did not read any `.env*` file, the real dev-token file or `.next` output. Listed out-of-scope items were not reviewed.
+
+## Attempt 2
+
+Verdict: PASS
+
+No 🔴 or 🟡 findings. By code reading, all four requested properties hold. I ran nothing: this session has no shell, so the tests were not executed.
+
+### Findings
+
+🟢 N1: the read-failure test's file-name assertion is weak for two of its four cases.
+- Where: `d:\project\simap-game-ui\scripts\dev-prod.test.ts:569`
+- Scenario: `toContain(FILES[n - 6])` is a substring check. `.env` (read 9) matches every file name, and `.env.development` (read 8) also matches `.env.development.local`. If a regression made read 9 report `.env.local`, the test would still pass.
+- Impact: test precision only. The refusal still exits 2, with no prompt, no spawn and no value printed, and those assertions are not affected. The product code names the right file (`scripts/dev-prod.mjs:198,244`).
+- Fix (optional, follow-up or next touch of this file): replace lines 568-570 with an exact match, keeping the secret check:
+```ts
+expect(r.err).toEqual([
+  `[dev:prod] cannot read ${FILES[n - 6]}: close whatever holds it and retry (nothing started)`,
+]);
+expect([...r.out, ...r.err].join("\n")).not.toContain("SECRET-CONTENT");
+```
+
+### What I checked
+
+1. Throwaway directory, never the repo root: holds.
+   - `loadEnvConfig` receives only the `mkdtempSync` directory (`dev-prod.test.ts:598,606`), and `@next/env` builds each path by joining that directory with the file name. It does not search parent directories.
+   - All four files are written by the test with a fake value (`:601`).
+   - The `loadedEnvFiles` assertion (`:607`) also fails if `@next/env` returns a cached result from an earlier load.
+
+2. Real `.env*` files cannot be read: holds.
+   - `drive` injects `readEnvFile` and `readTokenFile` (`:60,73`) and passes `env: o.env ?? {}`, not `process.env`.
+   - The real reader is wired only in `main()` (`dev-prod.mjs:304`).
+   - `dev-prod.mjs:313`, `dev.mjs:147` and `dev-token.mjs:271` all guard `main()`, so importing them in a test starts nothing. `db/target.js` has no file or env-loading call.
+
+3. `process.env` restored on failure: holds.
+   - The snapshot is taken before `try` (`:599`). All mutation is inside `try`, and `finally` deletes every key and restores the snapshot (`:610-612`). This also removes keys `@next/env` added, including `__NEXT_PROCESSED_ENV`.
+   - Restore runs before `rmSync`, so a Windows cleanup error cannot skip it.
+   - The test is fully synchronous, so no other test can run while the pin or forced `NODE_ENV` is set.
+   - `@next/env` keeps its own in-memory snapshot containing the pin after the test, but nothing writes it back unless `@next/env` is called again. This test is the only caller in `src`, `scripts`, `db` or `tests`.
+
+4. The `@next/env` test is no longer vacuous: holds.
+   - With `NODE_ENV=development`, the loader picks exactly the four names in `FILES`.
+   - The forced pass bypasses the `__NEXT_PROCESSED_ENV` early return, so the file values really are processed against the pin.
+   - A failed assertion would print only file paths or the issuer value, and the logger is silenced (`:603`).
+
+5. Read failures fail closed: holds.
+   - Read numbering is correct: read 1 is `.env.local` (`dev-prod.mjs:201`), reads 2-5 are the org loop (`:208-209`), and reads 6-9 are the issuer loop (`:215-216`), in `FILES` order.
+   - A throw becomes `EnvReadFailure`, then exit 2 (`:194-200,243-245`), before the prompt at `:229`. The original error is discarded, and the message carries only the file name.
+   - The test asserts code 2, no prompt, no spawn and no `SECRET-CONTENT` across stdout and stderr (`dev-prod.test.ts:564-570`).
+
+### Limits
+
+- I did not run the tests, the Checks or `git diff`. The green Checks (988 tests passed) are the implementer's report in `impl-log.md`, so the orchestrator should confirm them.
+- "Test-only" is not proven from git. The current `dev-prod.mjs` line numbers match those cited in Attempt 1, which is consistent with no product change but is not proof. The orchestrator should confirm with `git diff 2612bbe..HEAD --stat`, or the equivalent range, that only `scripts/dev-prod.test.ts` and ticket files changed.
+- Attempt 1's 🟢 N1 remains open: the Windows case-variant path through real `@next/env` is still not executed. It was outside this review's scope.
+- I did not read any `.env*` file, the real dev-token file or `.next` output. For `@next/env`, I read only targeted excerpts of its minified `dist/index.js`.
