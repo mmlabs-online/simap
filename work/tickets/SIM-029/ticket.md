@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | db, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 2 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T04:22:06Z |
+| Claimed by | — |
 | PR | https://github.com/mmlabs-online/simap/pull/29 |
 
 ## Goal
@@ -82,3 +82,9 @@ being able to migrate, seed or create throwaway databases there.
 - Done: production-target classifier, guards on the five dev scripts, `pnpm dev:prod`, README. Reviewer Attempt 2 PASS; no 🔴 remains. The security Attempt 2 verdict line is REWORK on a 🟡.
 - In progress / next: Ming decides on security 🟡 1 (wrong-org token) and checks the `.env.example` lines, then merges. Live `/api/readyz` needs M-3 and the real tunnel.
 - Gotchas: agents cannot read `.env.example`. `pnpm test:db` runs in CI only. Follow-ups are listed in the PR.
+
+### 2026-11-21 — claude — DONE (wrong-org rework)
+- Agent calls: 3 this round, 11 total, tokens 672k total (this round: implementer×1 38k, reviewer×1 54k, security-ai-generated-code-auditor×1 63k; in/out split not reported)
+- Done: `dev:prod` requires a token org, matches it to `SIMAP_DEV_ORG`, re-checks after refresh and names the org in the banner. Reviewer Attempt 3 PASS, security Attempt 3 PASS (no 🔴).
+- In progress / next: Ming decides on the two remaining 🟡 (token file swapped while the app runs; `SIMAP_DEV_ORG` only in `.env.local`), checks the `.env.example` lines, merges PR #29.
+- Gotchas: until the swap is fixed, do not run `dev:token` for another org while `dev:prod` is open.

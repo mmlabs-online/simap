@@ -154,3 +154,87 @@ Needs M-3 and the real tunnel; agents must not run these.
 - Issue 1 above: refuse the lone-CR and split-line `DATABASE_URL` forms.
 - Security Attempt 2 🟡 1: when `SIMAP_DEV_ORG` differs from a still-fresh token's `org`, refresh or stop, and show the active org in the production banner.
 - Security Attempt 2 🟢 2: refuse `heapsnapshot` in `NODE_OPTIONS` for `dev:prod`.
+
+## Attempt 3 — 2026-11-21
+Verdict: PASS
+
+### Checks (run by reviewer)
+- `pnpm format:check` — exit 0, "All matched files use the correct format" (270 files).
+- `pnpm typecheck && pnpm check:layers` — both exit 0; "check-layers: 223 files, no violations".
+- `pnpm test` — exit 0; Test Files 89 passed (89); Tests 869 passed | 3 skipped (872). Matches impl-log.
+- `pnpm build` — exit 0.
+- `pnpm test:db` — not run (CI-only check, needs Postgres). CI must be green on the PR.
+- Focused re-run of `scripts/dev-prod.test.ts`, `scripts/prod-guard.cli.test.ts`, `db/migrate.cli.test.ts`,
+  `db/target.test.ts`, `db/seeder.test.ts` — exit 0; 5 files, 66 tests passed.
+- Reviewer probe: the real `dev-prod.run` calling the real `dev-token.run`, with fake Identity `fetch`, Docker, port
+  probe, prompt and app, and a throwaway token file. No network, tunnel, database or real token file was used.
+
+### Security Attempt 2 finding 🟡 1: five fix points
+1. Mismatch is not fresh, so `dev:token` runs — FIXED: `scripts/dev-prod.mjs:48-51,113-117`. Test "token of another org
+   is refreshed, then runs". Probe: fresh org A token with `SIMAP_DEV_ORG=B` requested `org_id` B from Identity and
+   started with B; an uppercase `SIMAP_DEV_ORG` matched with no refresh.
+2. Org re-checked after refresh, exit 1 on mismatch — FIXED: `scripts/dev-prod.mjs:118-129`. Test "wrong org after
+   refresh exits 1 before docker and prompt". Probe: Identity answering with org A for a B request exits 1 with no
+   Docker call, prompt or app.
+3. Missing `org` is not fresh — FIXED: `scripts/dev-prod.mjs:39-42,49-50`. Test "token without org is refreshed; still
+   without org exits 1 with the --org hint". Probe: same result through the real `dev:token`.
+4. Banner prints the active org id — FIXED: `scripts/dev-prod.mjs:170`. Test "banner shows the org id, with or without
+   SIMAP_DEV_ORG, never the token". Probe: with `SIMAP_DEV_ORG` unset the banner names the token's org.
+5. Tests for mismatch then refresh, mismatch after refresh, no org claim — PRESENT: `scripts/dev-prod.test.ts:146-184`,
+   plus the `tokenIsFresh` case at `:80-86`.
+
+An invalid `SIMAP_DEV_ORG`, or a padded one that differs from the token, fails closed: `dev:token` exits 1 and nothing
+starts (probe).
+
+### Acceptance criteria
+- [x] Each of the five scripts exits 2 before connecting on port 15432 or `SIMAP_DB_TARGET=production`; tests cover each
+      entry — evidence: `scripts/prod-guard.cli.test.ts`, passing; not touched by this attempt.
+- [x] The container migrate path is unaffected; a test proves it — evidence: `db/migrate.cli.test.ts`, passing; this
+      attempt changes no `db/`, `Dockerfile` or `deploy/` file.
+- [x] `pnpm dev:prod` never writes the password or URL to disk or stdout and refuses when `.env.local` has
+      `DATABASE_URL` — evidence: `scripts/dev-prod.test.ts` secrecy and `.env.local` cases, passing. The new banner adds
+      only the org claim.
+- [x] `pnpm dev:prod` stops before the password on a token or tunnel failure, and with a valid token and tunnel starts
+      the app bound to `127.0.0.1` — evidence: `scripts/dev-prod.test.ts` step order and child process cases, plus the
+      probe traces above. The live `/api/readyz` 200 is under Ming verification.
+- [x] All Checks green — evidence: above; `pnpm test:db` is left to CI.
+
+### Issues
+No blocking issue.
+
+### Scope
+The attempt's commit `b226c9b` changes `README.md`, `scripts/dev-prod.mjs`, `scripts/dev-prod.test.ts` and `impl-log.md`,
+all within the plan and the rework Ming asked for. No High path changed in this attempt.
+
+### Rules (CLAUDE.md)
+- R1, R2, R6: not affected (no `src/` or schema change).
+- R3: no violation found in this attempt. **Still not verified:** the `.env.example` lines from the earlier attempts,
+  which agents may not read. **Ming must confirm they hold names only before merging** (High path).
+- R4: no violation. R5: each fix point has a test.
+
+### Blockers from review agents
+No 🔴 open. Security has not re-reviewed this attempt; the five fix points were verified here.
+
+### Nits (do not block)
+- `scripts/dev-prod.mjs:39-42,170`: the banner prints the unverified `org` claim as is. A blank claim counts as an org,
+  and a claim with control characters reaches the terminal (probe). Requiring a UUID in `tokenOrg` closes both. It needs
+  a tampered or malformed local token file, and the server still verifies the token.
+- `scripts/dev-prod.mjs:127`: when Identity returns the wrong org, `dev:token` reports it and `dev:prod` then adds the
+  generic "no fresh dev token" line. Harmless.
+
+### Ming verification after merge
+Needs M-3 and the real tunnel; agents must not run these.
+1. Tunnel up, `pnpm dev:prod` in PowerShell: enter the role password, the banner shows the expected org id, and
+   `curl -i http://127.0.0.1:3000/api/readyz` answers 200.
+2. Ctrl-C stops the app; the terminal still echoes typed input.
+3. `$env:DATABASE_URL = "postgres://u@127.0.0.1:15432/simap"; pnpm seed:dev` exits 2 and writes nothing. Clear it afterwards with `Remove-Item Env:DATABASE_URL`.
+
+### Follow-ups (out of scope)
+- The org can change after startup: the server reads the token file on every request
+  (`src/server/http/dev-token.ts:25-26,50`), so `pnpm dev:token --org B` in another terminal moves a running `dev:prod`
+  to org B while the banner still names A. Found by reading the code, not run live. Consider pinning the org for the
+  `dev:prod` child and refusing a token for another org.
+- `SIMAP_DEV_ORG` set only in `.env.local` is ignored: `dev-prod.mjs` and `dev-token.mjs` read the process env and load
+  no env file, so the match check is skipped. The banner still shows the real org. Document this or read the name.
+- Still open from Attempt 2: `CLAUDE.md` Commands entry for `pnpm dev:prod`; security 🟢 `PG*` stripping; lone-CR and
+  split-line `DATABASE_URL` forms; security 🟢 `heapsnapshot` in `NODE_OPTIONS`.

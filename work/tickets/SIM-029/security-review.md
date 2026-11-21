@@ -87,3 +87,43 @@ Static review only: I had no command runner, so no tests, scripts or live tunnel
 - **Container name:** `CONTAINER_RE` blocks option injection through `SIMAP_PG_TUNNEL`.
 
 Not reported, as instructed: `PG*` stripping (finding 4) and hand-run `node db/migrate.js`.
+
+## Attempt 3
+
+Verdict: PASS
+
+The Attempt 2 finding is fixed at the point it was reported: a fresh token for another org no longer gets past the startup check when `SIMAP_DEV_ORG` is in the shell. Two 🟡 gaps can still put the app on the wrong org's production data. Neither crosses a tenant boundary, because the token is always a verified one for an org the user belongs to. I rated them 🟡, the same as the original finding, so no 🔴.
+
+This was a static review. I ran no tests, scripts or tunnel, and I did not read any `.env*` file or the real token file.
+
+### Findings
+
+#### 🟡 1. Replacing the token file after the check switches the running production app to another org
+- **Where:** `d:\project\simap-game-ui\scripts\dev-prod.mjs:114-119` checks the org once and `:170-174` starts the app. `d:\project\simap-game-ui\src\server\http\dev-token.ts:25-26,50` re-reads the file on every request, uncached. `d:\project\simap-game-ui\scripts\dev-token.mjs:201` overwrites the same default file.
+- **Failure:** Ming runs `dev:prod` for org A and the banner says org A. In a second terminal, for local work, Ming runs `pnpm dev:token --org B`. The next `/api/*` request from the `dev:prod` app carries the org B token, so edits change B's real production data while the banner still says A. No restart or warning occurs. The same happens if the file is replaced during the password prompt (`dev-prod.mjs:163`).
+- **Fix:**
+  1. In `childEnv`, pass the checked org as a new variable, for example `SIMAP_DEV_EXPECTED_ORG: tokenOrg(token)`. Next does not override a variable already in the process environment, so `.env*` cannot change it.
+  2. In the server's dev-token path, when that variable is set, send no token if the file's `org` differs (case-insensitive), and warn with a new `wrong_org` reason in `d:\project\simap-game-ui\src\lib\dev-token\token.ts`.
+  3. Same-org refreshes keep working with no restart.
+  4. Add tests for a same-org swap (accepted) and an other-org swap (refused).
+
+#### 🟡 2. `SIMAP_DEV_ORG` set only in a `.env*` file is silently ignored
+- **Where:** `d:\project\simap-game-ui\scripts\dev-prod.mjs:113` reads only the shell environment, and `:156-162` inspects `.env.local` only for `DATABASE_URL`.
+- **Failure:** `.env.local` has `SIMAP_DEV_ORG=B` and the token file holds a fresh org A token. `wantOrg` is null, so the check passes and the app runs on A's production data. Nothing in `src/` reads `SIMAP_DEV_ORG`, so the Next child does not catch it either. The banner shows A's UUID, but nothing flags the mismatch. `README.md:59-60` says to set overrides in the shell, which documents the limit but does not enforce it.
+- **Fix:** at step 3, before the password prompt, refuse with exit 2 when `.env.local` sets `SIMAP_DEV_ORG`, reusing the `envFileSetsDatabaseUrl` matcher with the key as a parameter. Preferably cover the other files Next loads in dev too (`.env.development.local`, `.env.development`, `.env`). Never print the value.
+
+#### 🟢 3. A malformed `org` claim passes the startup check
+- **Where:** `d:\project\simap-game-ui\scripts\dev-prod.mjs:39-42` accepts any non-empty string, including `" "`, when `SIMAP_DEV_ORG` is unset.
+- **Failure:** the user is asked for the DB password and the app starts, but every API call fails with `org_invalid` (`d:\project\simap-game-ui\src\server\identity\verify.ts:147`), so no data is reachable. The unverified claim is also printed raw in the banner at `dev-prod.mjs:170`, so a tampered file could inject terminal control characters.
+- **Fix:** have `tokenOrg` accept only a UUID, matching the verifier.
+
+### Checked, no finding
+- **Differing token files:** the script, the `dev:token` child and the app all resolve to the same file. The resolved path is passed to the child (`dev-prod.mjs:74`), and Next keeps existing process variables over `.env*` values, so `.env.local` cannot redirect it.
+- **Non-string, missing or padded `org` claims:** non-string and missing claims are treated as not fresh. A padded claim fails the comparison when `SIMAP_DEV_ORG` is set, and otherwise fails at the verifier.
+- **Whitespace in `SIMAP_DEV_ORG`:** `dev-prod` trims it but `dev-token.mjs:33-34` does not. If a refresh is needed, `dev:token` rejects the value and the run stops, so this fails closed.
+- **Forged payload:** it can pass the unverified startup check, but the server's ES256 verification rejects it.
+- **Token or password exposure:** the banner prints only the org claim. The token is not in argv or the child environment. The password is collected after `dev:token` has finished, so that child never receives it, and the catch at `dev-prod.mjs:175-177` prints a fixed message.
+- **Step order:** still token, tunnel, `.env.local` check, password, app. A wrong org after refresh exits before any Docker call or prompt, and `dev-prod.test.ts:167-172` covers it.
+
+### Follow-ups
+Findings 1 and 2 can ship as a follow-up ticket if Ming accepts the risk for this PR. Until then, avoid running `dev:token` for another org while `dev:prod` is open.
