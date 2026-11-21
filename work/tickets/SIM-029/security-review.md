@@ -44,3 +44,46 @@ Static review only: I had no way to run commands, so nothing was executed. `impl
 
 ### Follow-ups
 - Add `pnpm dev:prod` to the Commands list in `CLAUDE.md`, as already noted in `impl-log.md`.
+
+## Attempt 2
+
+Verdict: REWORK
+
+Static review only: I had no command runner, so no tests, scripts or live tunnel were executed. I did not read any `.env*` file.
+
+### Attempt 1 findings
+
+| # | Status | Evidence |
+|---|---|---|
+| 1. Tunnel container default | Fixed | `d:\project\simap-game-ui\scripts\dev-prod.mjs:71` defaults to `pg-tunnel-pg-tunnel-1`. `d:\project\simap-game-ui\scripts\dev-prod.test.ts:164-172` asserts the `docker inspect` argv for the default and the override. I did not re-check the README line. |
+| 2. Token file mismatch | Fixed | `dev-prod.mjs:60,148` passes the resolved file to the child, and `d:\project\simap-game-ui\src\server\http\dev-token.ts:22,50` reads that variable. Test at `dev-prod.test.ts:225-230`. |
+| 3. `.env.local` colon form | Fixed | `dev-prod.mjs:46` matches `KEY: value` and a bare `KEY:`. Tests at `dev-prod.test.ts:84-86,94`. |
+| 5. `NODE_OPTIONS` report options | Fixed as written | `dev-prod.mjs:75-82` refuses `report` in any spelling, before any Docker call or prompt. A sibling route remains, see finding 2 below. |
+
+### New findings
+
+#### 🟡 1. A still-valid token for the wrong org passes the check, so production writes can land in the wrong org
+- **Where:** `d:\project\simap-game-ui\scripts\dev-prod.mjs:30-36,99`.
+- **Risk:** `tokenIsFresh` checks only `exp`. `SIMAP_DEV_ORG` is read only by `dev:token` (`d:\project\simap-game-ui\scripts\dev-token.mjs:33`), and that script runs only when the token is stale. `plan.md:135` names `SIMAP_DEV_ORG` as the org source for a refresh, but a token that is still fresh never reaches that step.
+- **Failure:** Ming runs `pnpm dev:token --org A`, then later in the token's lifetime (up to 24 h) runs `$env:SIMAP_DEV_ORG = "B"; pnpm dev:prod`. The file holds a fresh org A token, so no refresh happens. The banner names no org, the app serves org A, and edits meant for B change A's real data. Ming must be a member of A, so this is not a tenant bypass, but it is a wrong-tenant production write with no warning.
+- **Related case:** a fresh token with no `org` claim also passes. That one fails closed, with API calls answering 403 `org_required`.
+- **Fix:**
+  1. When `SIMAP_DEV_ORG` is set, treat a token whose `org` claim differs (case-insensitive) as not fresh, so `dev:token` runs.
+  2. Re-check the org after the refresh and exit 1 on a mismatch.
+  3. Treat a missing `org` claim as not fresh.
+  4. Print the active org id in the production banner, which covers the case where `SIMAP_DEV_ORG` is unset.
+  5. Add tests for mismatch then refresh, mismatch after refresh, and no org claim.
+
+#### 🟢 2. Heap snapshot options can still write the DB password to disk
+- **Where:** `d:\project\simap-game-ui\scripts\dev-prod.mjs:75-82`.
+- **Risk:** this is the same class as Attempt 1 finding 5. The filter blocks `inspect`, `debug` and `report`, but not `--heapsnapshot-near-heap-limit` or `--heapsnapshot-signal`. Next forwards parsed `NODE_OPTIONS` to the server child (`d:\project\simap-game-ui\node_modules\next\dist\cli\next-dev.js:363,391,416`), and that process holds `DATABASE_URL` in memory.
+- **Failure:** with `NODE_OPTIONS=--heapsnapshot-near-heap-limit=1` already set, a dev server nearing its heap limit writes a `.heapsnapshot` containing the URL and password. By default Node writes it to the working directory, which is the repo root here, and `.gitignore` has no heap pattern, so `git add .` could commit it. This needs the option to be set beforehand.
+- **Fix:** also refuse `heapsnapshot` in the squashed `NODE_OPTIONS`, and add it to the test list at `dev-prod.test.ts:175-182`.
+
+### Checked, no finding
+- **Production reach:** `pnpm migrate` and `migrate:smoke` guard before connecting. With `DATABASE_URL` unset, `db/migrate.js:30-32` exits 2 and does not fall back to `PG*`. `SIMAP_DB_TARGET=local` cannot override the port check (`db/target.js:28-46`).
+- **Password and URL:** the prompt comes after the token and tunnel steps, and Docker and `dev:token` never receive the password. It is not in argv. The catch at `dev-prod.mjs:150-152` prints a fixed message, the pool logs only `err.code` (`src/server/db/pool.ts:28`), and `next.config.*` does not reference `DATABASE_URL` or `process.env`.
+- **Bind:** `nextDevArgs` accepts only a validated port and always emits `-H 127.0.0.1` (`scripts/dev.mjs:19-33`).
+- **Container name:** `CONTAINER_RE` blocks option injection through `SIMAP_PG_TUNNEL`.
+
+Not reported, as instructed: `PG*` stripping (finding 4) and hand-run `node db/migrate.js`.
