@@ -154,3 +154,68 @@ None new. The orchestrator fills in any new ones.
 ### Follow-ups (out of scope)
 - A launcher check cannot protect `pnpm` or the launcher's own Node process: Node opens a `NODE_OPTIONS` inspector at startup, before any script code runs. Mention in README that `NODE_OPTIONS` must not set a non-loopback inspector.
 - Same as earlier attempts: add the `.next/static` scan to CI (SIM-028.1).
+
+## Attempt 4 — 2026-11-21
+Verdict: PASS
+
+Scope: plan `## Amendment (2026-11-21, escalation option 1)` only (commit 67cd408).
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format."
+- `pnpm typecheck`: exit 0. `pnpm check:layers`: exit 0, "check-layers: 223 files, no violations".
+- `pnpm test`: exit 0, "Test Files 86 passed (86); Tests 812 passed | 3 skipped (815)". This matches impl-log Attempt 4. `scripts/dev.test.ts` alone: 11 passed.
+- `pnpm build`: exit 0. AC2 bundle scan `grep -rlE "dev-token|dev:token|\.config/simap|SIMAP_DEV" .next/static` found nothing (exit 1).
+- `pnpm test:db`: CI-only, not run (no DB change).
+
+### Amendment implemented as specified
+- `scripts/dev.mjs:19-33` `nextDevArgs`: one pass over argv. It accepts only `--port <v>`, `-p <v>` or `--port=<v>`. Any other token, including `--`, positionals, `-H…`, `--inspect…` and `--help`, throws `USAGE`. A second port flag in any form throws `USAGE`. `validPort` (l.11-16) applies `/^[1-9][0-9]{0,4}$/` and `<= 65535`; a missing value throws the port message.
+- The return value is the literals `["dev","-H","127.0.0.1"]` plus `"--port", <validated digits>`. No user token is forwarded, and `-H 127.0.0.1` sits at index 1-2.
+- `USAGE` text matches the plan word for word.
+- `scripts/dev.mjs:36-45` `assertNodeOptionsSafe`: lowercases, drops non-letters, then tests `/inspect|debug/`. This matches the plan.
+- `ALLOWED`, `REFUSED`, `REFUSED_INSPECT`, `INSPECT_OK`, `inspectValueOk` and the "Always last" comment are gone. `devEnv` and `main()` are unchanged.
+- `scripts/dev.test.ts` covers every row of the plan's test table, case for case. The `devEnv` block is kept.
+- README step 4 and step 6 use the plan wording (`README.md:30-34`).
+
+### Final hostname checked with Next's bundled commander
+- Setup: a scratch script outside the repo imported the real `scripts/dev.mjs` and `next/dist/compiled/commander`. It used the `dev` option shape from `node_modules/next/dist/bin/next:201-205` (including the value-taking `--experimental-https-*`, `--experimental-upload-trace` and `[directory]`).
+- Input space: every argv of length 0-4 built from an 18-token pool: `--port`, `-p`, `--port=3001`, `3001`, `65535`, `0`, `--`, `-H`, `0.0.0.0`, `--hostname=0.0.0.0`, `.`, `--inspect`, `--experimental-https-key`, `-H0.0.0.0`, `--port=`, `-p3001`, `x`, `1`.
+- Result: 111,151 argvs, 8 accepted, 111,143 refused.
+- The accepted argvs produce only 4 distinct outputs:
+  - `["dev","-H","127.0.0.1"]` → `{port:3000, hostname:"127.0.0.1"}`
+  - `[…,"--port","3001"]`, `[…,"--port","65535"]` and `[…,"--port","1"]` → `hostname:"127.0.0.1"` with that port
+- None of the outputs has a directory operand, `inspect`, or any other option set.
+- The code always returns literals plus port digits, so this holds for every accepted input, not only the sampled ones.
+
+### Attempt-3 issues
+- **Review Attempt 3 Issue 1 (`--debug-port` in `NODE_OPTIONS`): closed.**
+  - Covered by the tests `"--debug-port=0.0.0.0:9229"`, `"--inspect --debug-port=0.0.0.0:9229"` and `"--debug_port=0.0.0.0"` (`scripts/dev.test.ts`, "refuses inspect and debug in any spelling").
+  - Local run: `NODE_OPTIONS=--debug-port=0.0.0.0:9229 node scripts/dev.mjs` printed the NODE_OPTIONS message and exited 1.
+- **Security Attempt 3 🟡 (trailing `--` or a value-taking last option): closed.** No user token reaches `next dev` any more, and the appended `-H` is gone (it is now at index 1).
+  - Local runs: `node scripts/dev.mjs -- --port 3001`, `--help`, `. --`, `. --experimental-https-key` and `--port 3001 --` each printed `USAGE` and exited 1. No server was started.
+  - The test "refuses the attempt-3 bypass inputs" also covers these cases.
+- **Security 🟢 (quoted spellings): closed.** Quote, backslash and tab cases are in the refuse table.
+
+### Acceptance criteria
+- [x] 1 (slice 1), 2, 4, 5, 6: no `src/**`, `package.json` or `.env.example` change since Attempt 3, and the same tests are green. AC2 bundle scan re-run above: empty.
+- [x] 3 Loopback only. The dev server bind is fixed by construction (see the commander check above). Any inspect or debug value in `NODE_OPTIONS` is refused. The server-side loopback guard (`src/server/http/dev-token.ts`) is unchanged and its tests are green.
+- [x] Impl-log records the pnpm 10 argv check: `pnpm dev --port 3001` → `["--port","3001"]`.
+
+Ming verification after merge: the 5 items listed in Attempt 1 still apply. Carry them into the PR.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+- No violations found (R1, R3, R4, R5). R2 and R6 do not apply.
+- Scope: 67cd408 touches only `scripts/dev.mjs`, `scripts/dev.test.ts`, `README.md` and `impl-log.md`. These are exactly the amendment's file list. No High path changed. `CLAUDE.md` line 24 is still accurate.
+
+### Blockers from review agents
+None new. The orchestrator fills in any new ones.
+
+### Nits (do not block)
+- Test name: the plan says "attempt-3 bypass inputs are refused", the code says "refuses the attempt-3 bypass inputs". Same cases.
+- "refuses a repeated port flag" uses a bare `.toThrow()`. `.toThrow(USAGE)` would pin the message.
+
+### Follow-ups (out of scope)
+- Still open from the plan's Residual: `NODE_OPTIONS` (or a `PORT`/dev flag) in a `.env*` file is not checked by the launcher.
+- Add the `.next/static` scan to CI (SIM-028.1).

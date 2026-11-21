@@ -137,3 +137,31 @@
 
 ### Follow-ups (out of scope)
 - Symlink-aware `assertOutsideRepo`; fail closed when the dev-token flag is in a `.env*` file; extend the AC2 bundle grep to `.next/server` and `.next/standalone`.
+## Attempt 4
+
+## Security re-review: SIM-028, attempt 4 (read-only, after escalation option 1)
+
+**Verdict: PASS from security. No 🔴 and no 🟡.** Attempt-3 🟡 and 🟢 are closed; one new 🟢 hardening note (out of scope). Code reading only. Files: `scripts/dev.mjs`, `scripts/dev.test.ts`, `package.json:6`, `README.md:30-38`; Next 16.4.6 `dist/bin/next`, `cli/next-dev.js`, `server/lib/start-server.js`, `server/lib/utils.js`, `lib/worker.js`, `@next/env`.
+
+### Findings
+
+**🟢 closed: Attempt-3 🟡 (forced host pushed out of option parsing)**
+- `scripts/dev.mjs:19-33` passes no user token through: it returns `["dev","-H","127.0.0.1"]` plus optional `["--port", <validated>]`. The forced host is directly after `dev`, so a trailing `--` or a leading value-taking option cannot swallow it. Any non-port argument throws `USAGE` (l.27): `--`, `.`, `-H*`, `--hostname*`, `--inspect*`, `--experimental-https-*`, `--experimental-upload-trace`.
+- `validPort` (l.11-16): `^[1-9][0-9]{0,4}$` and ≤ 65535; missing, empty, dash-led, leading-zero, whitespace, `+`, hex, exponent and decimal values refused; repeated flag refused (l.28). The value reaches Next as a separate digit-only token.
+- Next: `options.hostname` → `next-dev.js:305,355` → worker over IPC (`start-server.js:479-511`) → `server.listen(port, hostname)` (`start-server.js:251,430`). `HOST`/`HOSTNAME` not read; `PORT` port only (`start-server.js:280`).
+- Tests: `dev.test.ts:46-56`, `:130-141` (attempt-3 inputs); `:34-44` invariant (starts with `dev -H 127.0.0.1`, length 3 or 5).
+
+**🟢 closed: Attempt-3 🟢 (quoted and `--debug-port` NODE_OPTIONS spellings)**
+- `dev.mjs:36-45` lowercases and strips non-letters before matching `inspect|debug`; tests `dev.test.ts:158-186`. Over-matching fails safe (README l.31-32). Windows env lookup is case-insensitive. Remaining limit (pnpm and the launcher parse NODE_OPTIONS first) documented as best-effort (README l.33-34).
+
+**🟢 hardening (new, out of scope): NODE_OPTIONS from a `.env*` file skips the launcher check**
+- The `next dev` parent does not load `.env` files and forks the server with `_env.initialEnv` (`next-dev.js:362`), so the dev server process itself is safe.
+- The worker runs `loadEnvConfig`; `@next/env` does not special-case `NODE_OPTIONS`, so `NODE_OPTIONS=--inspect-wait=0.0.0.0:9229` in `.env.local` lands in the dev server's `process.env` when the shell does not set it. Child processes may inherit it: `lib/worker.js:81-84` strips only `inspect`/`inspect-brk` (`utils.js:287-290`), not `inspect-wait`; Turbopack's Node pools are native and unchecked.
+- Precondition: the developer writes the line into their own `.env*`; exploit chain unverified → 🟢.
+- Cheap fix: launcher refuses to start when `.env`, `.env.local`, `.env.development` or `.env.development.local` defines `NODE_OPTIONS` (combine with the `NEXT_PUBLIC_SIMAP_DEV_TOKEN` `.env*` follow-up).
+
+**🟢 checked and safe:** `package.json:6` is `node scripts/dev.mjs`, no `predev`/`postdev`; spawn passes no `execArgv` (`dev.mjs:61`); `--inspect` deprecation check (`bin/next:86`) irrelevant; one `server.listen` only.
+
+### Follow-ups (out of scope)
+- Fail closed when `.env*` files define `NODE_OPTIONS` or `NEXT_PUBLIC_SIMAP_DEV_TOKEN`.
+- Carried over: symlink-aware `assertOutsideRepo`; extend the AC2 bundle grep to `.next/server` and `.next/standalone`.

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | architecture, ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T01:21:04Z |
+| Claimed by | — |
 | PR | https://github.com/mmlabs-online/simap/pull/28 |
 
 ## Goal
@@ -97,3 +97,9 @@ Identity, so local development is not blocked by CORS (Identity cannot register 
 - Done: attempt 3 fixed both attempt-2 🟡 as reported (`-H 127.0.0.1` appended last; `--inspect` and `NODE_OPTIONS` checks). Checks green (86 files, 810 tests).
 - In progress / next: reviewer REWORK (`--debug-port` in `NODE_OPTIONS`); security 🟡 new bypass (trailing `--` or a value-taking option as last arg turns the appended `-H` into an operand/value). Max reworks reached → escalation.md; Ming picks an option (M-12). PR #28 stays open, not to be merged before that.
 - Gotchas: the launcher's blocklist approach to Next CLI args keeps leaking; recommended fix is an allowlist (`--port` only) with `-H 127.0.0.1` right after `dev`.
+
+### 2026-11-21 — claude — DONE (after escalation)
+- Agent calls: 4 this run (planner×1 63k, implementer×1 41k, reviewer×1 48k, security-ai-generated-code-auditor×1 44k; in/out split not reported).
+- Done: plan amended per escalation option 1; `scripts/dev.mjs` is now an allowlist launcher (`--port`/`-p` only, argv `dev -H 127.0.0.1 [--port n]`, NODE_OPTIONS with inspect/debug refused). Reviewer PASS (111,151 hostile argv tried against Next's commander: every accepted one binds 127.0.0.1); security PASS (no 🔴/🟡). Checks green: 86 files, 812 tests, build, AC2 scan. PR #28 updated.
+- In progress / next: Ming reviews and merges PR #28; then SIM-028.1 (browser dev-token mode) and SIM-029.
+- Gotchas: residual 🟢 — NODE_OPTIONS or NEXT_PUBLIC_SIMAP_DEV_TOKEN set in a `.env*` file is not checked by the launcher (follow-up).
