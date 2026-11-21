@@ -130,3 +130,66 @@ F1, F2, F3 and F5 are verified above. `security-review.md` was updated by anothe
 
 ### Rework requested by Ming (added by orchestrator, 2026-11-21)
 Fix in REWORK attempt 3: security Attempt 2 S1 and S2, and add the `.env.example` name (M-18). S3, S4 and the other follow-ups stay out of this PR.
+
+## Attempt 3 — 2026-11-21
+Verdict: PASS
+
+This PASS covers S1, S2 and the Checks. It does not cover the content of `.env.example`, which was not verified (see "Not verified"). Ming should run the command there before merging.
+
+### Checks (run by reviewer)
+Node 22 through fnm.
+- `pnpm format:check` — exit 0, 285 files.
+- `pnpm typecheck` — exit 0.
+- `pnpm check:layers` — exit 0, 234 files, no violations.
+- `pnpm test` — exit 0, 96 files, 951 passed, 3 skipped. Matches impl-log.
+- `pnpm build` — exit 0.
+- `pnpm check:dev-bundle` — exit 0, no dev-token strings in `.next/static`.
+- `pnpm test:db` — not run, left to CI as instructed.
+
+### Rework items
+- [x] S1 — `scripts/dev.mjs:61-67`. Evidence: the real `@next/env` 16.4.6 `loadEnvConfig`, fed in-memory strings through a patched `fs` on a non-existent root (no real `.env*` file read).
+  - 108 named cases, 0 mismatches, across the flag (upper and lower case), `DATABASE_URL` and `SIMAP_DEV_ORG`: lone CR, key and `=` on separate lines, key after U+2028/2029, BOM, `export`, colon form; comments and look-alikes pass.
+  - 120,000 seeded generated strings (40,000 per key): 0 cases where Next sets the key and the launcher misses it.
+  - Over-refusals, the safe direction: 64 (flag), 41 (`DATABASE_URL`), 30 (`SIMAP_DEV_ORG`).
+  - No weakening: 0 strings refused by the previous matcher (`4d07c7e`) and accepted by the new one, for all three keys. `DATABASE_URL` and `SIMAP_DEV_ORG` stay case-sensitive (`scripts/dev-prod.mjs:74,195`).
+- [x] S2 — `scripts/dev.mjs:85-94,124-130`, `scripts/dev-prod.mjs:179-185,218-222`.
+  - `dev:prod` `run()` with injected deps: EBUSY, EPERM, EACCES, EISDIR and EIO on each of the 4 files (20 cases) all exit 2 with the fixed message, no password prompt, no spawn, no error content.
+  - `dev` launcher: a scratch copy with a real unreadable path (directory named as each of the 4 files) exits 2 with the fixed message and starts nothing.
+  - The real reader returns null for missing files and throws `EnvReadFailure` with no `cause` on EISDIR.
+- [ ] `.env.example` (M-18) — NOT VERIFIED. The file name appears in the branch diff and in `d17dc00`; line counts and added lines were not inspected.
+
+### Acceptance criteria
+- [x] AC1, AC2, AC3 (reviewer parts) — no change to UI code in the rework commit `d17dc00`; related tests pass.
+- [x] AC4 — build and `check:dev-bundle` exit 0.
+- [x] AC5 — Checks above; new logic has tests in `scripts/dev.test.ts` and `scripts/dev-prod.test.ts`.
+
+Ming verification after merge (from plan.md and Decision 1 = C, not verified here):
+1. `pnpm dev:token --org <your-org-uuid>`, then `pnpm dev`.
+2. AC1: signed in at `http://localhost:3000`, no request to `api.mmlabs.online` with "Preserve log" on; `/sign-in` redirects into the app.
+3. AC2: rename the token file → "Refresh permissions" → "No usable dev token"; restore → "Check again" → signed in without restart; token without `--org` → the `--org` hint; with `--org` → "Check again" → signed in.
+4. AC3: amber badge at desktop and phone width, no sign-out or org switch; the first-visit profile saves.
+5. Decision 1 = C: under a real `pnpm dev:prod`, the red "Production data" badge shows in the shell and the red notice shows on the first-visit profile form, at desktop and phone width, without hiding the form.
+
+### Issues
+None that block.
+
+### Rules (CLAUDE.md)
+- R3: the `.env.example` entry is not verified, see below. No other violation found.
+- R1, R2, R4, R5, R6, R7: no violations found. `d17dc00` changes only `.env.example` (approved, M-18), both launchers, their tests and `impl-log.md`.
+
+### Blockers from review agents
+None recorded at the time of this review. `security-review.md` showed as modified in the working tree during this review, by another agent; it was not read again or assessed.
+
+### Not verified
+- `.env.example` content: the permission system denied the command that included `git diff --numstat origin/main...HEAD -- .env.example`, and it was not retried. So the 3-line count, the commented form and the absence of a value are unconfirmed. Before merging, Ming can run: `git diff --numstat origin/main...HEAD -- .env.example` (expected `3	0	.env.example`).
+- A real `next dev` loading `.env*` on Windows, a real `pnpm dev:prod`, and live browser behaviour.
+- `dev:prod` `main()` itself (it needs a TTY); its read-failure path was exercised through `run()` with the real reader's contract.
+- `origin/main` was not fetched; the diff uses the local ref.
+
+### Nits (do not block)
+- `src/ui/auth/DevGate.tsx`: the `generation.current += 1` nit from Attempt 1 remains.
+
+### Follow-ups (out of scope)
+- S3, S4, F4, F6 and case-variant hardening of other keys.
+- Check `src/server/identity/verify.test.ts:169` for wall-clock flakiness (passed in this run).
+- `pnpm check:dev-bundle` in CI, `.claude/loop.config.md` and `CLAUDE.md`.
