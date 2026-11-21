@@ -27,7 +27,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-007.2 | Org entry: org list, picker, switcher and org_access_denied | MERGED | P0 | M | ui, security | SIM-006.2, SIM-006.3 | none | 0 | 2026-11-20 |
 | SIM-007.3 | First-visit profile screen | MERGED | P0 | S | ui | SIM-007, SIM-007.2 | none | 0 | 2026-11-20 |
 | SIM-028 | Signed-in local dev with a server-side dev token | MERGED | P1 | M | architecture, ui, security | SIM-006.2, SIM-007.2 | plan-approval | 0 | 2026-11-21 |
-| SIM-028.1 | Browser dev-token mode (AuthGate skips Identity under pnpm dev) | BLOCKED | P1 | M | ui, security | SIM-028 | plan-approval | 0 | 2026-11-21 |
+| SIM-028.1 | Browser dev-token mode (AuthGate skips Identity under pnpm dev) | IN_PROGRESS | P1 | M | ui, security | SIM-028 | plan-approval | 0 | 2026-11-21 |
 | SIM-029 | Guard dev scripts against the production DB and add dev:prod | MERGED | P1 | M | db, security | SIM-028 | plan-approval | 2 | 2026-11-21 |
 | SIM-030 | Pin the dev:prod org for the running server | MERGED | P1 | S | security | SIM-029 | plan-approval | 1 | 2026-11-21 |
 | SIM-009 | Invite people to an org | BACKLOG | P1 | M | security, ui, api | SIM-007 | none | 0 | 2026-11-20 |
