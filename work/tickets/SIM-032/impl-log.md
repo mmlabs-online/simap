@@ -120,3 +120,19 @@ Node 22. typecheck 0; check:layers 0 (234 files); format:check 0; test 0 (1037 p
 
 ### Follow-ups
 N4, N5, N7, N8 beyond the port check, tunnel port identity, minimal helper env (unchanged). The POSIX final port check (`lsof`) was not run on a real POSIX host here.
+
+## Attempt 5 — 2026-11-21 (REWORK, Ming's second option 1)
+
+### Files touched
+- `scripts/dev-process.mjs` — required because U1: the final check in `stopTree` now returns clean only when `portBusy(port)` (the real bind probe, fail closed) says free. The default `listeners` query is a no-op (`[]`) and can only add doubt (a `null` result), never clear a busy port. Windows `Get-NetTCPConnection` and POSIX `lsof` results no longer decide the final check; `owner()` is unchanged. Retries stay at 3 x 200 ms; nothing is killed for the port. `portBusy` connects, then binds and closes at once, so it leaves nothing held.
+- `scripts/dev-process.test.ts` — required because: the final-port test runs the free and busy cases with the default check on every platform (no longer lsof-gated), and adds a query reporting no listener (`() => []`) while a real listener holds the port: stop returns `[0]` and the listener stays up. The T1 test now ends the child itself on the first stop read and waits (bounded 10 s) until it is gone, so it no longer depends on the 300 ms sleep.
+
+### Checks
+format:check, typecheck, check:layers (234 files, no violations), test (1037 passed, 3 skipped), build, check:dev-bundle: all exit 0. `bash -n scripts/start-dev.sh` exit 0. shellcheck not run (not installed).
+T1 test under load: 12 of 12 passed with 16 CPU spinners (each self-ending after 240 s).
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+N4, N5, N7, N9, N10, tunnel port identity, minimal helper env (unchanged). `parsePosixListeners` is still used by `owner()`. Not verified: a natural `Get-NetTCPConnection` failure (the blind-query test simulates it).

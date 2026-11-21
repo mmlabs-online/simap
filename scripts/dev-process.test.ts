@@ -364,15 +364,19 @@ describe("real tree", () => {
     await new Promise((r) => freeProbe.close(r));
     const apps: App[] = [];
     try {
-      if (hasLsof) {
-        const clean = await mk();
-        apps.push(clean);
-        expect(await clean.stop({ port: freePort })).toEqual([]);
-        const busy = await mk();
-        apps.push(busy);
-        expect(await busy.stop({ port: busyPort })).toEqual([0]);
-        expect(probe.listening).toBe(true); // a listener on the port is never killed
-      }
+      // The default check is the real bind probe: free gives [], a live listener gives [0] and is never killed.
+      const clean = await mk();
+      apps.push(clean);
+      expect(await clean.stop({ port: freePort })).toEqual([]);
+      const busy = await mk();
+      apps.push(busy);
+      expect(await busy.stop({ port: busyPort })).toEqual([0]);
+      expect(probe.listening).toBe(true);
+      // A query that reports "no listener" while a real one holds the port is not trusted.
+      const blind = await mk(() => []);
+      apps.push(blind);
+      expect(await blind.stop({ port: busyPort })).toEqual([0]);
+      expect(probe.listening).toBe(true);
       const unknown = await mk(() => null);
       apps.push(unknown);
       expect(await unknown.stop({ port: freePort })).toEqual([0]);
@@ -393,17 +397,26 @@ describe("real tree", () => {
       const killed: number[] = [];
       app = await startApp({
         cmd: process.execPath,
-        args: ["-e", "setTimeout(()=>{},40)"],
+        args: ["-e", "setInterval(()=>{},1000)"],
         env: MIN_ENV,
         cwd: tmpdir(),
-        // The first two reads fail; later ones show a different process on the freed PID.
-        snapshot: () =>
-          ++n <= 2
+        // The first read of stop() fails and ends the child, waiting (bounded) until it is gone, so the exit lands during the
+        // retry sleep whatever the load; later reads show a different process on the freed PID.
+        snapshot: () => {
+          if (++n === 2) {
+            process.kill(app!.pid!);
+            const end = Date.now() + 10_000;
+            while (alive(app!.pid!) && Date.now() < end)
+              Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20);
+            return null;
+          }
+          return n < 2
             ? null
             : {
                 procs: [{ pid: app!.pid!, ppid: 1, start: 5n }],
                 listeners: [],
-              },
+              };
+        },
         kill: (members: { pid: number }[]) => killed.push(...members.map((m) => m.pid)),
       });
       try {

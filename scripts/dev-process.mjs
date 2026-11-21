@@ -256,10 +256,7 @@ export async function startApp({
   cwd,
   snapshot = winSnapshot,
   kill = winKill,
-  listeners = (port) =>
-    WIN
-      ? (snapshot(port)?.listeners ?? null)
-      : parsePosixListeners(run("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-Fp"])),
+  listeners = /** @type {(port: number) => number[] | null} */ (() => []),
 }) {
   const child = spawn(cmd, args, {
     stdio: ["ignore", "inherit", "inherit"],
@@ -378,7 +375,8 @@ export async function startApp({
     const left = WIN ? await winStop(grace) : await posixStop();
     if (left.length || !Number.isInteger(port)) return left;
     for (let i = 0; i < 3; i++) {
-      if (listeners(port)?.length === 0) return [];
+      // The real bind probe decides (fail closed); a listener query can only add doubt, never clear it.
+      if ((await listeners(port))?.length === 0 && !(await portBusy(port))) return [];
       if (i < 2) await sleep(200);
     }
     return [0];
