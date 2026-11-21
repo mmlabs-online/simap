@@ -63,3 +63,47 @@
 ### Follow-ups (out of scope)
 - Detect the flag in `.env*` files, so the residual case where both bind and Host are open fails closed.
 - Extend the AC2 bundle grep to server and standalone output, and add it to CI. Slice 2's `check:dev-bundle` is the natural place.
+
+## Attempt 2
+
+## Security re-review: SIM-028, attempt 2 (read-only)
+
+**Verdict:** the attempt-1 🟡 is not fully closed. The attached `-H` forms are now refused, but two other ways to get a non-loopback bind through `scripts/dev.mjs` remain. Both 🟢 fixes are correct. Traced Next 16.4.6's CLI and bundled commander by reading the code; nothing was run.
+
+### Findings
+
+**🟡 should-fix: a host flag that is really another option's value turns off the default `-H 127.0.0.1`, and Next then binds all interfaces**
+- **Where:** `scripts/dev.mjs:17-31`, together with l.36.
+- **What happens:** `nextDevArgs` sets `hasHost = true` whenever it sees a token that looks like a host flag, whatever its position. It does not know which Next options take a value. Commander (`node_modules/next/dist/compiled/commander/index.js`) handles a required option value with `const e=s.shift()`, so it takes the next token even when that token starts with `-`.
+- **Options that take a value in `next dev`:** `-p/--port`, `--experimental-https-key`, `--experimental-https-cert`, `--experimental-https-ca`, `--experimental-upload-trace` (`node_modules/next/dist/bin/next:203`).
+- **Bypass:** `pnpm dev --experimental-https-key --hostname=localhost` (also `... -Hlocalhost` and the cert/ca/upload-trace options).
+  - The launcher sees `--hostname=localhost`, sets `hasHost = true` and does not add `-H 127.0.0.1`.
+  - Commander uses `--hostname=localhost` as the key path, so `options.hostname` stays `undefined`.
+  - `next-dev.js:305` passes it on, and `start-server.js:251` calls `server.listen(port, undefined)`, binding `::` / 0.0.0.0 with `NEXT_PUBLIC_SIMAP_DEV_TOKEN=1` set.
+  - The key path is ignored unless `--experimental-https` is also passed (`next-dev.js:513-516`), so the server starts normally.
+- **Exploit:** as attempt 1: a LAN client sending `curl -H "Host: localhost" http://<pc-ip>:3000/api/me` gets Ming's production identity.
+- **Fix:** always append `-H 127.0.0.1` last, after all user arguments (commander keeps the last value), so validation of user `-H` only keeps loopback alternatives. Alternatives: refuse value-taking options followed by a host-flag-looking token, or refuse user host flags entirely.
+- **Tests:** `["--experimental-https-key", "--hostname=localhost"]`, `["--experimental-https-cert", "-Hlocalhost"]`, `["--experimental-upload-trace", "-H", "localhost"]` must bind 127.0.0.1 or be refused.
+
+**🟡 should-fix: `--inspect` can open the Node inspector on a non-loopback interface**
+- **Where:** `scripts/dev.mjs:32-33` passes the argument through unchecked.
+- **What happens:** `next dev` accepts `--inspect [[host:]port]` (`bin/next:203`, parsed at l.94-100); `next-dev.js:387-389` copies it into the child's `NODE_OPTIONS`. `pnpm dev --inspect 0.0.0.0:9229` puts an unauthenticated V8 inspector on all interfaces.
+- **Exploit:** anyone on the LAN can attach and run arbitrary code in the dev server process, which reads the production Identity token file.
+- **Same path through env:** `NODE_OPTIONS=--inspect=0.0.0.0` in the shell is passed through by `devEnv` (l.39-41); Next reads it at `next-dev.js:363,378-386`.
+- **Fix:** accept `--inspect` / `--inspect=<v>` only as a bare port or `127.0.0.1|localhost|[::1]:port`; refuse a non-loopback `--inspect` in `process.env.NODE_OPTIONS`; add tests for both.
+
+**🟢 checked and safe: other paths to a non-loopback bind**
+- `HOSTNAME` / `HOST` are not read by `next dev` (`next-dev.js:305`, `start-server.js:175,251`); `PORT` only affects the port.
+- Commander does not prefix-match long options (`--host`, `--hostn`, `--H` → unknown option); `-h` is help.
+- A `-H0.0.0.0` after a non-first `--` cannot reach `options.hostname`; the launcher refuses it anyway (fails safe).
+- In `-p3000H0.0.0.0` commander gives the tail to `-p`; refused anyway. `next dev` has no boolean short flags.
+- The launcher always puts `dev` first.
+- `--experimental-upload-trace <url>` sends traces to a remote URL; spans do not carry headers or the token as far as read. Consider refusing it.
+
+**🟢 correct: the `assertOutsideRepo` `..` prefix fix** (`scripts/dev-token.mjs:116`; another drive on Windows gives an absolute `rel`, treated as outside). Gap: no regression test for `<repo>/..cache/tok` in `scripts/dev-token.test.ts:113-120`. The symlink/junction gap stays a follow-up.
+
+**🟢 correct: the tmp token file write** (`scripts/dev-token.mjs:124-137`: `rmSync(tmp, {force: true})` then `flag: "wx"`, O_EXCL fails closed; tmp cleaned on error). `chmodSync(dir, 0o700)` on an existing directory still optional.
+
+### Follow-ups (out of scope)
+- Symlink-aware `assertOutsideRepo`.
+- Fail closed when the dev-token flag appears in `.env*` files; extend the AC2 bundle grep to `.next/server` and `.next/standalone`.

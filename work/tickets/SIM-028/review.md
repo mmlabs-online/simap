@@ -50,3 +50,48 @@ None (filled in by the orchestrator if security-review.md reports any).
 
 ### Follow-ups (out of scope)
 - Add the AC2 `.next/static` scan to CI (already planned as `pnpm check:dev-bundle` in SIM-028.1).
+
+## Attempt 2 — 2026-11-21
+Verdict: PASS
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format."
+- `pnpm typecheck`: exit 0. `pnpm check:layers`: exit 0, "check-layers: 211 files, no violations".
+- `pnpm test`: exit 0, "Test Files 82 passed (82); Tests 775 passed | 3 skipped (778)". This matches impl-log. The count is unchanged because the new cases were added inside the existing `it` blocks in `scripts/dev.test.ts`.
+- `pnpm build`: exit 0. AC2 bundle scan `grep -rlE "dev-token|dev:token|\.config/simap|SIMAP_DEV" .next/static` found nothing (exit 1).
+- `pnpm test:db`: CI-only, not run (no DB change).
+
+### Attempt 1 blocker (Issue 1, attached `-H` forms)
+Fixed. `scripts/dev.mjs:26-31` now checks every short-option argument that contains `H` (`-H<host>`, `-H=<host>`, and clusters such as `-pH…`). The value after `H` must be in `ALLOWED`; otherwise the launcher refuses to start. When it cannot parse the argument, it refuses.
+I fed the launcher output to Next's own `next/dist/compiled/commander`, using the same `dev` option shape:
+- Refused: `-H0.0.0.0`, `-H=0.0.0.0`, `-H 127.0.0.1 -H0.0.0.0`, `-pH0.0.0.0`, `-- -H0.0.0.0`, `--hostname 0.0.0.0`, `-H localhost --hostname=0.0.0.0`.
+- Allowed: `-H127.0.0.1` gives hostname 127.0.0.1, `--port 4000` gives 127.0.0.1 (prepended), `[]` gives 127.0.0.1.
+Next's `dev` command defines `-H, --hostname` with no `.env()` binding (node_modules/next/dist/bin/next:203), so no env var can override the host. Tests: `scripts/dev.test.ts` adds the requested refusal cases and the kept case `-H127.0.0.1`, and they pass.
+
+### Acceptance criteria
+- [x] 1 (slice 1), 2, 4, 5, 6: unchanged since Attempt 1. The evidence is the same tests, still green, plus the bundle scan re-run above.
+- [x] 3 The dev server listens on loopback. Evidence: see the blocker section above. The Host, Origin and same-origin checks are still covered by `token.test.ts` › devAuthorizationFor and pass.
+
+Ming verification after merge: the 5 items listed in Attempt 1 still apply. Carry them into the PR.
+
+### Rework diff (f3f772c)
+- `scripts/dev.mjs`, `scripts/dev.test.ts`: the fix above.
+- `scripts/dev-token.mjs`: two optional hardening edits from security-review. Both are in a planned file, so no scope issue.
+  - `assertOutsideRepo` now treats only `..` or `..<sep>` as outside. Before, a sibling named `..foo` was misread as outside.
+  - `writeTokenFile` removes a stale `.tmp` file, then writes with `flag: "wx"`.
+  Existing assertOutsideRepo and writeTokenFile tests still pass.
+- No out-of-plan files, no High path the plan did not name.
+
+### Rules (CLAUDE.md)
+- R1, R3, R4, R5: no violations. R2 and R6 do not apply. (The Attempt 1 note about `.env.example` still stands: an agent cannot read it.)
+
+### Blockers from review agents
+None. security-review.md reports no blockers. The orchestrator fills in any new ones.
+
+### Nits (do not block)
+- `scripts/dev-token.test.ts`: no test covers the `..foo` sibling case that the new `assertOutsideRepo` check fixes, e.g. a file at `<repo>/..foo/t`, which should throw.
+- `-H=127.0.0.1` is accepted, but commander reads its value as `=127.0.0.1`, so Next fails to bind. This fails safe and is harmless.
+- The two nits from Attempt 1 still apply.
+
+### Follow-ups (out of scope)
+- Same as Attempt 1: add the `.next/static` scan to CI (SIM-028.1).
