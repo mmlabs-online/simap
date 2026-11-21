@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | architecture, ui, security |
@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T00:36:33Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/28 |
 
 ## Goal
 On `pnpm dev` the app at `http://localhost:3000` opens signed in as Ming without the browser ever calling mmlabs
@@ -73,5 +73,33 @@ Identity, so local development is not blocked by CORS (Identity cannot register 
 
 ## Notes / answers from Ming
 - 2026-11-21: Ming chose option B (tudocuatui dev-token). Any org-admin-api change → give Ming a prompt.
+- Waiting for Ming: plan approval (High tier)
+- Plan approved (2026-11-21): Ming approved decisions A-G as written in plan.md (incl. the split; SIM-028.1 created on main).
+- 2026-11-21: Ming asked to fix both 🟡 findings of security-review Attempt 2 on PR #28 before merge.
+- 2026-11-21 (escalation answer): Ming chose escalation.md option 1. Plan Decision C is amended: `pnpm dev` accepts only `--port <n>` / `-p <n>`, refuses every other argument and any `--`, builds `["dev", "-H", "127.0.0.1", "--port", n]` itself, and refuses to start when `NODE_OPTIONS` contains `inspect` or `debug` in any spelling. Plan approved (2026-11-21) for an amendment limited to this launcher change; anything wider needs a new approval. Attempts reset to 0 after the escalation decision.
 
 ## Handoff
+
+### 2026-11-21 — claude — BLOCKED
+- Agent calls: 3 (software-architect×1 63k, frontend-developer×1 44k, planner×1 133k; in/out split not reported).
+- Done: consult (architecture, ui; security has no consult agent), plan.md Status READY covering slice 1 (dev:token script, `pnpm dev` loopback launcher, bearer injection in `withAuth`, README, `.env.example` names).
+- In progress / next: Ming approves plan (M-11) incl. decisions A-G and the split; on approval create SIM-028.1 (browser dev-token mode, AC1 browser half) from `## Split proposal`, then `/run SIM-028`.
+- Gotchas: SIM-027 may add `src/proxy.*` and touches `src/lib/api/fetch.ts` (slice 2 hotspot); `.env*` is unreadable to agents, so `.env.example` names are appended blind; manual e2e needs M-1; `gh` CLI is not installed on this machine.
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 5 this run (implementer×2 80k + 24k, reviewer×2 64k + 29k, security-ai-generated-code-auditor×2 60k + 41k; in/out split not reported). Earlier run: 3 calls (see above).
+- Done: slice 1 implemented (dev:token script, loopback `pnpm dev` launcher, bearer injection in `withAuth`, README, `.env.example` names). Attempt 1 REWORK (attached `-H0.0.0.0` bypass); attempt 2 PASS. PR #28 opened.
+- In progress / next: Ming reviews PR #28. Security attempt 2 left two 🟡 (host flag swallowed by a value-taking option; non-loopback `--inspect`), flagged in the PR as "fix before merge recommended". Then SIM-028.1 (browser dev-token mode).
+- Gotchas: `gh` is installed at `C:\Program Files\GitHub CLI\gh.exe` but not on PATH; Node via fnm (`fnm env`); `.env.example` edited blind.
+
+### 2026-11-21 — claude — ESCALATED
+- Agent calls: 3 this run (implementer×1 37k, reviewer×1 47k, security-ai-generated-code-auditor×1 58k; in/out split not reported).
+- Done: attempt 3 fixed both attempt-2 🟡 as reported (`-H 127.0.0.1` appended last; `--inspect` and `NODE_OPTIONS` checks). Checks green (86 files, 810 tests).
+- In progress / next: reviewer REWORK (`--debug-port` in `NODE_OPTIONS`); security 🟡 new bypass (trailing `--` or a value-taking option as last arg turns the appended `-H` into an operand/value). Max reworks reached → escalation.md; Ming picks an option (M-12). PR #28 stays open, not to be merged before that.
+- Gotchas: the launcher's blocklist approach to Next CLI args keeps leaking; recommended fix is an allowlist (`--port` only) with `-H 127.0.0.1` right after `dev`.
+
+### 2026-11-21 — claude — DONE (after escalation)
+- Agent calls: 4 this run (planner×1 63k, implementer×1 41k, reviewer×1 48k, security-ai-generated-code-auditor×1 44k; in/out split not reported).
+- Done: plan amended per escalation option 1; `scripts/dev.mjs` is now an allowlist launcher (`--port`/`-p` only, argv `dev -H 127.0.0.1 [--port n]`, NODE_OPTIONS with inspect/debug refused). Reviewer PASS (111,151 hostile argv tried against Next's commander: every accepted one binds 127.0.0.1); security PASS (no 🔴/🟡). Checks green: 86 files, 812 tests, build, AC2 scan. PR #28 updated.
+- In progress / next: Ming reviews and merges PR #28; then SIM-028.1 (browser dev-token mode) and SIM-029.
+- Gotchas: residual 🟢 — NODE_OPTIONS or NEXT_PUBLIC_SIMAP_DEV_TOKEN set in a `.env*` file is not checked by the launcher (follow-up).

@@ -49,6 +49,43 @@ function setup(result: VerifyResult | (() => never), gate?: MemberGate) {
 
 const body = async (r: Response) => JSON.stringify(await r.json());
 
+describe("withAuth authorization dep (dev only)", () => {
+  const call = (authorization: AuthDeps["authorization"], result: VerifyResult) => {
+    const verify = vi.fn(async (_h: string | null) => result);
+    const deps: AuthDeps = {
+      verifier: { verify },
+      memberGate: async () => "active",
+      log: () => {},
+      authorization,
+    };
+    const route = createWithAuth(() => deps)(async () => new Response("ok"), { tier: "user" });
+    const run = () =>
+      route(new Request("http://x/api/t", { headers: { authorization: "Bearer client" } }), {
+        params: Promise.resolve({}),
+      });
+    return { verify, run };
+  };
+
+  it("verifier gets the dep result, not the client header", async () => {
+    const t = call(async () => "Bearer dev", okResult(["simap:user"]));
+    expect((await t.run()).status).toBe(200);
+    expect(t.verify).toHaveBeenCalledWith("Bearer dev");
+  });
+
+  it("dep returning null -> 401 unauthenticated even with a client Authorization header", async () => {
+    const t = call(async () => null, { ok: false, code: "missing" });
+    const r = await t.run();
+    expect(r.status).toBe(401);
+    expect(t.verify).toHaveBeenCalledWith(null);
+  });
+
+  it("no dep -> verifier gets req.headers.get('authorization') unchanged", async () => {
+    const t = call(undefined, okResult(["simap:user"]));
+    await t.run();
+    expect(t.verify).toHaveBeenCalledWith("Bearer client");
+  });
+});
+
 describe("withAuth", () => {
   it("manager token reaches a manager route with {sub,email,org,tier}", async () => {
     const t = setup(okResult(["simap:manager"]));
