@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T05:33:39Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -60,6 +60,13 @@ local development works without CORS.
 - Manual: `pnpm dev:token --org <uuid>`, `pnpm dev`, Chrome network log; `pnpm build && pnpm check:dev-bundle`.
 
 ## Notes / answers from Ming
+- Waiting for Ming: plan approval (ticket Gate; the plan touches no High path) and its 3 decisions.
 - 2026-11-21: created from the approved SIM-028 split (Decision G).
 
 ## Handoff
+
+### 2026-11-21 — claude — BLOCKED
+- Agent calls: 2, tokens 56k plus planner (usage not reported when this entry was written) (frontend-developer×1 56k, planner×1 pending; in/out split not reported)
+- Done: consult and plan (`Status: READY`).
+- In progress / next: Ming approves `plan.md` and its 3 decisions (how `dev:prod` shows production data in the browser; mid-session 403 `org_required` flips to the `--org` hint; edit README steps 7-8); then `/run SIM-028.1`.
+- Gotchas: whether Next drops the lazy `DevGate` chunk from the production build is unproven; plan step 1 tests it first. Live browser checks need M-1 and a real token.
