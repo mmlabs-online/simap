@@ -33,7 +33,7 @@ const isStream = (body: unknown) =>
 
 /**
  * The one bearer path for UI data calls to `/api/*`. On a 401, or a 403 other than `org_required`, it re-mints the
- * token once and resends once (D7). 5xx and network errors are returned or thrown untouched: no sign-out (AUT-02).
+ * token once and resends once (D7). Redirects are refused (`redirect: "error"`), so the bearer never follows one. 5xx and network errors are returned or thrown untouched: no sign-out (AUT-02).
  */
 export function createApiFetch({
   getToken,
@@ -49,7 +49,7 @@ export function createApiFetch({
     const send = (token: string) => {
       const headers = new Headers(init.headers);
       headers.set("Authorization", `Bearer ${token}`);
-      return fetchFn(input, { ...init, headers, cache: "no-store" });
+      return fetchFn(input, { ...init, headers, cache: "no-store", redirect: "error" });
     };
     const first = await getToken();
     if (first === null) throw new ApiAccessError("signed_out");

@@ -101,6 +101,20 @@ describe("createApiFetch", () => {
     expect(s.onAuthLost).toHaveBeenCalledTimes(1);
   });
 
+  it("sends redirect: error on first send and retry, even if the caller asks for follow", async () => {
+    const s = setup([() => res(401, "unauthenticated"), () => res(200)]);
+    await s.apiFetch("/api/me", { redirect: "follow" });
+    expect(sent(s.fetchFn, 0).redirect).toBe("error");
+    expect(sent(s.fetchFn, 1).redirect).toBe("error");
+  });
+
+  it("a rejected fetch (redirect refused) propagates, no onAuthLost", async () => {
+    const s = setup([() => Promise.reject(new TypeError("redirect mode is set to error"))]);
+    expect(await reject(s.apiFetch("/api/me"))).toBeInstanceOf(TypeError);
+    expect(s.fetchFn).toHaveBeenCalledTimes(1);
+    expect(s.onAuthLost).not.toHaveBeenCalled();
+  });
+
   it("403 with an unknown or unreadable body is treated as forbidden", async () => {
     const s = setup([() => res(403, "weird"), () => new Response("not json", { status: 403 })]);
     expect(await reject(s.apiFetch("/api/me"))).toMatchObject({ code: "forbidden" });
