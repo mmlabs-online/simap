@@ -16,6 +16,7 @@ describe("nextDevArgs", () => {
   it("keeps loopback host values", () => {
     expect(nextDevArgs(["-H", "localhost"])).toEqual(["dev", "-H", "localhost"]);
     expect(nextDevArgs(["--hostname=::1"])).toEqual(["dev", "--hostname=::1"]);
+    expect(nextDevArgs(["-H127.0.0.1"])).toEqual(["dev", "-H127.0.0.1"]);
     expect(nextDevArgs(["-H", "127.0.0.1", "--port", "4000"])).toEqual([
       "dev",
       "-H",
@@ -32,6 +33,10 @@ describe("nextDevArgs", () => {
       ["-H", "192.168.1.5"],
       ["--hostname=0.0.0.0"],
       ["-H"],
+      ["-H0.0.0.0"],
+      ["-H=0.0.0.0"],
+      ["-H", "127.0.0.1", "-H0.0.0.0"],
+      ["-H192.168.1.5"],
     ]) {
       expect(() => nextDevArgs(argv), argv.join(" ")).toThrow(/must listen on/);
     }

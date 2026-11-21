@@ -2,7 +2,7 @@
 // The password lives only in memory (the login request body). It is never printed or stored.
 import { chmodSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -113,7 +113,8 @@ export function tokenFilePath(env, home = homedir()) {
 export function assertOutsideRepo(file, repoRoot, platform = process.platform) {
   const norm = (p) => (platform === "win32" ? resolve(p).toLowerCase() : resolve(p));
   const rel = relative(norm(repoRoot), norm(file));
-  if (rel === "" || (!rel.startsWith("..") && !isAbsolute(rel))) {
+  const outside = rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel);
+  if (rel === "" || !outside) {
     throw fail("refusing to write the token inside the repository");
   }
 }
@@ -121,8 +122,9 @@ export function assertOutsideRepo(file, repoRoot, platform = process.platform) {
 export function writeTokenFile(file, token) {
   mkdirSync(dirname(file), { recursive: true, mode: 0o700 });
   const tmp = `${file}.tmp`;
+  rmSync(tmp, { force: true });
   try {
-    writeFileSync(tmp, `${token}\n`, { mode: 0o600 });
+    writeFileSync(tmp, `${token}\n`, { mode: 0o600, flag: "wx" });
     try {
       chmodSync(tmp, 0o600);
     } catch {

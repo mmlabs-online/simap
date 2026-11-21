@@ -23,6 +23,12 @@ export function nextDevArgs(argv) {
       if (!ALLOWED.has(a.slice("--hostname=".length))) throw new Error(REFUSED);
       hasHost = true;
       out.push(a);
+    } else if (/^-[^-]/.test(a) && a.includes("H")) {
+      // Attached forms: -H<host>, -H=<host>, and short-flag clusters containing H.
+      const value = a.slice(a.indexOf("H") + 1).replace(/^=/, "");
+      if (!ALLOWED.has(value)) throw new Error(REFUSED);
+      hasHost = true;
+      out.push(a);
     } else {
       out.push(a);
     }

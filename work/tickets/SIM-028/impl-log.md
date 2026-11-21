@@ -37,3 +37,20 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No.
 - Diff size: about +430 non-test lines.
+
+## Attempt 2 (REWORK)
+
+### Fixed
+- Review Issue 1 / security-review blocker: `scripts/dev.mjs` `nextDevArgs` now also checks attached forms `-H<host>`, `-H=<host>` and short-flag clusters containing `H`; the value must be an allowed loopback host, otherwise it throws the refusal. Required because Next's commander takes the last `-H`, so `-H0.0.0.0` bound all interfaces.
+- `scripts/dev.test.ts`: refusal cases `-H0.0.0.0`, `-H=0.0.0.0`, `-H 127.0.0.1 -H0.0.0.0`, `-H192.168.1.5`; keep case `-H127.0.0.1`.
+- Optional 🟢 (in files already in plan): `assertOutsideRepo` in `scripts/dev-token.mjs` now treats only `..` or `..<sep>` prefixes as outside (a repo dir named `..foo` is no longer misjudged); `writeTokenFile` removes a stale tmp then writes with `flag: "wx"`.
+- Not touched: `.claude/settings.json`, other 🟢 notes.
+
+### Checks
+- format:check: exit 0; typecheck: exit 0; check:layers: "211 files, no violations"; test: exit 0 (82 files); build: exit 0.
+
+### Out-of-plan files
+None.
+
+### Scope self-check
+- Smallest diff: yes, one branch plus tests and two small hardening edits.
