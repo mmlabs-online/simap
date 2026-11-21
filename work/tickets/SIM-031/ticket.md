@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | S |
 | Areas | security |
 | Gate | none |
 | Depends on | SIM-028.1 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-21 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/35 |
 
 ## Goal
 A running `pnpm dev:prod` accepts tokens only from the production Identity, so a stray `.env*` issuer and a token from
@@ -67,3 +67,9 @@ data.
 - 2026-11-21: Ming asked for this ticket after the SIM-028.1 Attempt 4 security review.
 
 ## Handoff
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 7, tokens 305k plus reviewer Attempt 2 (usage not reported when this entry was written) (planner×1 sonnet 53k, implementer×2 71k, reviewer×2 57k + pending, security-ai-generated-code-auditor×2 124k; in/out split not reported)
+- Done: `dev:prod` pins `MM_IDENTITY_ISSUER` to the production Identity and refuses case variants in the four `.env*` files. One rework, test-only. Reviewer Attempt 2 PASS; security Attempt 2 PASS.
+- In progress / next: Ming merges the PR. The live check needs M-3 and the real tunnel.
+- Gotchas: AC3's "password prompt" is read as the database password prompt. With a stale token, the Identity prompt and possibly the tunnel start come before the refusal (security Attempt 1 N2).
