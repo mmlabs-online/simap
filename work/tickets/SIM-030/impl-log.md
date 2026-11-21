@@ -34,3 +34,26 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No.
 - Diff size: see `git show --stat` of the commit.
+
+## Attempt 2 (REWORK: AC7)
+
+### Files touched
+- `src/server/http/dev-token.ts` (line 51): the third argument is now `process.env.NODE_ENV !== "production" ? process.env.SIMAP_DEV_EXPECTED_ORG : undefined`, as the review instructed. Read stays uncached. Required because: review Issue 1.
+- `work/tickets/SIM-030/impl-log.md`: this section.
+
+### Checks
+format:check, typecheck, check:layers (223 files, no violations), test, build: all exit 0.
+
+### AC7 scan (`grep -rl SIMAP_DEV_EXPECTED_ORG .next/static .next/server`)
+- `.next/static`: no hit.
+- `.next/server`: no compiled `.js` hit. One hit remains, in the source map only: `.next/server/chunks/[root-of-the-server]__027k0ohra5rgo._.js.map` (it embeds the original `dev-token.ts` source text).
+- So the literal scan still prints a file. I did not obfuscate or widen. Ming can decide: restrict the scan to `*.js`, or amend AC7.
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+- Keep the dev-token module out of the production bundle (and its source map), as in review.
+
+### Scope self-check
+One-line product change plus this log.
