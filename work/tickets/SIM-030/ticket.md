@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T05:14:40Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/30 |
 
 ## Goal
 A running `pnpm dev:prod` stays on the org it checked at startup, so a token change in another terminal or a stray
@@ -81,3 +81,9 @@ production data.
 - Done: org pin, `wrong_org`, four-file `SIMAP_DEV_ORG` refusal, UUID-only `tokenOrg`. Security Attempt 2 PASS. Reviewer Attempt 2 REWORK only on the literal AC7 scan, with no code change requested; AC1-AC6 pass.
 - In progress / next: Ming picks the AC7 wording. No rework was spent, because no code change can satisfy option 1. With option 1, the ticket goes to DONE and a PR.
 - Gotchas: do not obfuscate the env name, compute the key or strip maps to pass the scan.
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 8, tokens 393k plus reviewer Attempt 3 (usage not reported when this entry was written) (planner×1 75k, implementer×2 87k, reviewer×3 109k + pending, security-ai-generated-code-auditor×2 122k; in/out split not reported)
+- Done: org pin for the running server, `wrong_org`, four-file `SIMAP_DEV_ORG` refusal, UUID-only `tokenOrg`. Reviewer Attempt 3 PASS against Ming's AC7 wording; security Attempt 2 PASS.
+- In progress / next: Ming merges the PR. The live check needs M-3 and the real tunnel.
+- Gotchas: a build-only source map under `.next/server` holds the variable name by design (AC7). `plan.md` row 7 keeps the old AC7 command; the ticket Notes hold the approved wording.
