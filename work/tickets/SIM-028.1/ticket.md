@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | REWORK |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, security |
 | Gate | plan-approval |
 | Depends on | SIM-028 |
 | Needs Ming | — |
-| Attempts | 2 |
+| Attempts | 3 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T11:50:07Z |
-| PR | https://github.com/mmlabs-online/simap/pull/33 |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/33 (merged), https://github.com/mmlabs-online/simap/pull/34 |
 
 ## Goal
 Under `pnpm dev` (dev-token mode from SIM-028) the browser opens simap signed in and never calls mmlabs Identity, so
@@ -60,6 +60,8 @@ local development works without CORS.
 - Manual: `pnpm dev:token --org <uuid>`, `pnpm dev`, Chrome network log; `pnpm build && pnpm check:dev-bundle`.
 
 ## Notes / answers from Ming
+- 2026-11-21: Ming approved one extra rework beyond the limit of 2: fix security Attempt 3 S5 in PR #34 (force `NODE_ENV=development` in `devEnv`). S6, S7 and other follow-ups stay out.
+- 2026-11-21: Ming merged PR #33 at head `4d07c7e`, before attempt 3 reached the branch. S1, S2 and the `.env.example` name are not in that merge; they ship in the fixes PR from `ticket/SIM-028.1-fixes`.
 - 2026-11-21: Ming decided M-18: add `NEXT_PUBLIC_SIMAP_DEV_PROD` to `.env.example` (High-path edit approved, name only, as a comment line so a copied file is not refused by the launchers), and fix security Attempt 2 S1 and S2 in this PR.
 - 2026-11-21: Plan approved by Ming. Decision 1 = C: `scripts/dev-prod.mjs` sets `NEXT_PUBLIC_SIMAP_DEV_PROD=1` and the browser shows a distinct red "Production data" badge (in scope for this ticket). Decision 2 = default: a mid-session 403 `org_required` flips to the `--org` hint. Decision 3 = default: README "Local development" steps 7-8 are edited in this ticket.
 - 2026-11-21: created from the approved SIM-028 split (Decision G).
@@ -77,3 +79,15 @@ local development works without CORS.
 - Done: browser dev-token mode, red "Production data" badge and notice for `dev:prod`, `.env*` refusal of the flag, `pnpm check:dev-bundle`. Reviewer Attempt 2 PASS. Security Attempt 2 wrote REWORK with no 🔴 (S1, S2 are 🟡), so under the loop rule the ticket passes; both are raised to Ming on the PR.
 - In progress / next: Ming decides M-18 (`.env.example`) and whether S1/S2 are fixed before merge, then merges. Live browser checks need a real token (M-1); the `dev:prod` badge also needs M-3.
 - Gotchas: `verify.test.ts:169` failed once in six full runs (wall-clock test, no diff under `src/server`, cause not established). The branch merges `main` instead of rebasing, because a force-push was blocked.
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 11, tokens 775k plus reviewer Attempt 3 (usage not reported when this entry was written) (frontend-developer×1 56k, planner×1 123k, implementer×3 203k, reviewer×3 150k + pending, security-ai-generated-code-auditor×3 243k; in/out split not reported)
+- Done: S1, S2 and the commented `.env.example` name (M-18). Reviewer Attempt 3 PASS. Security Attempt 3 wrote REWORK with no 🔴 (S5 is 🟡), so under the loop rule the ticket passes. Both allowed reworks are used.
+- In progress / next: Ming does M-19 (check the `.env.example` lines; decide S5), then merges PR #33. Live checks need M-1 and M-3.
+- Gotchas: agents could not read `.env.example`; only its 3-line addition is confirmed. S5 needs `NODE_ENV=test` in the shell plus a `.env.test*` file.
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 14, tokens 983k (frontend-developer×1 56k, planner×1 123k, implementer×4 231k, reviewer×4 260k, security-ai-generated-code-auditor×4 313k; in/out split not reported)
+- Done: S5 fixed with Ming's approved extra rework. Reviewer Attempt 4 PASS; security Attempt 4 PASS.
+- In progress / next: Ming checks the `.env.example` lines (M-19) and merges PR #34; the ticket becomes MERGED then. Live checks need M-1 and M-3.
+- Gotchas: security N1 (`dev:prod` does not pin the Identity issuer) is a follow-up and should be fixed before `dev:prod` is used on real data.

@@ -110,3 +110,103 @@ return re.test(String(text).replace(/\r\n?/g, "\n"));
 - The public pages outside `AuthGate` (`/sign-up`, `/forgot-password`, `/reset-password`, `/verify-email`) were not reviewed. They do not render `DevGate` or the shell.
 - As instructed, I did not read `.env*` files, the real dev-token file or `.next` output, so I do not know whether any local `.env*` file currently sets this flag.
 - Not re-reported, as agreed: `.env.example`, F4, F6 and case-variant hardening of other keys.
+
+## Attempt 3
+
+Verdict: REWORK
+
+SIM-028.1 security review, attempt 3. The S1 parser fix and the S2 fail-closed fix are both correct. The rework is for one remaining bypass of the same guarantee: with `NODE_ENV=test` inherited, Next loads two `.env` files the launchers never check. There are no 🔴 findings: the badge grants no access, and the bypass needs both that shell variable and such a file.
+
+### Findings
+
+🟡 **S5. With `NODE_ENV=test`, Next loads `.env.test.local` and `.env.test`, and the launchers do not check them**
+- Where: `d:\project\simap-game-ui\scripts\dev.mjs:50-55` (`devEnv` passes `NODE_ENV` through) and `:96` (`ENV_FILE_NAMES`). `childEnv` at `d:\project\simap-game-ui\scripts\dev-prod.mjs:81-98` inherits this through `devEnv`.
+- Cause, in Next 16.4.6:
+  - `next/dist/bin/next:80` and `next/dist/server/lib/router-server.js:126-129` set `NODE_ENV` only when it is unset, so `test` survives under `next dev`.
+  - `@next/env/dist/index.js` then picks its file list from `NODE_ENV`. For `test` it is `.env.test.local`, `.env.test`, `.env`.
+  - `next/dist/build/define-env.js:76` still inlines `NODE_ENV` as `development` because `dev` is true, so the `DevGate` and `with-auth.ts:111` guards should stay active.
+- Scenario 1 (Windows): the shell has `NODE_ENV=test` and `.env.test.local` contains `next_public_simap_dev_prod=0`. `pnpm dev:prod` passes every check, Next applies the lowercase key over the launcher's `1`, and the browser shows amber against production.
+- Scenario 2 (any OS): the same setup with `NEXT_PUBLIC_SIMAP_DEV_PROD=1` in `.env.test` fakes the red badge under plain `pnpm dev`.
+- Correction: my attempt 2 said the launcher covers the "same list as Next". That holds only when `NODE_ENV` is not `test`.
+- Fix: force the mode in `devEnv`, which covers both launchers and keeps the four-file list correct:
+```js
+for (const k of Object.keys(copy)) {
+  const u = k.toUpperCase();
+  if (u === "NEXT_PUBLIC_SIMAP_DEV_PROD" || u === "NODE_ENV") delete copy[k];
+}
+return { ...copy, NODE_ENV: "development", NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" };
+```
+- Tests: update the `devEnv` expectations at `d:\project\simap-game-ui\scripts\dev.test.ts:200,209`, and add a case that `NODE_ENV: "test"` and `node_env: "test"` both come out as a single `NODE_ENV: "development"`. Add a `childEnv`/`run` assertion in `dev-prod.test.ts`.
+
+🟢 **S6. The new read-failure message says "nothing started", which can be false under `dev:prod`**
+- Where: `d:\project\simap-game-ui\scripts\dev.mjs:78`, used at `d:\project\simap-game-ui\scripts\dev-prod.mjs:220`, and pinned by `d:\project\simap-game-ui\scripts\dev-prod.test.ts:198`.
+- Scenario: the tunnel container is stopped, so `dev-prod.mjs:163` starts it. `.env.local` then returns `EBUSY`. The user is told nothing started while the production DB port is open on loopback.
+- Fix: say `app not started` in this message. Moving the checks above step 1 (S3, known) would also make the current text true.
+
+🟢 **S7. The exit path in `dev.mjs` `main` has no test**
+- Where: `d:\project\simap-game-ui\scripts\dev.mjs:123-130`.
+- The reader is tested, and `dev-prod` `run` is tested with `EBUSY`, but nothing tests that plain `pnpm dev` exits 2 without spawning Next. The code is correct by reading. This can be a follow-up.
+
+### Answers
+
+1. **S1: fixed for the parser, with the file-list gap in S5.**
+   - The launcher prefix matches Next's (`^\s*(?:export\s+)?`), with the same `\r\n?` normalisation and the `m` flag. Its suffix accepts everything Next's `\s*=` or `:\s+?` accepts, so any assignment Next parses for this key is refused, in any ASCII letter case.
+   - Next's key pattern `[\w.-]+` is ASCII-only, so Unicode case-folding tricks do not apply.
+   - Comments and look-alikes pass: `# KEY=`, `KEY_X=1`, and `OTHER=KEY=1`.
+   - It over-refuses in three harmless cases: a line inside a multiline quoted value, `EXPORT KEY=`, and `KEY:` at end of file.
+   - `DATABASE_URL` and `SIMAP_DEV_ORG` are not weakened. They stay case-sensitive and the new matcher accepts strictly more forms than the old one.
+2. **S2: fixed.**
+   - `makeEnvReader` (`dev.mjs:85-94`) returns null only for `ENOENT`. Every other error, including a thrown non-Error, becomes `EnvReadFailure`.
+   - That error carries only the fixed file name, with no cause, path or content.
+   - Both launchers exit 2 with a fixed message. In `dev:prod`, all three checks run before the prompt at `dev-prod.mjs:205`.
+   - Two bare catches remain nearby, and neither fails open on `.env`. `dev-prod.mjs:182` converts to `EnvReadFailure`. `dev-prod.mjs:265` reads the token file, where null only leads to a refresh or refusal.
+3. **Regressions:** the only issue in the changed lines is the message in S6. S5 predates this attempt.
+
+### What I checked and my limits
+
+- Read: the ticket, earlier security reviews, impl-log Attempt 3, both launchers, the relevant test sections, and the `@next/env` parser and file loader. Also the Next CLI, `router-server.js`, `config.js`, `define-env.js`, and the `NODE_ENV` guards under `src/server` and `src/ui/auth`.
+- **I ran nothing**: no tests, build, checks, `git diff` or live launcher. S5 and the regex comparison are traced by hand, and the Windows override is still from reading the loader. The impl-log's green results are its own claim.
+- I did not confirm in a running Turbopack server that the guards stay active under `NODE_ENV=test`.
+- I assumed the launchers run from the repo root, as `pnpm dev` does. Running the script directly from another directory would make Next read a different set of `.env` files.
+- As instructed, I did not read `.env*` files, the real dev-token file or `.next` output, so I do not know whether a `.env.test*` file exists or whether any local file sets this flag.
+- Not re-reported, as agreed: S3, S4, F4, F6, `.env.example`, and case-variant hardening of other keys.
+
+## Attempt 4
+
+Verdict: PASS
+
+SIM-028.1 security review, attempt 4. S5 is closed: no inherited `NODE_ENV` variant reaches the `next dev` child in either launcher. There are no 🔴 or 🟡 findings. Forcing the value has one small side effect on the issuer check (N1), which can be a follow-up. All of this comes from reading the code; I ran nothing.
+
+### Findings
+
+🟢 **N1. A shell with `NODE_ENV=production` no longer gets the strict issuer check under the launchers**
+- Where: `d:\project\simap-game-ui\scripts\dev.mjs:56-58`, `d:\project\simap-game-ui\scripts\dev-prod.mjs:87-97`, `d:\project\simap-game-ui\src\server\identity\config.ts:24,31-34`.
+- Cause: `loadIdentityConfig` reads `env.NODE_ENV` from the object passed at `with-auth.ts:103`. The bundler does not inline that form, so it saw the real shell value. Before this change, that shell required exactly `https://api.mmlabs.online`. Now the launcher's `development` value also allows another `https://<host>` or `http://localhost:<port>`.
+- Scenario: the shell has `NODE_ENV=production`, `.env.local` has `MM_IDENTITY_ISSUER=http://localhost:4000`, and the token file holds a token from that local Identity for the same org. `pnpm dev:prod` used to fail on every API request. It now accepts the token and works against the production database under that token's identity.
+- Severity: low. It needs the DB password at the prompt and a matching token file, and the server takes the token only from that file (`with-auth.ts:58`). A shell without `NODE_ENV` already behaved this way before this change, so the underlying gap is older: `dev:prod` never pins the issuer.
+- Fix (follow-up, outside S5): in `childEnv`, drop every letter-case variant of `MM_IDENTITY_ISSUER`, then set `MM_IDENTITY_ISSUER: "https://api.mmlabs.online"`. Next does not override a key already in the environment. Add a `dev-prod.test.ts` case with an inherited lowercase variant.
+
+### Answers
+
+1. **S5: closed for inherited values.**
+   - `devEnv` deletes every key whose uppercase form is `NODE_ENV`, then sets one `NODE_ENV: "development"` (`dev.mjs:54-58`).
+   - Plain `pnpm dev` spawns with that env (`dev.mjs:142`). `childEnv` spreads `devEnv` and adds only the production-data flag afterwards (`dev-prod.mjs:87-97`).
+   - `@next/env` picks `.env.test*` only when `process.env.NODE_ENV === "test"`. With `development` and `dev=true`, it loads `.env.development.local`, `.env.local`, `.env.development` and `.env`, matching `ENV_FILE_NAMES` (`dev.mjs:100`).
+   - A Windows `.env.local` line `node_env=test` can change the runtime value after the first load, but it does not change the file list. A forced reload calls `replaceProcessEnv` with the startup snapshot before choosing files, and the Next worker is forked from that snapshot (`initialEnv`, `next-dev.js:362`).
+
+2. **Does forcing weaken anything?**
+   - **Dev-token activation: no new activation found.** `define-env.js:76` inlines `process.env.NODE_ENV` as `development` under `next dev` for every compiler variant, so the guard at `with-auth.ts:111` already folded to true with a shell `NODE_ENV=production`. The impl-log's wording suggests that shell turned the guard off; by my reading it did not.
+   - **Issuer check: yes, only in the case in N1.**
+   - **Org pin: not weakened.** `dev-token.ts:51` uses the inlined form, so the pin is still read. If the value were not inlined, forcing `development` would make the pin apply, which is stricter.
+   - **`next build` and `pnpm start`: unaffected.** `devEnv` is called only from the two launchers and works on a copy. `build` runs `next build`, `start` runs the standalone server, and the Dockerfile and deploy compose still set `NODE_ENV=production`.
+
+3. **Regressions in the changed lines: none beyond N1.** The new tests cover `test`, `production`, a lowercase variant, and a single resulting key through both `devEnv` and `run`.
+
+### What I checked and my limits
+
+- Read: the ticket, attempt 3 review, impl-log Attempt 4, both launchers, the relevant test sections, `config.ts`, `dev-token.ts`, `with-auth.ts`, `devAuthorizationFor`, `proxy.ts`, `runtime.ts`, and the relevant parts of Next 16.4.6 (`@next/env`, CLI, `next-dev.js`, `router-server.js`, `setup-dev-bundler.js`, `define-env.js`).
+- **I ran no tests, build, checks, `git diff` or live launcher**, because this session had read and search tools only. I reviewed the current files, so "changed lines" relies on the impl-log's file list. Its green results are its own claim.
+- Not confirmed in a running Turbopack server: the inlining of `NODE_ENV` in server code, and the Windows case-insensitive override.
+- A `NODE_OPTIONS --require` preload could change `NODE_ENV` inside the child. That is already local code execution, so I did not treat it as an inherited variant.
+- As instructed, I did not read `.env*` files, the real dev-token file or `.next` output, so I do not know what local `.env*` files set.
+- Not re-reported, as agreed: S3, S4, S6, S7, F4, F6, and case-variant hardening of other keys.

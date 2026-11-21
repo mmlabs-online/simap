@@ -35,6 +35,7 @@ type Opts = {
   envFiles?: Record<string, string>;
   password?: string;
   spawnFails?: boolean;
+  envThrows?: string;
 };
 const dockerCalls: string[][] = [];
 
@@ -64,6 +65,7 @@ async function drive(o: Opts = {}) {
     sleep: async () => {},
     readEnvFile: (name: string) => {
       if (!trace.includes("env check")) trace.push("env check");
+      if (o.envThrows) throw Object.assign(new Error("SECRET-CONTENT"), { code: o.envThrows });
       if (name === ".env.local" && o.envLocal) return o.envLocal;
       return o.envFiles?.[name] ?? null;
     },
@@ -187,6 +189,16 @@ describe("buildProdUrl", () => {
 });
 
 describe("run: step order", () => {
+  it("refuses with exit 2 before the prompt when an .env file cannot be read", async () => {
+    const r = await drive({ envThrows: "EBUSY" });
+    expect(r.code).toBe(2);
+    expect(r.trace).not.toContain("prompt");
+    expect(r.trace).not.toContain("spawn");
+    expect(r.err).toEqual([
+      "[dev:prod] cannot read .env.local: close whatever holds it and retry (nothing started)",
+    ]);
+    expect(r.err.join("")).not.toContain("SECRET");
+  });
   it("happy path", async () => {
     const r = await drive();
     expect(r.code).toBe(0);
@@ -406,6 +418,13 @@ describe("run: child process", () => {
     );
     expect(keys).toEqual(["NEXT_PUBLIC_SIMAP_DEV_PROD"]);
     expect(r.spawned!.env.NEXT_PUBLIC_SIMAP_DEV_PROD).toBe("1");
+  });
+
+  it("child NODE_ENV is development, replacing any inherited case variant", async () => {
+    const r = await drive({ env: { NODE_ENV: "test", node_env: "production" } });
+    const keys = Object.keys(r.spawned!.env).filter((k) => k.toUpperCase() === "NODE_ENV");
+    expect(keys).toEqual(["NODE_ENV"]);
+    expect(r.spawned!.env.NODE_ENV).toBe("development");
   });
 
   it("child gets the checked org as the pin", async () => {

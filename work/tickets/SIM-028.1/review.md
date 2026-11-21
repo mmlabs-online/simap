@@ -130,3 +130,130 @@ F1, F2, F3 and F5 are verified above. `security-review.md` was updated by anothe
 
 ### Rework requested by Ming (added by orchestrator, 2026-11-21)
 Fix in REWORK attempt 3: security Attempt 2 S1 and S2, and add the `.env.example` name (M-18). S3, S4 and the other follow-ups stay out of this PR.
+
+## Attempt 3 — 2026-11-21
+Verdict: PASS
+
+This PASS covers S1, S2 and the Checks. It does not cover the content of `.env.example`, which was not verified (see "Not verified"). Ming should run the command there before merging.
+
+### Checks (run by reviewer)
+Node 22 through fnm.
+- `pnpm format:check` — exit 0, 285 files.
+- `pnpm typecheck` — exit 0.
+- `pnpm check:layers` — exit 0, 234 files, no violations.
+- `pnpm test` — exit 0, 96 files, 951 passed, 3 skipped. Matches impl-log.
+- `pnpm build` — exit 0.
+- `pnpm check:dev-bundle` — exit 0, no dev-token strings in `.next/static`.
+- `pnpm test:db` — not run, left to CI as instructed.
+
+### Rework items
+- [x] S1 — `scripts/dev.mjs:61-67`. Evidence: the real `@next/env` 16.4.6 `loadEnvConfig`, fed in-memory strings through a patched `fs` on a non-existent root (no real `.env*` file read).
+  - 108 named cases, 0 mismatches, across the flag (upper and lower case), `DATABASE_URL` and `SIMAP_DEV_ORG`: lone CR, key and `=` on separate lines, key after U+2028/2029, BOM, `export`, colon form; comments and look-alikes pass.
+  - 120,000 seeded generated strings (40,000 per key): 0 cases where Next sets the key and the launcher misses it.
+  - Over-refusals, the safe direction: 64 (flag), 41 (`DATABASE_URL`), 30 (`SIMAP_DEV_ORG`).
+  - No weakening: 0 strings refused by the previous matcher (`4d07c7e`) and accepted by the new one, for all three keys. `DATABASE_URL` and `SIMAP_DEV_ORG` stay case-sensitive (`scripts/dev-prod.mjs:74,195`).
+- [x] S2 — `scripts/dev.mjs:85-94,124-130`, `scripts/dev-prod.mjs:179-185,218-222`.
+  - `dev:prod` `run()` with injected deps: EBUSY, EPERM, EACCES, EISDIR and EIO on each of the 4 files (20 cases) all exit 2 with the fixed message, no password prompt, no spawn, no error content.
+  - `dev` launcher: a scratch copy with a real unreadable path (directory named as each of the 4 files) exits 2 with the fixed message and starts nothing.
+  - The real reader returns null for missing files and throws `EnvReadFailure` with no `cause` on EISDIR.
+- [ ] `.env.example` (M-18) — NOT VERIFIED. The file name appears in the branch diff and in `d17dc00`; line counts and added lines were not inspected.
+
+### Acceptance criteria
+- [x] AC1, AC2, AC3 (reviewer parts) — no change to UI code in the rework commit `d17dc00`; related tests pass.
+- [x] AC4 — build and `check:dev-bundle` exit 0.
+- [x] AC5 — Checks above; new logic has tests in `scripts/dev.test.ts` and `scripts/dev-prod.test.ts`.
+
+Ming verification after merge (from plan.md and Decision 1 = C, not verified here):
+1. `pnpm dev:token --org <your-org-uuid>`, then `pnpm dev`.
+2. AC1: signed in at `http://localhost:3000`, no request to `api.mmlabs.online` with "Preserve log" on; `/sign-in` redirects into the app.
+3. AC2: rename the token file → "Refresh permissions" → "No usable dev token"; restore → "Check again" → signed in without restart; token without `--org` → the `--org` hint; with `--org` → "Check again" → signed in.
+4. AC3: amber badge at desktop and phone width, no sign-out or org switch; the first-visit profile saves.
+5. Decision 1 = C: under a real `pnpm dev:prod`, the red "Production data" badge shows in the shell and the red notice shows on the first-visit profile form, at desktop and phone width, without hiding the form.
+
+### Issues
+None that block.
+
+### Rules (CLAUDE.md)
+- R3: the `.env.example` entry is not verified, see below. No other violation found.
+- R1, R2, R4, R5, R6, R7: no violations found. `d17dc00` changes only `.env.example` (approved, M-18), both launchers, their tests and `impl-log.md`.
+
+### Blockers from review agents
+None recorded at the time of this review. `security-review.md` showed as modified in the working tree during this review, by another agent; it was not read again or assessed.
+
+### Not verified
+- `.env.example` content: the permission system denied the command that included `git diff --numstat origin/main...HEAD -- .env.example`, and it was not retried. So the 3-line count, the commented form and the absence of a value are unconfirmed. Before merging, Ming can run: `git diff --numstat origin/main...HEAD -- .env.example` (expected `3	0	.env.example`).
+- A real `next dev` loading `.env*` on Windows, a real `pnpm dev:prod`, and live browser behaviour.
+- `dev:prod` `main()` itself (it needs a TTY); its read-failure path was exercised through `run()` with the real reader's contract.
+- `origin/main` was not fetched; the diff uses the local ref.
+
+### Nits (do not block)
+- `src/ui/auth/DevGate.tsx`: the `generation.current += 1` nit from Attempt 1 remains.
+
+### Follow-ups (out of scope)
+- S3, S4, F4, F6 and case-variant hardening of other keys.
+- Check `src/server/identity/verify.test.ts:169` for wall-clock flakiness (passed in this run).
+- `pnpm check:dev-bundle` in CI, `.claude/loop.config.md` and `CLAUDE.md`.
+
+### Rework requested by Ming (added by orchestrator, 2026-11-21)
+Fix in REWORK attempt 4 on `ticket/SIM-028.1-fixes` (PR #34): security Attempt 3 S5 only.
+
+## Attempt 4 — 2026-11-21
+Verdict: PASS
+
+This PASS covers S5 and the Checks on PR #34. Live browser checks and a real `next dev` / `pnpm dev:prod` run were not done (see "Not verified").
+
+### Checks (run by reviewer)
+Node 22.23.5 through fnm.
+- `pnpm format:check` — exit 0, 285 files.
+- `pnpm typecheck` — exit 0.
+- `pnpm check:layers` — exit 0, 234 files, no violations.
+- `pnpm test` — exit 0, 96 files, 953 passed, 3 skipped (Attempt 3 had 951 passed; the 2 new tests account for the rise).
+- `pnpm build` — exit 0.
+- `pnpm check:dev-bundle` — exit 0, no dev-token strings in `.next/static`.
+- `pnpm test:db` — not run, left to CI as instructed. This PR changes no file under `src/` or `db/`.
+
+### Rework items
+- [x] S5, `devEnv` — `scripts/dev.mjs:53-59` deletes every key whose uppercase form is `NODE_ENV` and sets one `NODE_ENV: "development"`. Tests: `scripts/dev.test.ts` "forces a single NODE_ENV=development whatever was inherited".
+- [x] S5, `dev:prod` child — `childEnv` (`scripts/dev-prod.mjs:81-98`) spreads `devEnv(...)` and adds only `NEXT_PUBLIC_SIMAP_DEV_PROD` after it. Tests: `scripts/dev-prod.test.ts` "child NODE_ENV is development, replacing any inherited case variant".
+- [x] S5, real loader — one-off script outside the repo, real `@next/env` 16.4.6 `loadEnvConfig` in a spawned child on a throwaway temp directory holding all six fake `.env*` files, deleted afterwards.
+  - Control: raw `NODE_ENV=test` loads `.env.test.local`, `.env.test`, `.env`, so the check can detect the bug.
+  - 7 inherited variants (unset, `NODE_ENV` test/production, `node_env`, `Node_Env`, mixed, empty plus variants), each through `devEnv` and through the real `run()` of `dev-prod.mjs` with stubbed I/O: 14 of 14 give one `NODE_ENV` key equal to `development` and load only `.env.development.local`, `.env.local`, `.env.development`, `.env`. This is the launchers' `ENV_FILE_NAMES` list.
+- [x] Commit scope — `79edf63` changes only `scripts/dev.mjs`, `scripts/dev.test.ts`, `scripts/dev-prod.test.ts` and `work/tickets/SIM-028.1/impl-log.md`. `7612b90` only moves the ticket state to REVIEW.
+- [x] Dev-token guards — `src/server/http/with-auth.ts`, `src/server/http/dev-token.ts`, `src/ui/auth/AuthGate.tsx` and `DevGate.tsx` are unchanged. Targeted Vitest on `src/server/http`, `src/server/identity` and both launcher test files: 9 files, 146 passed. The production path does not use `devEnv`: `pnpm start` runs the standalone server, the `Dockerfile` sets `NODE_ENV=production`, and `check:dev-bundle` passes.
+
+### Acceptance criteria
+- [x] AC1, AC2, AC3 (reviewer parts) — no UI or server code changed in this PR; related tests pass. Live parts remain with Ming below.
+- [x] AC4 — build and `check:dev-bundle` exit 0.
+- [x] AC5 — Checks above; the S5 logic has tests in both launcher test files.
+
+Ming verification after merge (unchanged from Attempt 3):
+1. `pnpm dev:token --org <your-org-uuid>`, then `pnpm dev`.
+2. AC1: signed in at `http://localhost:3000`, no request to `api.mmlabs.online` with "Preserve log" on; `/sign-in` redirects into the app.
+3. AC2: rename the token file → "Refresh permissions" → "No usable dev token"; restore → "Check again" → signed in without restart; token without `--org` → the `--org` hint; with `--org` → "Check again" → signed in.
+4. AC3: amber badge at desktop and phone width, no sign-out or org switch; the first-visit profile saves.
+5. Decision 1 = C: under a real `pnpm dev:prod`, the red "Production data" badge shows in the shell and the red notice shows on the first-visit profile form, at desktop and phone width, without hiding the form.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found in the attempt 4 changes (R1 to R7). R3 for `.env.example`: this attempt does not touch the file; its content stays unverified by agents (M-19).
+
+### Blockers from review agents
+None recorded in `security-review.md`. No security re-review of attempt 4 exists at the time of this review.
+
+### Not verified
+- A real `next dev` on Windows, a real `pnpm dev:prod`, and live browser behaviour. The loader was tested directly; the guards through unit tests and by confirming their code is unchanged.
+- `.env.example` content (hard limit on `.env*` values). The branch diff stat shows 3 added lines.
+- `pnpm test:db` (CI).
+- The branch is one commit behind `origin/main` (`6556028`, `work/backlog.md` only, no file overlap). Checks ran on the branch head, not on a merge result.
+
+### Nits (do not block)
+- `work/tickets/SIM-028.1/ticket.md`: `Attempts` still says 3 and `PR` still points to #33 while this work is attempt 4 on PR #34. The orchestrator owns these fields.
+- With `NODE_ENV=production` in the shell, the launchers now run with `development`, so `src/server/identity/config.ts:24` applies its development issuer rules, as it already does when `NODE_ENV` is unset. This follows from the approved S5 fix.
+- `src/ui/auth/DevGate.tsx`: the `generation.current += 1` nit from Attempt 1 remains.
+
+### Follow-ups (out of scope)
+- S3, S4, S6, S7, F4, F6 and case-variant hardening of other keys.
+- Check `src/server/identity/verify.test.ts:169` for wall-clock flakiness (passed in this run).
+- `pnpm check:dev-bundle` in CI, `.claude/loop.config.md` and `CLAUDE.md`.
