@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | REWORK |
 | Priority | P1 |
 | Size | S |
 | Areas | security |
 | Gate | plan-approval |
 | Depends on | SIM-029 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-21 |
 | Claimed by | claude@2026-11-21T04:58:10Z |
 | PR | — |
