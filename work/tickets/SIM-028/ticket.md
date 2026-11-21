@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | REWORK |
 | Priority | P1 |
 | Size | M |
 | Areas | architecture, ui, security |
 | Gate | plan-approval |
 | Depends on | SIM-006.2, SIM-007.2 |
 | Needs Ming | — |
-| Attempts | 1 |
+| Attempts | 2 |
 | Created | 2026-11-21 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-21T01:12:14Z |
 | PR | https://github.com/mmlabs-online/simap/pull/28 |
 
 ## Goal
@@ -75,6 +75,7 @@ Identity, so local development is not blocked by CORS (Identity cannot register 
 - 2026-11-21: Ming chose option B (tudocuatui dev-token). Any org-admin-api change → give Ming a prompt.
 - Waiting for Ming: plan approval (High tier)
 - Plan approved (2026-11-21): Ming approved decisions A-G as written in plan.md (incl. the split; SIM-028.1 created on main).
+- 2026-11-21: Ming asked to fix both 🟡 findings of security-review Attempt 2 on PR #28 before merge.
 
 ## Handoff
 
