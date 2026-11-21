@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-21 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/33 |
 
 ## Goal
 Under `pnpm dev` (dev-token mode from SIM-028) the browser opens simap signed in and never calls mmlabs Identity, so
