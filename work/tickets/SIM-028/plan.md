@@ -6,6 +6,111 @@ Status: READY
 > the gate are listed under **Decisions for Ming (defaults chosen)** in `## Assumptions`. None of them blocks the plan.
 > **Split:** the ticket is about 800 non-test lines, about twice the size of one cycle. This plan covers slice 1
 > (server and scripts). Slice 2 (browser dev-token mode, proposed as SIM-028.1) is outlined under `## Split proposal`.
+> **Amended 2026-11-21 (escalation option 1):** the `pnpm dev` launcher argument handling is replaced by an allowlist.
+> See `## Amendment (2026-11-21, escalation option 1)` right below; it overrides Decision C, Approach step 5, the
+> `scripts/dev.mjs` / `scripts/dev.test.ts` / `README.md` rows and the `scripts/dev.test.ts` test rows. Everything else
+> is unchanged and already passed review.
+
+## Amendment (2026-11-21, escalation option 1)
+
+Source: `escalation.md` option 1, chosen by Ming (ticket.md "Notes / answers from Ming", 2026-11-21): "`pnpm dev`
+accepts only `--port <n>` / `-p <n>`, refuses every other argument and any `--`, builds
+`["dev", "-H", "127.0.0.1", "--port", n]` itself, and refuses to start when `NODE_OPTIONS` contains `inspect` or
+`debug` in any spelling. Plan approved (2026-11-21) for an amendment limited to this launcher change."
+Closes review Attempt 3 Issue 1 (`--debug-port` in `NODE_OPTIONS`), security-review Attempt 3 🟡 (trailing `--` /
+value-taking option pushes the appended `-H` out of option parsing) and the 🟢 hardening note (quoted / `--debug-port`
+spellings), because none of those inputs can reach `next dev` any more.
+
+### Files that change (and only these)
+| File | Change | High path? |
+|---|---|---|
+| `scripts/dev.mjs` | Rewrite `nextDevArgs` as an allowlist parser and `assertNodeOptionsSafe` as a substring refusal (spec below). Delete `ALLOWED`, `REFUSED`, `REFUSED_INSPECT`, `INSPECT_OK`, `inspectValueOk` and the "Always last" comment (l.7-16, l.62-63). `devEnv` and `main()` (l.67-88) stay as they are. | no |
+| `scripts/dev.test.ts` | Replace the `nextDevArgs` and `assertNodeOptionsSafe` describe blocks (l.4-100) with the tables below. Keep the `devEnv` block (l.102-106). | no |
+| `README.md` | Replace "Local development" step 4, first sentence (l.30), and append one sentence to step 6 (l.34) (text below). | no |
+
+`CLAUDE.md` does not change: its Commands line ("`pnpm dev` (launcher: binds 127.0.0.1, server adds the dev token)",
+l.24) stays accurate. `package.json`, `.env.example` and all `src/**` files do not change.
+
+### Decision C (amended)
+`pnpm dev` always runs dev-token mode (loopback bind + flag), and **it accepts no `next dev` flags except a port**.
+For any other `next dev` option (`--inspect`, `--webpack`, HTTPS, a project directory, …) use `pnpm exec next dev …`,
+which has no dev token (README step 6). The launcher never forwards a user token to Next; it builds the argv itself.
+
+Allowed forms, decided:
+- `--port <n>`, `-p <n>`: as Ming specified.
+- `--port=<n>`: **allowed**. It is a single token, so it cannot swallow or be swallowed by another token, and the
+  launcher re-emits it as `--port <n>`; Next never sees the user's spelling. It costs one branch and avoids a
+  confusing refusal of a standard spelling.
+- `-p=<n>`, `-p<n>`: **refused**. Commander reads `-p=3001` as the value `=3001` (not a port), so accepting them
+  would mean inventing semantics Next does not have.
+- `--turbopack` / `--turbo` / `--webpack`: **refused**. Turbopack is already the default bundler for `next dev` in
+  Next 16, so `--turbopack` is a no-op (`dist/bin/next` l.203 lists `--turbo`, `--turbopack`, `--webpack` as plain
+  booleans); allowing it adds a branch with no benefit, and `--webpack` is a choice for `pnpm exec next dev`.
+- A leading `--`: **refused** like any other `--` (Ming: "refuses … any `--`"). pnpm 10 forwards
+  `pnpm dev --port 3001` without it, so nothing legitimate is lost; the usage message shows the right spelling.
+
+### `scripts/dev.mjs` spec
+- `export const USAGE = "[dev] usage: pnpm dev [--port <n> | -p <n> | --port=<n>]. pnpm dev always binds 127.0.0.1 and accepts no other next dev option (it adds a bearer token); use pnpm exec next dev for other options (no dev token).";`
+- `export function nextDevArgs(argv)`:
+  - Walk `argv` once. Accept exactly: `"--port"` or `"-p"` followed by a value token, or a token starting with
+    `"--port="` whose remainder is the value. Anything else (including `"--"`, any positional, `-H…`, `--hostname…`,
+    `--inspect…`, `-h`, `--help`, `--turbopack`, a repeated port flag in any form) → `throw new Error(USAGE)`.
+  - A port flag may appear at most once (second occurrence in any form → throw).
+  - Value check: `/^[1-9][0-9]{0,4}$/` and `Number(value) <= 65535`; else throw `"[dev] invalid port: use 1-65535"`.
+    A missing value (flag is the last token) throws the same port message. A value token that starts with `-` fails
+    the regex, so `--port -H` / `--port --` are refused.
+  - Return `["dev", "-H", "127.0.0.1"]`, plus `"--port", value` when a port was given. Nothing else is ever in the
+    array; `-H 127.0.0.1` sits directly after `dev`, before any user-derived value.
+- `export function assertNodeOptionsSafe(env)`:
+  - `const squashed = String(env.NODE_OPTIONS ?? "").toLowerCase().replace(/[^a-z]/g, "");`
+  - If `/inspect|debug/.test(squashed)` → `throw new Error("[dev] NODE_OPTIONS must not contain inspect or debug options (the Node inspector would expose the dev token); unset it, or use pnpm exec next dev")`.
+  - Dropping every non-letter removes quotes, backslashes, `_`, `-`, `=`, whitespace and digits, so every spelling
+    Node or Next's `tokenizeArgs` (`dist/server/lib/utils.js` l.161-194) could turn into `--inspect*`,
+    `--inspect_brk`, `--debug-port` or `--debug*` is caught. Fail-safe false positives (e.g. `--require ./debug-hook.js`)
+    are accepted and named in the README.
+- `main()`: unchanged: `assertNodeOptionsSafe(process.env)` then `nextDevArgs(process.argv.slice(2))`, print the
+  message and exit 1 on throw, else spawn as today.
+
+### Tests (`scripts/dev.test.ts`, replacing l.4-100)
+| Test (file › name) | Cases |
+|---|---|
+| `scripts/dev.test.ts › nextDevArgs builds the argv itself` | `[]` → `["dev","-H","127.0.0.1"]`; `["--port","3001"]`, `["-p","3001"]`, `["--port=3001"]` → `["dev","-H","127.0.0.1","--port","3001"]`; boundaries `["--port","1"]` and `["-p","65535"]` accepted |
+| `… › every accepted argv starts with dev -H 127.0.0.1 and has length 3 or 5` | invariant loop over all accepted cases above: `slice(0,3)` equals `["dev","-H","127.0.0.1"]`, `length` ∈ {3,5}, and when 5, `[3]` is `"--port"` and `[4]` matches `/^[1-9][0-9]{0,4}$/` |
+| `… › refuses any --` | `["--"]`, `["--","--port","3001"]`, `["--port","3001","--"]`, `[".","--"]`, `["--",".","--"]` → throws `USAGE` |
+| `… › refuses positionals and every other next dev option` | `["."]`, `["src"]`, `["--port","3001","."]`, `["-H","127.0.0.1"]`, `["-H","localhost"]`, `["-H0.0.0.0"]`, `["-H=0.0.0.0"]`, `["--hostname","0.0.0.0"]`, `["--hostname=::1"]`, `["--inspect"]`, `["--inspect","9229"]`, `["--inspect=127.0.0.1:9229"]`, `["--turbopack"]`, `["--turbo"]`, `["--webpack"]`, `["--experimental-https"]`, `["--experimental-https-key","k"]`, `["--experimental-upload-trace","x"]`, `["--disable-source-maps"]`, `["-h"]`, `["--help"]`, `["-pH"]`, `["--PORT","3001"]`, `["--port 3001"]` (one token) → throws `USAGE` |
+| `… › refuses attached short port forms` | `["-p=3001"]`, `["-p3001"]` → throws `USAGE` |
+| `… › refuses a repeated port flag` | `["--port","3001","--port","3002"]`, `["--port","3001","-p","3002"]`, `["--port=3001","--port=3002"]` → throws |
+| `… › refuses a missing or invalid port value` | `["--port"]`, `["-p"]`, `["--port="]`, `["--port","-H"]`, `["--port","--"]`, `["-p","--hostname=0.0.0.0"]`, `["--port","0"]`, `["--port","65536"]`, `["--port","99999"]`, `["--port","03001"]`, `["--port","3001a"]`, `["--port"," 3001"]`, `["--port","+3001"]`, `["--port","3e3"]`, `["--port","0x10"]`, `["--port","3001.0"]`, `["--port","-1"]`, `["--port=0.0.0.0"]` → throws `/invalid port/` |
+| `… › attempt-3 bypass inputs are refused` (security-review Attempt 3) | `[".","--"]`, `["--",".","--"]`, `[".","--experimental-https-key"]`, `[".","--experimental-https-ca"]`, `[".","--experimental-upload-trace"]`, `["--experimental-https-key","--hostname=localhost"]` → throws |
+| `assertNodeOptionsSafe › allows NODE_OPTIONS without inspect or debug` | `undefined`, `""`, `"   "`, `"--max-old-space-size=4096"`, `"--enable-source-maps --max-old-space-size=4096"`, `"--no-warnings"` → no throw |
+| `… › refuses inspect and debug in any spelling` | `"--inspect"`, `"--inspect=9229"`, `"--inspect=127.0.0.1:9229"` (loopback now refused too), `"--inspect-brk"`, `"--inspect-brk=0.0.0.0:9229"`, `"--inspect-port=0.0.0.0:9230"`, `"--inspect-wait"`, `"--inspect-publish-uid=http"`, `"--inspect_brk=0.0.0.0"`, `"--debug-port=0.0.0.0:9229"`, `"--inspect --debug-port=0.0.0.0:9229"`, `"--debug_port=0.0.0.0"`, `"--debug"`, `"--debug-brk"`, `"--INSPECT"`, `"--Inspect-Brk=0.0.0.0"`, `"\"--inspect=0.0.0.0:9229\""`, `"'--inspect'"`, `"--ins\"pect\"=0.0.0.0:9229"`, `"--ins\\pect"`, `"--max-old-space-size=1 --inspect 192.168.1.5:9229"`, `"--max-old-space-size=1\t--inspect"`, `"-r ./debug-hook.js"` (documented false positive) → throws `/NODE_OPTIONS/` |
+| `devEnv` (unchanged block) | as today |
+
+### README (exact wording)
+- Step 4, replace the first sentence ("`pnpm dev` binds `127.0.0.1` (always passed last) and refuses … `NODE_OPTIONS`).")
+  with: "`pnpm dev` always runs `next dev -H 127.0.0.1` and accepts only a port (`pnpm dev --port 3001`, `-p 3001` or
+  `--port=3001`); any other argument, including `--`, is refused. It also refuses to start when `NODE_OPTIONS`
+  mentions `inspect` or `debug` (any spelling, so an unrelated value such as a `debug-hook.js` path is refused too).
+  This check is best-effort: `pnpm` and the launcher's own Node process start before it runs and already honour
+  `NODE_OPTIONS`, so never put an inspector address in `NODE_OPTIONS` while using a dev token." Keep the rest of step 4.
+- Step 6, append: "Use it also for any other `next dev` option (`--inspect`, `--webpack`, HTTPS, another directory)."
+
+### Verification for this amendment (reviewer)
+- `pnpm test scripts/dev.test.ts` green with the tables above; full Checks green (`pnpm format:check`, `pnpm typecheck`,
+  `pnpm check:layers`, `pnpm test`, `pnpm build`), AC2 `.next/static` scan still empty.
+- Code reading: `nextDevArgs` returns only literals plus the validated port digits; `-H 127.0.0.1` is at index 1-2.
+- Local run: `node scripts/dev.mjs -- --port 3001`, `node scripts/dev.mjs --help`, `node scripts/dev.mjs . --` each exit
+  1 with the usage line and start no server; `$env:NODE_OPTIONS="--debug-port=0.0.0.0:9229"; node scripts/dev.mjs`
+  exits 1 with the NODE_OPTIONS message (unset it afterwards). The implementer records in `impl-log.md` that
+  `pnpm dev --port 3001` reaches the launcher as `["--port","3001"]` (no leading `--`, pnpm 10), e.g. with a
+  temporary `console.error(process.argv.slice(2))` that is removed before commit. Optional: feed accepted outputs to Next's bundled
+  commander as in review Attempt 3 and confirm `options.hostname === "127.0.0.1"`.
+
+### Residual (documented, not coded)
+- `NODE_OPTIONS` set in a `.env*` file is not checked: the launcher does not read `.env*` (out of scope, same as the
+  existing `NEXT_PUBLIC_SIMAP_DEV_TOKEN` assumption). Whether Next's dev parent would pass such a value into the
+  forked server (`dist/cli/next-dev.js` l.378-416) was not verified; README already says not to put dev flags in
+  `.env*`. Follow-up candidate together with the security-review "fail closed on `.env*` flag" item.
 
 ## Scope summary
 - `work/decisions.md` D56 (Ming, 2026-11-21): "Local dev signs in like tudocuatui (its D44/D45/D46): `pnpm dev:token`
@@ -55,7 +160,7 @@ Status: READY
 |---|---|---|
 | 1 | (slice-1 form of ticket AC1) With a valid token file, `pnpm dev` signs `/api/*` requests with the file token: a request without `Authorization` gets the dev identity. The browser half of AC1 (signed-in UI, no request to `api.mmlabs.online`) is slice 2. | Unit tests: `dev-token.test.ts › devAuthorization returns Bearer <file token> for a same-origin localhost /api request` and `with-auth.test.ts › authorization dep: verifier gets the dep result`. Manual check, only possible with a real token (Ming, after M-1): `curl -i http://localhost:3000/api/me` → 200. |
 | 2 | The token never reaches the browser: not in any response body or header, not in `.next/static` or any client bundle, and the dev-token path is disabled in `pnpm build` output (`NODE_ENV=production`). | Code reading: the dev result only goes into `d.verifier.verify(...)`; `/api/me` returns `{sub,email,org,tier,member}` (`src/app/api/me/route.ts` l.12-16). The `getAuthDeps` guard is the literal `process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_SIMAP_DEV_TOKEN === "1"`, inlined to false by `define-env.js` l.76, and `./dev-token` is loaded only through `await import()` inside that guard. After `pnpm build`, `rg -l "dev-token\|dev:token\|\.config/simap" .next/static` finds nothing (the command is in the README). Test `with-auth.test.ts › logs never contain the token…` (existing) still passes. |
-| 3 | Injection only for same-origin requests (`Sec-Fetch-Site` absent or `same-origin`), only `/api/*`, always drops a client `Authorization`, and refuses to run unless the dev server listens on loopback. | `token.test.ts › devAuthorizationFor …` cases (cross-site, same-site, none → null; non-`/api/` path → null; client Authorization never returned; Host not loopback → null; foreign Origin → null). `dev.test.ts › nextDevArgs …` (always `-H 127.0.0.1` by default; refuses `0.0.0.0`, `::`, LAN IPs, a missing value and the `--hostname=` form). The server never injects unless `NEXT_PUBLIC_SIMAP_DEV_TOKEN=1`, which only `scripts/dev.mjs` sets (grep). |
+| 3 | Injection only for same-origin requests (`Sec-Fetch-Site` absent or `same-origin`), only `/api/*`, always drops a client `Authorization`, and refuses to run unless the dev server listens on loopback. | `token.test.ts › devAuthorizationFor …` cases (cross-site, same-site, none → null; non-`/api/` path → null; client Authorization never returned; Host not loopback → null; foreign Origin → null). `dev.test.ts › nextDevArgs …` (amended 2026-11-21: argv is always `dev -H 127.0.0.1 [--port n]`; every other argument, any `--` and `inspect`/`debug` in `NODE_OPTIONS` are refused; see `## Amendment`). The server never injects unless `NEXT_PUBLIC_SIMAP_DEV_TOKEN=1`, which only `scripts/dev.mjs` sets (grep). |
 | 4 | `pnpm dev:token` never prints the password or token, never writes the password anywhere, and writes the token file outside the repo. The file default path and override are tested. | `dev-token.test.ts › run: captured stdout/stderr contain neither password nor token`, `› tokenFilePath default ~/.config/simap/dev-token and SIMAP_DEV_TOKEN_FILE override`, `› refuses a token path inside the repo (case-insensitive on win32)`, `› writeTokenFile writes token + newline atomically, mode 0600 on POSIX`. Code reading: the password exists only in the in-memory `/auth/login` body, never in argv, env or a file. |
 | 5 | Missing / malformed / expired token → a single warning naming `pnpm dev:token`, and `/api/*` answers 401 as without a token. Refreshing the file needs no dev-server restart. | `token.test.ts › parseDevToken missing/malformed/expired/ok`, `› warningFor names pnpm dev:token and never the token`, `› createWarnOnce logs only on change`. `dev-token.test.ts › two requests with a missing file warn once`, `› a rewritten file is picked up on the next call`. `with-auth.test.ts › authorization dep returning null → 401 unauthenticated even with a client Authorization header`. |
 | 6 | All Checks green; new logic has Vitest tests (token-file reader, header rewrite, script answer parsing). | `pnpm format:check`, `pnpm typecheck && pnpm check:layers`, `pnpm test`, `pnpm build`. The tests are listed in `## Tests to write`. |
@@ -134,7 +239,7 @@ request, and their behaviour is otherwise unchanged (401/403/503 as today).
 | `… › writeTokenFile writes token + "\n", leaves no .tmp file, mode 0600 on POSIX (assertion skipped on win32)` | AC4 |
 | `… › run (fake fetch, fake prompt): login body has the email/password, headers Origin https://simap.mmlabs.online and X-MM-App simap, redirect manual; token body {audience:"simap",account_id,org_id}; Cookie forwarded; logout attempted; logout failure ignored; captured stdout/stderr contain neither password nor token` | AC4, scope bullet 1 |
 | `… › run without org: writes the token and prints the "no org: re-run with --org <uuid>" hint` | Decision D |
-| `scripts/dev.test.ts › nextDevArgs: [] → ["dev","-H","127.0.0.1"]; --port 3001 passed through; -H localhost / --hostname=::1 / -H 127.0.0.1 kept; -H 0.0.0.0, --hostname :: , -H 192.168.1.5, --hostname=0.0.0.0, a trailing -H with no value → throws` | AC3 loopback |
+| *(Superseded 2026-11-21 by the `## Amendment` test table)* `scripts/dev.test.ts › nextDevArgs: [] → ["dev","-H","127.0.0.1"]; --port 3001 passed through; -H localhost / --hostname=::1 / -H 127.0.0.1 kept; -H 0.0.0.0, --hostname :: , -H 192.168.1.5, --hostname=0.0.0.0, a trailing -H with no value → throws` | AC3 loopback |
 | `… › devEnv sets NEXT_PUBLIC_SIMAP_DEV_TOKEN=1 and keeps the rest of env` | Decision B |
 
 ## Approach
@@ -177,7 +282,8 @@ request, and their behaviour is otherwise unchanged (401/403/503 as today).
      an org. Error messages come from the mappers. The Identity body and the token are never printed.
    - **Testing seam.** `run({ fetchFn, promptEmail, promptPassword, env, out, err, now })` carries all I/O, so
      Vitest can drive it.
-5. **`scripts/dev.mjs`**. `nextDevArgs(argv)`:
+5. **`scripts/dev.mjs`**. *(Superseded 2026-11-21 for argument handling and NODE_OPTIONS by `## Amendment`; the
+   `main()` spawn bullets below still apply.)* `nextDevArgs(argv)`:
    - It parses `-H`/`--hostname` in the forms `-H x`, `--hostname x` and `--hostname=x`.
    - The value must be in {`127.0.0.1`, `localhost`, `::1`}. Otherwise it throws `[dev] the dev server must listen on
      127.0.0.1, localhost or ::1 (it adds Ming's bearer token)`. With no `-H` it adds `-H 127.0.0.1`.
@@ -196,7 +302,8 @@ request, and their behaviour is otherwise unchanged (401/403/503 as today).
    - The default path, the `SIMAP_DEV_TOKEN_FILE` override and the Windows file-mode note.
    - Token lifetime: it lasts as long as Identity says (printed). Re-run it when `/api` calls answer 401; no restart.
    - Turnstile: after 3 failed sign-ins, sign in once at `https://simap.mmlabs.online`, then retry.
-   - `pnpm dev` binds `127.0.0.1` and refuses other `-H` values. `pnpm exec next dev` has no dev token.
+   - `pnpm dev` binds `127.0.0.1` and refuses other `-H` values. `pnpm exec next dev` has no dev token. *(Amended
+     2026-11-21: wording in `## Amendment` → README.)*
    - Residual exposure: requests without `Sec-Fetch-Site` (curl, local processes) are treated as same-origin, as in
      tudocuatui. Never put `NEXT_PUBLIC_SIMAP_DEV_TOKEN` in a `.env*` file.
    - The bundle check command from AC2.
@@ -256,7 +363,8 @@ How the CLAUDE.md rules are met:
   `process.env.NODE_ENV === "development"`.** No `/api/dev-session` probe. It is a boolean, carries no secret, folds to
   false in `pnpm build` (`define-env.js` l.76), and needs no production route and no extra round trip. The same
   variable gates the server, so client and server always agree.
-- **C. `pnpm dev` always runs dev-token mode (loopback bind + flag).** D56 says "under `pnpm dev` the server adds it".
+- **C. `pnpm dev` always runs dev-token mode (loopback bind + flag).** *(Amended 2026-11-21: `pnpm dev` accepts only
+  a port; see `## Amendment`.)* D56 says "under `pnpm dev` the server adds it".
   There is no `pnpm dev:identity`: browser sign-in from localhost is blocked by CORS anyway. `pnpm exec next dev`
   remains for a plain run (README). SIM-029's `pnpm dev:prod` is expected to reuse `scripts/dev.mjs`.
 - **D. No `--org` → unscoped token, as the ticket says.** The script then prints
