@@ -29,7 +29,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-028 | Signed-in local dev with a server-side dev token | MERGED | P1 | M | architecture, ui, security | SIM-006.2, SIM-007.2 | plan-approval | 0 | 2026-11-21 |
 | SIM-028.1 | Browser dev-token mode (AuthGate skips Identity under pnpm dev) | BACKLOG | P1 | M | ui, security | SIM-028 | plan-approval | 0 | 2026-11-21 |
 | SIM-029 | Guard dev scripts against the production DB and add dev:prod | MERGED | P1 | M | db, security | SIM-028 | plan-approval | 2 | 2026-11-21 |
-| SIM-030 | Pin the dev:prod org for the running server | REVIEW | P1 | S | security | SIM-029 | plan-approval | 1 | 2026-11-21 |
+| SIM-030 | Pin the dev:prod org for the running server | DONE | P1 | S | security | SIM-029 | plan-approval | 1 | 2026-11-21 |
 | SIM-009 | Invite people to an org | BACKLOG | P1 | M | security, ui, api | SIM-007 | none | 0 | 2026-11-20 |
 | SIM-011 | Members page, profile fields and deactivation | BACKLOG | P1 | M | api, ui, security | SIM-007 | none | 0 | 2026-11-20 |
 | SIM-012 | Seat list, add/delete seats, seat detail and occupancy | BACKLOG | P1 | L | api, ui | SIM-010, SIM-011 | none | 0 | 2026-11-20 |
