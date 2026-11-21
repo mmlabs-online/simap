@@ -87,7 +87,7 @@ CI runs the same check (job `image`) on every pull request.
 
 ## Release and deploy
 
-1. Ming pushes a branch `release/vX.Y.Z` from a commit on `main` (agents never push `release/*`).
+1. Ming pushes a branch `release/X.Y.Z` (no `v`, e.g. `release/0.1.0`) from a commit on `main` (agents never push `release/*`).
 2. The `release` workflow tags the commit, builds and pushes `mingming21400/simap:vX.Y.Z`, runs `check-image.sh` on
    the pushed digest and opens `release/simap-vX.Y.Z` on `mmlabs-online/deployment`, changing only
    `apps/simap/release.env` (image pinned by digest). It deploys nothing itself.

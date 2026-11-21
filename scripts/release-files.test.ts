@@ -60,9 +60,25 @@ describe("release.yml", () => {
     const next = release.indexOf("\n      - ", i + 1);
     return release.slice(i, next === -1 ? undefined : next);
   };
-  it("triggers only on push to release/v*", () => {
-    expect(release).toMatch(/^on:\n {2}push:\n {4}branches: \["release\/v\*"\]\n/m);
+  it("triggers only on push to release/[0-9]* (branch release/X.Y.Z, D57)", () => {
+    expect(release).toMatch(/^on:\n {2}push:\n {4}branches: \["release\/\[0-9\]\*"\]\n/m);
     expect(release).not.toMatch(/pull_request|workflow_dispatch|schedule/);
+  });
+  it("accepts only release/X.Y.Z branches and tags them vX.Y.Z (D57)", () => {
+    const guards = stepRun("guards");
+    const m = guards.match(/\[\[ "\$GITHUB_REF_NAME" =~ (\S+) \]\]/);
+    expect(m).not.toBeNull();
+    const re = new RegExp(m![1]);
+    for (const ok of ["release/0.1.0", "release/1.20.3"]) expect(re.test(ok)).toBe(true);
+    for (const bad of [
+      "release/v0.1.0",
+      "release/0.1",
+      "release/01.0.0",
+      "release/0.1.0-rc1",
+      "release/simap-0.1.0",
+    ])
+      expect(re.test(bad)).toBe(false);
+    expect(guards).toContain('TAG="v${BASH_REMATCH[1]}"');
   });
   it("pushes linux/amd64 mingming21400/simap:<tag> with no attestations", () => {
     expect(release).toContain("platforms: linux/amd64");
