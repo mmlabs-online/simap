@@ -13,8 +13,11 @@ import {
   devEnv,
   devProdFileMessage,
   ENV_FILE_NAMES,
+  EnvReadFailure,
+  envReadMessage,
   envFileSetsKey,
   envFileSettingDevProd,
+  makeEnvReader,
   nextDevArgs,
 } from "./dev.mjs";
 import { JWT_SHAPE, promptPassword, tokenFilePath } from "./dev-token.mjs";
@@ -96,7 +99,8 @@ function childEnv(env, url, tokenFile, org) {
 
 /** All I/O comes through `deps`, so tests can drive it. Returns the exit code. */
 export async function run(deps) {
-  const { env, argv, now, readTokenFile, runDevToken, docker, probe, sleep, readEnvFile } = deps;
+  const { env, argv, now, readTokenFile, runDevToken, docker, probe, sleep } = deps;
+  const rawRead = deps.readEnvFile;
   const { promptPassword: ask, spawnApp, out, err } = deps;
   try {
     let args;
@@ -172,6 +176,13 @@ export async function run(deps) {
     }
 
     // 3. .env.local and password
+    const readEnvFile = (n) => {
+      try {
+        return rawRead(n);
+      } catch {
+        throw new EnvReadFailure(n);
+      }
+    };
     const envText = readEnvFile(".env.local");
     if (envText !== null && envFileSetsDatabaseUrl(envText)) {
       err(
@@ -204,7 +215,11 @@ export async function run(deps) {
       args,
       env: childEnv(env, buildProdUrl(password, ports.primary), file, org),
     });
-  } catch {
+  } catch (e) {
+    if (e instanceof EnvReadFailure) {
+      err(envReadMessage(e.envFile, "dev:prod"));
+      return 2;
+    }
     err("[dev:prod] unexpected error");
     return 1;
   }
@@ -262,13 +277,7 @@ async function main() {
       },
       probe: probePort,
       sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
-      readEnvFile: (name) => {
-        try {
-          return readFileSync(resolve(root, name), "utf8");
-        } catch {
-          return null;
-        }
-      },
+      readEnvFile: makeEnvReader(root),
       promptPassword,
       spawnApp: spawnNext,
       out: (m) => console.log(m),
