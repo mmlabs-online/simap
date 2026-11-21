@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | ESCALATED |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | architecture, ui, security |
 | Gate | plan-approval |
 | Depends on | SIM-006.2, SIM-007.2 |
 | Needs Ming | — |
-| Attempts | 2 |
+| Attempts | 0 |
 | Created | 2026-11-21 |
 | Claimed by | — |
 | PR | https://github.com/mmlabs-online/simap/pull/28 |
@@ -76,6 +76,7 @@ Identity, so local development is not blocked by CORS (Identity cannot register 
 - Waiting for Ming: plan approval (High tier)
 - Plan approved (2026-11-21): Ming approved decisions A-G as written in plan.md (incl. the split; SIM-028.1 created on main).
 - 2026-11-21: Ming asked to fix both 🟡 findings of security-review Attempt 2 on PR #28 before merge.
+- 2026-11-21 (escalation answer): Ming chose escalation.md option 1. Plan Decision C is amended: `pnpm dev` accepts only `--port <n>` / `-p <n>`, refuses every other argument and any `--`, builds `["dev", "-H", "127.0.0.1", "--port", n]` itself, and refuses to start when `NODE_OPTIONS` contains `inspect` or `debug` in any spelling. Plan approved (2026-11-21) for an amendment limited to this launcher change; anything wider needs a new approval. Attempts reset to 0 after the escalation decision.
 
 ## Handoff
 
