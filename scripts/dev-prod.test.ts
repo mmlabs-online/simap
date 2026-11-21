@@ -420,6 +420,13 @@ describe("run: child process", () => {
     expect(r.spawned!.env.NEXT_PUBLIC_SIMAP_DEV_PROD).toBe("1");
   });
 
+  it("child NODE_ENV is development, replacing any inherited case variant", async () => {
+    const r = await drive({ env: { NODE_ENV: "test", node_env: "production" } });
+    const keys = Object.keys(r.spawned!.env).filter((k) => k.toUpperCase() === "NODE_ENV");
+    expect(keys).toEqual(["NODE_ENV"]);
+    expect(r.spawned!.env.NODE_ENV).toBe("development");
+  });
+
   it("child gets the checked org as the pin", async () => {
     const r = await drive();
     expect(r.spawned!.env.SIMAP_DEV_EXPECTED_ORG).toBe(ORG);

@@ -197,7 +197,19 @@ describe("assertNodeOptionsSafe", () => {
 
 describe("devEnv", () => {
   it("sets the dev-token flag and keeps the rest", () => {
-    expect(devEnv({ A: "1" })).toEqual({ A: "1", NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" });
+    expect(devEnv({ A: "1" })).toEqual({
+      A: "1",
+      NODE_ENV: "development",
+      NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1",
+    });
+  });
+
+  it("forces a single NODE_ENV=development whatever was inherited", () => {
+    for (const env of [{ NODE_ENV: "test" }, { NODE_ENV: "production" }, { node_env: "test" }]) {
+      const out = devEnv({ ...env, A: "1" });
+      expect(Object.keys(out).filter((k) => k.toUpperCase() === "NODE_ENV")).toEqual(["NODE_ENV"]);
+      expect(out.NODE_ENV).toBe("development");
+    }
   });
 
   it("drops an inherited production-data flag in any letter case (plain dev never shows it)", () => {
@@ -206,7 +218,7 @@ describe("devEnv", () => {
       next_public_simap_dev_prod: "1",
       A: "1",
     });
-    expect(out).toEqual({ A: "1", NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" });
+    expect(out).toEqual({ A: "1", NODE_ENV: "development", NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" });
   });
 });
 

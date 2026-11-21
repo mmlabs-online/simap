@@ -46,12 +46,16 @@ export function assertNodeOptionsSafe(env) {
 }
 
 // Sets the dev-token flag. An inherited production-data flag (any letter case on Windows) is dropped, so plain
-// `pnpm dev` never shows the red badge; only dev:prod sets it again, after this call.
+// `pnpm dev` never shows the red badge; only dev:prod sets it again, after this call. NODE_ENV is forced to
+// "development" (inherited value dropped in any letter case) so Next loads the four .env files the launchers check,
+// never .env.test*.
 export function devEnv(env) {
   const copy = { ...env };
-  for (const k of Object.keys(copy))
-    if (k.toUpperCase() === "NEXT_PUBLIC_SIMAP_DEV_PROD") delete copy[k];
-  return { ...copy, NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" };
+  for (const k of Object.keys(copy)) {
+    const u = k.toUpperCase();
+    if (u === "NEXT_PUBLIC_SIMAP_DEV_PROD" || u === "NODE_ENV") delete copy[k];
+  }
+  return { ...copy, NODE_ENV: "development", NEXT_PUBLIC_SIMAP_DEV_TOKEN: "1" };
 }
 
 /**

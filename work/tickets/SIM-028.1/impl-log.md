@@ -80,3 +80,18 @@ Out-of-plan files
 - `.env.example` (High path, approved by Ming, M-18): appended a comment and a commented `# NEXT_PUBLIC_SIMAP_DEV_PROD=` line with a shell append. Not opened or reordered by me.
 
 Follow-ups: S3 (move the `.env*` checks above the token step), S4 (re-check after the prompt / watch files), F4, F6 and case-variant hardening of other keys remain open.
+
+## Attempt 4 (rework of security review attempt 3: S5 only, one extra rework approved by Ming)
+
+Files touched
+- `scripts/dev.mjs`: `devEnv` drops any inherited `NODE_ENV` in any letter case and sets `NODE_ENV: "development"`, so Next loads the four `.env*` files the launchers check, never `.env.test*` (S5).
+- `scripts/dev.test.ts`: updated `devEnv` expectations; new case that `NODE_ENV` test/production and `node_env` test each give one `NODE_ENV: "development"`.
+- `scripts/dev-prod.test.ts`: `run` child env has a single `NODE_ENV: "development"` even with inherited `NODE_ENV: test` and `node_env: production`.
+
+`childEnv` check: it spreads `devEnv(...)` last; only `NEXT_PUBLIC_SIMAP_DEV_PROD` is added afterwards, so it cannot reintroduce another NODE_ENV (covered by the new test). Dev-token guards in `src/server/http/with-auth.ts` and `dev-token.ts` were not edited; they key off the child's NODE_ENV, which is now always "development" under `dev:prod`, so the earlier shell `NODE_ENV=production` case no longer reaches the child.
+Real `@next/env` 16.4.6 `loadEnvConfig` on a throwaway temp dir (scratchpad, not the repo): with `devEnv`'s NODE_ENV, `.env.test` was not read and `.env.development` was. Done with a one-off script, not committed (`@next/env` is not a direct dependency).
+
+Checks (Node 22): typecheck exit 0; check:layers 234 files, no violations; format:check exit 0; test exit 0; build exit 0; check:dev-bundle "no dev-token strings in .next/static".
+
+Out-of-plan files: none.
+Follow-ups: S3, S4, S6, S7, F4, F6, other case-variant keys, unchanged. Not verified: `next dev` itself on Windows; the guards' behaviour was reasoned from the diff, not re-run end to end.
