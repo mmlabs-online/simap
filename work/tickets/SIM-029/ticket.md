@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T03:42:36Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/29 |
 
 ## Goal
 Let Ming run the local app against the production database through the Cloudflare pg-tunnel without any dev script
@@ -75,3 +75,9 @@ being able to migrate, seed or create throwaway databases there.
 - Done: consult and plan (`Status: READY`). Gate raised to plan-approval because the plan touches `.env.example`.
 - In progress / next: Ming approves `plan.md` and answers its 3 decisions (`.env.local` conflict, hand-run `node db/migrate.js` stays unguarded, `pnpm migrate` and `migrate:smoke` become local-only); then `/run SIM-029`.
 - Gotchas: `pg` reads the port with `parseInt`, so `PGPORT=15432abc` reaches the tunnel. Tests must use closed port 1, never 15432 (the real tunnel may be listening). Live `/api/readyz` needs M-3.
+
+### 2026-11-21 — claude — DONE
+- Agent calls: 8, tokens 518k total (database-optimizer×1 43k, planner×1 81k, implementer×2 119k, reviewer×2 121k, security-ai-generated-code-auditor×2 154k; in/out split not reported)
+- Done: production-target classifier, guards on the five dev scripts, `pnpm dev:prod`, README. Reviewer Attempt 2 PASS; no 🔴 remains. The security Attempt 2 verdict line is REWORK on a 🟡.
+- In progress / next: Ming decides on security 🟡 1 (wrong-org token) and checks the `.env.example` lines, then merges. Live `/api/readyz` needs M-3 and the real tunnel.
+- Gotchas: agents cannot read `.env.example`. `pnpm test:db` runs in CI only. Follow-ups are listed in the PR.
