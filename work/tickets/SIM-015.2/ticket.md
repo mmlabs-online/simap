@@ -1,4 +1,4 @@
-# SIM-015.2: Free-form layout editor
+# SIM-015.2: Tile-based layout editor
 
 | Field | Value |
 |---|---|

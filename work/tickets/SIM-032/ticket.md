@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | security |
@@ -97,3 +97,8 @@ command signs in, connects through the tunnel, starts the app, and prints the lo
 - Done: security Attempt 5 PASS; added `scripts/start-dev.ps1`, tests and a README usage guide; merged `origin/main`. Format, typecheck, layers, tests, build and dev-bundle checks pass. PR: https://github.com/mmlabs-online/simap/pull/39
 - In progress / next: reviewer Attempt 5 has no recorded verdict, and the PowerShell wrapper has had no agent review. State stays REVIEW. Ming decides whether to review first or merge.
 - Gotchas: Ming decided no `pg_dump` is needed. Tunnel handshakes are intermittent; Next gets SIGBUS from WSL on `/mnt/d`; a Windows clock behind Identity makes fresh tokens unusable.
+
+### 2026-11-22 — claude — MERGED
+- Done: Ming merged PR #39 (`2672852`) with CI green.
+- In progress / next: none on this ticket; the follow-ups are listed in the PR.
+- Gotchas: reviewer Attempt 5 has no recorded verdict, and the PowerShell wrapper had no agent review before merge.

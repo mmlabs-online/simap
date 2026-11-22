@@ -7,7 +7,7 @@
 | Size | M |
 | Areas | api, ui |
 | Gate | none |
-| Depends on | SIM-010 |
+| Depends on | SIM-010, SIM-012, SIM-024.1 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
