@@ -36,7 +36,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-009.2 | Accept-invitation page | DONE | P1 | M | security, ui | SIM-009 | none | 1 | 2026-11-22 |
 | SIM-011 | Members page, profile fields and deactivation | MERGED | P1 | M | api, ui, security | SIM-007 | plan-approval | 1 | 2026-11-22 |
 | SIM-024 | Sprite atlas, manifest, placeholder art and map renderer | MERGED | P1 | M | ui, architecture | SIM-003 | none | 1 | 2026-11-21 |
-| SIM-024.1 | Room map renderer, avatars, name tags and dev demo | REWORK | P1 | M | ui, architecture | SIM-024 | none | 1 | 2026-11-22 |
+| SIM-024.1 | Room map renderer, avatars, name tags and dev demo | REVIEW | P1 | M | ui, architecture | SIM-024 | none | 1 | 2026-11-22 |
 | SIM-012 | Seat list, add/delete seats, seat detail and occupancy | BACKLOG | P1 | L | api, ui | SIM-010, SIM-011 | none | 0 | 2026-11-20 |
 | SIM-015.1 | Room layout API and read-only room view | BLOCKED | P1 | M | api, ui | SIM-010, SIM-012, SIM-024.1 | none | 0 | 2026-11-22 |
 | SIM-015.2 | Tile-based layout editor | BLOCKED | P1 | M | ui, ux | SIM-015.1 | none | 0 | 2026-11-22 |
