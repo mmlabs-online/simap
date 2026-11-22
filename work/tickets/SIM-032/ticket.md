@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 4 |
 | Created | 2026-11-21 |
-| Claimed by | claude@2026-11-21T14:25:35Z |
-| PR | — |
+| Claimed by | |
+| PR | https://github.com/mmlabs-online/simap/pull/39 |
 
 ## Goal
 Ming starts simap on production data with one command, `scripts/start-dev.sh`, without filling in `.env.local`. The
@@ -92,3 +92,8 @@ command signs in, connects through the tunnel, starts the app, and prints the lo
 - Done: T1, T2, Issue 2, root-PID N6 and the README limit line. Checks green (1037 tests). All work is on `ticket/SIM-032`; no PR.
 - In progress / next: Ming picks an option in the second section of `escalation.md` (M-21). Open: 🔴 U1 and the flaky T1 test.
 - Gotchas: do not run `scripts/start-dev.sh` on production from this branch: a failed listener query can report a clean stop while the app still serves.
+
+### 2026-11-22 — claude — REVIEW (PR opened at Ming's request)
+- Done: security Attempt 5 PASS; added `scripts/start-dev.ps1`, tests and a README usage guide; merged `origin/main`. Format, typecheck, layers, tests, build and dev-bundle checks pass. PR: https://github.com/mmlabs-online/simap/pull/39
+- In progress / next: reviewer Attempt 5 has no recorded verdict, and the PowerShell wrapper has had no agent review. State stays REVIEW. Ming decides whether to review first or merge.
+- Gotchas: Ming decided no `pg_dump` is needed. Tunnel handshakes are intermittent; Next gets SIGBUS from WSL on `/mnt/d`; a Windows clock behind Identity makes fresh tokens unusable.
