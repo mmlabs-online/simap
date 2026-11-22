@@ -63,3 +63,58 @@ Left for the orchestrator to copy from `security-review.md`. That file appeared 
 - Plan A13: the registry has no `pillar` sprite, and `label.sign` carries no text.
 - SIM-015.2's ticket text still describes the old free-form editor and should be re-scoped before planning.
 - The local dev `simap` database does not have this migration applied; run `pnpm migrate` locally before working on SIM-015.4.
+
+## Attempt 2 — 2026-11-22
+Verdict: PASS
+
+Reviewed at `51cb1b7`, Slice 1 only (ACs 1, 5a, 6a, S1; D59). ACs 2, 3, 4, 5b and 6b belong to SIM-015.4 and SIM-015.5 and
+were not judged. Issue 1 and Issue 2 are fixed. The only code change since attempt 1 is the 8-line check in
+`scripts/schema-check.mjs`.
+
+### Checks (run by reviewer)
+Local Docker Postgres only (`simap-game-ui-db-1`, `127.0.0.1:5432`), `DATABASE_URL=postgres://simap@127.0.0.1:5432/simap` in the command environment.
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck` — exit 0
+- `pnpm check:layers` — exit 0, "352 files, no violations"
+- `pnpm test` — exit 0, Test Files 143 passed (143); Tests 1501 passed | 3 skipped (1504)
+- `pnpm build` — exit 0
+- `node scripts/schema-check.mjs` — exit 0, "schema check ok"; 17 `pass: 8 ` lines, 43 `pass` lines, 0 FAIL
+- `node scripts/test-db.mjs` — exit 0, Test Files 5 passed (5); Tests 52 passed (52); no throwaway database left behind
+
+Every count in the Attempt 2 section of `impl-log.md` (lines 59-65) matches this run.
+
+### Rework verification
+- Issue 1 fixed: `impl-log.md:59` records 17 section 8 checks and the run prints 17. The rework added 27 lines to `impl-log.md` and deleted none, so the Attempt 1 section is unedited.
+- Issue 2 fixed: `scripts/schema-check.mjs:379-386` matches the requested check. `refused` requires both SQLSTATE `23514` and the constraint name `layout_fixtures_sprite_key_check` (`scripts/schema-check.mjs:136-140`), and the run prints `pass: 8 fixture blank sprite key refused (23514)`.
+- Migration unchanged: `db/migrations/20261122120000_room_tile_layout.sql` is blob `9312dde` at both `5e375ed` and `HEAD`, and its only commit on this branch is `1b024cf`.
+- Current `main` (`41ff6fb`, 3 commits ahead of the merge base): a trial merge has no conflict, those commits change none of `db/`, `scripts/schema-check.mjs`, `src/lib/api/error.ts`, `src/ui/copy/api.ts` or `src/lib/sprites/layout.ts`, and this migration stays the newest.
+
+### Acceptance criteria
+- [x] AC1 The migration is forward-only, and the previous image keeps working — evidence: one added migration file, unchanged since attempt 1; no applied migration edited; schema check `8 old-shape room, seat and fixture inserts still work` passes; 52 DB tests pass on the new schema. The rolled-back trial on seeded data from attempt 1 still applies because the migration blob is identical.
+- [x] AC5a Out-of-bounds, overlapping, wrongly rotated or unknown-sprite payload refused (validator part) — evidence: `src/lib/validate/layout.test.ts` passes within `pnpm test`; the validator is unchanged since attempt 1.
+- [x] AC6a Unit tests cover the payload validation — evidence: `pnpm test` green, 1501 passed.
+- [x] S1 The validator agrees with the renderer — evidence: `fixture.test.ts › DEMO_LAYOUT passes the layout rules` and `committed-atlas.test.ts › committed manifest blocks equal the registry` pass within `pnpm test`; validator, registry and renderer are unchanged since the attempt 1 comparison.
+- Ming verification after merge: none (plan:79-81).
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1 (`check:layers` green), R2 (migration forward-only and unchanged), R3 (no config or secrets in the rework), R4 (the rework changes only `scripts/schema-check.mjs` and ticket work files), R5 (all checks green), R6 (no new table or query), R7 (no route ships).
+
+### Blockers from review agents
+Attempt 1: no 🔴 in `security-review.md`. Attempt 2: a separate security agent reviews it in parallel and is not assessed here; the orchestrator must copy any 🔴 from it, which would turn this PASS into REWORK.
+
+### Nits (do not block)
+- `validateLayoutSave` accepts `-0` for `x`, `y` and `rotation` (carried from attempt 1, harmless).
+
+### Follow-ups (out of scope)
+Carried from the attempt 1 security review, present in the ticket files on `origin/main` (`41ff6fb`), not on this branch:
+- SIM-015.3 (`ticket.md:50`): cap zoom by canvas area or render only the viewport.
+- SIM-015.4 (`ticket.md:49`): treat stored `floor_zones` as untrusted on read.
+- SIM-015.5 (`ticket.md:47`): cap total floor cells; refuse `baseVersion` above int4; keep `org_id` and `room_id` on the seat UPDATE; one `unnest` UPDATE and one INSERT; check the room seat count before the seat-set comparison; DB test for a foreign-org seat id.
+
+Still open from attempt 1:
+- Plan A13: the registry has no `pillar` sprite, and `label.sign` carries no text.
+- SIM-015.2's ticket text still describes the old free-form editor and should be re-scoped before planning.
+- The local dev `simap` database does not have this migration applied; run `pnpm migrate` locally before working on SIM-015.4.

@@ -61,3 +61,39 @@ if (floorCells > layout.w * layout.h * 2) return bad("floors");
 ### Follow-ups
 - Findings 3 and 4 belong in SIM-015.4 and SIM-015.3.
 - Findings 5 and 6 should be copied into SIM-015.5 when that ticket is created.
+
+## Attempt 2
+
+## Security review: SIM-015.1, attempt 2
+
+**Verdict: no 🔴 and no 🟡. One new 🟢 note. Attempt 1 severities are unchanged.** One requested confirmation is only partial: I could not prove the migration and validator are byte-identical (see below).
+
+This was static review only. This session has no Bash or git tool, so I ran no `git diff`, checks or payloads. I read no `.env*` file and changed nothing.
+
+### Findings
+
+**🟢 1. (new) `sprite_key` blank check misses tabs and newlines**
+- **Where:** `d:\project\simap-game-ui\db\migrations\20261122120000_room_tile_layout.sql:35` (same pattern for seats at line 22). The new check at `d:\project\simap-game-ui\scripts\schema-check.mjs:379-386` tests spaces only.
+- **Risk:** `btrim(x)` strips only spaces by default, so a key of `E'\t'` satisfies the constraint. Only direct SQL could write it, because the save validator requires a known sprite key. Nothing in `src` reads `sprite_key` yet, so there is no current exposure.
+- **Fix:** do not change this migration for it. In SIM-015.4, treat stored `sprite_key` as untrusted on read: look it up in the sprite registry and handle an unknown key without crashing the room view. If the DB rule should be strict, a later forward-only migration can use `sprite_key ~ '\S'`.
+
+### Added check: no issue
+`schema-check.mjs:379-386` inserts a fixture with `kind = null`, a valid placement and sprite key `'  '`.
+- **Correct target:** every other new fixture constraint passes for this row, so the assertion on code `23514` and `layout_fixtures_sprite_key_check` can only be met by the intended constraint.
+- **No injection:** the interpolated SQL fragments are hardcoded literals, and the org and room ids are bound parameters.
+- **Isolation:** it runs in `tx` against the throwaway `simap_schema_*` database, after the local-only `assertDevSeedTarget` guard (`schema-check.mjs:17`, `db/seeder.js:15-36`).
+- **No leak:** output is the step name and pass/FAIL only. The captured error fields are `code` and `constraint`.
+
+### Unchanged since attempt 1: partly confirmed
+- **Consistent with no change:** the attempt 1 line references still match the current text (`layout.ts:142-144`, `187`, `192`; migration lines 8 and 11). The suggested `floorCells` cap and `baseVersion` bound are absent, as expected for items carried forward. `impl-log.md:53-55` lists `schema-check.mjs` as the only file touched and says the migration is unchanged.
+- **Not proven:** this is not a content comparison. The impl-log statement does not name `layout.ts`, and I could not inspect what `e178ff0` or `2602430` changed.
+- **To close it, run:**
+
+```
+git diff --stat 5e375ed..2602430 -- db/migrations src scripts
+```
+
+Expected result: only `scripts/schema-check.mjs` is listed. Any other file means this review did not cover the full change and should be repeated.
+
+### Follow-ups
+- Add finding 1's read-side handling to SIM-015.4.
