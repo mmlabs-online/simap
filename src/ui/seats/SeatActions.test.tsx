@@ -31,6 +31,9 @@ const render = (tier: Tier | null, s: SeatDto | null, notice: string | null = nu
       onAssign={() => {}}
       onDelete={() => {}}
       onRelease={() => {}}
+      onRemove={() => {}}
+      onSetCannotSeat={() => {}}
+      onClearCannotSeat={() => {}}
     />,
   );
 
@@ -67,5 +70,56 @@ describe("SeatActions", () => {
   });
   it("the notice renders without a seat", () => {
     expect(render("admin", null, "Heads up")).toContain("Heads up");
+  });
+});
+
+describe("SeatActions remove and cannot-seat buttons", () => {
+  const occupied = (over: Partial<SeatDto> = {}): SeatDto => ({
+    ...seat(false),
+    status: "occupied",
+    occupant: { id: "o", displayName: "O" },
+    ...over,
+  });
+  const renderWith = (tier: Tier | null, s: SeatDto, busy = false) =>
+    renderToStaticMarkup(
+      <SeatActions
+        tier={tier}
+        seat={s}
+        notice={null}
+        busy={busy}
+        onAssign={() => {}}
+        onDelete={() => {}}
+        onRelease={() => {}}
+        onRemove={() => {}}
+        onSetCannotSeat={() => {}}
+        onClearCannotSeat={() => {}}
+      />,
+    );
+  const a = seatsCopy.actions;
+  it("user sees none of them", () => {
+    const html = renderWith("user", occupied());
+    for (const t of [a.removeOccupant, a.blockSeat, a.unblockSeat]) {
+      expect(html.includes(t)).toBe(false);
+    }
+  });
+  it("manager sees Remove and Block; Unblock on a cannot-seat seat", () => {
+    const html = renderWith("manager", occupied());
+    expect(html).toContain(a.removeOccupant);
+    expect(html).toContain(a.blockSeat);
+    expect(html).not.toContain(a.unblockSeat);
+    const blocked = renderWith("manager", occupied({ cannotSeat: true, cannotSeatReason: "x" }));
+    expect(blocked).toContain(a.removeOccupant);
+    expect(blocked).toContain(a.unblockSeat);
+    expect(blocked).not.toContain(a.blockSeat);
+  });
+  it("own seat shows Release, not Remove", () => {
+    const html = renderWith("manager", occupied({ mine: true }));
+    expect(html).toContain(a.release);
+    expect(html).not.toContain(a.removeOccupant);
+  });
+  it("busy disables the buttons", () => {
+    const html = renderWith("admin", occupied(), true);
+    expect(html).toMatch(new RegExp(`<button[^>]*disabled[^>]*>${a.removeOccupant}<`));
+    expect(html).toMatch(new RegExp(`<button[^>]*disabled[^>]*>${a.blockSeat}<`));
   });
 });

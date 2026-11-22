@@ -61,6 +61,23 @@ export const seatsCopy = {
     releaseSubmit: "Release",
     releaseChanged:
       "This seat changed in the meantime, so it was not released. The page was reloaded.",
+    removeOccupant: "Remove occupant",
+    removeTitle: (code: string) => `Remove the occupant of seat ${code}?`,
+    removeBody: (name: string) =>
+      `Remove ${name} from this seat? Their primary device here becomes a secondary device.`,
+    removeSubmit: "Remove",
+    removeChanged:
+      "This seat changed in the meantime, so nobody was removed. The page was reloaded.",
+    blockSeat: "Block seat",
+    blockTitle: (code: string) => `Block seat ${code}`,
+    blockReason: "Reason",
+    blockOccupantNote: "The current occupant stays until you remove them.",
+    blockSubmit: "Block",
+    blockInvalid: "Enter a reason of 1 to 200 characters.",
+    unblockSeat: "Unblock seat",
+    unblockTitle: (code: string) => `Unblock seat ${code}?`,
+    unblockBody: "The reason is deleted for good.",
+    unblockSubmit: "Unblock",
     assign: "Assign",
     replace: "Replace",
     assignTitle: (code: string) => `Assign seat ${code}`,
