@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-22 |
-| Claimed by | claude@2026-11-22T10:06:21Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/44 |
 
 ## Goal
 People move between rooms from any signed-in page without going back to the room list.
@@ -62,3 +62,8 @@ People move between rooms from any signed-in page without going back to the room
 - 2026-11-22: Ming asked to create this ticket, moving the room switcher out of SIM-012.3.
 
 ## Handoff
+### 2026-11-22 — claude — DONE
+- Agent calls: 5, tokens about 209k total, in/out split not reported (planner×1 sonnet 36k; implementer×2 default model 36k, 22k; reviewer×2 default model 63k, 52k).
+- Done: room switcher bar, pure helpers and tests. Review attempt 1 found Go could open a room no longer listed; fixed with `visibleSelection`. Review attempt 2 PASS. PR #44 opened.
+- In progress / next: Ming runs the browser checks (arrow keys on the closed select, 390 px, blocked `/api/rooms`), then reviews and merges PR #44.
+- Gotchas: Node and pnpm are not on PATH in agent shells; activate fnm first. Vitest renders static markup only, so effect-driven paths were read from the code, not run. Follow-up: `listRooms` caps at 500 rooms.
