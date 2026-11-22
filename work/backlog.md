@@ -32,7 +32,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-030 | Pin the dev:prod org for the running server | MERGED | P1 | S | security | SIM-029 | plan-approval | 1 | 2026-11-21 |
 | SIM-031 | Pin the Identity issuer for pnpm dev:prod | MERGED | P1 | S | security | SIM-028.1 | none | 1 | 2026-11-21 |
 | SIM-032 | One-command local start on production data | REWORK | P1 | M | security | SIM-031 | none | 4 | 2026-11-21 |
-| SIM-009 | Invite people to an org | DONE | P1 | M | security, ui, api | SIM-007 | none | 1 | 2026-11-22 |
+| SIM-009 | Invite people to an org | MERGED | P1 | M | security, ui, api | SIM-007 | none | 1 | 2026-11-22 |
 | SIM-009.2 | Accept-invitation page | BACKLOG | P1 | M | security, ui | SIM-009 | none | 0 | 2026-11-22 |
 | SIM-011 | Members page, profile fields and deactivation | MERGED | P1 | M | api, ui, security | SIM-007 | plan-approval | 1 | 2026-11-22 |
 | SIM-011.2 | Members page UI: list, edit and deactivate dialogs | BACKLOG | P1 | M | ui | SIM-011 | none | 0 | 2026-11-22 |
