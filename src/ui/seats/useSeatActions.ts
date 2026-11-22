@@ -43,18 +43,20 @@ export function useSeatActions({
   }, [openCode]);
 
   const run = useCallback(
-    async (action: SeatAction, seatCode: string | null, call: () => Promise<ActionResult>) => {
+    async (
+      action: SeatAction,
+      seatCode: string | null,
+      started: SeatDialog | null,
+      call: () => Promise<ActionResult>,
+    ) => {
       if (busyRef.current) return;
       busyRef.current = true;
       setBusy(true);
       setNotice(null);
       const outcome = actionOutcome(action, await call());
-      setDialog(null);
-      setNotice(
-        outcome.message
-          ? { seatCode: outcome.closePanel ? null : seatCode, text: outcome.message }
-          : null,
-      );
+      // Close only the dialog that started this write, not a newer one.
+      setDialog((d) => (d === started ? null : d));
+      setNotice(outcome.message ? { seatCode, text: outcome.message } : null);
       if (outcome.closePanel && seatCode !== null) onDeleted(seatCode);
       if (outcome.reload) await refresh();
       busyRef.current = false;
@@ -64,7 +66,10 @@ export function useSeatActions({
     [onDeleted, refresh],
   );
 
-  // A confirm belongs to the seat that was open; Back closes it with the panel.
+  // A confirm belongs to the seat that was open; Back closes it with the panel and drops it for good.
+  useEffect(() => {
+    setDialog((d) => (d && d.kind !== "add" && d.seat.code !== openCode ? null : d));
+  }, [openCode]);
   const shown = dialog && dialog.kind !== "add" && dialog.seat.code !== openCode ? null : dialog;
 
   return {
@@ -84,13 +89,15 @@ export function useSeatActions({
     requestRelease: (seat: SeatDto) => setDialog({ kind: "release", seat }),
     closeDialog: () => setDialog(null),
     add: (count: number) =>
-      roomId === null ? Promise.resolve() : run("add", null, () => seatsApi.add(roomId, count)),
+      roomId === null
+        ? Promise.resolve()
+        : run("add", null, shown, () => seatsApi.add(roomId, count)),
     confirm: () => {
       if (!shown || shown.kind === "add") return Promise.resolve();
       const { seat } = shown;
       return shown.kind === "delete"
-        ? run("delete", seat.code, () => seatsApi.remove(seat.id))
-        : run("release", seat.code, () => seatsApi.release(seat.id));
+        ? run("delete", seat.code, shown, () => seatsApi.remove(seat.id))
+        : run("release", seat.code, shown, () => seatsApi.release(seat.id));
     },
   };
 }

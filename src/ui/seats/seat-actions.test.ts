@@ -9,7 +9,49 @@ import {
   focusAfterDelete,
   keepRowsOnError,
   parseAddCount,
+  routeNotice,
+  shouldReplaceAfterDelete,
 } from "./seat-actions";
+
+describe("shouldReplaceAfterDelete", () => {
+  it("replaces only when mounted and the URL still shows the deleted seat", () => {
+    expect(shouldReplaceAfterDelete(true, "C302-01", "C302-01")).toBe(true);
+    expect(shouldReplaceAfterDelete(true, "C302-02", "C302-01")).toBe(false);
+    expect(shouldReplaceAfterDelete(true, null, "C302-01")).toBe(false);
+    expect(shouldReplaceAfterDelete(false, "C302-01", "C302-01")).toBe(false);
+  });
+});
+
+describe("routeNotice", () => {
+  it("shows nothing without a notice", () => {
+    expect(routeNotice(null, "C302-01")).toEqual({ panel: null, page: null });
+  });
+  it("shows a notice for the open seat in the panel, unprefixed", () => {
+    expect(routeNotice({ seatCode: "C302-01", text: "x" }, "C302-01")).toEqual({
+      panel: "x",
+      page: null,
+    });
+  });
+  it("names the seat when the open seat is another one", () => {
+    expect(routeNotice({ seatCode: "C302-01", text: "x" }, "C302-02")).toEqual({
+      panel: seatsCopy.actions.noticeForSeat("C302-01", "x"),
+      page: null,
+    });
+  });
+  it("shows on the page with the seat code when no panel is open", () => {
+    expect(routeNotice({ seatCode: "C302-01", text: "x" }, null)).toEqual({
+      panel: null,
+      page: seatsCopy.actions.noticeForSeat("C302-01", "x"),
+    });
+  });
+  it("keeps a room-level notice unprefixed", () => {
+    expect(routeNotice({ seatCode: null, text: "x" }, null)).toEqual({ panel: null, page: "x" });
+    expect(routeNotice({ seatCode: null, text: "x" }, "C302-01")).toEqual({
+      panel: "x",
+      page: null,
+    });
+  });
+});
 
 const AUTH = ["unauthenticated", "forbidden", "member_deactivated", "org_required"];
 const fail = (code: string) => ({ ok: false as const, code });

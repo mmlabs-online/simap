@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { Card } from "../Card";
@@ -9,7 +9,12 @@ import { createRoomsApi } from "../rooms/rooms-api";
 import { useSession } from "../session";
 import { AddSeatsDialog } from "./AddSeatsDialog";
 import { ConfirmSeatDialog } from "./ConfirmSeatDialog";
-import { focusAfterDelete, canManageSeats } from "./seat-actions";
+import {
+  focusAfterDelete,
+  canManageSeats,
+  routeNotice,
+  shouldReplaceAfterDelete,
+} from "./seat-actions";
 import { SeatActions } from "./SeatActions";
 import { SeatDetailPanel } from "./SeatDetailPanel";
 import { panelView, parseSeatParam, retryTarget, seatHref } from "./seat-view";
@@ -51,15 +56,28 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
     }
   }, [dismissedCode, urlParam]);
 
+  // The latest URL, for a write that finishes after the user moved on.
+  const latest = useRef({ code: null as string | null, pathname });
+  const mounted = useRef(false);
+  useEffect(() => {
+    latest.current = { code: urlParam.kind === "code" ? urlParam.code : null, pathname };
+  }, [urlParam, pathname]);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
   const onDeleted = useCallback(
     (code: string) => {
       setDismissedCode(code);
       setFocusAfter({ code, codesBefore: list.seats.map((s) => s.code) });
-      if (urlParam.kind === "code" && urlParam.code === code) {
-        router.replace(seatHref(pathname, null), { scroll: false });
+      if (shouldReplaceAfterDelete(mounted.current, latest.current.code, code)) {
+        router.replace(seatHref(latest.current.pathname, null), { scroll: false });
       }
     },
-    [list.seats, urlParam, router, pathname],
+    [list.seats, router],
   );
   const actions = useSeatActions({ seatsApi, roomId, openCode, refresh, onDeleted });
 
@@ -99,9 +117,7 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
 
   const view = panelView(param, resolution, list, detail);
   const { notice, dialog } = actions;
-  const panelNotice =
-    notice && notice.seatCode !== null && notice.seatCode === openCode ? notice.text : null;
-  const pageNotice = notice && !panelNotice ? notice.text : null;
+  const { panel: panelNotice, page: pageNotice } = routeNotice(notice, openCode);
   const confirm =
     dialog && dialog.kind !== "add"
       ? dialog.kind === "delete"

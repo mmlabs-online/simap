@@ -79,6 +79,31 @@ export function actionOutcome(action: SeatAction, result: ActionResult): Outcome
   };
 }
 
+/** After a delete finishes: leave the URL only if the page is still mounted and still shows that seat. */
+export function shouldReplaceAfterDelete(
+  mounted: boolean,
+  currentCode: string | null,
+  deletedCode: string,
+): boolean {
+  return mounted && currentCode === deletedCode;
+}
+
+/**
+ * Where a seat notice shows: in the open panel if there is one, else on the page. A notice about
+ * another seat than the open one names its seat code.
+ */
+export function routeNotice(
+  notice: { seatCode: string | null; text: string } | null,
+  openCode: string | null,
+): { panel: string | null; page: string | null } {
+  if (!notice) return { panel: null, page: null };
+  const text =
+    notice.seatCode !== null && notice.seatCode !== openCode
+      ? seatsCopy.actions.noticeForSeat(notice.seatCode, notice.text)
+      : notice.text;
+  return openCode !== null ? { panel: text, page: null } : { panel: null, page: text };
+}
+
 /** A transient failure keeps the rows on screen; auth and not-found do not. */
 export function keepRowsOnError(code: string): boolean {
   return code === "unavailable" || code === "internal";

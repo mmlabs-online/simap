@@ -47,3 +47,31 @@ literal; reworded inside the same file.)
 ### Scope self-check
 - Could the diff be smaller? No further cut without dropping a plan item.
 - Diff size (`git diff --numstat HEAD~1 HEAD` of the code commit): production +605 / -29 (`copy/seats.ts` 27, `AddSeatsDialog` 63, `ConfirmSeatDialog` 36, `SeatActions` 48, `SeatDetailPanel` 15/2, `SeatsPage` 114/5, `SeatsView` 30/5, `seat-actions` 99, `seats-api` 42/14, `useRoomSeats` 35/3, `useSeatActions` 96); tests +304 / -0 (`seat-actions.test` 152, `SeatActions.test` 53, `SeatActionDialogs.test` 43, `seats-api.test` 41, `SeatsView.test` 12, `SeatDetailPanel.test` 3). Total +909 / -29. Plan estimate was ~565 production / ~330 test; production ran about 7% over.
+
+## Attempt 2 (rework) — 2026-11-22
+
+Fixed only the 2 blockers and 2 should-fix items of review attempt 1. Nits untouched.
+
+### Files touched
+- `src/ui/seats/SeatsPage.tsx` — Issue 1: latest-URL ref and mounted ref; `onDeleted` replaces only via `shouldReplaceAfterDelete`, with the ref's pathname. Issue 3: notice routed through `routeNotice`.
+- `src/ui/seats/useSeatActions.ts` — Issue 2: effect on `[openCode]` drops a seat-bound dialog that no longer matches (`shown` derivation kept). Issue 3: notice always keeps the seat code (also on `closePanel`). Issue 4: `run` takes the starting dialog and closes only it.
+- `src/ui/seats/seat-actions.ts` — new pure `shouldReplaceAfterDelete` and `routeNotice`.
+- `src/ui/copy/seats.ts` — `actions.noticeForSeat(code, text)`.
+- `src/ui/seats/seat-actions.test.ts` — tests for both new functions.
+
+### Checks
+- `pnpm format:check` exit 0, "All matched files use the correct format."
+- `pnpm typecheck` exit 0; `pnpm check:layers` exit 0, "check-layers: 340 files, no violations"
+- `pnpm test` exit 0
+- `pnpm build` exit 0
+- `pnpm test:db` not run (instructed).
+- Reviewer's scratch harness (run from the scratchpad, not copied): 11 passed. T1 no nav call, C302-02 stays open; T2 no nav call; T3 `afterReopenNoClick` false for delete and release; T4 `addOpenAfterFirstWrite` true with 1 write; T9 panel of C302-02 shows "Seat C302-01: This seat gained ...". Fake hook runtime, not a browser.
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+None new.
+
+### Scope self-check
+- Diff size (`git diff --numstat`, before this log and commit): copy/seats 1/0, SeatsPage 24/8, seat-actions.test 42/0, seat-actions 25/0, useSeatActions 18/11. Total +110 / -19.
