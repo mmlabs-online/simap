@@ -1,16 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { apiCopy } from "../copy/api";
 import { seatsCopy } from "../copy/seats";
+import type { SeatDto } from "@/lib/seats/types";
 import {
   actionOutcome,
   canManageSeats,
   canRelease,
+  confirmText,
+  decideReask,
   deleteBlock,
   focusAfterDelete,
   keepRowsOnError,
   parseAddCount,
+  pickStep,
+  reaskDialog,
+  refusedDialog,
   routeNotice,
+  seatButtons,
   shouldReplaceAfterDelete,
+  type AssignDialog,
 } from "./seat-actions";
 
 describe("shouldReplaceAfterDelete", () => {
@@ -190,5 +198,213 @@ describe("focusAfterDelete", () => {
   it("never the deleted code, even if a failed reload kept it", () => {
     expect(focusAfterDelete(before, "R-03", before)).toBe("R-02");
     expect(focusAfterDelete(["R-01"], "R-01", ["R-01"])).toBeNull();
+  });
+});
+
+const seatOf = (over: Partial<SeatDto> = {}): SeatDto => ({
+  id: "s1",
+  code: "C302-01",
+  seq: 1,
+  roomId: "r1",
+  roomCode: "C302",
+  status: "empty",
+  cannotSeat: false,
+  cannotSeatReason: null,
+  occupant: null,
+  mine: false,
+  group: null,
+  project: null,
+  deviceCount: 0,
+  devices: [],
+  ...over,
+});
+const occupied = (id = "o1", displayName = "Trần Thị Bích") =>
+  seatOf({ status: "occupied", occupant: { id, displayName } });
+const chosen = { id: "m1", displayName: "Nguyễn Văn Ân" };
+
+describe("seatButtons", () => {
+  it("matrix over tier and seat state", () => {
+    for (const tier of [null, undefined, "user"] as const) {
+      expect(seatButtons(tier, seatOf()).assign).toBeNull();
+    }
+    for (const tier of ["manager", "admin"] as const) {
+      expect(seatButtons(tier, seatOf()).assign).toBe("assign");
+      expect(seatButtons(tier, occupied()).assign).toBe("replace");
+      expect(seatButtons(tier, seatOf({ cannotSeat: true })).assignDisabled).toBe(true);
+      expect(seatButtons(tier, occupied()).assignDisabled).toBe(false);
+    }
+    expect(seatButtons("manager", seatOf()).remove).toBe(false);
+    expect(seatButtons("admin", seatOf()).remove).toBe(true);
+    expect(seatButtons("user", seatOf({ mine: true })).release).toBe(true);
+  });
+});
+
+describe("pickStep", () => {
+  it("empty seat sends expected null", () => {
+    expect(pickStep(seatOf(), chosen)).toEqual({
+      kind: "send",
+      memberId: "m1",
+      memberName: "Nguyễn Văn Ân",
+      expectedOccupantId: null,
+    });
+  });
+  it("occupied builds one snapshot with the shown id and name", () => {
+    expect(pickStep(occupied(), chosen)).toEqual({
+      kind: "confirm",
+      confirm: {
+        expectedOccupantId: "o1",
+        occupantName: "Trần Thị Bích",
+        memberId: "m1",
+        memberName: "Nguyễn Văn Ân",
+      },
+    });
+  });
+  it("the same person does nothing", () => {
+    expect(pickStep(occupied("m1"), chosen)).toEqual({ kind: "none" });
+  });
+});
+
+describe("confirmText", () => {
+  it("exact replace text with diacritics", () => {
+    expect(
+      confirmText({
+        expectedOccupantId: "o1",
+        occupantName: "Trần Thị Bích",
+        memberId: "m1",
+        memberName: "Nguyễn Văn Ân",
+      }),
+    ).toBe("Trần Thị Bích sits here. Replace with Nguyễn Văn Ân?");
+  });
+  it("plain assign text when occupantName is null", () => {
+    const text = confirmText({
+      expectedOccupantId: null,
+      occupantName: null,
+      memberId: "m1",
+      memberName: "Ân",
+    });
+    expect(text).toBe("Assign Ân to this seat?");
+    expect(text).not.toContain("sits here");
+  });
+});
+
+describe("decideReask", () => {
+  const member = { id: "m1", name: "Nguyễn Văn Ân" };
+  const ok = (seat: SeatDto) => ({ ok: true as const, value: seat });
+  it("a new occupant asks again with that name and id", () => {
+    expect(decideReask(ok(occupied("o2", "Lê Văn C")), member)).toEqual({
+      kind: "ask",
+      seat: occupied("o2", "Lê Văn C"),
+      confirm: {
+        expectedOccupantId: "o2",
+        occupantName: "Lê Văn C",
+        memberId: "m1",
+        memberName: "Nguyễn Văn Ân",
+      },
+    });
+  });
+  it("now empty asks a plain assign confirm", () => {
+    const step = decideReask(ok(seatOf()), member);
+    expect(step).toMatchObject({
+      kind: "ask",
+      confirm: { expectedOccupantId: null, occupantName: null },
+    });
+  });
+  it("already the chosen person is done", () => {
+    expect(decideReask(ok(occupied("m1")), member)).toEqual({ kind: "done" });
+  });
+  it("chosen AND cannot-seat is done", () => {
+    expect(decideReask(ok({ ...occupied("m1"), cannotSeat: true }), member)).toEqual({
+      kind: "done",
+    });
+  });
+  it("cannot-seat closes with the reason", () => {
+    expect(decideReask(ok(seatOf({ cannotSeat: true })), member)).toEqual({ kind: "cannotSeat" });
+  });
+  it("a failed refetch is an error and never an ask", () => {
+    expect(decideReask(fail("unavailable"), member)).toEqual({
+      kind: "error",
+      code: "unavailable",
+    });
+  });
+});
+
+describe("assign dialog transitions", () => {
+  const dialog: AssignDialog = {
+    kind: "assign",
+    seat: occupied(),
+    confirm: {
+      expectedOccupantId: "o1",
+      occupantName: "Trần Thị Bích",
+      memberId: "m1",
+      memberName: "Ân",
+    },
+    revision: 3,
+    error: null,
+    reloadToken: 5,
+  };
+  it("reaskDialog replaces seat and snapshot, bumps revision, keeps the picker", () => {
+    const seat = occupied("o2", "Lê");
+    const confirm = {
+      expectedOccupantId: "o2",
+      occupantName: "Lê",
+      memberId: "m1",
+      memberName: "Ân",
+    };
+    const next = reaskDialog({ ...dialog, error: "old" }, seat, confirm);
+    expect(next).toMatchObject({ kind: "assign", seat, confirm, revision: 4, error: null });
+    expect(next.reloadToken).toBe(5);
+  });
+  it("refusedDialog clears confirm, sets the error, bumps reloadToken", () => {
+    expect(refusedDialog(dialog, "gone")).toMatchObject({
+      confirm: null,
+      error: "gone",
+      reloadToken: 6,
+      revision: 3,
+    });
+  });
+});
+
+describe("actionOutcome assign", () => {
+  it("ok reloads and keeps the panel", () => {
+    expect(actionOutcome("assign", { ok: true })).toEqual({
+      reload: true,
+      closePanel: false,
+      message: null,
+    });
+  });
+  it("auth and invalid_request do not reload", () => {
+    for (const code of [...AUTH, "invalid_request"]) {
+      expect(actionOutcome("assign", fail(code))).toEqual({
+        reload: false,
+        closePanel: false,
+        message: apiCopy.errors[code as keyof typeof apiCopy.errors],
+      });
+    }
+  });
+  it("member_not_assignable keeps the dialog", () => {
+    expect(actionOutcome("assign", fail("member_not_assignable"))).toEqual({
+      reload: true,
+      closePanel: false,
+      message: seatsCopy.actions.memberGone,
+      keepDialog: true,
+    });
+  });
+  it("not_found closes the panel; seat_cannot_seat reloads with a message", () => {
+    expect(actionOutcome("assign", fail("not_found"))).toMatchObject({
+      reload: true,
+      closePanel: true,
+    });
+    expect(actionOutcome("assign", fail("seat_cannot_seat"))).toEqual({
+      reload: true,
+      closePanel: false,
+      message: apiCopy.errors.seat_cannot_seat,
+    });
+  });
+  it("never gets Release copy and never keeps the dialog otherwise", () => {
+    for (const code of ["occupant_changed", "not_allowed", "unavailable", "internal"]) {
+      const out = actionOutcome("assign", fail(code));
+      expect(out.message).not.toBe(seatsCopy.actions.releaseChanged);
+      expect(out.keepDialog).toBeUndefined();
+    }
   });
 });

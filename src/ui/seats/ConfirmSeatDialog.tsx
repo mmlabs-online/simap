@@ -1,4 +1,5 @@
 import { EntityFormDialog } from "../EntityFormDialog";
+import { CLIP } from "./SeatsView";
 
 /** Shared confirm for Delete and Release. Cancel comes first, so it takes focus when the dialog opens. */
 export function ConfirmSeatDialog({
@@ -30,7 +31,7 @@ export function ConfirmSeatDialog({
         onConfirm();
       }}
     >
-      <p className="text-sm font-medium text-on-surface">{body}</p>
+      <p className={`max-h-32 text-sm font-medium text-on-surface ${CLIP}`}>{body}</p>
     </EntityFormDialog>
   );
 }

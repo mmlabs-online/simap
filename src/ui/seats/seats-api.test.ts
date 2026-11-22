@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiAccessError, type ApiFetch } from "@/lib/api/fetch";
+import { validateOccupantPut } from "@/lib/validate/seat";
 import { createSeatsApi } from "./seats-api";
 
 type Call = [string, RequestInit | undefined];
@@ -67,6 +68,52 @@ describe("seats-api errors", () => {
   });
 });
 
+describe("seats-api activeMembers", () => {
+  const dto = {
+    id: "m1",
+    displayName: "Nguyễn Ân",
+    email: "x@example.com",
+    employeeCode: "E1",
+    seats: [],
+    devices: [],
+  };
+  it("status and limit always; no q when blank; cursor verbatim; no duplicate keys", async () => {
+    const a = fake(() => jsonRes({ items: [], nextCursor: null, groups: [] }));
+    await a.api.activeMembers("   ", null);
+    await a.api.activeMembers("  Ân  Nguyễn ", "cur+/=");
+    const first = new URLSearchParams(a.calls[0][0].split("?")[1]);
+    expect(a.calls[0][0].startsWith("/api/members?")).toBe(true);
+    expect(first.get("status")).toBe("active");
+    expect(first.get("limit")).toBe("20");
+    expect(first.has("q")).toBe(false);
+    expect(first.has("cursor")).toBe(false);
+    const second = new URLSearchParams(a.calls[1][0].split("?")[1]);
+    expect(second.getAll("q")).toEqual(["Ân Nguyễn"]);
+    expect(second.getAll("cursor")).toEqual(["cur+/="]);
+    expect([...second.keys()].sort()).toEqual(["cursor", "limit", "q", "status"]);
+  });
+  it("keeps only id, displayName, employeeCode (no email); wrong shape is internal", async () => {
+    const a = fake(() => jsonRes({ items: [dto], nextCursor: "n", groups: [] }));
+    expect(await a.api.activeMembers("", null)).toEqual({
+      ok: true,
+      value: {
+        items: [{ id: "m1", displayName: "Nguyễn Ân", employeeCode: "E1" }],
+        nextCursor: "n",
+      },
+    });
+    expect(await fake(() => jsonRes({})).api.activeMembers("", null)).toEqual({
+      ok: false,
+      code: "internal",
+    });
+    expect(
+      await fake(() => jsonRes({ items: [{ id: 1 }], nextCursor: null })).api.activeMembers(
+        "",
+        null,
+      ),
+    ).toEqual({ ok: false, code: "internal" });
+  });
+});
+
 describe("seats-api writes", () => {
   const item = { id: "s/1", code: "C1-01", devices: [] };
   it("add: POST the count, reads items", async () => {
@@ -91,6 +138,25 @@ describe("seats-api writes", () => {
     expect(await fake(() => jsonRes({})).api.release("s")).toEqual({
       ok: false,
       code: "internal",
+    });
+  });
+  it("setOccupant: PUT body has exactly both keys, null expected kept, passes the validator", async () => {
+    const a = fake(() => jsonRes(item));
+    const memberId = "11111111-1111-4111-8111-111111111111";
+    expect(await a.api.setOccupant("s/1", memberId, null)).toEqual({ ok: true, value: item });
+    expect(a.calls[0][0]).toBe("/api/seats/s%2F1/occupant");
+    expect(a.calls[0][1]?.method).toBe("PUT");
+    const body = JSON.parse(String(a.calls[0][1]?.body));
+    expect(Object.keys(body).sort()).toEqual(["expectedOccupantId", "memberId"]);
+    expect(body.expectedOccupantId).toBeNull();
+    expect(validateOccupantPut(body)).toEqual({
+      ok: true,
+      value: { memberId, expectedOccupantId: null },
+    });
+    const err = fake(() => jsonRes({ error: { code: "occupant_changed" } }, 409));
+    expect(await err.api.setOccupant("s", memberId, null)).toEqual({
+      ok: false,
+      code: "occupant_changed",
     });
   });
   it("each write never throws and reads the error code", async () => {
