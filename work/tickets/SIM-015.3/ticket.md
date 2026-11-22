@@ -47,6 +47,7 @@ Everyone opens a room and sees who sits where on its pixel map, then opens a sea
 
 ## Technical notes
 - Files: `src/ui/roomlayout/*`, `src/ui/seats/*`, `src/ui/copy/*`.
+- Security (SIM-015.1 review, finding 4): a 64 x 64 room at 4x zoom is an 8,192 px canvas (about 268 MB). Cap zoom by canvas area or render only the viewport, and show the error state on failure.
 - Vitest here runs static markup in node, so canvas, pan, focus and pointer behaviour need a browser.
 
 ## Test plan

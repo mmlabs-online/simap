@@ -44,6 +44,7 @@ An Admin can save a whole room layout in one safe step, without losing another A
 
 ## Technical notes
 - Files: `src/server/layout/*`, `src/app/api/rooms/[id]/layout/route.ts`, `src/lib/api/error.ts`, `src/ui/copy/api.ts`.
+- Security (SIM-015.1 review): (1) cap total floor cells at twice the grid area, with a test for 64 full-grid zones, because overlapping zones can hang every member's browser; (2) refuse `baseVersion` above the int4 range; (3) keep `org_id` and `room_id` on the seat UPDATE; (4) use one `unnest` UPDATE and one INSERT; (5) check the room seat count before the seat-set comparison; (6) add a DB test that a foreign-org seat id changes neither org.
 
 ## Test plan
 - Unit: route refusal mapping.

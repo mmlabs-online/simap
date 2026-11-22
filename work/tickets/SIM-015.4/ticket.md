@@ -46,6 +46,7 @@ Any org member can read a room's map data, including a usable default for a room
 
 ## Technical notes
 - Files: `src/lib/sprites/default-layout.ts`, `src/server/layout/layout.ts`, `src/app/api/rooms/[id]/layout/route.ts`.
+- Security (SIM-015.1 review, finding 3): treat stored `floor_zones` as untrusted on read. Re-validate shape, bounds, known sprite and a total-cell cap, and fall back to the default floor.
 - `pnpm build` confirms the `[id]` route path.
 
 ## Test plan
