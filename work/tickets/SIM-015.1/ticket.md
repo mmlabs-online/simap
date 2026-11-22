@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | REWORK |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, security |
 | Gate | plan-approval |
 | Depends on | SIM-010, SIM-012, SIM-024.1 |
 | Needs Ming | M-24 |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-20 |
 | Claimed by | claude@2026-11-22T11:43:55Z |
 | PR | — |
