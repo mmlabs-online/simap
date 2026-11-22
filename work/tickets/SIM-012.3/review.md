@@ -207,3 +207,86 @@ None. No review trigger path changed.
 ### Ming verification after merge (carry to the PR)
 B1 Roles, B2 Add, B3 Delete, B4 Delete refused, B5 Release, B6 In flight, as listed in `plan.md`, at 390 px and desktop, in
 light and dark. These need a real browser: native dialog stacking, Esc and scrim, focus, Next.js navigation and layout.
+
+## Attempt 3 — 2026-11-22
+Verdict: PASS
+
+Attempt 2 Issues 5 and 6 are closed, and Issues 1 to 4 stay closed. No blocker remains. **Ticket AC1 (room switcher) is not
+delivered**: it stays deferred to the proposed SIM-012.5, pending Ming's decision, and is not counted against this attempt.
+The PR must state it.
+
+### Checks (run by reviewer)
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck && pnpm check:layers` — both exit 0, "check-layers: 340 files, no violations"
+- `pnpm test` — 5 of 5 sequential runs exit 0, each "Test Files 138 passed (138); Tests 1401 passed | 3 skipped (1404)"
+- `pnpm build` — exit 0
+- `pnpm test:db` — not run, as instructed. No file under `src/server`, `src/app/api`, `src/lib`, `db/` or `scripts/` changed.
+- Load probe: 2 rounds of 4 concurrent `pnpm test` runs. 6 of 8 passed, 2 failed one test each (see Test flakes).
+- Scratch harness (not committed, not a browser): the 31 Attempt 1 and 2 scenarios pass, and 7 new notice-timing scenarios
+  (N1 to N7) ran, with results read from their output. It proves state order and calls. It does not prove native dialog,
+  focus or Next.js router behaviour.
+  Files: `C:\Users\ttngo\AppData\Local\Temp\claude\a3e515fd31dc05c9\370082c2-0d8c-4461-9583-1eabecf44bf5\scratchpad\r123\a3-review-harness.log`,
+  `C:\Users\ttngo\AppData\Local\Temp\claude\a3e515fd31dc05c9\370082c2-0d8c-4461-9583-1eabecf44bf5\scratchpad\r123\a3-new.log`
+- Not run: any dev server, database, real browser. `pnpm test` itself runs `scripts/start-dev.sh` through
+  `scripts/start-dev.test.ts`, with a stub `node` first on `PATH`; the real launcher was not started.
+
+### Test flakes (not caused by this branch)
+Neither failure appeared in the 5 sequential runs. Neither test, nor the code it exercises, differs from `origin/main`.
+- `src/server/identity/verify.test.ts` > "expired beyond 30 s leeway; within leeway ok; iat in future; nbf; age > 12 h":
+  line 169 expected `ok: true`. The token is signed with `exp: now() - 29` against a 30 s leeway, so a delay of about 1 s
+  under load can expire it (inferred from the test; the assertion does not print the failure code).
+  Log: `C:\Users\ttngo\AppData\Local\Temp\claude\a3e515fd31dc05c9\370082c2-0d8c-4461-9583-1eabecf44bf5\scratchpad\r123\a3-load-1-4.log`
+- `scripts/start-dev.test.ts` > "no TTY and no usable winpty: exit 1, names a supported terminal, launcher not run": timed out
+  at Vitest's default 5000 ms while spawning Git Bash synchronously.
+  Log: `C:\Users\ttngo\AppData\Local\Temp\claude\a3e515fd31dc05c9\370082c2-0d8c-4461-9583-1eabecf44bf5\scratchpad\r123\a3-load-2-1.log`
+
+The implementer's failed run has no log, so which test failed there cannot be established. These two are candidates only.
+
+### Earlier issues
+- [x] Issue 1 (in-flight navigation) stays closed — T1 and T2 make no router call; S1 and S8 pass.
+- [x] Issue 2 (confirm comes back) stays closed — T3 `afterReopenNoClick: false` for Delete and Release; S2 passes.
+- [x] Issue 3 (late result on the wrong seat) stays closed — T9 and S8 show "Seat C302-01: …" in C302-02's panel.
+- [x] Issue 4 (write closes a newer dialog) stays closed — T4 `addOpenAfterFirstWrite: true` with one write; S4 passes.
+- [x] Issue 5 (Add error reads as about the open seat) closed — S5 and S6 show "Add seats: …" in the panel; N7 shows bare text
+      on the page again after Back. Unit test: `seat-actions.test.ts` > "keeps an Add notice bare on the page and labels it in
+      an open panel".
+- [x] Issue 6 (old refusal on a reopened seat) closed — S3 `reopenSameSeatPanel: null`. A refusal still survives its own list
+      reload (N2), a "gone" notice survives the panel closing (N1), and a result landing after a reopen still shows (N6).
+
+### Acceptance criteria
+- [ ] AC1 Room switcher — **NOT DELIVERED**, deferred to proposed SIM-012.5 (Ming undecided). Not counted against this attempt.
+- [x] AC2, AC3, AC7 — unchanged; suite and harness T5, T8, T10, T11 pass.
+- [x] AC4 Delete confirms, removes, closes and moves focus — T1, T2, T6, T7, S9. Real focus: B3.
+- [x] AC5 Occupied or device seat is refused with a message — `deleteBlock` tests, T9, S3, N2.
+- [x] AC6 Release confirms; a changed seat reloads and says so — T8, N3.
+- [x] Plan row 8, project checks and rules — Checks above.
+
+### Scope
+`git diff --name-only 0dbd7b4 928d72b` lists exactly `src/ui/copy/seats.ts`, `src/ui/seats/seat-actions.ts`,
+`src/ui/seats/seat-actions.test.ts`, `src/ui/seats/useSeatActions.ts` and `work/tickets/SIM-012.3/impl-log.md`. These match
+the Issue 5 and 6 fixes. No High path changed. `34752e3` changes only `ticket.md`.
+
+### Rules (CLAUDE.md)
+No violations found. R1 `check:layers` clean; R2, R6, R7 no server, route or migration change; R3 no config or secret; R4 the
+rework stays in the plan's files; R5 checks green and the changed routing has a unit test; D36 new text is in
+`src/ui/copy/seats.ts`.
+
+### Blockers from review agents
+None. No review trigger path changed.
+
+### Nits (do not block)
+- `useSeatActions.ts:39-41` (N4): if a refused write's result commits in the same render as a change to another seat, the
+  effect clears the notice and the user sees no message. The seat is unchanged, the list still reloads, and the window is
+  narrow. By reading, the previous condition cleared this case too, so it is not a regression.
+- N5: a late notice about C302-01 shown on C302-02 disappears when C302-03 opens. This follows the Issue 6 rule.
+- Attempt 1 and 2 nits remain open and do not block.
+
+### Follow-ups (out of scope)
+- Ming to decide proposed SIM-012.5 (room switcher, ticket AC1, spec SHL-01).
+- Harden the two timing-sensitive tests: a wider margin at `verify.test.ts:169` or a fixed clock, and an explicit timeout for
+  the process-spawning tests in `scripts/start-dev.test.ts`.
+- Writes have no client timeout (from Attempt 1).
+
+### Ming verification after merge (carry to the PR)
+B1 Roles, B2 Add, B3 Delete, B4 Delete refused, B5 Release, B6 In flight, as listed in `plan.md`, at 390 px and desktop, in
+light and dark. These need a real browser: native dialog stacking, Esc and scrim, focus, Next.js navigation and layout.
