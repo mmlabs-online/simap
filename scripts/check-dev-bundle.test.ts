@@ -37,6 +37,15 @@ describe("findForbidden", () => {
     );
   });
 
+  it("the demo marker is in fixture.ts and FORBIDDEN", () => {
+    const fixture = readFileSync(
+      new URL("../src/app/dev/roommap/fixture.ts", import.meta.url),
+      "utf8",
+    );
+    expect(FORBIDDEN).toContain("simap-roommap-fixture-9c41");
+    expect(fixture).toContain("simap-roommap-fixture-9c41");
+  });
+
   it("missing dir and empty dir -> throws", () => {
     expect(() => findForbidden(join(tmp(), "nope"))).toThrow();
     expect(() => findForbidden(tmp())).toThrow();

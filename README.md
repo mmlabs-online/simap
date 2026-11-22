@@ -43,8 +43,8 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
    "Production data" badge instead (it only labels the session and grants nothing); plain `pnpm dev` never shows it. If
    the token is missing, expired or has no org, the app names the command to run, and "Check again" picks up the new
    token without a restart. The sign-up, password and email-link pages still call Identity and fail under CORS in dev.
-8. After `pnpm build`, run `pnpm check:dev-bundle`: it fails if dev-token code, the dev:prod flag or a badge label is in
-   the client bundle.
+8. After `pnpm build`, run `pnpm check:dev-bundle`: it fails if dev-token code, the dev:prod flag, a badge label or the room map demo
+   fixture is in the client bundle.
 
 ## Production database (dev)
 

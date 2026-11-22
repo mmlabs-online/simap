@@ -4,7 +4,8 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 // "No usable dev token" is the sentinel taken from src/ui/copy/dev-token.ts (guarded by the test); minifiers rename
-// `DevGate`, so the strings carry the proof. The last three are the dev:prod flag and the badge labels.
+// `DevGate`, so the strings carry the proof. The next three are the dev:prod flag and the badge labels; the last is the
+// room map demo fixture marker (SIM-024.1, src/app/dev/roommap/fixture.ts).
 export const FORBIDDEN = [
   "DevGate",
   "[dev-token]",
@@ -17,6 +18,7 @@ export const FORBIDDEN = [
   "SIMAP_DEV_PROD",
   "Production data",
   "Dev token",
+  "simap-roommap-fixture-9c41",
 ];
 
 function filesUnder(dir) {
