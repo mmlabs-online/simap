@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-22 |
-| Claimed by | claude@2026-11-22T06:08:12Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/40 |
 
 ## Goal
 Draw a pixel-art room from layout data with the sprite atlas, so the room view (SIM-015.1) and editor (SIM-015.2) can
@@ -66,3 +66,9 @@ build on a working renderer. This is slice 2 of SIM-024.
 - 2026-11-22: Ming asked to create this ticket from the SIM-024 slice 2 proposal.
 
 ## Handoff
+
+### 2026-11-22 — claude — DONE
+- Agent calls: 7, tokens 510k, in/out split not reported (frontend-developer×1 30k, software-architect×1 72k, planner×1 115k, implementer×2 145k, reviewer×2 148k; models from agent files, no overrides)
+- Done: renderer, avatars, overlays, name tags, loader, dev demo and bundle check. Review PASS on attempt 2. Checks green (1224 tests). PR: https://github.com/mmlabs-online/simap/pull/40
+- In progress / next: Ming merges and runs the browser checks in the PR. SIM-012 is the next runnable art-path ticket.
+- Gotchas: no agent saw real pixels. Zoom follows the spec (2/3/4), not the ticket wording. Work ran in a separate worktree because Ming's production dev server was running from the main checkout.
