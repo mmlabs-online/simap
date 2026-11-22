@@ -337,6 +337,7 @@ describe("credentials and X-MM-App per call", () => {
     ["forgot", (c) => c.forgotPassword({ email: "a@b.co", turnstileToken: "ts" }), "omit", true],
     ["verify-email", (c) => c.verifyEmail("t"), "omit", false],
     ["reset", (c) => c.resetPassword({ token: "t", newPassword: "pw" }), "omit", false],
+    ["acceptInvitation", (c) => c.acceptInvitation({ accountId: ID, token: "t" }), "include", true],
   ];
   it.each(calls)("%s", async (_n, run, credentials, app) => {
     const { client, fetchFn } = setup(ok);
@@ -504,5 +505,65 @@ describe("invite", () => {
     });
     const down = setup(() => Promise.reject(new TypeError("offline")));
     expect((await reject(down.client.invite(args))).code).toBe("network");
+  });
+});
+
+describe("acceptInvitation", () => {
+  const ORG = "22222222-2222-4222-8222-222222222222";
+  const args = { accountId: ID, token: "tok-invite" };
+
+  it("acceptInvitation posts /auth/invitations/accept with {account_id, token}", async () => {
+    const { client, req } = setup(() => json({ org_id: ORG, roles: ["simap:member"] }));
+    await client.acceptInvitation(args);
+    const { url, init, headers, body } = req();
+    expect(url).toBe(`${BASE}/auth/invitations/accept`);
+    expect(init.method).toBe("POST");
+    expect(init.credentials).toBe("include");
+    expect(headers["X-MM-App"]).toBe("simap");
+    expect(headers).not.toHaveProperty("Authorization");
+    expect(body).toEqual({ account_id: ID, token: "tok-invite" });
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("acceptInvitation returns lowercase orgId; ignores roles", async () => {
+    const { client } = setup(() => json({ org_id: ORG.toUpperCase(), roles: ["x"] }));
+    expect(await client.acceptInvitation(args)).toEqual({ orgId: ORG });
+  });
+
+  it("acceptInvitation 2xx with unreadable body or non-UUID org_id -> orgId null", async () => {
+    for (const res of [
+      () => new Response(null, { status: 204 }),
+      () => new Response("<html>", { status: 200 }),
+      () => json({ org_id: "nope" }),
+      () => json({}),
+    ]) {
+      expect(await setup(res).client.acceptInvitation(args)).toEqual({ orgId: null });
+    }
+  });
+
+  it("acceptInvitation rejects unknown for a non-UUID accountId without a request", async () => {
+    const { client, fetchFn } = setup(() => json({ org_id: ORG }));
+    expect(await reject(client.acceptInvitation({ ...args, accountId: "x" }))).toEqual({
+      code: "unknown",
+    });
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("acceptInvitation maps 403/422/429 codes via toAuthError", async () => {
+    const mismatch = setup(() => json({ error: { code: "invitation_email_mismatch" } }, 403));
+    expect(await reject(mismatch.client.acceptInvitation(args))).toEqual({
+      code: "invitation_email_mismatch",
+    });
+    const invalid = setup(() => json({ error: { code: "token_invalid" } }, 422));
+    expect(await reject(invalid.client.acceptInvitation(args))).toEqual({ code: "token_invalid" });
+    const limited = setup(() =>
+      json({ error: { code: "rate_limited" } }, 429, { "Retry-After": "30" }),
+    );
+    expect(await reject(limited.client.acceptInvitation(args))).toMatchObject({
+      code: "rate_limited",
+      retryAfterSeconds: 30,
+    });
+    const down = setup(() => Promise.reject(new TypeError("offline")));
+    expect(await reject(down.client.acceptInvitation(args))).toEqual({ code: "network" });
   });
 });

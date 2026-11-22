@@ -36,6 +36,8 @@ export function SignInView({
   accounts,
   onContinueAs,
   continuingId,
+  intro,
+  footer,
 }: {
   status: "idle" | "submitting";
   error?: AuthError | null;
@@ -51,6 +53,10 @@ export function SignInView({
   accounts?: AccountChoice[];
   onContinueAs?: (account: AccountChoice) => void;
   continuingId?: string | null;
+  /** Rendered after the error notice, before the accounts list and the form. */
+  intro?: ReactNode;
+  /** Rendered after the forgot and sign-up links. */
+  footer?: ReactNode;
 }) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -78,6 +84,7 @@ export function SignInView({
         </Notice>
       )}
       {error && <Notice kind="error">{authErrorMessage(error)}</Notice>}
+      {intro}
       {accounts && accounts.length > 0 && onContinueAs && (
         <>
           <section aria-label={copy.accountsLabel} className="flex flex-col gap-2">
@@ -140,6 +147,7 @@ export function SignInView({
           {copy.toSignUp}
         </a>
       )}
+      {footer}
     </AuthLayout>
   );
 }

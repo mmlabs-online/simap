@@ -79,4 +79,16 @@ describe("takeLinkToken", () => {
     expect(takeLinkToken(f.deps, "/verify-email")).toBeNull();
     expect(f.calls).toHaveLength(1);
   });
+
+  it("takes a 43-char token and replaces state with /accept-invitation", () => {
+    const f = fake(`#token=${tok(43)}`);
+    expect(takeLinkToken(f.deps, "/accept-invitation")).toBe(tok(43));
+    expect(f.calls).toEqual(["replace:null::/accept-invitation"]);
+  });
+
+  it("/accept-invitation?token=... is never read, still cleaned", () => {
+    const f = fake("", `?token=${tok(43)}`);
+    expect(takeLinkToken(f.deps, "/accept-invitation")).toBeNull();
+    expect(f.calls).toEqual(["replace:null::/accept-invitation"]);
+  });
 });

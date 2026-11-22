@@ -38,6 +38,11 @@ export interface IdentityClient {
     email: string;
     role: string;
   }): Promise<{ id: string; expiresAt: string }>;
+  /**
+   * Accepts an org invitation as the signed-in account (`POST /auth/invitations/accept`, cookie mode, no bearer).
+   * Call only from the Accept click. A 2xx is success whatever the body: `orgId` is null when it cannot be read.
+   */
+  acceptInvitation(v: { accountId: string; token: string }): Promise<{ orgId: string | null }>;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -46,6 +51,7 @@ const LOGOUT_TIMEOUT_MS = 5000;
 const ACCOUNTS_TIMEOUT_MS = 5000;
 const ORGS_TIMEOUT_MS = 5000;
 const INVITE_TIMEOUT_MS = 15000;
+const ACCEPT_TIMEOUT_MS = 15000;
 /** A hung /token would hold the cross-tab renewal lock for every tab. */
 const TOKEN_TIMEOUT_MS = 15000;
 const unknownError = (): AuthError => ({ code: "unknown" });
@@ -273,6 +279,21 @@ export function createIdentityClient({
         throw unknownError();
       }
       return { id: id.toLowerCase(), expiresAt: new Date(expires_at).toISOString() };
+    },
+    async acceptInvitation({ accountId, token }) {
+      if (!UUID_RE.test(accountId)) throw unknownError();
+      const json = asObject(
+        await post(
+          "/auth/invitations/accept",
+          { account_id: accountId, token },
+          "cookie",
+          AbortSignal.timeout(ACCEPT_TIMEOUT_MS),
+        ),
+      );
+      const orgId = json.org_id;
+      return {
+        orgId: typeof orgId === "string" && UUID_RE.test(orgId) ? orgId.toLowerCase() : null,
+      };
     },
     async accounts() {
       const items = asObject(
