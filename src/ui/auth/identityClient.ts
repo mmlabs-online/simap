@@ -28,6 +28,16 @@ export interface IdentityClient {
   /** Joins the app as the given account. Call only after the user's click (D8). 200 `member`; 202 `pending` (needs approval). */
   join(accountId: string): Promise<"member" | "pending">;
   accounts(): Promise<{ accountId: string; email: string }[]>;
+  /**
+   * Invites `email` to the org with a simap role (`POST /auth/orgs/{org_id}/invitations`). Identity always answers 201
+   * and never echoes the email; it sends the mail itself. Rejects `unknown` for a body that does not match the request.
+   */
+  invite(v: {
+    accountId: string;
+    orgId: string;
+    email: string;
+    role: string;
+  }): Promise<{ id: string; expiresAt: string }>;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -35,6 +45,7 @@ const EXPIRES_MAX = 86400;
 const LOGOUT_TIMEOUT_MS = 5000;
 const ACCOUNTS_TIMEOUT_MS = 5000;
 const ORGS_TIMEOUT_MS = 5000;
+const INVITE_TIMEOUT_MS = 15000;
 /** A hung /token would hold the cross-tab renewal lock for every tab. */
 const TOKEN_TIMEOUT_MS = 15000;
 const unknownError = (): AuthError => ({ code: "unknown" });
@@ -238,6 +249,30 @@ export function createIdentityClient({
           AbortSignal.timeout(ORGS_TIMEOUT_MS),
         ),
       );
+    },
+    async invite({ accountId, orgId, email, role }) {
+      if (!UUID_RE.test(accountId) || !UUID_RE.test(orgId)) throw unknownError();
+      const json = asObject(
+        await post(
+          `/auth/orgs/${encodeURIComponent(orgId)}/invitations`,
+          { account_id: accountId, email, role },
+          "cookie",
+          AbortSignal.timeout(INVITE_TIMEOUT_MS),
+        ),
+      );
+      const { id, org_id, expires_at } = json;
+      if (
+        typeof id !== "string" ||
+        !UUID_RE.test(id) ||
+        typeof org_id !== "string" ||
+        org_id.toLowerCase() !== orgId.toLowerCase() ||
+        json.role !== role ||
+        typeof expires_at !== "string" ||
+        !Number.isFinite(Date.parse(expires_at))
+      ) {
+        throw unknownError();
+      }
+      return { id: id.toLowerCase(), expiresAt: new Date(expires_at).toISOString() };
     },
     async accounts() {
       const items = asObject(

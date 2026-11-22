@@ -433,3 +433,76 @@ describe("orgs and token with an org", () => {
     expect(await reject(client.token(ID, ORG))).toEqual({ code: "org_access_denied" });
   });
 });
+
+describe("invite", () => {
+  const ORG = "22222222-2222-4222-8222-222222222222";
+  const INV = "AAAAAAAA-1111-4111-8111-111111111111";
+  const good = (over: Record<string, unknown> = {}) => ({
+    id: INV,
+    org_id: ORG,
+    role: "simap:user",
+    expires_at: "2026-11-29T07:00:00+07:00",
+    ...over,
+  });
+  const args = { accountId: ID, orgId: ORG, email: "a@b.co", role: "simap:user" };
+
+  it("request shape: cookie class, exact body, no Authorization, signal", async () => {
+    const { client, req } = setup(() => json(good(), 201));
+    await client.invite(args);
+    const { url, init, headers, body } = req();
+    expect(url).toBe(`${BASE}/auth/orgs/${ORG}/invitations`);
+    expect(init.method).toBe("POST");
+    expect(init.credentials).toBe("include");
+    expect(headers["X-MM-App"]).toBe("simap");
+    expect(headers).not.toHaveProperty("Authorization");
+    expect(body).toEqual({ account_id: ID, email: "a@b.co", role: "simap:user" });
+    expect(init.cache).toBe("no-store");
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("parses a good 201 (id lowercased, expiry in UTC)", async () => {
+    const { client } = setup(() => json(good(), 201));
+    expect(await client.invite(args)).toEqual({
+      id: INV.toLowerCase(),
+      expiresAt: "2026-11-29T00:00:00.000Z",
+    });
+  });
+
+  it("rejects unknown for a body that does not match the request", async () => {
+    for (const b of [
+      good({ org_id: ID }),
+      good({ role: "simap:manager" }),
+      good({ id: "nope" }),
+      good({ expires_at: undefined }),
+      good({ expires_at: "soon" }),
+      {},
+      null,
+    ]) {
+      const { client } = setup(() => json(b, 201));
+      expect((await reject(client.invite(args))).code).toBe("unknown");
+    }
+  });
+
+  it("a non-UUID id rejects unknown without fetching", async () => {
+    const { client, fetchFn } = setup(() => json(good(), 201));
+    expect((await reject(client.invite({ ...args, orgId: "x" }))).code).toBe("unknown");
+    expect((await reject(client.invite({ ...args, accountId: "x" }))).code).toBe("unknown");
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("maps errors: code, Retry-After, network", async () => {
+    const forbidden = setup(() =>
+      json({ error: { code: "invite_role_forbidden", message: "x" } }, 403),
+    );
+    expect((await reject(forbidden.client.invite(args))).code).toBe("invite_role_forbidden");
+    const limited = setup(() =>
+      json({ error: { code: "rate_limited", message: "x" } }, 429, { "Retry-After": "30" }),
+    );
+    expect(await reject(limited.client.invite(args))).toMatchObject({
+      code: "rate_limited",
+      retryAfterSeconds: 30,
+    });
+    const down = setup(() => Promise.reject(new TypeError("offline")));
+    expect((await reject(down.client.invite(args))).code).toBe("network");
+  });
+});

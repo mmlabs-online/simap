@@ -212,6 +212,7 @@ export async function getDeleteImpact(
 
 /**
  * Seat/device lock order (every writer of seats, occupants, device placement, seat-request approval):
+ * 0. a member row `for update` before any room/seat lock (deactivating a member, SIM-011);
  * 1. room row first: `for update` when creating, deleting or renaming seats (lockRoom, allocateSeatSeq),
  *    `for share` when only changing an existing seat's occupant or placing/moving a device on it;
  * 2. then seat rows `for update`, in ascending id order when more than one;
