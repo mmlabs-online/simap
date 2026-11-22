@@ -23,6 +23,10 @@ export const apiCopy = {
     occupant_changed: "This seat just changed. Check it and try again.",
     not_allowed: "This action is not allowed.",
     member_not_assignable: "This member can't be assigned to a seat.",
+    layout_out_of_bounds: "Something in this layout is outside the room.",
+    layout_overlap: "Two items in this layout are on the same tile.",
+    layout_bad_rotation: "An item in this layout has a rotation it can't use.",
+    layout_unknown_sprite: "This layout uses an item that doesn't exist.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

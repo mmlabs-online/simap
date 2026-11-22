@@ -36,5 +36,10 @@ The app never migrates.
 - `audit_log` is append-only (update, delete and truncate raise `55000`).
 - `members.profile_confirmed_at` (SIM-007, `20261120190000_members_profile_confirmed_at.sql`): null = profile not
   confirmed yet; set once by the member's first `PATCH /api/me`, never reset.
+- Tile layout (SIM-015.1, `20261122120000_room_tile_layout.sql`): `rooms.grid_w/grid_h` (both null = no saved layout),
+  `rooms.floor_zones` (jsonb array), `rooms.layout_version`; `seats` and `layout_fixtures` get `tile_x`, `tile_y`,
+  `tile_rotation`, `sprite_key` (all four null or all four set). `layout_fixtures.kind` is nullable: a tile-placed
+  fixture stores `kind = null` and is identified by `sprite_key`; legacy rows keep `kind` and have no tile placement.
+  The old free-form columns stay until a later contract migration. Bounds and overlap are checked in `src/lib`.
 - Dev seed: `pnpm seed:dev` loads fake data (fixed UUIDs, `@simap.example` emails, invented names) into a local
   database only; it refuses non-local hosts and `NODE_ENV=production`. Never put real data in the seed.

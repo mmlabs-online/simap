@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { avatarFor } from "@/lib/sprites/avatar";
 import { buildDrawList, resolveFrameKey } from "@/lib/sprites/placement";
 import type { SpriteManifest } from "@/lib/sprites/types";
+import { checkLayoutRules } from "@/lib/validate/layout";
 import { DEMO_FIXTURE_MARKER, DEMO_LAYOUT, DEMO_VIEWS } from "./fixture";
 
 const manifest = JSON.parse(
@@ -18,6 +19,10 @@ describe("demo fixture", () => {
       expect(manifest.frames[key as string], p.sprite).toBeDefined();
     }
     expect(buildDrawList(DEMO_LAYOUT, DEMO_VIEWS, manifest).unknown).toEqual([]);
+  });
+
+  it("DEMO_LAYOUT passes the layout rules", () => {
+    expect(checkLayoutRules(DEMO_LAYOUT)).toEqual({ ok: true });
   });
 
   it("covers every seat state", () => {
