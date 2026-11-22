@@ -61,5 +61,25 @@ export const seatsCopy = {
     releaseSubmit: "Release",
     releaseChanged:
       "This seat changed in the meantime, so it was not released. The page was reloaded.",
+    assign: "Assign",
+    replace: "Replace",
+    assignTitle: (code: string) => `Assign seat ${code}`,
+    assignConfirmTitle: (code: string) => `Assign seat ${code}?`,
+    assignConfirmBody: (member: string) => `Assign ${member} to this seat?`,
+    replaceTitle: (code: string) => `Replace the occupant of seat ${code}?`,
+    replaceBody: (occupant: string, member: string) =>
+      `${occupant} sits here. Replace with ${member}?`,
+    assignChanged:
+      "This seat changed in the meantime, so nothing was assigned. The page was reloaded.",
+    memberGone: "This member can no longer be assigned. The list was reloaded.",
+    pickerSearch: "Search by name or employee code",
+    pickerList: "Active members",
+    pickerLoading: "Loading members",
+    pickerEmpty: "No active members found.",
+    pickerError: "Could not load the members.",
+    pickerNone: "Choose a member first.",
+    pickerLoadMore: "Load more",
+    pickerMoreFailed: "Could not load more members.",
+    pickerSitsHere: "sits here",
   },
 } as const;

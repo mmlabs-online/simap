@@ -32,6 +32,20 @@ describe("seat dialogs", () => {
     expect(html.indexOf("Cancel")).toBeGreaterThan(-1);
     expect(html.indexOf("Cancel")).toBeLessThan(html.lastIndexOf(seatsCopy.actions.deleteSubmit));
   });
+  it("confirm body clips a long name", () => {
+    const html = renderToStaticMarkup(
+      <ConfirmSeatDialog
+        open
+        title="t"
+        body={"Â".repeat(500)}
+        submitLabel="s"
+        submitting={false}
+        onClose={() => {}}
+        onConfirm={() => {}}
+      />,
+    );
+    expect(html).toMatch(/max-h-32[^"]*overflow-hidden/);
+  });
   it("count field is text with numeric input mode and no browser validation", () => {
     const html = renderToStaticMarkup(
       <AddSeatsDialog open submitting={false} onClose={() => {}} onAdd={() => {}} />,

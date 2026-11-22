@@ -28,6 +28,7 @@ const render = (tier: Tier | null, s: SeatDto | null, notice: string | null = nu
       seat={s}
       notice={notice}
       busy={false}
+      onAssign={() => {}}
       onDelete={() => {}}
       onRelease={() => {}}
     />,
@@ -43,6 +44,23 @@ describe("SeatActions", () => {
       }
     }
     expect(render(null, seat(false))).toBe("");
+  });
+  it("assign role matrix; Replace when occupied", () => {
+    for (const tier of ["user", "manager", "admin"] as const) {
+      const empty = render(tier, seat(false));
+      const full = render(tier, { ...seat(false), occupant: { id: "o", displayName: "O" } });
+      const can = tier !== "user";
+      expect(empty.includes(">Assign<")).toBe(can);
+      expect(full.includes(">Replace<")).toBe(can);
+      expect(full.includes(">Assign<")).toBe(false);
+    }
+    expect(render(null, seat(false))).toBe("");
+  });
+  it("cannot-seat disables assign and replace", () => {
+    const blocked = { ...seat(false), cannotSeat: true, cannotSeatReason: "Broken" };
+    expect(render("manager", blocked)).toMatch(/<button[^>]*disabled[^>]*>Assign</);
+    const withOccupant = { ...blocked, occupant: { id: "o", displayName: "O" } };
+    expect(render("admin", withOccupant)).toMatch(/<button[^>]*disabled[^>]*>Replace</);
   });
   it("no buttons unless the seat is ready", () => {
     expect(render("admin", null)).toBe("");

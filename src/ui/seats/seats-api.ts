@@ -1,6 +1,13 @@
 import { ApiAccessError, type ApiFetch } from "@/lib/api/fetch";
 import type { RoomSeatsResponse, SeatDto } from "@/lib/seats/types";
 
+import {
+  normalizePickerQuery,
+  PICKER_PAGE,
+  type PickerMember,
+  type PickerPage,
+} from "./member-picker";
+
 export type SeatsResult<T> = { ok: true; value: T } | { ok: false; code: string };
 
 const fail = (code: string): { ok: false; code: string } => ({ ok: false, code });
@@ -77,6 +84,41 @@ export function createSeatsApi(fetcher: ApiFetch) {
       call<null>(seatPath(seatId), { method: "DELETE" }, async () => ({ ok: true, value: null })),
     release: (seatId: string) =>
       call<SeatDto>(`${seatPath(seatId)}/release`, { method: "POST" }, json(isSeat)),
+    setOccupant: (seatId: string, memberId: string | null, expectedOccupantId: string | null) =>
+      call<SeatDto>(
+        `${seatPath(seatId)}/occupant`,
+        {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ memberId, expectedOccupantId }),
+        },
+        json(isSeat),
+      ),
+    activeMembers: (q: string, cursor: string | null) => {
+      const params = new URLSearchParams({ status: "active", limit: String(PICKER_PAGE) });
+      const query = normalizePickerQuery(q);
+      if (query !== "") params.set("q", query);
+      if (cursor !== null) params.set("cursor", cursor);
+      return call<PickerPage>(
+        `/api/members?${params.toString()}`,
+        { method: "GET" },
+        async (res) => {
+          const body: unknown = await res.json();
+          if (!isObject(body) || !Array.isArray(body.items)) return fail("internal");
+          if (body.nextCursor !== null && typeof body.nextCursor !== "string")
+            return fail("internal");
+          const items: PickerMember[] = [];
+          for (const m of body.items as unknown[]) {
+            if (!isObject(m) || typeof m.id !== "string" || typeof m.displayName !== "string") {
+              return fail("internal");
+            }
+            const code = typeof m.employeeCode === "string" ? m.employeeCode : null;
+            items.push({ id: m.id, displayName: m.displayName, employeeCode: code });
+          }
+          return { ok: true, value: { items, nextCursor: body.nextCursor } };
+        },
+      );
+    },
   };
 }
 

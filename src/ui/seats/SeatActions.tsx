@@ -2,7 +2,7 @@ import type { SeatDto } from "@/lib/seats/types";
 import type { Tier } from "@/lib/tier";
 import { seatsCopy } from "../copy/seats";
 import { Button } from "../Button";
-import { canManageSeats, canRelease } from "./seat-actions";
+import { seatButtons } from "./seat-actions";
 
 /** Panel actions. `seat` is the detail seat once it is ready, else `null` (no buttons). The notice shows in every view. */
 export function SeatActions({
@@ -10,6 +10,7 @@ export function SeatActions({
   seat,
   notice,
   busy,
+  onAssign,
   onDelete,
   onRelease,
 }: {
@@ -17,11 +18,11 @@ export function SeatActions({
   seat: SeatDto | null;
   notice: string | null;
   busy: boolean;
+  onAssign: (seat: SeatDto) => void;
   onDelete: (seat: SeatDto) => void;
   onRelease: (seat: SeatDto) => void;
 }) {
-  const release = seat !== null && canRelease(seat);
-  const remove = seat !== null && canManageSeats(tier);
+  const buttons = seat ? seatButtons(tier, seat) : null;
   return (
     <>
       {notice && (
@@ -29,14 +30,23 @@ export function SeatActions({
           {notice}
         </p>
       )}
-      {seat && (release || remove) && (
+      {seat && buttons && (buttons.assign || buttons.release || buttons.remove) && (
         <div className="flex flex-wrap gap-2">
-          {release && (
+          {buttons.assign && (
+            <Button
+              variant="tonal"
+              disabled={busy || buttons.assignDisabled}
+              onClick={() => onAssign(seat)}
+            >
+              {seatsCopy.actions[buttons.assign]}
+            </Button>
+          )}
+          {buttons.release && (
             <Button variant="tonal" disabled={busy} onClick={() => onRelease(seat)}>
               {seatsCopy.actions.release}
             </Button>
           )}
-          {remove && (
+          {buttons.remove && (
             <Button variant="danger" disabled={busy} onClick={() => onDelete(seat)}>
               {seatsCopy.actions.delete}
             </Button>

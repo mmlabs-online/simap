@@ -9,7 +9,9 @@ import { createRoomsApi } from "../rooms/rooms-api";
 import { useSession } from "../session";
 import { AddSeatsDialog } from "./AddSeatsDialog";
 import { ConfirmSeatDialog } from "./ConfirmSeatDialog";
+import { MemberPickerDialog } from "./MemberPickerDialog";
 import {
+  confirmText,
   focusAfterDelete,
   canManageSeats,
   routeNotice,
@@ -118,20 +120,31 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
   const view = panelView(param, resolution, list, detail);
   const { notice, dialog } = actions;
   const { panel: panelNotice, page: pageNotice } = routeNotice(notice, openCode);
-  const confirm =
-    dialog && dialog.kind !== "add"
-      ? dialog.kind === "delete"
-        ? {
-            title: seatsCopy.actions.deleteTitle(dialog.seat.code),
-            body: seatsCopy.actions.deleteBody,
-            submitLabel: seatsCopy.actions.deleteSubmit,
-          }
-        : {
-            title: seatsCopy.actions.releaseTitle(dialog.seat.code),
-            body: seatsCopy.actions.releaseBody,
-            submitLabel: seatsCopy.actions.releaseSubmit,
-          }
-      : null;
+  const assign = dialog?.kind === "assign" ? dialog : null;
+  const copy = seatsCopy.actions;
+  let confirm: { title: string; body: string; submitLabel: string } | null = null;
+  if (assign?.confirm) {
+    const replace = assign.confirm.occupantName !== null;
+    confirm = {
+      title: replace
+        ? copy.replaceTitle(assign.seat.code)
+        : copy.assignConfirmTitle(assign.seat.code),
+      body: confirmText(assign.confirm),
+      submitLabel: replace ? copy.replace : copy.assign,
+    };
+  } else if (dialog?.kind === "delete") {
+    confirm = {
+      title: copy.deleteTitle(dialog.seat.code),
+      body: copy.deleteBody,
+      submitLabel: copy.deleteSubmit,
+    };
+  } else if (dialog?.kind === "release") {
+    confirm = {
+      title: copy.releaseTitle(dialog.seat.code),
+      body: copy.releaseBody,
+      submitLabel: copy.releaseSubmit,
+    };
+  }
 
   return (
     <>
@@ -156,18 +169,32 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
             seat={view.kind === "ready" ? view.seat : null}
             notice={panelNotice}
             busy={actions.busy}
+            onAssign={actions.requestAssign}
             onDelete={actions.requestDelete}
             onRelease={actions.requestRelease}
           />
         }
       />
+      {assign && (
+        <MemberPickerDialog
+          open
+          seat={assign.seat}
+          loadPage={seatsApi.activeMembers}
+          reloadToken={assign.reloadToken}
+          error={assign.error}
+          submitting={actions.busy && assign.confirm === null}
+          onClose={actions.closeDialog}
+          onPick={(m) => void actions.pick(m)}
+        />
+      )}
       <ConfirmSeatDialog
+        key={assign ? `assign-${assign.revision}` : "plain"}
         open={confirm !== null}
         title={confirm?.title ?? ""}
         body={confirm?.body ?? ""}
         submitLabel={confirm?.submitLabel ?? ""}
         submitting={actions.busy}
-        onClose={actions.closeDialog}
+        onClose={assign ? actions.closeConfirm : actions.closeDialog}
         onConfirm={() => void actions.confirm()}
       />
       <AddSeatsDialog

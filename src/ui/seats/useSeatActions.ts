@@ -2,13 +2,27 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SeatDto } from "@/lib/seats/types";
-import { actionOutcome, deleteBlock, type ActionResult, type SeatAction } from "./seat-actions";
+import { apiErrorMessage } from "../copy/api";
+import {
+  actionOutcome,
+  decideReask,
+  deleteBlock,
+  pickStep,
+  reaskDialog,
+  refusedDialog,
+  type ActionResult,
+  type AssignDialog,
+  type OccupantConfirm,
+  type SeatAction,
+} from "./seat-actions";
+import type { PickerMember } from "./member-picker";
 import type { SeatsApi } from "./seats-api";
 
 export type SeatDialog =
   | { kind: "add" }
   | { kind: "delete"; seat: SeatDto }
-  | { kind: "release"; seat: SeatDto };
+  | { kind: "release"; seat: SeatDto }
+  | AssignDialog;
 export type SeatNotice = { seatCode: string | null; text: string };
 
 /**
@@ -69,6 +83,72 @@ export function useSeatActions({
     setDialog((d) => (d && d.kind !== "add" && d.seat.code !== openCode ? null : d));
   }, [openCode]);
   const shown = dialog && dialog.kind !== "add" && dialog.seat.code !== openCode ? null : dialog;
+  const shownRef = useRef<SeatDialog | null>(null);
+  useEffect(() => {
+    shownRef.current = shown;
+  }, [shown]);
+
+  /**
+   * PUT the occupant. Busy is held through the PUT, any refetch and the reload, so a new confirm
+   * cannot be submitted before the page shows the current state. A refusal never leads to a PUT:
+   * `occupant_changed` only refetches and asks again; a write happens only from a user's submit.
+   */
+  const writeOccupant = async (
+    started: AssignDialog,
+    choice: OccupantConfirm | { memberId: string; memberName: string; expectedOccupantId: null },
+  ) => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setBusy(true);
+    setNotice(null);
+    const code = started.seat.code;
+    const result = await seatsApi.setOccupant(
+      started.seat.id,
+      choice.memberId,
+      choice.expectedOccupantId,
+    );
+    const still = () => shownRef.current === started;
+    const finish = (next: SeatDialog | null, message: string | null) => {
+      setDialog((d) => (d === started ? next : d));
+      // The dialog was closed meanwhile: the message still shows, as a notice.
+      const asNotice = next === null || !still();
+      setNotice(message && asNotice ? { seatCode: code, text: message } : null);
+    };
+    let closed = true;
+    let closePanel = false;
+    if (result.ok) {
+      finish(null, null);
+    } else if (result.code === "occupant_changed") {
+      const fresh = await seatsApi.get(started.seat.id);
+      const step = decideReask(fresh, { id: choice.memberId, name: choice.memberName });
+      if (step.kind === "ask") {
+        finish(reaskDialog(started, step.seat, step.confirm), apiErrorMessage(result.code));
+        closed = !still();
+      } else if (step.kind === "done") {
+        finish(null, null);
+      } else if (step.kind === "cannotSeat") {
+        finish(null, apiErrorMessage("seat_cannot_seat"));
+      } else {
+        finish(refusedDialog(started, apiErrorMessage(step.code)), apiErrorMessage(step.code));
+        closed = !still();
+      }
+    } else {
+      const outcome = actionOutcome("assign", result);
+      closePanel = outcome.closePanel;
+      if (outcome.keepDialog) {
+        finish(refusedDialog(started, outcome.message ?? ""), outcome.message);
+        closed = !still();
+      } else {
+        finish(null, outcome.message);
+      }
+    }
+    if (closePanel) onDeleted(code);
+    await refresh();
+    busyRef.current = false;
+    setBusy(false);
+    // With the dialog still open the panel heading is inert, so focus moves only when it closed.
+    if (closed && !closePanel) setFocusSignal((n) => n + 1);
+  };
 
   return {
     dialog: shown,
@@ -85,6 +165,34 @@ export function useSeatActions({
       else setDialog({ kind: "delete", seat });
     },
     requestRelease: (seat: SeatDto) => setDialog({ kind: "release", seat }),
+    requestAssign: (seat: SeatDto) => {
+      setNotice(null);
+      setDialog({
+        kind: "assign",
+        seat,
+        confirm: null,
+        revision: 0,
+        error: null,
+        reloadToken: 0,
+      });
+    },
+    /** A member was picked: send at once on an empty seat, ask on an occupied one, nothing for the same person. */
+    pick: (member: PickerMember) => {
+      if (shown?.kind !== "assign") return Promise.resolve();
+      const step = pickStep(shown.seat, member);
+      if (step.kind === "send") return writeOccupant(shown, step);
+      if (step.kind === "confirm") {
+        setDialog({ ...shown, confirm: step.confirm, error: null });
+      } else {
+        setDialog(null);
+      }
+      return Promise.resolve();
+    },
+    /** Closes only the replace confirm, and not while its write is in flight. */
+    closeConfirm: () => {
+      if (busyRef.current) return;
+      setDialog((d) => (d?.kind === "assign" ? { ...d, confirm: null } : d));
+    },
     closeDialog: () => setDialog(null),
     add: (count: number) =>
       roomId === null
@@ -92,6 +200,9 @@ export function useSeatActions({
         : run("add", null, shown, () => seatsApi.add(roomId, count)),
     confirm: () => {
       if (!shown || shown.kind === "add") return Promise.resolve();
+      if (shown.kind === "assign") {
+        return shown.confirm ? writeOccupant(shown, shown.confirm) : Promise.resolve();
+      }
       const { seat } = shown;
       return shown.kind === "delete"
         ? run("delete", seat.code, shown, () => seatsApi.remove(seat.id))

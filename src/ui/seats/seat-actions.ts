@@ -5,10 +5,126 @@ import { validateSeatAdd } from "@/lib/validate/seat";
 import { apiErrorMessage } from "../copy/api";
 import { seatsCopy } from "../copy/seats";
 
-export type SeatAction = "add" | "delete" | "release";
+export type SeatAction = "add" | "delete" | "release" | "assign";
 export type ActionResult = { ok: true } | { ok: false; code: string };
 
 const AUTH_CODES = ["unauthenticated", "forbidden", "member_deactivated", "org_required"];
+
+/** What the user was shown when they were asked to confirm: one snapshot of the occupant and the choice. */
+export type OccupantConfirm = {
+  expectedOccupantId: string | null;
+  occupantName: string | null;
+  memberId: string;
+  memberName: string;
+};
+export type AssignDialog = {
+  kind: "assign";
+  seat: SeatDto;
+  confirm: OccupantConfirm | null;
+  /** Bumped on every re-ask, so the confirm dialog remounts and focus returns to Cancel. */
+  revision: number;
+  error: string | null;
+  /** Bumped to make the picker reload its list. */
+  reloadToken: number;
+};
+
+/** Assign and Replace are for a Manager or Admin. The server enforces it too. */
+export function canAssign(tier: Tier | null | undefined): boolean {
+  return tier != null && atLeastTier(tier, "manager");
+}
+
+export type SeatButtons = {
+  assign: "assign" | "replace" | null;
+  assignDisabled: boolean;
+  release: boolean;
+  remove: boolean;
+};
+
+/** Which panel buttons show. Assign and Replace are one button; a cannot-seat seat disables it. */
+export function seatButtons(tier: Tier | null | undefined, seat: SeatDto): SeatButtons {
+  return {
+    assign: canAssign(tier) ? (seat.occupant ? "replace" : "assign") : null,
+    assignDisabled: seat.cannotSeat,
+    release: canRelease(seat),
+    remove: canManageSeats(tier),
+  };
+}
+
+export type PickStep =
+  | { kind: "none" }
+  | { kind: "send"; memberId: string; memberName: string; expectedOccupantId: null }
+  | { kind: "confirm"; confirm: OccupantConfirm };
+
+/** An empty seat is assigned at once; an occupied one asks first; the same person changes nothing. */
+export function pickStep(
+  seat: Pick<SeatDto, "occupant">,
+  member: { id: string; displayName: string },
+): PickStep {
+  if (seat.occupant === null) {
+    return {
+      kind: "send",
+      memberId: member.id,
+      memberName: member.displayName,
+      expectedOccupantId: null,
+    };
+  }
+  if (seat.occupant.id === member.id) return { kind: "none" };
+  return {
+    kind: "confirm",
+    confirm: {
+      expectedOccupantId: seat.occupant.id,
+      occupantName: seat.occupant.displayName,
+      memberId: member.id,
+      memberName: member.displayName,
+    },
+  };
+}
+
+export function confirmText(c: OccupantConfirm): string {
+  return c.occupantName === null
+    ? seatsCopy.actions.assignConfirmBody(c.memberName)
+    : seatsCopy.actions.replaceBody(c.occupantName, c.memberName);
+}
+
+export type Reask =
+  | { kind: "error"; code: string }
+  | { kind: "done" }
+  | { kind: "cannotSeat" }
+  | { kind: "ask"; seat: SeatDto; confirm: OccupantConfirm };
+
+/** After `occupant_changed`: what to do with the refetched seat. Nothing here ever sends a write. */
+export function decideReask(
+  fresh: { ok: true; value: SeatDto } | { ok: false; code: string },
+  member: { id: string; name: string },
+): Reask {
+  if (!fresh.ok) return { kind: "error", code: fresh.code };
+  const seat = fresh.value;
+  if (seat.occupant?.id === member.id) return { kind: "done" };
+  if (seat.cannotSeat) return { kind: "cannotSeat" };
+  return {
+    kind: "ask",
+    seat,
+    confirm: {
+      expectedOccupantId: seat.occupant?.id ?? null,
+      occupantName: seat.occupant?.displayName ?? null,
+      memberId: member.id,
+      memberName: member.name,
+    },
+  };
+}
+
+export function reaskDialog(
+  d: AssignDialog,
+  seat: SeatDto,
+  confirm: OccupantConfirm,
+): AssignDialog {
+  return { ...d, seat, confirm, revision: d.revision + 1, error: null };
+}
+
+/** The member cannot be assigned any more: drop the confirm, show why, reload the picker's list. */
+export function refusedDialog(d: AssignDialog, error: string): AssignDialog {
+  return { ...d, confirm: null, error, reloadToken: d.reloadToken + 1 };
+}
 
 /** Add and Delete are for an Admin only. The server enforces it too. */
 export function canManageSeats(tier: Tier | null | undefined): boolean {
@@ -40,7 +156,13 @@ export function deleteBlock(
   return null;
 }
 
-export type Outcome = { reload: boolean; closePanel: boolean; message: string | null };
+export type Outcome = {
+  reload: boolean;
+  closePanel: boolean;
+  message: string | null;
+  /** Assign only: the member was refused, so the picker stays open. */
+  keepDialog?: true;
+};
 
 /**
  * What the page does after a write, from `result.code` only (never the HTTP status). Auth codes and
@@ -70,6 +192,25 @@ export function actionOutcome(action: SeatAction, result: ActionResult): Outcome
       reload: true,
       closePanel: false,
       message: code === "seat_not_empty" ? seatsCopy.actions.deleteChanged : apiErrorMessage(code),
+    };
+  }
+  if (action === "assign") {
+    if (code === "member_not_assignable") {
+      return {
+        reload: true,
+        closePanel: false,
+        message: seatsCopy.actions.memberGone,
+        keepDialog: true,
+      };
+    }
+    if (code === "not_found") {
+      return { reload: true, closePanel: true, message: seatsCopy.actions.deleteGone };
+    }
+    return {
+      reload: true,
+      closePanel: false,
+      message:
+        code === "occupant_changed" ? seatsCopy.actions.assignChanged : apiErrorMessage(code),
     };
   }
   return {
