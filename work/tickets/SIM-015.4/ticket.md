@@ -1,8 +1,8 @@
-# SIM-015.4: Default room layout and layout read API
+# SIM-015.4: Default room layout and stored-layout resolver
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | api, security |
@@ -57,5 +57,6 @@ Any org member can read a room's map data, including a usable default for a room
 
 ## Notes / answers from Ming
 - 2026-11-22 (D59): split from SIM-015.1; Ming approved the split and defaults A1-A14.
+- 2026-11-22: the plan splits this ticket. SIM-015.4 delivers the pure `src/lib` slice: AC3, the unit-test part of AC7, and the pure parts of AC1, AC2, AC4 and AC6. SIM-015.6 delivers the GET route, DB and route tests, and the rest of those criteria.
 
 ## Handoff
