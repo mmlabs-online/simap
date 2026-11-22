@@ -310,3 +310,68 @@ Security review of SIM-032, attempt 4. There is 1 blocker: the new final port ch
 - The PID-pinning reasoning relies on my knowledge of Node and Windows handle behaviour.
 - I did not read any `.env*` file, the real dev-token file or `.next` output.
 - N4, N5, N7, tunnel port identity, minimal helper env, SIM-028.1 S4, F4 and F6 were not re-reported.
+
+## Attempt 5
+
+Verdict: PASS
+
+Security review of SIM-032, attempt 5. U1 is closed: a stop is now reported clean only when `portBusy` finds the app port free, and a failed listener query can no longer clear it. I found no 🔴 or 🟡 issues, only 2 🟢 notes. I read the code and ran nothing.
+
+### Findings
+
+#### 🟢 V1. A slow refused connect reads as "busy", so a clean stop can show a false warning
+- **Where:** `d:\project\simap-game-ui\scripts\dev-process.mjs:124`, `:126`, `:147`, `:377-382`
+- **Scenario:** Windows can retry a refused TCP connect for a noticeable time. If a refusal takes 2 s or more on a loaded machine, the timeout at `:126` returns busy. After 3 tries, stop returns `[0]`, and Ming sees "could not confirm" although the port is free.
+- **Impact:** this fails closed, with no leak and no kill. It can also make a normal stop take several seconds. The final-port test reportedly passes, so this is not happening routinely, but I did not measure the refusal time.
+- **Fix (optional, follow-up):** measure it on Ming's machine. If it is near 2 s, use a longer connect timeout for the loopback probe. Keep timeout = busy.
+
+#### 🟢 V2. No test isolates the bind branch of `portBusy`
+- **Where:** `d:\project\simap-game-ui\scripts\dev-process.mjs:137-143`, `:148`; `d:\project\simap-game-ui\scripts\dev-process.test.ts:373-378`
+- **Scenario:** the busy and "blind query" tests use a healthy listener, so `connects` returns true and `bindFails` never runs. A later regression in `bindFails` would pass those tests, and it matters in the one case where connect is refused while a listener still exists (full backlog).
+- **Fix (optional, follow-up):** extract the probes behind a test seam, or add a case where connect reports refused while the port is bound.
+
+### Answers
+
+**1. Is U1 closed? Yes.**
+- **The clean path needs all of these** (`:376-379`): the tree stop returned empty, `port` is an integer, the listener query returned `[]`, and `portBusy` returned false. Any other result ends in `[0]`, and `halt` warns and exits non-zero (`dev-prod.mjs:318-323`).
+- **The app's bind is covered.** `nextDevArgs` always passes `-H 127.0.0.1` and dev:prod always passes an explicit `--port` (`dev.mjs:33`, `dev-prod.mjs:149`). Next listens on that host and port (`start-server.js:430`), and an explicit port disables its port retry (`next-dev.js:302`).
+- **A live listener cannot read as free.** A normal listener accepts the connect. If its backlog is full and connect is refused, the exclusive-address bind on `127.0.0.1:port` still fails.
+- **Error paths fail closed:**
+
+| Probe result | Outcome |
+|---|---|
+| Connect succeeds or times out | Busy |
+| Any connect error except `ECONNREFUSED` | Busy |
+| `EADDRNOTAVAIL` or `EAFNOSUPPORT` | Treated as free only for `::1`, and the `127.0.0.1` connect and bind must still pass |
+| Any bind error | Busy |
+| Synchronous throw on an invalid port | Not reachable, because `validPort` allows only 1-65535. If it did occur, the launcher exits 1 with "unexpected error", never a clean stop |
+
+- **`bindFails` should not hang.** `close` runs in the `listening` callback, before the event loop can accept a connection.
+
+**2. Effect on a foreign listener: none of concern.**
+- **Sends:** a TCP connect and close only, with no application bytes, credentials or token.
+- **Holds:** the bind runs only after both connects were refused, and closes at once. A process binding in that instant could get `EADDRINUSE`, which is harmless and very unlikely.
+- **Kills:** nothing. The port result never feeds `kill`, and the test confirms a real listener stays up (`dev-process.test.ts:373-379`).
+
+**3. No-op default `listeners`: no protection lost.**
+- The parameter is read only at `:379`. The only production caller is `spawnNext` (`dev-prod.mjs:430`), which does not pass it.
+- `owner()` does not use it. On Windows it reads `snap.listeners`, and on POSIX its own block-scoped `listeners` from `lsof` (`:402`).
+- A silently empty result in `owner()` gives `"unknown"` through `classifyOwner` (`:91`), and `dev-prod.mjs:372` then stops the app. So U1's failure mode does not carry over there.
+
+**4. Regressions in the changed lines: none blocking.** The `[0]` sentinel, retry bound and `halt` reporting are unchanged in behaviour. The T1 test change affects only the test. Its injected `kill` records PIDs, and the real kill targets only its own child.
+
+### What I checked
+- `scripts/dev-process.mjs` and `scripts/dev-prod.mjs` in full.
+- `validPort` and `nextDevArgs` in `scripts/dev.mjs`.
+- The `portBusy`, final-port and T1 tests in `scripts/dev-process.test.ts`.
+- All `startApp`, `portBusy` and `.owner(` call sites under `scripts`, `src` and `db`.
+- Next's listen and retry lines in `node_modules`.
+- `security-review.md`, `escalation.md` and Attempt 5 of `impl-log.md`.
+
+### Limits
+- I ran no tests, PowerShell, `lsof`, Ctrl-C, Next, Postgres or the tunnel. The green checks are the implementer's, from `impl-log.md`.
+- I had no git tool, so I reviewed the current code and the impl-log's description of the change, not a literal diff.
+- Bind-conflict and refused-connect behaviour on Windows comes from my knowledge of Node, libuv and Winsock. I did not observe it.
+- The accepted option 1 limit remains: a hidden child holding no port can survive, and the port check is point-in-time.
+- I did not read any `.env*` file, the real dev-token file or `.next` output.
+- N4, N5, N7, N9, N10, tunnel port identity, minimal helper env, SIM-028.1 S4, F4 and F6 were not re-reported.
