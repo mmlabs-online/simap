@@ -18,6 +18,11 @@ export const apiCopy = {
     member_not_empty: "This member still has seats or devices.",
     cannot_deactivate_self: "You can't deactivate yourself.",
     role_not_allowed: "You can't invite someone with this role.",
+    seat_not_empty: "This seat still has an occupant or devices. Clear them first.",
+    seat_cannot_seat: "This seat is marked as not available for seating.",
+    occupant_changed: "This seat just changed. Check it and try again.",
+    not_allowed: "This action is not allowed.",
+    member_not_assignable: "This member can't be assigned to a seat.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

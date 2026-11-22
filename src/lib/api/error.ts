@@ -13,6 +13,11 @@ export const API_ERROR_CODES = [
   "member_not_empty",
   "cannot_deactivate_self",
   "role_not_allowed",
+  "seat_not_empty",
+  "seat_cannot_seat",
+  "occupant_changed",
+  "not_allowed",
+  "member_not_assignable",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
