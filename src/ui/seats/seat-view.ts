@@ -97,11 +97,15 @@ export type PanelView =
 /** What the panel shows for the URL's seat. A detail that belongs to another seat is never shown. */
 export function panelView(
   param: SeatParam,
+  resolution: RoomResolution,
   list: SeatListState,
   detail: SeatDetailState,
 ): PanelView {
   if (param.kind === "none") return { kind: "closed" };
   if (param.kind === "invalid") return { kind: "notFound", truncated: false };
+  if (resolution.kind === "missing") return { kind: "notFound", truncated: false };
+  if (resolution.kind === "error") return { kind: "error", code: resolution.code };
+  if (resolution.kind === "loading") return { kind: "loading" };
   if (list.status === "error") return { kind: "error", code: list.errorCode ?? "internal" };
   const row = list.seats.find((s) => s.code === param.code);
   if (!row) {
@@ -119,4 +123,23 @@ export function panelView(
     return { kind: "ready", seat: detail.seat };
   }
   return { kind: "loading" };
+}
+
+/** What the panel's Try again retries: the room list, the seat list, or the seat detail. */
+export function retryTarget(
+  resolution: RoomResolution,
+  list: Pick<SeatListState, "status">,
+): "rooms" | "seats" | "detail" {
+  if (resolution.kind === "error") return "rooms";
+  if (list.status === "error") return "seats";
+  return "detail";
+}
+
+/** True when the point lies outside the rect, i.e. on the scrim and not on the panel itself. */
+export function isOutsideRect(
+  rect: { left: number; right: number; top: number; bottom: number },
+  x: number,
+  y: number,
+): boolean {
+  return x < rect.left || x > rect.right || y < rect.top || y > rect.bottom;
 }

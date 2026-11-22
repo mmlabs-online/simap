@@ -36,7 +36,11 @@ export function SeatsView({ roomCode, resolution, list, onRetry, onOpen }: Seats
     resolution.kind === "loading" ||
     (resolution.kind === "found" && list.status === "loading" && list.seats.length === 0);
   const errorCode =
-    resolution.kind === "error" ? resolution.code : list.status === "error" ? list.errorCode : null;
+    resolution.kind === "error"
+      ? resolution.code
+      : resolution.kind === "found" && list.status === "error"
+        ? list.errorCode
+        : null;
 
   return (
     <div className="p-4 lg:p-6 flex flex-col gap-4">

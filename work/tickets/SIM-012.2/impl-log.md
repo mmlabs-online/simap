@@ -51,3 +51,36 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No; this is the plan's smallest working slice.
 - Diff size: about +1,000 lines including tests (see `git diff --stat` after commit).
+
+## Attempt 2 (rework) — 2026-11-22
+
+Fixed the 3 blockers and 4 should-fix items of review attempt 1. Nits untouched.
+
+### Files touched
+- `src/ui/seats/seat-view.ts` — Issue 1: `panelView(param, resolution, list, detail)` returns notFound/error/loading from the room resolution before the list is consulted. Issue 2: new pure `retryTarget`. Issue 6: new pure `isOutsideRect`.
+- `src/ui/seats/SeatsPage.tsx` — passes `resolution` to `panelView`; panel Try again dispatches through `retryTarget` to `reloadRooms`, `reloadSeats` or `retryDetail`.
+- `src/ui/seats/SeatsView.tsx` — Issue 3: list error is read only when the room is found.
+- `src/ui/seats/useRoomSeats.ts` — Issue 4: when no seat is open, bump `detailCounter` and reset detail to `EMPTY_DETAIL`.
+- `src/ui/seats/SeatDetailPanel.tsx` — Issue 5: close prefers the row for `codeRef.current`, then a connected non-body `previous`, then `#main`. Issue 6: scrim close only when both pointer positions are outside the dialog rect.
+- Tests: `seat-view.test.ts` (existing `panelView` calls take a resolution; new cases for missing, error and loading resolution, `retryTarget`, `isOutsideRect`), `SeatsView.test.tsx` (deleted room: not-found only, no alert, no retry).
+
+### Checks (run by me, not `test:db`)
+- `pnpm format:check` — exit 0, `All matched files use the correct format.`
+- `pnpm typecheck` — exit 0
+- `pnpm check:layers` — exit 0, `332 files, no violations`
+- `pnpm test` — exit 0, `Test Files 135 passed (135)`, `Tests 1368 passed | 3 skipped (1371)`
+- `pnpm build` — exit 0
+
+### Corrected diff size (Issue 7)
+- Attempt 2 alone: +148 / -27 in `src` (about +57 production, +91 test).
+- Whole ticket, `git diff --numstat main -- src`: **+1,453 in `src`: 841 production and 612 test**. Including work files the branch is about +2,006 lines. The earlier "about +1,000" was wrong.
+
+### Not verified
+- Effects (focus return under StrictMode, `showModal`, pointer handling on the dialog, scrim vs scrollbar) are not covered by Vitest, and no browser or dev server was run. Browser list B1-B4 from the review remains for Ming.
+- `pnpm test:db` not run, as instructed. No file under `src/server`, API, SQL or migrations changed.
+
+### Out-of-plan files
+None.
+
+### Scope self-check
+- Only the listed issues were changed; no SIM-012.3 or SIM-012.4 scope.

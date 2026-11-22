@@ -3,7 +3,10 @@ import type { RoomDto } from "@/lib/rooms/types";
 import type { SeatDeviceDto, SeatDto } from "@/lib/seats/types";
 import {
   deviceSummary,
+  isOutsideRect,
   panelView,
+  retryTarget,
+  type RoomResolution,
   parseSeatParam,
   resolveRoom,
   seatHref,
@@ -52,6 +55,7 @@ const detail = (over: Partial<SeatDetailState> = {}): SeatDetailState => ({
   errorCode: null,
   ...over,
 });
+const found: RoomResolution = { kind: "found", room: {} as RoomDto };
 const open = { kind: "code", code: "C302-01" } as const;
 
 describe("parseSeatParam", () => {
@@ -157,56 +161,122 @@ describe("splitDevices", () => {
 
 describe("panelView", () => {
   it("closed with no seat param", () => {
-    expect(panelView({ kind: "none" }, list(), detail()).kind).toBe("closed");
+    expect(panelView({ kind: "none" }, found, list(), detail()).kind).toBe("closed");
   });
   it("invalid param is not found", () => {
-    expect(panelView({ kind: "invalid" }, list(), detail())).toEqual({
+    expect(panelView({ kind: "invalid" }, found, list(), detail())).toEqual({
       kind: "notFound",
       truncated: false,
     });
   });
   it("list loading shows loading; list error shows the error", () => {
-    expect(panelView(open, list({ status: "loading", seats: [] }), detail()).kind).toBe("loading");
+    expect(panelView(open, found, list({ status: "loading", seats: [] }), detail()).kind).toBe(
+      "loading",
+    );
     expect(
-      panelView(open, list({ status: "error", seats: [], errorCode: "unavailable" }), detail()),
+      panelView(
+        open,
+        found,
+        list({ status: "error", seats: [], errorCode: "unavailable" }),
+        detail(),
+      ),
     ).toEqual({
       kind: "error",
       code: "unavailable",
     });
   });
   it("code not in list", () => {
-    expect(panelView({ kind: "code", code: "C302-09" }, list(), detail())).toEqual({
+    expect(panelView({ kind: "code", code: "C302-09" }, found, list(), detail())).toEqual({
       kind: "notFound",
       truncated: false,
     });
   });
   it("code not in a truncated list uses the truncation wording flag", () => {
     expect(
-      panelView({ kind: "code", code: "C302-09" }, list({ truncated: true }), detail()),
+      panelView({ kind: "code", code: "C302-09" }, found, list({ truncated: true }), detail()),
     ).toEqual({
       kind: "notFound",
       truncated: true,
     });
   });
   it("detail loading", () => {
-    expect(panelView(open, list(), detail({ status: "loading", seat: null })).kind).toBe("loading");
+    expect(panelView(open, found, list(), detail({ status: "loading", seat: null })).kind).toBe(
+      "loading",
+    );
   });
   it("detail for another seat is never shown", () => {
     expect(
-      panelView(open, list(), detail({ seatId: "other", seat: seat({ id: "other" }) })).kind,
+      panelView(open, found, list(), detail({ seatId: "other", seat: seat({ id: "other" }) })).kind,
     ).toBe("loading");
-    expect(panelView(open, list(), detail({ seat: seat({ id: "other" }) })).kind).toBe("loading");
+    expect(panelView(open, found, list(), detail({ seat: seat({ id: "other" }) })).kind).toBe(
+      "loading",
+    );
   });
   it("detail 404 is not found; other errors are errors", () => {
     expect(
-      panelView(open, list(), detail({ status: "error", seat: null, errorCode: "not_found" })),
+      panelView(
+        open,
+        found,
+        list(),
+        detail({ status: "error", seat: null, errorCode: "not_found" }),
+      ),
     ).toEqual({ kind: "notFound", truncated: false });
     expect(
-      panelView(open, list(), detail({ status: "error", seat: null, errorCode: "unavailable" })),
+      panelView(
+        open,
+        found,
+        list(),
+        detail({ status: "error", seat: null, errorCode: "unavailable" }),
+      ),
     ).toEqual({ kind: "error", code: "unavailable" });
   });
   it("ready", () => {
     const s = seat({ status: "occupied" });
-    expect(panelView(open, list(), detail({ seat: s }))).toEqual({ kind: "ready", seat: s });
+    expect(panelView(open, found, list(), detail({ seat: s }))).toEqual({ kind: "ready", seat: s });
+  });
+});
+
+describe("panelView with the room resolution", () => {
+  const loadingList = list({ status: "loading", seats: [] });
+  it("a missing room is not found without waiting for seats", () => {
+    expect(panelView(open, { kind: "missing" }, loadingList, detail())).toEqual({
+      kind: "notFound",
+      truncated: false,
+    });
+  });
+  it("a failed room load shows that error", () => {
+    expect(panelView(open, { kind: "error", code: "unavailable" }, loadingList, detail())).toEqual({
+      kind: "error",
+      code: "unavailable",
+    });
+  });
+  it("a loading room shows loading", () => {
+    expect(panelView(open, { kind: "loading" }, loadingList, detail())).toEqual({
+      kind: "loading",
+    });
+  });
+});
+
+describe("retryTarget", () => {
+  it("a room list failure retries rooms", () => {
+    expect(retryTarget({ kind: "error", code: "x" }, { status: "loading" })).toBe("rooms");
+  });
+  it("a seat list failure retries seats", () => {
+    expect(retryTarget(found, { status: "error" })).toBe("seats");
+  });
+  it("otherwise retries the detail", () => {
+    expect(retryTarget(found, { status: "ready" })).toBe("detail");
+  });
+});
+
+describe("isOutsideRect", () => {
+  const rect = { left: 100, right: 500, top: 0, bottom: 300 };
+  it("inside and on the edge is not outside", () => {
+    expect(isOutsideRect(rect, 200, 100)).toBe(false);
+    expect(isOutsideRect(rect, 100, 300)).toBe(false);
+  });
+  it("left of or below the rect is outside", () => {
+    expect(isOutsideRect(rect, 50, 100)).toBe(true);
+    expect(isOutsideRect(rect, 200, 400)).toBe(true);
   });
 });

@@ -78,8 +78,11 @@ export function useRoomSeats(
     openCode === null ? null : (list.seats.find((s) => s.code === openCode)?.id ?? null);
 
   const loadDetail = useCallback(() => {
-    if (openId === null) return;
     const id = ++detailCounter.current;
+    if (openId === null) {
+      setDetail(EMPTY_DETAIL);
+      return;
+    }
     setDetail({ seatId: openId, status: "loading", seat: null, errorCode: null });
     void seatsApi.get(openId).then((result) => {
       if (!mounted.current || id !== detailCounter.current) return;

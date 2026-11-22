@@ -102,6 +102,15 @@ describe("SeatsView", () => {
     expect(html).toContain(seatsCopy.roomNotFoundTitle);
     expect(html).not.toContain("<table");
   });
+  it("a deleted room (missing, list not_found) shows only not-found, no alert or retry", () => {
+    const html = render({
+      resolution: { kind: "missing" },
+      list: ready({ status: "error", seats: [], errorCode: "not_found" }),
+    });
+    expect(html).toContain(seatsCopy.roomNotFoundTitle);
+    expect(html).not.toContain('role="alert"');
+    expect(html).not.toContain(seatsCopy.retry);
+  });
   it("truncated notice", () => {
     expect(render({ list: ready({ truncated: true }) })).toContain(seatsCopy.truncated(500));
     expect(render()).not.toContain(seatsCopy.truncated(500));

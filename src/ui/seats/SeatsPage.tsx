@@ -6,7 +6,7 @@ import { useApiFetch } from "../auth/api-fetch-context";
 import { Card } from "../Card";
 import { createRoomsApi } from "../rooms/rooms-api";
 import { SeatDetailPanel } from "./SeatDetailPanel";
-import { panelView, parseSeatParam, seatHref } from "./seat-view";
+import { panelView, parseSeatParam, retryTarget, seatHref } from "./seat-view";
 import { createSeatsApi } from "./seats-api";
 import { SeatsView } from "./SeatsView";
 import { useRoomSeats } from "./useRoomSeats";
@@ -29,6 +29,12 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
   );
 
   const onRetry = () => void (resolution.kind === "error" ? reloadRooms() : reloadSeats());
+  const onPanelRetry = () => {
+    const target = retryTarget(resolution, list);
+    if (target === "rooms") void reloadRooms();
+    else if (target === "seats") void reloadSeats();
+    else retryDetail();
+  };
 
   return (
     <>
@@ -40,10 +46,10 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
         onOpen={(code) => router.push(seatHref(pathname, code), { scroll: false })}
       />
       <SeatDetailPanel
-        view={panelView(param, list, detail)}
+        view={panelView(param, resolution, list, detail)}
         seatCode={openCode}
         onClose={() => router.replace(seatHref(pathname, null), { scroll: false })}
-        onRetry={retryDetail}
+        onRetry={onPanelRetry}
       />
     </>
   );

@@ -6,7 +6,7 @@ import { apiErrorMessage } from "../copy/api";
 import { seatsCopy } from "../copy/seats";
 import { Button, IconButton } from "../Button";
 import { Icon } from "../Icon";
-import { splitDevices, statusView, type PanelView } from "./seat-view";
+import { isOutsideRect, splitDevices, statusView, type PanelView } from "./seat-view";
 import { CLIP } from "./SeatsView";
 
 const LABEL = "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant";
@@ -134,13 +134,11 @@ export function SeatDetailPanel({
     el.showModal();
     return () => {
       el.close();
-      let target: HTMLElement | null =
-        previous && previous.isConnected && previous !== document.body ? previous : null;
-      if (!target && codeRef.current) {
-        target = document.querySelector<HTMLElement>(
-          `[data-seat-code="${CSS.escape(codeRef.current)}"]`,
-        );
-      }
+      const row = codeRef.current
+        ? document.querySelector<HTMLElement>(`[data-seat-code="${CSS.escape(codeRef.current)}"]`)
+        : null;
+      const target =
+        row ?? (previous && previous.isConnected && previous !== document.body ? previous : null);
       (target ?? document.getElementById("main"))?.focus?.();
     };
   }, [open]);
@@ -159,10 +157,18 @@ export function SeatDetailPanel({
         onClose();
       }}
       onPointerDown={(e) => {
-        pressedOnScrim.current = e.target === e.currentTarget;
+        pressedOnScrim.current =
+          e.target === e.currentTarget &&
+          isOutsideRect(e.currentTarget.getBoundingClientRect(), e.clientX, e.clientY);
       }}
       onPointerUp={(e) => {
-        if (pressedOnScrim.current && e.target === e.currentTarget) onClose();
+        if (
+          pressedOnScrim.current &&
+          e.target === e.currentTarget &&
+          isOutsideRect(e.currentTarget.getBoundingClientRect(), e.clientX, e.clientY)
+        ) {
+          onClose();
+        }
         pressedOnScrim.current = false;
       }}
       className="m-0 ml-auto h-dvh max-h-dvh w-full max-w-full sm:max-w-[440px] p-0 bg-surface-high text-on-surface overflow-y-auto shadow-[0_12px_40px_var(--shadow)]"
