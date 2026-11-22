@@ -42,9 +42,11 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-012.3 | Add and delete seats, release and role gating | MERGED | P1 | M | ui | SIM-012.2 | none | 3 | 2026-11-22 |
 | SIM-012.5 | Room switcher in the app shell | MERGED | P1 | S | ui | SIM-012.2 | none | 1 | 2026-11-22 |
 | SIM-012.4 | Member picker, assign, replace, remove and cannot-seat | MERGED | P1 | M | ui | SIM-012.3 | none | 1 | 2026-11-22 |
-| SIM-012.6 | Remove occupant and set or clear cannot-seat | DONE | P1 | S | ui | SIM-012.4 | none | 0 | 2026-11-22 |
-| SIM-015.1 | Room layout API and read-only room view | BLOCKED | P1 | M | api, ui | SIM-010, SIM-012, SIM-024.1 | none | 0 | 2026-11-22 |
-| SIM-015.2 | Tile-based layout editor | BLOCKED | P1 | M | ui, ux | SIM-015.1 | none | 0 | 2026-11-22 |
+| SIM-012.6 | Remove occupant and set or clear cannot-seat | MERGED | P1 | S | ui | SIM-012.4 | none | 0 | 2026-11-22 |
+| SIM-015.1 | Room layout tile-grid schema and API | BACKLOG | P1 | M | db, api, security | SIM-010, SIM-012, SIM-024.1 | plan-approval | 0 | 2026-11-22 |
+| SIM-015.3 | Read-only pixel room map on the room page | BACKLOG | P1 | M | ui, ux | SIM-015.1 | none | 0 | 2026-11-22 |
+| SIM-015.2 | Tile-based layout editor | BACKLOG | P1 | M | ui, ux | SIM-015.1, SIM-015.3 | none | 0 | 2026-11-22 |
+| SIM-033 | Ship the real room art and an in-app Credits page | BACKLOG | P1 | S | ui, architecture | SIM-015.3 | none | 0 | 2026-11-22 |
 | SIM-011.2 | Members page UI: list, edit and deactivate dialogs | BACKLOG | P1 | M | ui | SIM-011 | none | 0 | 2026-11-22 |
 | SIM-013 | Devices | BACKLOG | P1 | M | api, ui | SIM-012 | none | 0 | 2026-11-20 |
 | SIM-014 | Seat requests and approvals | BACKLOG | P1 | M | api, ui, ux | SIM-012 | none | 0 | 2026-11-20 |
@@ -57,4 +59,4 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-021 | Go-live checklist and first production deploy | BACKLOG | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | none | 0 | 2026-11-20 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
 
-Blocked (D47; SIM-024 and SIM-024.1 unblocked by D55): SIM-015.1, SIM-015.2 and any later sprite/atlas/map ticket — waiting for Ming to lift D47.
+D47 is lifted for the room map tickets (D58). SIM-033 waits for Ming item M-10.

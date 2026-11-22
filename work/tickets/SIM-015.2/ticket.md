@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | BACKLOG |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
 | Gate | none |
-| Depends on | SIM-015.1 |
+| Depends on | SIM-015.1, SIM-015.3 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
@@ -45,6 +45,7 @@ spec LAY-01, LAY-02, LAY-03, LAY-05, SEA-01; D20.
 
 ## Notes / answers from Ming
 - 2026-11-20 (D47): BLOCKED — waiting for pixel-art decisions (D41–D46). Do not start until Ming lifts it; the map tickets bring the tile-grid model and are re-scoped then.
+- 2026-11-22 (D58): Ming lifted D47 for the room map tickets. This ticket now runs after SIM-015.1 and SIM-015.3.
 
 ## Change from Ming (2026-11-20, D43)
 Supersedes the free-form editor above: the editor places sprites on whole tiles, rotates in 4 directions, no resize,
