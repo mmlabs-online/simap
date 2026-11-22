@@ -1,6 +1,7 @@
 import "server-only";
 import { atLeast, tierFromOrgRoles, type Tier } from "@/lib/auth/tier";
 import { loadIdentityConfig } from "@/server/identity/config";
+import { dbMemberGate } from "@/server/members/gate";
 import { createIdentityVerifier, type IdentityVerifier } from "@/server/identity/verify";
 import type { OrgScope } from "./org-scope";
 import { apiError } from "./respond";
@@ -18,7 +19,7 @@ export const WITH_AUTH_MARK = Symbol.for("simap.withAuth");
 
 const scopeFor = (org: string): OrgScope => Object.freeze({ orgId: org }) as OrgScope;
 
-/** Org-local member check (SIM-011 plugs the deny list in here). Must fail closed: a throw becomes 503. */
+/** Org-local member check (the deny list: `members.status`, SIM-011). Must fail closed: a throw becomes 503. */
 export type MemberGate = (scope: OrgScope, sub: string) => Promise<"active" | "deactivated">;
 
 type Log = (entry: Record<string, unknown>) => void;
@@ -33,7 +34,6 @@ export type AuthDeps = {
 type RouteContext<P> = { params: Promise<P> };
 
 const logEntry: Log = (entry) => console.error(JSON.stringify(entry));
-const allowAll: MemberGate = async () => "active";
 
 /** `deps` may throw (missing or invalid config); the guard then answers 503 and logs once per process. */
 export function createWithAuth(deps: () => AuthDeps, configLog: Log = logEntry) {
@@ -106,7 +106,7 @@ function getAuthDeps(): AuthDeps {
       issuer,
       deps: {
         verifier: createIdentityVerifier({ issuer, jwksUrl, log: logEntry }),
-        memberGate: allowAll, // SIM-011 replaces this with the org-local deny list.
+        memberGate: dbMemberGate,
         log: logEntry,
         ...(process.env.NODE_ENV === "development" &&
           process.env.NEXT_PUBLIC_SIMAP_DEV_TOKEN === "1" && {

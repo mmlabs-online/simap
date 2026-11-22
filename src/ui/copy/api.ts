@@ -14,6 +14,9 @@ export const apiCopy = {
     not_found: "This item was not found.",
     room_code_taken: "This room code is already used.",
     room_not_empty: "This room still has seats or people.",
+    employee_code_taken: "This employee code is already used.",
+    member_not_empty: "This member still has seats or devices.",
+    cannot_deactivate_self: "You can't deactivate yourself.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

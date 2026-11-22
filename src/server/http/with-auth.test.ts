@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Tier } from "@/lib/auth/tier";
 import type { VerifyCode, VerifyResult } from "@/server/identity/verify";
+import { dbMemberGate } from "@/server/members/gate";
 import {
   WITH_AUTH_MARK,
+  withAuth,
   createWithAuth,
   type AuthContext,
   type AuthDeps,
@@ -238,6 +240,24 @@ describe("withAuth", () => {
     await scoped.call("user");
     expect(scoped.memberGate.mock.calls[0][0].orgId).toBe(ORG);
     expect(scoped.memberGate.mock.calls[0][1]).toBe(SUB);
+  });
+
+  it("default deps wire the DB member gate", async () => {
+    vi.stubEnv("MM_IDENTITY_ISSUER", "https://api.mmlabs.online");
+    globalThis.__simapAuth = undefined;
+    try {
+      const r = await withAuth(async () => Response.json({}), { tier: "user" })(
+        new Request("http://x/api/t"),
+        { params: Promise.resolve({}) },
+      );
+      expect(r.status).toBe(401);
+      expect((globalThis.__simapAuth as { deps: AuthDeps } | undefined)?.deps.memberGate).toBe(
+        dbMemberGate,
+      );
+    } finally {
+      globalThis.__simapAuth = undefined;
+      vi.unstubAllEnvs();
+    }
   });
 
   it("handler throws -> 500 internal, body has no message, log has only {event:'api_unhandled', code}", async () => {
