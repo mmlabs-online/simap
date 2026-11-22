@@ -11,8 +11,8 @@
 | Needs Ming | M-24 |
 | Attempts | 1 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-22T11:43:55Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/47 |
 
 ## Goal
 A room's map has one clean, saved tile-grid data shape that the read-only view (SIM-015.3) and the editor (SIM-015.2) both
@@ -78,3 +78,9 @@ use.
 - Done: consults saved; plan READY with no blocking question. It implements slice 1 only: migration, schema check, shared type, pure validator, unit tests and 4 error codes.
 - In progress / next: Ming answers A1–A14 in `plan.md` and approves (M-24). If A1 is accepted, create SIM-015.4 (default layout, GET) and SIM-015.5 (save, PUT), carry ACs 2, 3, 4, 5b and 6b to them, and repoint SIM-015.3 to SIM-015.4 and SIM-015.2 to SIM-015.5.
 - Gotchas: no code or check has run for this plan. SIM-015.2's scope text still describes the old free-form editor and must be re-scoped before planning.
+
+### 2026-11-22 — claude — DONE (slice 1)
+- Agent calls: 6 since plan approval, tokens about 357k total, in/out split not reported (implementer×2 default model 78k, 21k; reviewer×2 default model 85k, 40k; security-ai-generated-code-auditor×2 default model 69k, 64k).
+- Done: forward-only tile-grid migration, schema checks, shared type, pure validator, tests and 4 error codes. Review attempt 1 found a wrong check count in impl-log and a missing fixture sprite-key check; both fixed. Review attempt 2 PASS, security no 🔴. PR #47 opened.
+- In progress / next: Ming reviews the migration and merges PR #47. Next ticket: SIM-015.4.
+- Gotchas: Node and pnpm need fnm activated. The local `simap` database does not have this migration applied yet. Security follow-ups are in SIM-015.3, SIM-015.4 and SIM-015.5.
