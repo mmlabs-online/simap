@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | REWORK |
 | Priority | P1 |
 | Size | L |
 | Areas | api, ui |
 | Gate | none |
 | Depends on | SIM-010, SIM-011 |
 | Needs Ming | — |
-| Attempts | 1 |
+| Attempts | 2 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-22T08:05:24Z |
 | PR | https://github.com/mmlabs-online/simap/pull/41 |
 
 ## Goal
@@ -52,6 +52,7 @@ spec SEA-01..05, ROO-02, DEV-06, REG-03 (seat); D18, D22, D26, D30, D32, D47 (se
 - Manual: assign, replace, release on a seeded room.
 
 ## Notes / answers from Ming
+- 2026-11-22: Ming approved one more rework beyond the limit of 2: fix the open security 🟡 items (Attempt 2 findings 1-3, Attempt 1 finding 2). Ming also asked to create SIM-012.2.
 - 2026-11-20 (D47): seat add/delete and the seat list fold into this ticket (SIM-010 was already approved); clean UI kit only, no map. The planner may propose a split.
 
 ## Handoff
