@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui, security |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-007 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-22T03:59:51Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -47,4 +47,13 @@ spec MEM-01, MEM-02; D12, D16 (a), D17, D34.
 ## Notes / answers from Ming
 —
 
+Waiting for Ming: plan approval (High tier)
+
 ## Handoff
+
+### 2026-11-22 — claude — BLOCKED
+- Agent calls: 3, tokens ~211k total (api-platform-engineer×1 opus 58.6k, frontend-developer×1 opus 58.6k, planner×1 opus 93.8k; per-call in/out split not reported)
+- Done: consult (api, ui; security skipped by Max consultants = 2), plan READY. The plan edits `src/server/http/with-auth.ts` and its test (High path `src/server/http/**`), so Gate was raised from `none` to `plan-approval`.
+- In progress / next: Ming approves `plan.md` (M-22: assumptions A1–A11, split into SIM-011 server slice + SIM-011.2 Members page UI). After approval, `/run SIM-011` resumes at IMPLEMENT; SIM-011.2 gets added to the board then.
+- Gotchas: A9 changes the lock order (member row before room/seats); SIM-012/SIM-014 must follow it. Local Postgres 16 runs as a system service here (no Docker); role/db `simap` created for `pnpm test:db`.
+
