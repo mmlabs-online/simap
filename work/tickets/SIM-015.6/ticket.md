@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-22 |
-| Claimed by | claude@2026-11-22T13:16:02Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/49 |
 
 ## Goal
 Any org member can read a room's map data through the API, including a usable default for a room nobody has arranged yet.
@@ -61,3 +61,9 @@ Any org member can read a room's map data through the API, including a usable de
 - 2026-11-22: split from SIM-015.4 by its plan, while Ming asked to continue the room map work.
 
 ## Handoff
+
+### 2026-11-22 — claude — DONE
+- Agent calls: 5, tokens ~264k total (in/out split not reported) (api-platform-engineer×1 sonnet 38k, planner×1 opus 74k, implementer×1 sonnet 65k, reviewer×1 opus 51k, security-ai-generated-code-auditor×1 opus 36k).
+- Done: GET /api/rooms/{id}/layout + getRoomLayout service (repeatable read, read only; org-scoped), SQL caps on floor_zones / sprite_key, type guard in `take`. Review PASS attempt 1, security review PASS (no 🔴). PR #49.
+- In progress / next: Ming reviews and merges PR #49; then SIM-015.3 and SIM-015.5 become runnable.
+- Gotchas: pnpm/node come from fnm — in Bash run `eval "$(fnm env --shell bash)" && fnm use 22` first. DB tests need DATABASE_URL inline (local trust URL from compose.dev.yml); GitHub CI may be unavailable, so local evidence is in review.md.
