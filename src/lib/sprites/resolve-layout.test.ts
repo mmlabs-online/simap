@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { checkLayoutRules } from "@/lib/validate/layout";
+import { REGISTRY } from "./registry";
 import {
   parseStoredFloors,
   resolveLayout,
@@ -231,5 +232,36 @@ describe("caps", () => {
     const r = resolveLayout(room({ gridW: 64, gridH: 64 }), seats, fixtures);
     expect(r.layout.seats.length + r.unplaced.length).toBe(500);
     expect(r.layout.fixtures).toHaveLength(2000);
+  });
+});
+
+describe("take guard", () => {
+  const bad: [string, unknown][] = [
+    ["x 0.5", { sprite: "desk.single", x: 0.5, y: 0, rotation: 0 }],
+    ["x null", { sprite: "desk.single", x: null, y: 0, rotation: 0 }],
+    ["x string", { sprite: "desk.single", x: "1", y: 0, rotation: 0 }],
+    ["x bigint", { sprite: "desk.single", x: 1n, y: 0, rotation: 0 }],
+    ["placement undefined", undefined],
+  ];
+  it.each(bad)("%s never throws and never keeps its place", (_n, p) => {
+    const r = resolveLayout(
+      room(),
+      [seat(1, p as never)],
+      [p === undefined ? (undefined as never) : ({ id: id(1001), ...(p as object) } as never)],
+    );
+    expect(r.saved).toBe(true);
+    expect(r.layout.fixtures).toEqual([]);
+    const placed = r.layout.seats.concat();
+    expect(placed.length + r.unplaced.length).toBe(1);
+    for (const s of placed) {
+      expect(Number.isInteger(s.x) && Number.isInteger(s.y)).toBe(true);
+      expect([s.x, s.y]).toEqual([0, 0]);
+    }
+  });
+});
+
+describe("registry keys", () => {
+  it("every registry key is shorter than 129 characters", () => {
+    expect(Object.keys(REGISTRY).every((k) => k.length < 129)).toBe(true);
   });
 });

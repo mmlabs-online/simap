@@ -66,6 +66,16 @@ export function resolveLayout(
   // Cells held by blocking footprints and chair tiles; a non-blocking item conflicts with nothing.
   const occupied = new Set<number>();
   const take = (kind: "seat" | "fixture", p: StoredPlacement): boolean => {
+    if (
+      typeof p !== "object" ||
+      p === null ||
+      typeof p.sprite !== "string" ||
+      !isInt(p.x) ||
+      !isInt(p.y) ||
+      !isInt(p.rotation)
+    ) {
+      return false;
+    }
     const one = [{ sprite: p.sprite, x: p.x, y: p.y, rotation: p.rotation }];
     const rules = kind === "seat" ? { seats: one, fixtures: [] } : { seats: [], fixtures: one };
     if (!checkLayoutRules({ w, h, floors: [], ...rules }).ok) return false;
@@ -91,7 +101,7 @@ export function resolveLayout(
   const placed = new Map<string, Placement & { code: string }>();
   const waiting: StoredSeat[] = [];
   for (const s of seats) {
-    if (s.placement !== null && take("seat", s.placement)) {
+    if (s.placement != null && take("seat", s.placement)) {
       const { sprite, x, y, rotation } = s.placement;
       placed.set(s.id, { id: s.id, code: s.code, sprite, x, y, rotation: rotation as Rotation });
     } else {
