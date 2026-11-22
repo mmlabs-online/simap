@@ -9,7 +9,7 @@ export type CannotSeatValue = { cannotSeat: true; reason: string } | { cannotSea
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
-const INVISIBLE = /[\p{Cc}\p{Cf}ᅟᅠㅤﾠ]/u;
+const INVISIBLE = /[\p{C}\p{Zl}\p{Zp}\p{Default_Ignorable_Code_Point}⠀]/u;
 const VISIBLE = /[\p{L}\p{N}\p{S}\p{P}]/u;
 
 const unknownKey = (body: Record<string, unknown>, keys: string[]) =>

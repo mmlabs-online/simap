@@ -65,13 +65,34 @@ describe("validateCannotSeat", () => {
     expect(validateCannotSeat({ cannotSeat: true, reason: "a".repeat(200) }).ok).toBe(true);
   });
   it("rejects NUL, zero-width-only and filler-only reasons; keeps Vietnamese text", () => {
-    for (const reason of ["a\u0000b", "​", "ㅤ", "ᅟ ​"]) {
+    const rejected = [
+      "a\u0000b",
+      "\u200B",
+      "\u3164",
+      "\u115F \u200B",
+      "a\u202Eb",
+      "a\nb",
+      "a\u2028b",
+      "a\u2029b",
+      "\u2800",
+      "a\u034Fb",
+      "a\uFE0Fb",
+      "a\u2065b",
+      "a\uE000b",
+      "a\uD800b",
+    ];
+    for (const reason of rejected) {
       expect(validateCannotSeat({ cannotSeat: true, reason })).toEqual({
         ok: false,
         field: "reason",
       });
     }
     expect(validateCannotSeat({ cannotSeat: true, reason: "Ghế hỏng, đang sửa" }).ok).toBe(true);
+    const nfd = "Ghế hỏng".normalize("NFD");
+    expect(validateCannotSeat({ cannotSeat: true, reason: nfd })).toEqual({
+      ok: true,
+      value: { cannotSeat: true, reason: "Ghế hỏng" },
+    });
   });
   it("false ok; false with a non-null reason errors; non-boolean errors", () => {
     expect(validateCannotSeat({ cannotSeat: false })).toEqual({

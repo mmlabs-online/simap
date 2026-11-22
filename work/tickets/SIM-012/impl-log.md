@@ -74,3 +74,25 @@ None new (room.ts gap already noted in review).
 
 ### Scope self-check
 Two files, validator and its test only.
+
+## Attempt 3 (REWORK, approved beyond the normal limit)
+
+### Files touched
+- `src/lib/validate/seat.ts` — `INVISIBLE` replaced with `/[\p{C}\p{Zl}\p{Zp}\p{Default_Ignorable_Code_Point}⠀]/u` (Attempt 2 findings 1, 2). Required because U+2800, line separators, default-ignorable, private-use, unassigned and lone surrogates passed.
+- `src/lib/validate/seat.test.ts` — escaped rejected-case list from the finding (no raw invisible literals) plus an NFD Vietnamese reason that must pass and be stored as NFC (Attempt 2 finding 3).
+- `src/server/seats/seats.db.test.ts` — one test calling `deleteSeat`, `setOccupant`, `releaseSeat`, `setCannotSeat` with this org's scope and another org's seat id: 404 `not_found`, foreign row unchanged, audit counts unchanged in both orgs (Attempt 1 finding 2).
+
+### Check results
+- format:check: all files correct format. typecheck: OK. check:layers: 291 files, no violations.
+- test: 119 files passed; 1195 passed, 3 skipped.
+- test:db (throwaway container `simap-sim012-test`, removed): 5 files, 52 tests passed.
+- build: exit 0.
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+Unchanged 🟢 items; `member.ts` and `room.ts` share the same invisible-character gap (not touched).
+
+### Scope self-check
+Only the three listed items changed.

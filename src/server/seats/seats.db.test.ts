@@ -455,3 +455,31 @@ describe("seats (db): D32 group inheritance", () => {
     expect((await seatRow(w.seatId)).group_id).toBeNull();
   });
 });
+
+describe("seats (db): cross-org writes", () => {
+  it("delete, assign, release and cannot-seat on another org's seat -> 404, nothing changed, no audit", async () => {
+    const w = await world();
+    const other = await world({ occupied: true });
+    const before = await seatRow(other.seatId);
+    const auditAll = (orgId: string) =>
+      count("select count(*)::int as n from audit_log where org_id = $1", [orgId]);
+    const auditBefore = [await auditAll(w.orgId), await auditAll(other.orgId)];
+    const notFound = { ok: false, status: 404, code: "not_found" };
+    expect(await deleteSeat(pool, w.scope, actor(), other.seatId)).toEqual(notFound);
+    expect(
+      await setOccupant(pool, w.scope, actor(), other.seatId, {
+        memberId: w.y,
+        expectedOccupantId: other.x,
+      }),
+    ).toEqual(notFound);
+    expect(await releaseSeat(pool, w.scope, await subOf(other.x), other.seatId)).toEqual(notFound);
+    expect(
+      await setCannotSeat(pool, w.scope, actor(), other.seatId, {
+        cannotSeat: true,
+        reason: "Hỏng",
+      }),
+    ).toEqual(notFound);
+    expect(await seatRow(other.seatId)).toEqual(before);
+    expect([await auditAll(w.orgId), await auditAll(other.orgId)]).toEqual(auditBefore);
+  });
+});
