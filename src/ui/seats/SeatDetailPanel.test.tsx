@@ -102,4 +102,7 @@ describe("SeatDetailPanel", () => {
   it("renders the actions slot", () => {
     expect(render({ kind: "ready", seat }, <p>slot-marker</p>)).toContain("slot-marker");
   });
+  it("the heading is focusable for the focus fallback", () => {
+    expect(render({ kind: "loading" })).toMatch(/<h2[^>]*tabindex="-1"/);
+  });
 });

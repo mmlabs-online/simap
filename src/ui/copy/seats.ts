@@ -33,4 +33,31 @@ export const seatsCopy = {
     noTag: "None",
     moreDevices: (n: number) => `${n} more devices are not shown.`,
   },
+  actions: {
+    add: "Add seats",
+    addTitle: "Add seats",
+    addCount: "How many seats (1 to 50)",
+    addSubmit: "Add",
+    addInvalid: "Enter a whole number from 1 to 50.",
+    addCheckFirst:
+      "The service did not confirm the result. Check the seat list before adding again, because seat numbers are never reused.",
+    delete: "Delete seat",
+    deleteTitle: (code: string) => `Delete seat ${code}?`,
+    deleteBody:
+      "This cannot be undone. Requests for this seat are removed too, and its number is never used again.",
+    deleteSubmit: "Delete",
+    deleteBlockedOccupant: "This seat has an occupant, so it cannot be deleted.",
+    deleteBlockedDevices: "This seat has devices, so it cannot be deleted.",
+    deleteBlockedBoth: "This seat has an occupant and devices, so it cannot be deleted.",
+    deleteChanged:
+      "This seat gained an occupant or a device in the meantime, so it was not deleted.",
+    deleteGone: "This seat was already deleted.",
+    release: "Release seat",
+    releaseTitle: (code: string) => `Release seat ${code}?`,
+    releaseBody:
+      "You will no longer sit here. The primary device of this seat becomes a secondary device.",
+    releaseSubmit: "Release",
+    releaseChanged:
+      "This seat changed in the meantime, so it was not released. The page was reloaded.",
+  },
 } as const;

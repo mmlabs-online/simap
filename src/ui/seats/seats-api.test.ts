@@ -66,3 +66,44 @@ describe("seats-api errors", () => {
     });
   });
 });
+
+describe("seats-api writes", () => {
+  const item = { id: "s/1", code: "C1-01", devices: [] };
+  it("add: POST the count, reads items", async () => {
+    const a = fake(() => jsonRes({ items: [item] }, 201));
+    expect(await a.api.add("a/b", 3)).toEqual({ ok: true, value: [item] });
+    expect(a.calls[0][0]).toBe("/api/rooms/a%2Fb/seats");
+    expect(a.calls[0][1]?.method).toBe("POST");
+    expect(a.calls[0][1]?.body).toBe(JSON.stringify({ count: 3 }));
+    expect(await fake(() => jsonRes({})).api.add("r", 1)).toEqual({ ok: false, code: "internal" });
+  });
+  it("remove: DELETE, 204 is null", async () => {
+    const a = fake(() => new Response(null, { status: 204 }));
+    expect(await a.api.remove("s/1")).toEqual({ ok: true, value: null });
+    expect(a.calls[0][0]).toBe("/api/seats/s%2F1");
+    expect(a.calls[0][1]?.method).toBe("DELETE");
+  });
+  it("release: POST, returns the seat", async () => {
+    const a = fake(() => jsonRes(item));
+    expect(await a.api.release("s/1")).toEqual({ ok: true, value: item });
+    expect(a.calls[0][0]).toBe("/api/seats/s%2F1/release");
+    expect(a.calls[0][1]?.method).toBe("POST");
+    expect(await fake(() => jsonRes({})).api.release("s")).toEqual({
+      ok: false,
+      code: "internal",
+    });
+  });
+  it("each write never throws and reads the error code", async () => {
+    const body = () => jsonRes({ error: { code: "seat_not_empty" } }, 409);
+    const expected = { ok: false, code: "seat_not_empty" };
+    expect(await fake(body).api.remove("s")).toEqual(expected);
+    expect(await fake(body).api.add("r", 1)).toEqual(expected);
+    expect(await fake(body).api.release("s")).toEqual(expected);
+    const net = throwing(new TypeError("x"));
+    const denied = throwing(new ApiAccessError("forbidden"));
+    expect(await net.remove("s")).toEqual({ ok: false, code: "unavailable" });
+    expect(await net.add("r", 1)).toEqual({ ok: false, code: "unavailable" });
+    expect(await denied.release("s")).toEqual({ ok: false, code: "forbidden" });
+    expect(await denied.remove("s")).toEqual({ ok: false, code: "forbidden" });
+  });
+});
