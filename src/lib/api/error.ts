@@ -18,6 +18,10 @@ export const API_ERROR_CODES = [
   "occupant_changed",
   "not_allowed",
   "member_not_assignable",
+  "layout_out_of_bounds",
+  "layout_overlap",
+  "layout_bad_rotation",
+  "layout_unknown_sprite",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

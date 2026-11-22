@@ -8,13 +8,23 @@ export type Placement = { id: string; sprite: string; x: number; y: number; rota
 
 export type FloorZone = { sprite: string; x: number; y: number; w: number; h: number };
 
-/** Provisional: SIM-015.1 owns the persisted shape. Derived seat status lives in `SeatView`, never here. */
+/** A room's tile layout; `w`/`h` are in tiles. Derived seat status lives in `SeatView`, never here. */
 export type RoomLayout = {
   w: number;
   h: number;
   floors: FloorZone[];
   seats: (Placement & { code: string })[];
   fixtures: Placement[];
+};
+
+/** A validated layout save (SIM-015.1 API contract): the seats are exactly the room's, fixtures carry no id. */
+export type LayoutSaveValue = {
+  baseVersion: number;
+  w: number;
+  h: number;
+  floors: FloorZone[];
+  seats: Placement[];
+  fixtures: Omit<Placement, "id">[];
 };
 
 export type SeatState = "empty" | "occupied" | "mine" | "pending" | "cannot";
