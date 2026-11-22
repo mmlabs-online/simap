@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
@@ -66,6 +66,7 @@ each action shown only to the role allowed to use it.
   desktop.
 
 ## Notes / answers from Ming
+- 2026-11-22 (orchestrator): the plan defers the room switcher (AC1) to a proposed SIM-012.5 to keep the slice smaller. Not yet decided by Ming; the PR must state that AC1 is not delivered.
 - 2026-11-22: Ming asked to create this ticket from the SIM-012.2 split proposal.
 
 ## Handoff
