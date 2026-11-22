@@ -165,3 +165,64 @@ Attempt 1 asked for NUL, U+200B, U+202E and a newline. U+202E and an interior ne
 - Unicode categories are from my knowledge of the standard and were not checked against the runtime's ICU version. `\p{Cn}` depends on that version.
 - Blank rendering can be font-dependent, so no blocklist can guarantee that every accepted string is visibly non-blank.
 - Scope was finding 1 only. Other Attempt 1 findings stand as recorded. This is a code-level review and does not guarantee the absence of vulnerabilities.
+
+## Attempt 3
+
+Verdict: PASS
+
+Security re-review of SIM-012, attempt 3: no 🔴, no 🟡, 2 🟢. All four requested findings are closed. This comes from reading the code only: I ran no tests or checks, so R5 still depends on the reviewer confirming the green results in `impl-log.md`.
+
+All paths are under `d:\project\simap-wt\SIM-012`.
+
+## Status of requested findings
+
+| Finding | Status | Evidence |
+|---|---|---|
+| Attempt 2 🟡 1: U+2800 bypasses the required reason | Closed | `src/lib/validate/seat.ts:12` includes U+2800 (confirmed at byte level). Rejection is tested at `seat.test.ts:77`. |
+| Attempt 2 🟡 2: hidden and line-breaking characters | Closed | `seat.ts:12` now covers `\p{C}` (Cc, Cf, Cs, Co, Cn), `Zl`, `Zp` and Default_Ignorable. With the `u` flag, a lone surrogate matches `Cs`, so it can no longer reach the no-op comparison at `src/server/seats/seats.ts:454` in a changed form. |
+| Attempt 2 🟡 3: missing test cases | Closed | `seat.test.ts:69-82` contains all 14 requested values, escaped. The only non-ASCII text in that file is Vietnamese test copy. |
+| Attempt 1 🟡 2: cross-org writes untested | Closed | `src/server/seats/seats.db.test.ts:459-485` calls all four writes with org A's scope and org B's seat id. |
+
+## Findings
+
+### 🟢 1. A font-dependent blank symbol can still satisfy the required reason
+**Where:** `src/lib/validate/seat.ts:12-13`
+
+**Scenario:** a Manager sends `{"cannotSeat":true,"reason":"\uD834\uDD59"}` (U+1D159 MUSICAL SYMBOL NULL NOTEHEAD). It is category `So` and not default-ignorable, so it passes `VISIBLE`, and some fonts draw it blank. The seat would then show an empty reason.
+
+**Fix:** no change needed for this ticket. This is the blocklist limit you said to treat as a note. Adding `\u{1D159}` would close this one code point, but not the general class.
+
+### 🟢 2. U+2800 is a raw invisible-looking literal in the regex
+**Where:** `src/lib/validate/seat.ts:12`
+
+**Scenario:** the character looks like a space in an editor and in diffs, so a later cleanup could remove or replace it unnoticed. The test at `seat.test.ts:77` would catch the removal, so the impact is limited to readability.
+
+**Fix:** write it as `\u2800`, as Attempt 2 proposed:
+
+```ts
+const INVISIBLE = /[\p{C}\p{Zl}\p{Zp}\p{Default_Ignorable_Code_Point}\u2800]/u;
+```
+
+## What I checked
+
+**Reason validator**
+- NFC and trim run before every check, and the checked string is the one returned and stored.
+- `validateCannotSeat` is the validator on the only route that calls `setCannotSeat` (`src/app/api/seats/[id]/cannot-seat/route.ts:19-21`).
+- Whitespace-only and mark-only values are rejected, including NBSP plus a combining mark: trim removes the NBSP and `VISIBLE` excludes marks.
+- Both regexes have `u` and no `g`, so there is no `lastIndex` carry-over.
+- Characters unassigned in the runtime's Unicode version are rejected, which fails closed.
+
+**Cross-org test**
+- **Foreign row:** `seatRow` is compared before and after on occupant, group, cannot-seat flag and reason (`seats.db.test.ts:463, 482`). A deleted row would also fail this comparison.
+- **Audit:** total `audit_log` counts for both orgs, across all actions, are compared (`:464-466, 483`).
+- **Each call would reach a visible change or a different refusal if seat scoping were lost:**
+  - `deleteSeat`: the occupied seat would return 409 instead of 404.
+  - `setOccupant`: `expectedOccupantId` matches the real occupant, so it would proceed past the stale check.
+  - `releaseSeat`: uses the real foreign occupant's `sub`, the strongest case for this call. It would return 409 or succeed instead of 404.
+  - `setCannotSeat`: the value differs from the stored row, so it is not a no-op.
+
+## Limits
+- I did not run tests, the app, a server, a database or git, and did not read any `.env*` file. The results in `impl-log.md` are unverified, and I did not independently confirm the worktree's commit.
+- The cross-org test proves behaviour, not each individual predicate. Removing `org_id` from only a final `UPDATE` (for example `seats.ts:384`) would not fail it, because the earlier scoped reads refuse first. That single edit is also not exploitable, for the same reason.
+- Unicode properties come from my knowledge of the standard and were not checked against the runtime's ICU version.
+- Scope was the four findings above. Recorded 🟢 items and follow-ups were not re-reported. This is a code-level review and does not guarantee the absence of vulnerabilities.

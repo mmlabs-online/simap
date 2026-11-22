@@ -137,3 +137,62 @@ Filled in by the orchestrator from `security-review.md`.
 
 ### Ming verification after merge
 None for this slice. The manual test moves to SIM-012.2, and Ming still needs to confirm defaults A1-A13.
+
+## Attempt 3 — 2026-11-22
+Verdict: PASS
+
+Narrow re-review of `9dec4ff`, which closes security Attempt 2 findings 1-3 and Attempt 1 finding 2. Earlier passes were not re-judged, because this rework does not change their code paths.
+
+### Checks (run by reviewer)
+Node 22.23.5, worktree `ticket/SIM-012` at `345c1e1`.
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck` — exit 0.
+- `pnpm check:layers` — exit 0, "291 files, no violations".
+- `pnpm test` — exit 0, "Test Files 119 passed (119); Tests 1195 passed | 3 skipped (1198)".
+- `pnpm build` — exit 0.
+- `pnpm test:db` — exit 0, "Test Files 5 passed (5); Tests 52 passed (52)". Throwaway `postgres:17` container `simap-sim012-review` on `127.0.0.1:55433`, removed afterwards.
+- The results match impl-log.md Attempt 3.
+
+Validator, run through the real `validateCannotSeat` in a scratch copy (Unicode 17.0):
+- 28 bad reasons, covering every case in the finding plus range ends (U+DC00, U+FE00, U+E0100, U+E01EF, U+FFF0, U+FFF8, U+E0000, U+E0FFF) and the four Hangul fillers inside text: 0 accepted.
+- Every code point from U+0000 to U+10FFFF placed inside `a<char>b`: 954,751 refused, 0 differences from the intended class.
+- 298 Vietnamese inputs (5 phrases and every vowel with every tone, upper and lower case, each in NFC and NFD): all accepted and returned as NFC.
+- Regex entry at byte level: `e2 a0 80`, which is U+2800. It is the only non-ASCII character on the line. It is correct, but it is a raw invisible literal (see Nits).
+
+Can the new DB test fail? Mutations were made in a scratch copy only, and each ran the `cross-org writes` test against the throwaway database:
+- Baseline and restored copy: pass.
+- All org scoping removed on the path to the write, one function at a time: **4 of 4 caught**. `deleteSeat` and `releaseSeat` return 409 instead of 404, `setCannotSeat` returns ok and changes the foreign row, and `setOccupant` reaches the write and throws a foreign-key error.
+- `org_id` removed from only the final write (4 mutants) or only one lookup or lock (4 mutants): the test still passes. This is correct, because the remaining scoped lookups still answer 404 before the write, so the foreign row cannot be reached. The test proves the outcome, not that each SQL statement has its own filter.
+
+Not verified:
+- Real HTTP requests with a real Identity token (same limit as earlier attempts).
+- Whether every accepted reason renders visibly in every font.
+- `security-review.md` has an uncommitted change that this reviewer did not make. It was not assessed here; the orchestrator owns it.
+
+### Acceptance criteria
+- [x] Attempt 2 finding 1 (U+2800) closed — evidence: `src/lib/validate/seat.ts:12`; `"⠀"` is refused in `src/lib/validate/seat.test.ts` and in the sweep.
+- [x] Attempt 2 finding 2 (hidden and line-breaking characters) closed — evidence: `src/lib/validate/seat.ts:12`; code point sweep with 0 differences.
+- [x] Attempt 2 finding 3 (test cases) closed — evidence: `src/lib/validate/seat.test.ts:68-83` uses the requested escaped list; the NFD case is at `:91-95`.
+- [x] Attempt 1 finding 2 (cross-org writes) closed — evidence: `src/server/seats/seats.db.test.ts:459-485`, passing, and 4 of 4 full-path mutants caught.
+- [x] Valid Vietnamese reasons pass in NFC and NFD — evidence: 298 inputs above.
+- [x] Scope — `git show --stat 9dec4ff`: `src/lib/validate/seat.ts`, `src/lib/validate/seat.test.ts`, `src/server/seats/seats.db.test.ts` and `work/tickets/SIM-012/impl-log.md` only. The later `345c1e1` changes `ticket.md` only.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1: `seat.ts` stays pure lib code. R2: no migration. R3: no new env. R4: the rework stays inside the approved findings. R5: checks are green and the new logic has tests. R6: the new test covers cross-org writes. R7: not affected.
+
+### Blockers from review agents
+Filled in by the orchestrator from `security-review.md`.
+
+### Nits (do not block)
+- 💭 `src/lib/validate/seat.ts:12` holds U+2800 as a raw invisible literal. The value is correct, but `⠀` would be reviewable and is what the finding proposed.
+- 💭 VS16 emoji such as U+2764 U+FE0F are now refused, which is the trade-off the security finding accepted.
+
+### Follow-ups (out of scope)
+- `src/lib/validate/member.ts` and `src/lib/validate/room.ts` still have the invisible-character gaps; a shared validator would close them.
+- Earlier follow-ups still stand.
+
+### Ming verification after merge
+None for this slice. The manual test moves to SIM-012.2, and Ming still needs to confirm defaults A1-A13.

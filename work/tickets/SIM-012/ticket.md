@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | MERGED |
 | Priority | P1 |
 | Size | L |
 | Areas | api, ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 2 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-22T08:05:24Z |
+| Claimed by | — |
 | PR | https://github.com/mmlabs-online/simap/pull/41 |
 
 ## Goal
@@ -66,3 +66,9 @@ spec SEA-01..05, ROO-02, DEV-06, REG-03 (seat); D18, D22, D26, D30, D32, D47 (se
 - Done: seat API, occupancy rules and tests. Reviewer PASS on attempt 2. Checks green (1195 unit, 51 DB tests). PR: https://github.com/mmlabs-online/simap/pull/41
 - In progress / next: Ming decides on the open security 🟡 items and on creating SIM-012.2 (UI) from the plan's split proposal.
 - Gotchas: security Attempt 2 says REWORK with no 🔴, so it does not block under the loop rules. The UI halves of AC3-AC6 are not done. Real HTTP with a real Identity token is unverified.
+
+### 2026-11-22 — claude — DONE (API slice, security rework)
+- Agent calls: 3 more (implementer×1 35k, security-ai-generated-code-auditor×1 44k, reviewer×1 58k); session total 836k.
+- Done: closed security Attempt 2 findings 1-3 and Attempt 1 finding 2. Reviewer and security PASS on attempt 3. Checks green (1195 unit, 52 DB tests). PR: https://github.com/mmlabs-online/simap/pull/41
+- In progress / next: Ming merged PR #41 (`64771cb`), which includes the security fix `9dec4ff`. Plan defaults A1-A13 still need confirming. SIM-012.2 is runnable.
+- Gotchas: the cross-org test proves the outcome, not an `org_id` filter on each statement. Real HTTP with a real Identity token is unverified.
