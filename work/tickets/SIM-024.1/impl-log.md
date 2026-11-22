@@ -44,3 +44,26 @@ None. `next.config.ts`, `.github/**`, `package.json`, `public/sprites/**`, `asse
 ### Scope self-check
 - Could the diff be smaller? Not without dropping planned tests or files.
 - Diff size: +1601 / -3 lines against the plan commit (779 product, 822 test, by file name). **This passes the plan's ~1,500-line stop-and-report limit.** The work was already complete and green when the total was measured, so nothing further was added; reported for the orchestrator to decide (oxfmt line wrapping and the 5 UI test files account for most of the overrun versus the 800 + 450 estimate).
+
+## Attempt 2 (rework) — 2026-11-22
+
+Fixes review Issue 1 only.
+
+### Files touched
+- `src/ui/roomlayout/SeatOverlay.tsx`: removed `outline-none` from the seat button class list (required because it forced `--tw-outline-style:none`, cancelling hover and focus-visible outlines).
+- `src/ui/roomlayout/SeatOverlay.test.tsx`: added a case asserting the button classes contain `hover:outline-2` and `focus-visible:outline-2` and not `outline-none`.
+
+### Checks
+- format:check, typecheck, check:layers: pass (351 files; "check-layers: 297 files, no violations").
+- test: pass (123 files; 1224 passed, 3 skipped). `pnpm test:db` not run (by instruction).
+- build: pass. check:dev-bundle: pass ("no dev-token strings in .next/static").
+- Built CSS (`.next/static/chunks/02wgcykuki3lk.css`): `.hover\:outline-2:hover{outline-style:var(--tw-outline-style);outline-width:2px}` and the focus-visible rule are the same; `@property --tw-outline-style{inherits:false;initial-value:solid}`. With `outline-none` gone from the seat button, the variable resolves to `solid`, so the outline renders. (`.outline-none` still exists in the CSS because other components use it; the seat button no longer does.)
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+None new.
+
+### Scope self-check
+Two files, about 8 lines. Nothing else changed.

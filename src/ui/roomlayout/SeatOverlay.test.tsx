@@ -64,6 +64,13 @@ describe("SeatOverlay", () => {
     expect(html).toContain('aria-label="Seat B2, empty"');
   });
 
+  it("button keeps a visible hover and focus outline (no outline-none)", () => {
+    const cls = /<button[^>]*class="([^"]*)"/.exec(render())?.[1].split(" ") ?? [];
+    expect(cls).toContain("hover:outline-2");
+    expect(cls).toContain("focus-visible:outline-2");
+    expect(cls).not.toContain("outline-none");
+  });
+
   it("overlay position includes the bounds offset", () => {
     const m = structuredClone(manifest);
     m.frames["desk.single.s"].anchor = [0, -48];

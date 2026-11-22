@@ -37,7 +37,7 @@ export function SeatOverlay({
             key={seat.id}
             type="button"
             aria-label={roomlayoutCopy.seatLabel(seat.code, state, view.name)}
-            className="group absolute cursor-pointer rounded-sm outline-none hover:outline-2 hover:outline-white focus-visible:outline-2 focus-visible:outline-white focus-visible:ring-2 focus-visible:ring-teal-500"
+            className="group absolute cursor-pointer rounded-sm hover:outline-2 hover:outline-white focus-visible:outline-2 focus-visible:outline-white focus-visible:ring-2 focus-visible:ring-teal-500"
             style={{ left, top, width: seat.w * zoom, height: seat.h * zoom }}
           >
             <span
