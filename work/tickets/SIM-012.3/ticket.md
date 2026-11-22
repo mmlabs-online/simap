@@ -1,8 +1,8 @@
-# SIM-012.3: Room switcher, add and delete seats, release and role gating
+# SIM-012.3: Add and delete seats, release and role gating
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
@@ -15,7 +15,7 @@
 | PR | https://github.com/mmlabs-online/simap/pull/43 |
 
 ## Goal
-People move between rooms from the shell, Admins add and delete seats, and an occupant releases their own seat, with
+Admins add and delete seats, and an occupant releases their own seat, with
 each action shown only to the role allowed to use it.
 
 ## Scope reference
@@ -25,8 +25,6 @@ each action shown only to the role allowed to use it.
 - Spec SEA-01, ROO-02, REG-03 and the room switcher; D22, D30, D36, D47.
 
 ## Scope
-- Room switcher in a thin bar under the header: a native `<select>` and a **Go** button, with no navigation on `change`.
-  It shows on every signed-in page and refetches rooms when the path changes.
 - Role gating helpers for this slice's actions. `seat.mine` shows Release, and Admin sees add and delete.
 - Admin: add seats (count 1 to 50) with `POST /api/rooms/[id]/seats`.
 - Admin: delete a seat with `DELETE /api/seats/[id]`, after confirmation.
@@ -37,14 +35,13 @@ each action shown only to the role allowed to use it.
 - UI copy in `src/ui/copy/seats.ts`.
 
 ## Out of scope
+- Room switcher (moved to SIM-012.5).
 - Any server, API, schema or migration change.
 - Member picker, assign, replace, remove and cannot-seat (SIM-012.4).
 - Device actions (SIM-013), seat requests (SIM-014), tag editing (SIM-016).
 - Any map or pixel skin (SIM-015.x, D47).
 
 ## Acceptance criteria
-- [ ] The switcher lists the org's rooms and opens the chosen room only when Go is pressed. Arrow keys on the closed
-      select do not navigate.
 - [ ] Add and Delete appear only for an Admin, and Release appears only on a seat marked `mine`.
 - [ ] An Admin adds 1 to 50 seats and the table shows them. An invalid count shows a field error and sends nothing.
 - [ ] Deleting an empty seat asks for confirmation, removes it, closes the panel and moves focus to a control that exists.
@@ -66,7 +63,7 @@ each action shown only to the role allowed to use it.
   desktop.
 
 ## Notes / answers from Ming
-- 2026-11-22 (orchestrator): the plan defers the room switcher (AC1) to a proposed SIM-012.5 to keep the slice smaller. Not yet decided by Ming; the PR must state that AC1 is not delivered.
+- 2026-11-22: Ming moved the room switcher (original AC1) to SIM-012.5.
 - 2026-11-22: Ming asked to create this ticket from the SIM-012.2 split proposal.
 
 ## Handoff
