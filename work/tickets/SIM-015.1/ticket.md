@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, security |
 | Gate | plan-approval |
 | Depends on | SIM-010, SIM-012, SIM-024.1 |
-| Needs Ming | — |
+| Needs Ming | M-24 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-22T11:20:24Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -61,6 +61,8 @@ use.
 - 2026-11-20 (D47): BLOCKED — waiting for pixel-art decisions (D41–D46). Do not start until Ming lifts it; the map tickets bring the tile-grid model and are re-scoped then.
 - 2026-11-22 (D58): Ming lifted D47 for the room map tickets and accepted the proposed order. This ticket is re-scoped to the schema and API; the read-only view moved to SIM-015.3.
 
+Waiting for Ming: plan approval (High tier)
+
 ## Handoff
 
 ### 2026-11-20 — claude — BLOCKED (board update, D47)
@@ -70,3 +72,9 @@ use.
 ### 2026-11-22 — claude — BACKLOG (re-scope, D58)
 - Done: unblocked and re-scoped to the tile-grid schema and API. The original free-form scope is in git history.
 - Next: `/run SIM-015.1`; stops at plan approval.
+
+### 2026-11-22 — claude — BLOCKED (plan approval)
+- Agent calls: 3, tokens about 253k total, in/out split not reported (database-optimizer×1 default model 46k; api-platform-engineer×1 default model 68k; planner×1 default model 138k).
+- Done: consults saved; plan READY with no blocking question. It implements slice 1 only: migration, schema check, shared type, pure validator, unit tests and 4 error codes.
+- In progress / next: Ming answers A1–A14 in `plan.md` and approves (M-24). If A1 is accepted, create SIM-015.4 (default layout, GET) and SIM-015.5 (save, PUT), carry ACs 2, 3, 4, 5b and 6b to them, and repoint SIM-015.3 to SIM-015.4 and SIM-015.2 to SIM-015.5.
+- Gotchas: no code or check has run for this plan. SIM-015.2's scope text still describes the old free-form editor and must be re-scoped before planning.
