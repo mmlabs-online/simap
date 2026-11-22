@@ -9,6 +9,9 @@ export type CannotSeatValue = { cannotSeat: true; reason: string } | { cannotSea
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
+const INVISIBLE = /[\p{Cc}\p{Cf}ᅟᅠㅤﾠ]/u;
+const VISIBLE = /[\p{L}\p{N}\p{S}\p{P}]/u;
+
 const unknownKey = (body: Record<string, unknown>, keys: string[]) =>
   Object.keys(body).find((k) => !keys.includes(k));
 
@@ -50,7 +53,12 @@ export function validateCannotSeat(body: unknown): Validated<CannotSeatValue> {
   if (body.cannotSeat !== true) return { ok: false, field: "cannotSeat" };
   if (typeof body.reason !== "string") return { ok: false, field: "reason" };
   const reason = body.reason.normalize("NFC").trim();
-  if (reason.length < 1 || reason.length > SEAT_LIMITS.reason) {
+  if (
+    reason.length < 1 ||
+    reason.length > SEAT_LIMITS.reason ||
+    INVISIBLE.test(reason) ||
+    !VISIBLE.test(reason)
+  ) {
     return { ok: false, field: "reason" };
   }
   return { ok: true, value: { cannotSeat: true, reason } };

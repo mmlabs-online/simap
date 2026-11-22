@@ -52,3 +52,25 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No; every file is in the plan, `rooms.ts` is comment only.
 - Diff size: 3 modified files +12 / -1; the rest are new files.
+
+## Attempt 2 (REWORK) - 2026-11-22
+
+Fixes review Issue 1 only (blocker): `validateCannotSeat` accepted NUL (Postgres 22021, 500) and invisible-only reasons.
+
+### Files touched
+- `src/lib/validate/seat.ts`: local `INVISIBLE` / `VISIBLE` regexes (same classes as `member.ts`); after NFC + trim, reject with `field: "reason"` if the reason has a control, format or filler character, or no visible character. Required because: review Issue 1 fix instruction; `member.ts` not touched.
+- `src/lib/validate/seat.test.ts`: new case for NUL, zero-width only, Hangul filler only (plus filler + zero-width) as errors; Vietnamese reason with diacritics stays valid.
+
+### Checks
+- format:check exit 0; typecheck exit 0; check:layers exit 0 (291 files, no violations); build exit 0.
+- test: "Test Files 119 passed (119); Tests 1195 passed | 3 skipped (1198)".
+- test:db: throwaway `postgres:17` container `simap-sim012-test` on 127.0.0.1:55432, removed afterwards: "Test Files 5 passed (5); Tests 51 passed (51)".
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+None new (room.ts gap already noted in review).
+
+### Scope self-check
+Two files, validator and its test only.
