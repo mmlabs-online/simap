@@ -7,7 +7,7 @@
 | Size | M |
 | Areas | ui, ux |
 | Gate | none |
-| Depends on | SIM-015.4 |
+| Depends on | SIM-015.6 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
