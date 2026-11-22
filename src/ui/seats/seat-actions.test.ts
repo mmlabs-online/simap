@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { apiCopy } from "../copy/api";
+import { apiCopy, apiErrorMessage } from "../copy/api";
 import { seatsCopy } from "../copy/seats";
 import type { SeatDto } from "@/lib/seats/types";
 import {
@@ -12,6 +12,8 @@ import {
   focusAfterDelete,
   keepRowsOnError,
   parseAddCount,
+  parseCannotSeatReason,
+  removeDialog,
   pickStep,
   reaskDialog,
   refusedDialog,
@@ -233,8 +235,8 @@ describe("seatButtons", () => {
       expect(seatButtons(tier, seatOf({ cannotSeat: true })).assignDisabled).toBe(true);
       expect(seatButtons(tier, occupied()).assignDisabled).toBe(false);
     }
-    expect(seatButtons("manager", seatOf()).remove).toBe(false);
-    expect(seatButtons("admin", seatOf()).remove).toBe(true);
+    expect(seatButtons("manager", seatOf()).deleteSeat).toBe(false);
+    expect(seatButtons("admin", seatOf()).deleteSeat).toBe(true);
     expect(seatButtons("user", seatOf({ mine: true })).release).toBe(true);
   });
 });
@@ -405,6 +407,119 @@ describe("actionOutcome assign", () => {
       const out = actionOutcome("assign", fail(code));
       expect(out.message).not.toBe(seatsCopy.actions.releaseChanged);
       expect(out.keepDialog).toBeUndefined();
+    }
+  });
+});
+
+describe("seatButtons: remove and cannot-seat", () => {
+  it("gating by tier and seat state", () => {
+    for (const tier of [null, undefined, "user"] as const) {
+      for (const s of [seatOf(), occupied(), seatOf({ cannotSeat: true })]) {
+        const b = seatButtons(tier, s);
+        expect([b.removeOccupant, b.setCannotSeat, b.clearCannotSeat]).toEqual([
+          false,
+          false,
+          false,
+        ]);
+      }
+    }
+    for (const tier of ["manager", "admin"] as const) {
+      const empty = seatButtons(tier, seatOf());
+      expect([empty.removeOccupant, empty.setCannotSeat, empty.clearCannotSeat]).toEqual([
+        false,
+        true,
+        false,
+      ]);
+      const full = seatButtons(tier, occupied());
+      expect(full.removeOccupant).toBe(true);
+      const blocked = seatButtons(tier, { ...occupied(), cannotSeat: true });
+      expect([blocked.removeOccupant, blocked.setCannotSeat, blocked.clearCannotSeat]).toEqual([
+        true,
+        false,
+        true,
+      ]);
+    }
+  });
+  it("mine seat: Release, not Remove", () => {
+    for (const tier of ["manager", "admin"] as const) {
+      const b = seatButtons(tier, { ...occupied(), mine: true });
+      expect(b.release).toBe(true);
+      expect(b.removeOccupant).toBe(false);
+    }
+  });
+});
+
+describe("removeDialog", () => {
+  it("snapshots the occupant id and name; null for an empty seat", () => {
+    expect(removeDialog(occupied("o9", "Lê Văn Cường"))).toMatchObject({
+      kind: "remove",
+      expectedOccupantId: "o9",
+      occupantName: "Lê Văn Cường",
+    });
+    expect(removeDialog(seatOf())).toBeNull();
+  });
+});
+
+describe("parseCannotSeatReason", () => {
+  it("returns the validator's value", () => {
+    expect(parseCannotSeatReason("  Ghế hỏng  ")).toEqual({ ok: true, reason: "Ghế hỏng" });
+    const nfd = "Ghế hỏng".normalize("NFD");
+    expect(parseCannotSeatReason(nfd)).toEqual({ ok: true, reason: "Ghế hỏng".normalize("NFC") });
+    expect(parseCannotSeatReason("x".repeat(200))).toEqual({ ok: true, reason: "x".repeat(200) });
+  });
+  it("refuses bad input", () => {
+    for (const bad of ["", "   ", "\n", "​", "a\nb", "x".repeat(201)]) {
+      expect(parseCannotSeatReason(bad)).toEqual({ ok: false });
+    }
+  });
+});
+
+describe("actionOutcome new actions", () => {
+  const actions = ["removeOccupant", "setCannotSeat", "clearCannotSeat"] as const;
+  it("success reloads without message", () => {
+    for (const a of actions) {
+      expect(actionOutcome(a, { ok: true })).toEqual({
+        reload: true,
+        closePanel: false,
+        message: null,
+      });
+    }
+  });
+  it("auth and invalid_request never reload", () => {
+    for (const a of actions) {
+      for (const code of [...AUTH, "invalid_request"]) {
+        const out = actionOutcome(a, fail(code));
+        expect(out.reload).toBe(false);
+        expect(out.closePanel).toBe(false);
+      }
+    }
+  });
+  it("not_found closes and reloads", () => {
+    for (const a of actions) {
+      expect(actionOutcome(a, fail("not_found"))).toEqual({
+        reload: true,
+        closePanel: true,
+        message: seatsCopy.actions.deleteGone,
+      });
+    }
+  });
+  it("remove occupant_changed reloads with its own message and no keepDialog", () => {
+    const out = actionOutcome("removeOccupant", fail("occupant_changed"));
+    expect(out).toEqual({
+      reload: true,
+      closePanel: false,
+      message: seatsCopy.actions.removeChanged,
+    });
+    expect(out.keepDialog).toBeUndefined();
+  });
+  it("transient failures reload with the API message", () => {
+    for (const a of actions) {
+      for (const code of ["unavailable", "internal"]) {
+        const out = actionOutcome(a, fail(code));
+        expect(out.reload).toBe(true);
+        expect(out.closePanel).toBe(false);
+        expect(out.message).toBe(apiErrorMessage(code));
+      }
     }
   });
 });

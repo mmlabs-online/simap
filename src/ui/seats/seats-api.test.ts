@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiAccessError, type ApiFetch } from "@/lib/api/fetch";
-import { validateOccupantPut } from "@/lib/validate/seat";
+import { validateCannotSeat, validateOccupantPut } from "@/lib/validate/seat";
 import { createSeatsApi } from "./seats-api";
 
 type Call = [string, RequestInit | undefined];
@@ -171,5 +171,45 @@ describe("seats-api writes", () => {
     expect(await net.add("r", 1)).toEqual({ ok: false, code: "unavailable" });
     expect(await denied.release("s")).toEqual({ ok: false, code: "forbidden" });
     expect(await denied.remove("s")).toEqual({ ok: false, code: "forbidden" });
+  });
+});
+
+describe("seats-api occupant removal and cannot-seat", () => {
+  it("setOccupant clears with null and the shown occupant id", async () => {
+    const a = fake(() => jsonRes(seatBody));
+    await a.api.setOccupant("s/1", null, "11111111-1111-4111-8111-111111111111");
+    expect(a.calls[0][0]).toBe("/api/seats/s%2F1/occupant");
+    expect(a.calls[0][1]?.method).toBe("PUT");
+    const body = JSON.parse(a.calls[0][1]?.body as string);
+    expect(body).toEqual({
+      memberId: null,
+      expectedOccupantId: "11111111-1111-4111-8111-111111111111",
+    });
+    expect(Object.keys(body)).toHaveLength(2);
+    expect(validateOccupantPut(body).ok).toBe(true);
+  });
+  it("setCannotSeat: PATCH with the reason", async () => {
+    const a = fake(() => jsonRes(seatBody));
+    expect(await a.api.setCannotSeat("s/1", "Broken")).toEqual({ ok: true, value: seatBody });
+    expect(a.calls[0][0]).toBe("/api/seats/s%2F1/cannot-seat");
+    expect(a.calls[0][1]?.method).toBe("PATCH");
+    expect(new Headers(a.calls[0][1]?.headers).get("content-type")).toBe("application/json");
+    const body = JSON.parse(a.calls[0][1]?.body as string);
+    expect(body).toEqual({ cannotSeat: true, reason: "Broken" });
+    expect(validateCannotSeat(body).ok).toBe(true);
+    const err = fake(() => jsonRes({ error: { code: "not_found" } }, 404));
+    expect(await err.api.setCannotSeat("s", "x")).toEqual({ ok: false, code: "not_found" });
+  });
+  it("clearCannotSeat: body is exactly cannotSeat false", async () => {
+    const a = fake(() => jsonRes(seatBody));
+    await a.api.clearCannotSeat("s/1");
+    expect(a.calls[0][0]).toBe("/api/seats/s%2F1/cannot-seat");
+    expect(a.calls[0][1]?.method).toBe("PATCH");
+    const body = JSON.parse(a.calls[0][1]?.body as string);
+    expect(body).toEqual({ cannotSeat: false });
+    expect(Object.keys(body)).toHaveLength(1);
+    expect(validateCannotSeat(body).ok).toBe(true);
+    const denied = throwing(new ApiAccessError("forbidden"));
+    expect(await denied.clearCannotSeat("s")).toEqual({ ok: false, code: "forbidden" });
   });
 });

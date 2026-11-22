@@ -1,11 +1,18 @@
 import type { SeatDto } from "@/lib/seats/types";
 import type { Tier } from "@/lib/tier";
 import { atLeastTier } from "@/lib/tier";
-import { validateSeatAdd } from "@/lib/validate/seat";
+import { validateCannotSeat, validateSeatAdd } from "@/lib/validate/seat";
 import { apiErrorMessage } from "../copy/api";
 import { seatsCopy } from "../copy/seats";
 
-export type SeatAction = "add" | "delete" | "release" | "assign";
+export type SeatAction =
+  | "add"
+  | "delete"
+  | "release"
+  | "assign"
+  | "removeOccupant"
+  | "setCannotSeat"
+  | "clearCannotSeat";
 export type ActionResult = { ok: true } | { ok: false; code: string };
 
 const AUTH_CODES = ["unauthenticated", "forbidden", "member_deactivated", "org_required"];
@@ -37,7 +44,10 @@ export type SeatButtons = {
   assign: "assign" | "replace" | null;
   assignDisabled: boolean;
   release: boolean;
-  remove: boolean;
+  removeOccupant: boolean;
+  setCannotSeat: boolean;
+  clearCannotSeat: boolean;
+  deleteSeat: boolean;
 };
 
 /** Which panel buttons show. Assign and Replace are one button; a cannot-seat seat disables it. */
@@ -46,8 +56,38 @@ export function seatButtons(tier: Tier | null | undefined, seat: SeatDto): SeatB
     assign: canAssign(tier) ? (seat.occupant ? "replace" : "assign") : null,
     assignDisabled: seat.cannotSeat,
     release: canRelease(seat),
-    remove: canManageSeats(tier),
+    removeOccupant: canAssign(tier) && seat.occupant !== null && !seat.mine,
+    setCannotSeat: canAssign(tier) && !seat.cannotSeat,
+    clearCannotSeat: canAssign(tier) && seat.cannotSeat,
+    deleteSeat: canManageSeats(tier),
   };
+}
+
+/** Remove asks first. The occupant id and name are the ones shown when the dialog opened. */
+export type RemoveDialog = {
+  kind: "remove";
+  seat: SeatDto;
+  expectedOccupantId: string;
+  occupantName: string;
+};
+export type CannotSeatDialog = { kind: "cannotSeat"; seat: SeatDto };
+export type ClearCannotSeatDialog = { kind: "clearCannotSeat"; seat: SeatDto };
+
+export function removeDialog(seat: SeatDto): RemoveDialog | null {
+  if (seat.occupant === null) return null;
+  return {
+    kind: "remove",
+    seat,
+    expectedOccupantId: seat.occupant.id,
+    occupantName: seat.occupant.displayName,
+  };
+}
+
+/** The reason is checked by the server's own validator; its value is what is sent. */
+export function parseCannotSeatReason(raw: string): { ok: true; reason: string } | { ok: false } {
+  const checked = validateCannotSeat({ cannotSeat: true, reason: raw });
+  if (!checked.ok || !checked.value.cannotSeat) return { ok: false };
+  return { ok: true, reason: checked.value.reason };
 }
 
 export type PickStep =
@@ -211,6 +251,19 @@ export function actionOutcome(action: SeatAction, result: ActionResult): Outcome
       closePanel: false,
       message:
         code === "occupant_changed" ? seatsCopy.actions.assignChanged : apiErrorMessage(code),
+    };
+  }
+  if (action === "removeOccupant" || action === "setCannotSeat" || action === "clearCannotSeat") {
+    if (code === "not_found") {
+      return { reload: true, closePanel: true, message: seatsCopy.actions.deleteGone };
+    }
+    return {
+      reload: true,
+      closePanel: false,
+      message:
+        action === "removeOccupant" && code === "occupant_changed"
+          ? seatsCopy.actions.removeChanged
+          : apiErrorMessage(code),
     };
   }
   return {

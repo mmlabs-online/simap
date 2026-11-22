@@ -94,6 +94,26 @@ export function createSeatsApi(fetcher: ApiFetch) {
         },
         json(isSeat),
       ),
+    setCannotSeat: (seatId: string, reason: string) =>
+      call<SeatDto>(
+        `${seatPath(seatId)}/cannot-seat`,
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ cannotSeat: true, reason }),
+        },
+        json(isSeat),
+      ),
+    clearCannotSeat: (seatId: string) =>
+      call<SeatDto>(
+        `${seatPath(seatId)}/cannot-seat`,
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ cannotSeat: false }),
+        },
+        json(isSeat),
+      ),
     activeMembers: (q: string, cursor: string | null) => {
       const params = new URLSearchParams({ status: "active", limit: String(PICKER_PAGE) });
       const query = normalizePickerQuery(q);

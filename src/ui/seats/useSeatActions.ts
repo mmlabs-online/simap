@@ -9,10 +9,14 @@ import {
   deleteBlock,
   pickStep,
   reaskDialog,
+  removeDialog,
   refusedDialog,
   type ActionResult,
   type AssignDialog,
+  type CannotSeatDialog,
+  type ClearCannotSeatDialog,
   type OccupantConfirm,
+  type RemoveDialog,
   type SeatAction,
 } from "./seat-actions";
 import type { PickerMember } from "./member-picker";
@@ -22,6 +26,9 @@ export type SeatDialog =
   | { kind: "add" }
   | { kind: "delete"; seat: SeatDto }
   | { kind: "release"; seat: SeatDto }
+  | RemoveDialog
+  | CannotSeatDialog
+  | ClearCannotSeatDialog
   | AssignDialog;
 export type SeatNotice = { seatCode: string | null; text: string };
 
@@ -174,6 +181,19 @@ export function useSeatActions({
       else setDialog({ kind: "delete", seat });
     },
     requestRelease: (seat: SeatDto) => setDialog({ kind: "release", seat }),
+    requestRemove: (seat: SeatDto) => {
+      const next = removeDialog(seat);
+      if (next) setDialog(next);
+    },
+    requestSetCannotSeat: (seat: SeatDto) => setDialog({ kind: "cannotSeat", seat }),
+    requestClearCannotSeat: (seat: SeatDto) => setDialog({ kind: "clearCannotSeat", seat }),
+    setCannotSeat: (reason: string) => {
+      const started = shown;
+      if (started?.kind !== "cannotSeat") return Promise.resolve();
+      return run("setCannotSeat", started.seat.code, started, () =>
+        seatsApi.setCannotSeat(started.seat.id, reason),
+      );
+    },
     requestAssign: (seat: SeatDto) => {
       setNotice(null);
       setDialog({
@@ -212,7 +232,17 @@ export function useSeatActions({
       if (shown.kind === "assign") {
         return shown.confirm ? writeOccupant(shown, shown.confirm) : Promise.resolve();
       }
+      if (shown.kind === "cannotSeat") return Promise.resolve();
+      if (shown.kind === "remove") {
+        const started = shown;
+        return run("removeOccupant", started.seat.code, started, () =>
+          seatsApi.setOccupant(started.seat.id, null, started.expectedOccupantId),
+        );
+      }
       const { seat } = shown;
+      if (shown.kind === "clearCannotSeat") {
+        return run("clearCannotSeat", seat.code, shown, () => seatsApi.clearCannotSeat(seat.id));
+      }
       return shown.kind === "delete"
         ? run("delete", seat.code, shown, () => seatsApi.remove(seat.id))
         : run("release", seat.code, shown, () => seatsApi.release(seat.id));

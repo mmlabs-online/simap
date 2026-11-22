@@ -13,6 +13,9 @@ export function SeatActions({
   onAssign,
   onDelete,
   onRelease,
+  onRemove,
+  onSetCannotSeat,
+  onClearCannotSeat,
 }: {
   tier: Tier | null | undefined;
   seat: SeatDto | null;
@@ -21,6 +24,9 @@ export function SeatActions({
   onAssign: (seat: SeatDto) => void;
   onDelete: (seat: SeatDto) => void;
   onRelease: (seat: SeatDto) => void;
+  onRemove: (seat: SeatDto) => void;
+  onSetCannotSeat: (seat: SeatDto) => void;
+  onClearCannotSeat: (seat: SeatDto) => void;
 }) {
   const buttons = seat ? seatButtons(tier, seat) : null;
   return (
@@ -30,29 +36,51 @@ export function SeatActions({
           {notice}
         </p>
       )}
-      {seat && buttons && (buttons.assign || buttons.release || buttons.remove) && (
-        <div className="flex flex-wrap gap-2">
-          {buttons.assign && (
-            <Button
-              variant="tonal"
-              disabled={busy || buttons.assignDisabled}
-              onClick={() => onAssign(seat)}
-            >
-              {seatsCopy.actions[buttons.assign]}
-            </Button>
-          )}
-          {buttons.release && (
-            <Button variant="tonal" disabled={busy} onClick={() => onRelease(seat)}>
-              {seatsCopy.actions.release}
-            </Button>
-          )}
-          {buttons.remove && (
-            <Button variant="danger" disabled={busy} onClick={() => onDelete(seat)}>
-              {seatsCopy.actions.delete}
-            </Button>
-          )}
-        </div>
-      )}
+      {seat &&
+        buttons &&
+        (buttons.assign ||
+          buttons.release ||
+          buttons.removeOccupant ||
+          buttons.setCannotSeat ||
+          buttons.clearCannotSeat ||
+          buttons.deleteSeat) && (
+          <div className="flex flex-wrap gap-2">
+            {buttons.assign && (
+              <Button
+                variant="tonal"
+                disabled={busy || buttons.assignDisabled}
+                onClick={() => onAssign(seat)}
+              >
+                {seatsCopy.actions[buttons.assign]}
+              </Button>
+            )}
+            {buttons.release && (
+              <Button variant="tonal" disabled={busy} onClick={() => onRelease(seat)}>
+                {seatsCopy.actions.release}
+              </Button>
+            )}
+            {buttons.removeOccupant && (
+              <Button variant="danger" disabled={busy} onClick={() => onRemove(seat)}>
+                {seatsCopy.actions.removeOccupant}
+              </Button>
+            )}
+            {buttons.setCannotSeat && (
+              <Button variant="tonal" disabled={busy} onClick={() => onSetCannotSeat(seat)}>
+                {seatsCopy.actions.blockSeat}
+              </Button>
+            )}
+            {buttons.clearCannotSeat && (
+              <Button variant="tonal" disabled={busy} onClick={() => onClearCannotSeat(seat)}>
+                {seatsCopy.actions.unblockSeat}
+              </Button>
+            )}
+            {buttons.deleteSeat && (
+              <Button variant="danger" disabled={busy} onClick={() => onDelete(seat)}>
+                {seatsCopy.actions.delete}
+              </Button>
+            )}
+          </div>
+        )}
     </>
   );
 }

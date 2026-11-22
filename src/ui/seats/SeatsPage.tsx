@@ -8,6 +8,7 @@ import { seatsCopy } from "../copy/seats";
 import { createRoomsApi } from "../rooms/rooms-api";
 import { useSession } from "../session";
 import { AddSeatsDialog } from "./AddSeatsDialog";
+import { CannotSeatDialog } from "./CannotSeatDialog";
 import { ConfirmSeatDialog } from "./ConfirmSeatDialog";
 import { MemberPickerDialog } from "./MemberPickerDialog";
 import {
@@ -138,6 +139,18 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
       body: copy.deleteBody,
       submitLabel: copy.deleteSubmit,
     };
+  } else if (dialog?.kind === "remove") {
+    confirm = {
+      title: copy.removeTitle(dialog.seat.code),
+      body: copy.removeBody(dialog.occupantName),
+      submitLabel: copy.removeSubmit,
+    };
+  } else if (dialog?.kind === "clearCannotSeat") {
+    confirm = {
+      title: copy.unblockTitle(dialog.seat.code),
+      body: copy.unblockBody,
+      submitLabel: copy.unblockSubmit,
+    };
   } else if (dialog?.kind === "release") {
     confirm = {
       title: copy.releaseTitle(dialog.seat.code),
@@ -172,6 +185,9 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
             onAssign={actions.requestAssign}
             onDelete={actions.requestDelete}
             onRelease={actions.requestRelease}
+            onRemove={actions.requestRemove}
+            onSetCannotSeat={actions.requestSetCannotSeat}
+            onClearCannotSeat={actions.requestClearCannotSeat}
           />
         }
       />
@@ -196,6 +212,12 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
         submitting={actions.busy}
         onClose={assign ? actions.closeConfirm : actions.closeDialog}
         onConfirm={() => void actions.confirm()}
+      />
+      <CannotSeatDialog
+        seat={dialog?.kind === "cannotSeat" ? dialog.seat : null}
+        submitting={actions.busy}
+        onClose={actions.closeDialog}
+        onSubmit={(reason) => void actions.setCannotSeat(reason)}
       />
       <AddSeatsDialog
         open={dialog?.kind === "add"}
