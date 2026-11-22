@@ -78,3 +78,90 @@ One request can return up to 500 seats with 20 devices each, so 10,000 device ob
 - The race analysis comes from reading the code and assumes Postgres's default READ COMMITTED isolation. I did not observe it under real concurrency.
 - I read test files only where needed for coverage claims, and did not review `seats-routes.test.ts` or `seats.test.ts` in full.
 - This is a code-level review and does not guarantee the absence of vulnerabilities.
+
+## Attempt 2
+
+Verdict: REWORK
+
+Attempt 1 finding 🟡 1 is only partly closed. NUL, C0/C1 controls, bidi controls, zero-width characters and the four Hangul fillers are now rejected, and the length cap holds. A reason that displays as blank is still accepted (finding 1), so the D26 bypass remains. No 🔴, 3 🟡, 1 🟢.
+
+I could not execute code in this session. Results below come from reading the code plus Unicode properties, so **run the proposed test cases to confirm them**.
+
+## Findings
+
+### 🟡 1. U+2800 still bypasses the required reason (D26)
+**Where:** `d:\project\simap-wt\SIM-012\src\lib\validate\seat.ts:12-13`, checked at `:59-60`
+
+**Failure:** a Manager sends `{"cannotSeat":true,"reason":"\u2800"}`. U+2800 BRAILLE PATTERN BLANK has category `So`, so:
+- `trim()` keeps it, because it is not whitespace.
+- `INVISIBLE` misses it, because it is not `Cc`, `Cf` or a listed filler.
+- `VISIBLE` matches it through `\p{S}`.
+
+The seat is flagged cannot-seat with a reason that renders blank for every User in the org.
+
+**Fix:** use the regex under finding 2, which adds `\u2800`, and add `"\u2800"` to the rejected test cases.
+
+### 🟡 2. Hidden and line-breaking characters pass when next to one visible character
+**Where:** `d:\project\simap-wt\SIM-012\src\lib\validate\seat.ts:12`
+
+`INVISIBLE` covers only `Cc`, `Cf` and four fillers. Each of these is accepted inside a value such as `"a<char>b"`:
+
+| Characters | Category | Failure |
+|---|---|---|
+| U+2028, U+2029 | `Zl`, `Zp` | Line break inside the reason, which the control-character ban was meant to stop |
+| U+034F, U+FE00-FE0F, U+E0100-E01EF | `Mn`, default-ignorable | Invisible data can be hidden in text that looks normal; variation selectors can encode an arbitrary payload |
+| U+2065, U+FFF0-FFF8, unassigned U+E0000 range | `Cn`, default-ignorable | Same hidden-text risk |
+| U+E000 and other private use | `Co` | Renders as tofu or font-dependent glyphs |
+| Lone surrogate `\uD800` (valid in JSON) | `Cs` | See below |
+
+For a lone surrogate, Node's UTF-8 encoding should store U+FFFD, so the stored value differs from the validated one. The no-op comparison at `d:\project\simap-wt\SIM-012\src\server\seats\seats.ts:454` then never matches, and each identical retry performs another update and writes another `seat.cannot_seat` audit row (`:457-470`). I inferred the encoding step and did not observe it through `pg`.
+
+**Fix:** replace line 12 with:
+
+```ts
+const INVISIBLE = /[\p{C}\p{Zl}\p{Zp}\p{Default_Ignorable_Code_Point}\u2800]/u;
+```
+
+`\p{C}` covers `Cc`, `Cf`, `Cs`, `Co` and `Cn`. Default-ignorable covers all four Hangul fillers, so the invisible literals can go. Vietnamese text is unaffected.
+
+**Trade-off:** emoji using VS16 (for example U+2764 U+FE0F) become invalid. ZWJ emoji are already rejected. This seems acceptable for a short operational reason.
+
+### 🟡 3. Tests omit cases Attempt 1 explicitly required
+**Where:** `d:\project\simap-wt\SIM-012\src\lib\validate\seat.test.ts:68`
+
+Attempt 1 asked for NUL, U+200B, U+202E and a newline. U+202E and an interior newline are missing. Both are rejected by the current code, but a later regex edit could drop that with no failing test. Line 68 also uses raw invisible literals, which are hard to review.
+
+**Fix:** use escaped values only:
+
+```ts
+["a\u0000b", "\u200B", "\u3164", "\u115F \u200B", "a\u202Eb", "a\nb", "a\u2028b", "a\u2029b",
+ "\u2800", "a\u034Fb", "a\uFE0Fb", "a\u2065b", "a\uE000b", "a\uD800b"]
+```
+
+### 🟢 4. Stacked combining marks remain possible
+**Where:** `d:\project\simap-wt\SIM-012\src\lib\validate\seat.ts:55-60`
+
+`"a"` followed by 199 combining marks passes and can draw over neighbouring UI. The 200-unit cap bounds it, and `Mn` cannot be banned outright without risking legitimate text. No UI renders `cannotSeatReason` yet (only the DTO and server reference it). Clip the reason visually when the UI is built.
+
+## Follow-ups (out of scope)
+- `src/lib/validate/member.ts:13-16` has the same class gaps, so a display name of U+2800 passes. Attempt 2 copied these regexes. A shared helper would fix both.
+- Apply the same helper to the `src/lib/validate/room.ts` gap already recorded in Attempt 1.
+
+## What I checked
+| Area | Result |
+|---|---|
+| Order of operations | NFC, then trim, then all checks, and the checked string is the one returned. No normalization runs after validation. |
+| NFC or trim creating a bypass | None, because checks run on the final value. |
+| Length cap | Still applies after NFC and trim, so NFC expansion is counted. It counts UTF-16 units, so astral characters count as 2, which is stricter. |
+| Regex state | Both have `u` and no `g`, so there is no `lastIndex` carry-over. |
+| Filler literals | Line 12 contains exactly U+115F, U+1160, U+3164, U+FFA0 (byte-level grep). |
+| Whitespace-only input | Rejected after `trim()`. |
+| NUL 500 path | Closed: NUL is `Cc`, so the route returns 400 before any DB call. |
+| Write path | The only `cannot_seat_reason` update is in `setCannotSeat`, and its only route caller validates first. |
+| Migration | The column is `text` with no length or content constraint, so the validator is the only gate. |
+
+## Limits
+- I did not run tests, the app, a server or a database, and did not read any `.env*` file. The green checks in `impl-log.md` are unverified.
+- Unicode categories are from my knowledge of the standard and were not checked against the runtime's ICU version. `\p{Cn}` depends on that version.
+- Blank rendering can be font-dependent, so no blocklist can guarantee that every accepted string is visibly non-blank.
+- Scope was finding 1 only. Other Attempt 1 findings stand as recorded. This is a code-level review and does not guarantee the absence of vulnerabilities.

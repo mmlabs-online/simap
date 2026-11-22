@@ -84,3 +84,56 @@ Filled in by the orchestrator from `security-review.md`.
 
 ### Ming verification after merge
 None for this slice. The ticket's manual test (assign, replace, release on a seeded room) moves to SIM-012.2. Ming still needs to confirm defaults A1-A13.
+
+## Attempt 2 — 2026-11-22
+Verdict: PASS
+
+Re-review of the Attempt 1 blocker only. Attempt 1 passes were not re-judged, because the rework does not touch them.
+
+### Checks (run by reviewer)
+Node 22.23.5, worktree `ticket/SIM-012` at `55ce6cb`.
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck` — exit 0.
+- `pnpm check:layers` — exit 0, "291 files, no violations".
+- `pnpm test` — exit 0, "Test Files 119 passed (119); Tests 1195 passed | 3 skipped (1198)".
+- `pnpm build` — exit 0.
+- `pnpm test:db` — exit 0, "Test Files 5 passed (5); Tests 51 passed (51)". Throwaway `postgres:17` container `simap-sim012-review` on `127.0.0.1:55433`, removed afterwards.
+- The results match impl-log.md Attempt 2.
+
+Scratch test outside the repo, against a fresh throwaway container with the same name and port, also removed. It calls the real `PATCH /api/seats/[id]/cannot-seat` handler, validator and `setCannotSeat` on a migrated database. Only the token verifier and member gate are faked. 5 of 5 passed:
+- Control: NUL passed straight to `setCannotSeat` still gets Postgres `22021`, so the database would refuse it if the validator let it through.
+- 31 bad reasons through the route, including NUL (inside, alone, leading, trailing), C0/C1/DEL, bidi embedding, override and isolate characters, LRM/ALM, soft hyphen, ZWJ, zero-width-only, BOM-only, tag character, all 4 Hangul fillers, blank and combining-only: each is 400 `invalid_request`, with 0 pool `connect` or `query` calls and the seat row unchanged.
+- 8 valid reasons: Vietnamese with diacritics, capitals and all tone marks, digits and punctuation, 200 characters, emoji, NFD input (stored as NFC) and surrounding whitespace (trimmed): each is 200 and stored as expected.
+- Every Unicode code point except surrogates: no `Cc`, `Cf` or filler character passes inside text.
+
+Not verified:
+- Real HTTP requests with a real Identity token (same limit as Attempt 1).
+- `security-review.md` was not assessed here. It has an uncommitted change of 87 added lines that this reviewer did not make; the orchestrator owns it.
+
+### Acceptance criteria
+- [x] Attempt 1 Issue 1 fixed — evidence: `src/lib/validate/seat.ts:12-13`, `:56-61`; `src/lib/validate/seat.test.ts:67-75`; scratch route run above.
+- [x] Regex classes match `src/lib/validate/member.ts:13`, `:16` — evidence: byte comparison of the filler characters.
+- [x] AC1-AC8 (server halves) unchanged from Attempt 1 — evidence: `482c8d5` touches none of that code; `pnpm test` and `pnpm test:db` are green.
+
+Scope of `482c8d5`: `src/lib/validate/seat.ts`, `src/lib/validate/seat.test.ts` and `work/tickets/SIM-012/impl-log.md` only. The later `55ce6cb` changes `ticket.md` only.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1: `seat.ts` stays pure lib code. R2: no migration. R3: no new env. R4: the rework stays inside Issue 1. R5: the new logic has tests. R6 and R7: not affected; the refusal is 400 before any SQL.
+
+### Blockers from review agents
+Filled in by the orchestrator from `security-review.md`.
+
+### Nits (do not block)
+- 💭 U+2800 (braille blank, class `So`) alone passes as a reason and is stored, so a Manager can still set a blank-looking reason. It causes no 500 and matches the class set Attempt 1 prescribed; `member.ts` has the same gap.
+- 💭 A lone surrogate inside text (`"a\ud800b"`) passes and is stored as `a�b`. It causes no 500, and only a hand-crafted request can send it.
+- 💭 Attempt 1 nits on `truncated: true` and the repeated room lookup still stand.
+
+### Follow-ups (out of scope)
+- Move the reason and name text checks into one shared validator, and decide there on U+2800 and lone surrogates.
+- Attempt 1 follow-ups still stand, including the `src/lib/validate/room.ts` control-character gap.
+
+### Ming verification after merge
+None for this slice. The manual test moves to SIM-012.2, and Ming still needs to confirm defaults A1-A13.
