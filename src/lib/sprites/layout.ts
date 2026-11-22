@@ -30,3 +30,14 @@ export type LayoutSaveValue = {
 export type SeatState = "empty" | "occupied" | "mine" | "pending" | "cannot";
 
 export type SeatView = { state: SeatState; avatarSeed: string | null; name: string | null };
+
+/** GET /api/rooms/{id}/layout (SIM-015.1 contract): one room's layout with derived seat status. */
+export type LayoutResponse = {
+  room: { id: string; code: string; name: string };
+  version: number;
+  saved: boolean;
+  layout: RoomLayout;
+  seatViews: Record<string, SeatView>;
+  unplaced: { id: string; code: string }[];
+  truncated: boolean;
+};

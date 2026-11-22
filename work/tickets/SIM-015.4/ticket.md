@@ -1,8 +1,8 @@
-# SIM-015.4: Default room layout and layout read API
+# SIM-015.4: Default room layout and stored-layout resolver
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | api, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-22 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/48 |
 
 ## Goal
 Any org member can read a room's map data, including a usable default for a room nobody has arranged yet.
@@ -57,5 +57,11 @@ Any org member can read a room's map data, including a usable default for a room
 
 ## Notes / answers from Ming
 - 2026-11-22 (D59): split from SIM-015.1; Ming approved the split and defaults A1-A14.
+- 2026-11-22: the plan splits this ticket. SIM-015.4 delivers the pure `src/lib` slice: AC3, the unit-test part of AC7, and the pure parts of AC1, AC2, AC4 and AC6. SIM-015.6 delivers the GET route, DB and route tests, and the rest of those criteria.
 
 ## Handoff
+### 2026-11-22 — claude — DONE (slice 1)
+- Agent calls: 5, tokens about 350k total, in/out split not reported (api-platform-engineer×1 default model 55k; planner×1 default model 95k; implementer×1 default model 57k; reviewer×1 default model 70k; security-ai-generated-code-auditor×1 default model 73k).
+- Done: pure `defaultLayout`, `seatViewOf`, `parseStoredFloors`, `resolveLayout`, floor-cell cap, `LayoutResponse` and unit tests. Review attempt 1 PASS, security no 🔴. PR #48 opened.
+- In progress / next: Ming fixes GitHub Billing, re-runs CI and merges PR #48. Next ticket: SIM-015.6 (GET route).
+- Gotchas: Node and pnpm need fnm activated. GitHub CI is not running (billing). `docs/spec-v1.md:362` still says avatars come from `sub`, which D59 supersedes.

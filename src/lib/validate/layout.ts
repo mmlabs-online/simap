@@ -10,6 +10,7 @@ export const LAYOUT_LIMITS = {
   seats: SEAT_LIMITS.list,
   fixtures: 2000,
   floors: 64,
+  floorCells: 2,
   bodyBytes: 262_144,
 } as const;
 
@@ -164,6 +165,13 @@ export function checkLayoutRules(layout: LayoutRulesInput): { ok: true } | Layou
     chairCells.add(cell);
   }
   return { ok: true };
+}
+
+/** Total floor cells (overlaps counted) within `floorCells` times the grid area. Zones must be in bounds already. */
+export function floorCellsWithinCap(floors: readonly FloorZone[], w: number, h: number): boolean {
+  let total = 0;
+  for (const z of floors) total += z.w * z.h;
+  return total <= w * h * LAYOUT_LIMITS.floorCells;
 }
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>

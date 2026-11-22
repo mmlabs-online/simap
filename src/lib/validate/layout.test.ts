@@ -3,6 +3,7 @@ import type { Rotation } from "@/lib/sprites/layout";
 import {
   LAYOUT_LIMITS,
   checkLayoutRules,
+  floorCellsWithinCap,
   footprintOf,
   validateLayoutSave,
   type LayoutRulesInput,
@@ -276,5 +277,31 @@ describe("validateLayoutSave", () => {
     it("accepts a prop on a chair tile", () => {
       expect(rules({ seats: [seat(1, 2, 2)], fixtures: [fx("prop.mug", 2, 3)] }).ok).toBe(true);
     });
+  });
+});
+
+describe("floorCellsWithinCap", () => {
+  const zone = (w: number, h: number) => ({ sprite: "floor.wood", x: 0, y: 0, w, h });
+
+  it("accepts exactly twice the grid area", () => {
+    expect(floorCellsWithinCap([zone(12, 8), zone(12, 8)], 12, 8)).toBe(true);
+  });
+
+  it("refuses one cell above twice the grid area", () => {
+    expect(floorCellsWithinCap([zone(12, 8), zone(12, 8), zone(1, 1)], 12, 8)).toBe(false);
+  });
+
+  it("refuses 64 full-grid zones", () => {
+    expect(
+      floorCellsWithinCap(
+        Array.from({ length: 64 }, () => zone(64, 64)),
+        64,
+        64,
+      ),
+    ).toBe(false);
+  });
+
+  it("accepts one full-grid zone", () => {
+    expect(floorCellsWithinCap([zone(12, 8)], 12, 8)).toBe(true);
   });
 });
