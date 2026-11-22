@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | REWORK |
 | Priority | P1 |
 | Size | L |
 | Areas | api, ui |
 | Gate | none |
 | Depends on | SIM-010, SIM-011 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-20 |
 | Claimed by | claude@2026-11-22T07:31:20Z |
 | PR | — |
