@@ -1,12 +1,10 @@
-import { PageSkeleton } from "@/ui";
-import { shellCopy } from "@/ui/copy/shell";
+import { SeatsPage } from "@/ui";
 
-export default function RoomDetailPage() {
-  return (
-    <PageSkeleton
-      title={shellCopy.pages.roomDetail.title}
-      emptyText={shellCopy.pages.roomDetail.empty}
-      icon="meeting_room"
-    />
-  );
+export default async function RoomDetailPage({
+  params,
+}: {
+  params: Promise<{ roomCode: string }>;
+}) {
+  const { roomCode } = await params;
+  return <SeatsPage key={roomCode} roomCode={roomCode} />;
 }

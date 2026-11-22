@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isActive, navItemsFor, roomEditorHref } from "./nav";
+import { isActive, navItemsFor, roomDetailHref, roomEditorHref } from "./nav";
 
 const ids = (tier: Parameters<typeof navItemsFor>[0]) => navItemsFor(tier).map((i) => i.id);
 
@@ -50,5 +50,17 @@ describe("roomEditorHref", () => {
     expect(roomEditorHref("A 1")).toBe("/rooms/A%201/edit");
     expect(roomEditorHref("Phòng")).toBe(`/rooms/${encodeURIComponent("Phòng")}/edit`);
     expect(roomEditorHref("Phòng")).not.toContain("ò");
+  });
+});
+
+describe("roomDetailHref", () => {
+  it("encodes the code", () => {
+    expect(roomDetailHref("C302")).toBe("/rooms/C302");
+    expect(roomDetailHref("A 1")).toBe("/rooms/A%201");
+  });
+  it("returns null for dot segments and keeps A..B", () => {
+    expect(roomDetailHref(".")).toBeNull();
+    expect(roomDetailHref("..")).toBeNull();
+    expect(roomDetailHref("A..B")).toBe("/rooms/A..B");
   });
 });

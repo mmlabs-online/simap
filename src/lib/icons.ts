@@ -4,10 +4,12 @@
  */
 export const ICON_NAMES = [
   "add",
+  "block",
   "close",
   "dark_mode",
   "edit",
   "edit_square",
+  "event_seat",
   "fact_check",
   "grid_view",
   "group",

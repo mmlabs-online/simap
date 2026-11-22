@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
 | Gate | none |
 | Depends on | SIM-012 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-22 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/42 |
 
 ## Goal
 Everyone opens a room and sees its seats as a list with full seat detail. Admins add and delete seats, Managers manage
@@ -69,3 +69,9 @@ occupants and the cannot-seat flag, and occupants release their own seat, all wi
 - 2026-11-22: Ming asked to create this ticket from the SIM-012 split proposal.
 
 ## Handoff
+
+### 2026-11-22 — claude — DONE (slice 1, read path)
+- Agent calls: 6, tokens 467k plus reviewer Attempt 2 (usage not reported when this entry was written) (frontend-developer×1 73k, planner×1 155k, implementer×2 141k, reviewer×2 100k + pending; models from agent files, no overrides)
+- Done: room page, seat table, panel at `?seat`, not-found states and room card link. Review PASS on attempt 2. Checks green (1368 tests). PR: https://github.com/mmlabs-online/simap/pull/42
+- In progress / next: Ming decides whether to create SIM-012.3 and SIM-012.4 from the plan, and runs browser checks B1-B4.
+- Gotchas: no write action shipped. No agent opened a browser, so native dialog, focus, Back and layout are unverified.
