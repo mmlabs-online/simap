@@ -56,7 +56,7 @@ tests. R2/R6/R7 do not apply (no schema, query or route handler). D53: meta tag 
 `src/ui/copy/invitations.ts`.
 
 ### Blockers from review agents
-None.
+None. `security-review.md` Attempt 1 has no 🔴 and no 🟡; its notes (check `history.state` in the DevTools test, sign-in edge case for a brand-new invitee) are listed in the PR.
 
 ### Nits (do not block)
 - `src/ui/auth/accept-views.tsx:20`: `AcceptReadyView` declares `offerOtherAccount` but never reads it, and the page still
