@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | api, security |
 | Gate | none |
 | Depends on | SIM-015.4 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-22 |
 | Claimed by | claude@2026-11-22T13:16:02Z |
 | PR | — |
