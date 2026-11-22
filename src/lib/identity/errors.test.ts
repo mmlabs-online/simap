@@ -113,3 +113,23 @@ describe("org errors", () => {
     expect(toAuthError(422, h(), body("org_not_supported")).code).toBe("unknown");
   });
 });
+
+describe("toAuthError: invitation codes", () => {
+  it("accepts each invitation code from a server body", () => {
+    for (const code of [
+      "org_invite_forbidden",
+      "invite_role_forbidden",
+      "invitation_limit_reached",
+      "org_invite_unavailable",
+      "invitation_email_mismatch",
+      "unknown_role",
+    ]) {
+      expect(toAuthError(403, h(), body(code)).code).toBe(code);
+    }
+  });
+  it("an unlisted invitation-style code is unknown", () => {
+    for (const code of ["join_closed_x", "invitation_invalid", "forbidden"]) {
+      expect(toAuthError(403, h(), body(code)).code).toBe("unknown");
+    }
+  });
+});

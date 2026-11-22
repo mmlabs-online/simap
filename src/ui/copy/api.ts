@@ -17,6 +17,7 @@ export const apiCopy = {
     employee_code_taken: "This employee code is already used.",
     member_not_empty: "This member still has seats or devices.",
     cannot_deactivate_self: "You can't deactivate yourself.",
+    role_not_allowed: "You can't invite someone with this role.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

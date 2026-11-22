@@ -18,6 +18,12 @@ export type AuthErrorCode =
   | "token_invalid"
   | "email_already_verified"
   | "org_access_denied"
+  | "org_invite_forbidden"
+  | "invite_role_forbidden"
+  | "invitation_limit_reached"
+  | "org_invite_unavailable"
+  | "invitation_email_mismatch"
+  | "unknown_role"
   /** Client-only: a fresh token still got 401. Never accepted from a server body. */
   | "no_access"
   | "unknown";

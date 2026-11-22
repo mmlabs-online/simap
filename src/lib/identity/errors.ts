@@ -22,6 +22,12 @@ export const SERVER_AUTH_ERROR_CODES: readonly AuthErrorCode[] = [
   "token_invalid",
   "email_already_verified",
   "org_access_denied",
+  "org_invite_forbidden",
+  "invite_role_forbidden",
+  "invitation_limit_reached",
+  "org_invite_unavailable",
+  "invitation_email_mismatch",
+  "unknown_role",
 ];
 
 const RETRY_MAX_SECONDS = 86400;

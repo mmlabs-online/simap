@@ -23,6 +23,12 @@ const CODES: AuthErrorCode[] = [
   "token_invalid",
   "email_already_verified",
   "org_access_denied",
+  "org_invite_forbidden",
+  "invite_role_forbidden",
+  "invitation_limit_reached",
+  "org_invite_unavailable",
+  "invitation_email_mismatch",
+  "unknown_role",
   "no_access",
   "unknown",
 ];
@@ -56,5 +62,22 @@ describe("apiErrorMessage", () => {
   it("covers every API error code, and forbidden is exactly the permission text", () => {
     for (const code of API_ERROR_CODES) expect(apiErrorMessage(code).trim()).not.toBe("");
     expect(apiErrorMessage("forbidden")).toBe("You don't have permission");
+  });
+});
+
+describe("invitation error codes", () => {
+  it("each has its own message", () => {
+    for (const code of [
+      "org_invite_forbidden",
+      "invite_role_forbidden",
+      "invitation_limit_reached",
+      "org_invite_unavailable",
+      "invitation_email_mismatch",
+      "unknown_role",
+    ] as AuthErrorCode[]) {
+      const text = authErrorMessage({ code });
+      expect(text).not.toBe(authErrorMessage({ code: "unknown" }));
+      expect(text).not.toMatch(/[{}]|undefined/);
+    }
   });
 });
