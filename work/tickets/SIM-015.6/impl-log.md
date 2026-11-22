@@ -31,4 +31,4 @@ None.
 
 ### Scope self-check
 - Could the diff be smaller? No; production code is about 150 lines, rest is tests.
-- Diff size: about +820 / -2 lines (mostly tests)
+- Diff size: +621 / -1 lines (mostly tests)
