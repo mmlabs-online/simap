@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 2 |
 | Created | 2026-11-22 |
-| Claimed by | claude@2026-11-22T09:11:04Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/43 |
 
 ## Goal
 People move between rooms from the shell, Admins add and delete seats, and an occupant releases their own seat, with
@@ -70,3 +70,9 @@ each action shown only to the role allowed to use it.
 - 2026-11-22: Ming asked to create this ticket from the SIM-012.2 split proposal.
 
 ## Handoff
+
+### 2026-11-22 — claude — DONE (room switcher deferred)
+- Agent calls: 8, tokens 614k, in/out split not reported (frontend-developer×1 58k, planner×1 130k, implementer×3 170k, reviewer×3 256k; models from agent files, no overrides)
+- Done: Admin add and delete, occupant release, role gating, shared confirm dialog and refresh after writes. Review PASS on attempt 3. Checks green (1401 tests). PR: https://github.com/mmlabs-online/simap/pull/43
+- In progress / next: Ming decides on the room switcher (SIM-012.5 or a final commit here) and runs browser checks B1-B6.
+- Gotchas: AC1 is not delivered. No agent opened a browser. Two existing tests are timing-sensitive under heavy load.
