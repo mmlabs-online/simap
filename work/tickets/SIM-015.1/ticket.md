@@ -1,8 +1,8 @@
-# SIM-015.1: Room layout tile-grid schema and API
+# SIM-015.1: Room layout tile-grid schema and validator
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | M-24 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-22T11:43:55Z |
 | PR | — |
 
 ## Goal
@@ -61,7 +61,7 @@ use.
 - 2026-11-20 (D47): BLOCKED — waiting for pixel-art decisions (D41–D46). Do not start until Ming lifts it; the map tickets bring the tile-grid model and are re-scoped then.
 - 2026-11-22 (D58): Ming lifted D47 for the room map tickets and accepted the proposed order. This ticket is re-scoped to the schema and API; the read-only view moved to SIM-015.3.
 
-Waiting for Ming: plan approval (High tier)
+- 2026-11-22: Plan approved (Ming), with defaults A1-A14 and the split (D59). This ticket delivers slice 1 only: ACs 1, 5a and 6a. SIM-015.4 and SIM-015.5 carry ACs 2, 3, 4, 5b and 6b.
 
 ## Handoff
 
