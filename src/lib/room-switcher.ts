@@ -21,3 +21,8 @@ export function keepGoodRooms(
 ): RoomDto[] {
   return status === "ready" ? rooms : prev;
 }
+
+/** The selection the select can show: the code if listed, else empty. */
+export function visibleSelection(rooms: RoomDto[], selected: string): string {
+  return rooms.some((r) => r.code === selected) ? selected : "";
+}

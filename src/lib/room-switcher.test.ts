@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RoomDto } from "./rooms/types";
-import { goTarget, keepGoodRooms, roomCodeFromPath } from "./room-switcher";
+import { goTarget, keepGoodRooms, roomCodeFromPath, visibleSelection } from "./room-switcher";
 
 const room = (code: string): RoomDto => ({
   id: code,
@@ -52,5 +52,18 @@ describe("keepGoodRooms", () => {
   it("keeps the previous list on loading or error", () => {
     expect(keepGoodRooms(prev, "error", [])).toBe(prev);
     expect(keepGoodRooms(prev, "loading", [])).toBe(prev);
+  });
+});
+
+describe("visibleSelection", () => {
+  it("returns a listed code", () => {
+    expect(visibleSelection([room("A"), room("B")], "B")).toBe("B");
+  });
+  it("returns empty for an unlisted code or an empty list", () => {
+    expect(visibleSelection([room("A")], "B")).toBe("");
+    expect(visibleSelection([], "B")).toBe("");
+  });
+  it("leaves Go with no target when the code is not listed", () => {
+    expect(goTarget(visibleSelection([], "B"), null)).toBeNull();
   });
 });

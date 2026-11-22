@@ -34,3 +34,31 @@ None.
 ### Scope self-check
 - Could the diff be smaller? no
 - Diff size: about +270 / -3 lines including tests
+
+## Attempt 2 — 2026-11-22
+Fixes review attempt 1, Issue 1 only.
+
+### Files touched
+| File | Required because |
+|---|---|
+| src/lib/room-switcher.ts | Added `visibleSelection` (Issue 1) |
+| src/lib/room-switcher.test.ts | Tests for `visibleSelection` and Go with an unlisted code |
+| src/ui/RoomSwitcher.tsx | Uses `shown = visibleSelection(good, selected)` for the view and `goTarget`; `selected` state unchanged |
+
+### Tests added / changed
+- room-switcher.test.ts › visibleSelection (listed, unlisted, empty list, goTarget returns null)
+
+### Checks (actual output summary)
+- format:check, typecheck, check:layers (344 files, no violations): pass
+- test: Test Files 140 passed; Tests 1416 passed | 3 skipped
+- build: Compiled successfully
+
+### Out-of-plan files
+None.
+
+### Follow-ups (noticed, not done)
+- Browser checks (arrow keys, 390 px, blocked /api/rooms) still not run.
+
+### Scope self-check
+- Could the diff be smaller? no
+- Diff size: about +24 / -4 lines including tests

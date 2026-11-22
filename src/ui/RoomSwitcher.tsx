@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { goTarget, keepGoodRooms, roomCodeFromPath } from "@/lib/room-switcher";
+import { goTarget, keepGoodRooms, roomCodeFromPath, visibleSelection } from "@/lib/room-switcher";
 import type { RoomDto } from "@/lib/rooms/types";
 import { useApiFetch } from "./auth/api-fetch-context";
 import { Button } from "./Button";
@@ -76,10 +76,12 @@ export function RoomSwitcher({ pathname }: { pathname: string }) {
     setSelected(current ?? "");
   }, [current]);
 
+  const shown = visibleSelection(good, selected);
+
   const onGo = () => {
-    const href = goTarget(selected, current);
+    const href = goTarget(shown, current);
     if (href) router.push(href);
   };
 
-  return <RoomSwitcherView rooms={good} selected={selected} onSelect={setSelected} onGo={onGo} />;
+  return <RoomSwitcherView rooms={good} selected={shown} onSelect={setSelected} onGo={onGo} />;
 }
