@@ -39,7 +39,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-024.1 | Room map renderer, avatars, name tags and dev demo | MERGED | P1 | M | ui, architecture | SIM-024 | none | 2 | 2026-11-22 |
 | SIM-012 | Seat list, add/delete seats, seat detail and occupancy | MERGED | P1 | L | api, ui | SIM-010, SIM-011 | none | 3 | 2026-11-22 |
 | SIM-012.2 | Room detail page, seat table and seat panel | MERGED | P1 | M | ui | SIM-012 | none | 2 | 2026-11-22 |
-| SIM-012.3 | Room switcher, add and delete seats, release and role gating | PLANNING | P1 | M | ui | SIM-012.2 | none | 0 | 2026-11-22 |
+| SIM-012.3 | Room switcher, add and delete seats, release and role gating | IN_PROGRESS | P1 | M | ui | SIM-012.2 | none | 0 | 2026-11-22 |
 | SIM-012.4 | Member picker, assign, replace, remove and cannot-seat | BACKLOG | P1 | M | ui | SIM-012.3 | none | 0 | 2026-11-22 |
 | SIM-015.1 | Room layout API and read-only room view | BLOCKED | P1 | M | api, ui | SIM-010, SIM-012, SIM-024.1 | none | 0 | 2026-11-22 |
 | SIM-015.2 | Tile-based layout editor | BLOCKED | P1 | M | ui, ux | SIM-015.1 | none | 0 | 2026-11-22 |
