@@ -377,6 +377,14 @@ try {
     ),
   );
   check(
+    "8 fixture blank sprite key refused (23514)",
+    refused(
+      await tx(insFixture("null", seatTile, ", 1, 2, 0, '  '")),
+      "23514",
+      "layout_fixtures_sprite_key_check",
+    ),
+  );
+  check(
     "8 partial grid refused (23514)",
     refused(
       await tx(

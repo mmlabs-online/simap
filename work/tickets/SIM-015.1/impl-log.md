@@ -42,3 +42,30 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No: every file is in the plan list.
 - Diff size: see report.
+
+## Attempt 2
+
+Rework for review attempt 1 (Issue 1, Issue 2).
+
+### Files touched
+| File | Required because |
+|---|---|
+| `scripts/schema-check.mjs` | Issue 2: added check `8 fixture blank sprite key refused (23514)` for `layout_fixtures_sprite_key_check`; formatted with oxfmt |
+
+The migration and `work/backlog.md` are unchanged.
+
+### Checks (actual output)
+Local Postgres only (`DATABASE_URL=postgres://simap@127.0.0.1:5432/simap` in the command environment; `node scripts/schema-check.mjs`, `node scripts/test-db.mjs`).
+- schema check: exit 0, `schema check ok`; `grep -c '^pass: 8 '` = 17 (Attempt 1 said 17 but the file had 16 at that time; now it really is 17); total `^pass` lines 43, FAIL lines 0
+- test:db: Test Files 5 passed (5); Tests 52 passed (52)
+- format:check: exit 0, All matched files use the correct format.
+- typecheck: exit 0
+- check:layers: exit 0, 352 files, no violations
+- test: exit 0, Test Files 143 passed (143); Tests 1501 passed | 3 skipped (1504)
+- build: exit 0
+
+### Out-of-plan files
+None.
+
+### Scope self-check
+One check added, nothing else.
