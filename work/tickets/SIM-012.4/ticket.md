@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-22 |
-| Claimed by | claude@2026-11-22T10:26:31Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/45 |
 
 ## Goal
 Managers and Admins seat people safely from the seat panel: assign, replace with confirmation, remove, and block a seat
@@ -68,3 +68,8 @@ with a reason.
 - 2026-11-22: Ming asked to create this ticket from the SIM-012.2 split proposal.
 
 ## Handoff
+### 2026-11-22 — claude — DONE (slice 1)
+- Agent calls: 6, tokens about 458k total, in/out split not reported (frontend-developer×1 default model 49k; planner×1 default model 116k; implementer×2 default model 98k, 23k; reviewer×2 default model 92k, 80k).
+- Done: member picker, Assign, Replace, re-ask after `occupant_changed`, `member_not_assignable`, Manager+ gating of these, Assign/Replace disabled on cannot-seat. Review attempt 1 found failed auth still reloaded the seats and a refetch `not_found` left the picker open; both fixed. Review attempt 2 PASS. PR #45 opened.
+- In progress / next: Ming runs browser checks B1-B6, reviews and merges PR #45, and decides on SIM-012.6 (Remove, Release-not-Remove for a Manager occupant, set/clear cannot-seat, reason check). AC1, AC6 and AC8 stay partial until then.
+- Gotchas: Node and pnpm need fnm activated. `writeOccupant` and `useMemberPicker` have no direct tests (no hook harness). Member search is accent-sensitive, against spec DSH-02; the fix needs a server and DB ticket.
