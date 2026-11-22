@@ -20,11 +20,13 @@ export function AppShellView({
   session,
   pathname,
   actions,
+  roomSwitcher,
   children,
 }: {
   session: Session | null;
   pathname: string;
   actions: ShellActions;
+  roomSwitcher?: ReactNode;
   children: ReactNode;
 }) {
   const navItems = session
@@ -121,9 +123,6 @@ export function AppShellView({
 
           <div className="flex-1" />
 
-          {/* Room switcher slot: wired by SIM-010 (spec SHL-01). */}
-          {session && <div data-slot="room-switcher" />}
-
           <ThemeToggle />
 
           {session && (
@@ -153,6 +152,12 @@ export function AppShellView({
             </>
           )}
         </header>
+
+        {session && roomSwitcher && (
+          <div className="flex-none flex items-center gap-2 px-4 lg:px-5 py-2 bg-surface border-b border-outline-variant">
+            {roomSwitcher}
+          </div>
+        )}
 
         <main
           id="main"

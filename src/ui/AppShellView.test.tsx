@@ -99,6 +99,28 @@ describe("AppShellView", () => {
     expect(html).not.toMatch(/class="inline-flex[^"]*hidden/);
   });
 
+  it("roomSwitcher: absent by default, between header and main with a prop, absent when signed out", () => {
+    const shell = (tier: Tier | null, withSwitcher: boolean) =>
+      renderToStaticMarkup(
+        <AppShellView
+          session={tier ? { tier, email: "a@example.invalid" } : null}
+          pathname="/"
+          actions={{}}
+          roomSwitcher={withSwitcher ? <p>switcher-marker</p> : undefined}
+        >
+          <p>x</p>
+        </AppShellView>,
+      );
+    const none = shell("user", false);
+    expect(none).not.toContain("switcher-marker");
+    expect(none).not.toContain('data-slot="room-switcher"');
+    const withIt = shell("user", true);
+    const at = withIt.indexOf("switcher-marker");
+    expect(at).toBeGreaterThan(withIt.indexOf("</header>"));
+    expect(at).toBeLessThan(withIt.indexOf("<main"));
+    expect(shell(null, true)).not.toContain("switcher-marker");
+  });
+
   it("user has no approvals link; manager has it", () => {
     expect(hrefs(render("user"))).not.toContain("/approvals");
     expect(hrefs(render("manager"))).toContain("/approvals");

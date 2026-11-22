@@ -26,6 +26,7 @@ export const shellCopy = {
     signOut: "Sign out",
     toggleTheme: "Toggle light/dark theme",
   },
+  roomSwitcher: { label: "Room", placeholder: "Select a room", go: "Go" },
   signedOut: {
     title: "Signed out",
     body: "Sign in with your mmlabs account to continue.",
