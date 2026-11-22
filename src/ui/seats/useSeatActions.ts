@@ -35,11 +35,9 @@ export function useSeatActions({
   const [focusSignal, setFocusSignal] = useState(0);
   const busyRef = useRef(false);
 
-  // Another seat opened: a notice about the old seat is stale.
+  // A seat opened: any notice bound to a seat is stale (this runs only when openCode changes).
   useEffect(() => {
-    setNotice((n) =>
-      n && n.seatCode !== null && openCode !== null && n.seatCode !== openCode ? null : n,
-    );
+    setNotice((n) => (n && n.seatCode !== null && openCode !== null ? null : n));
   }, [openCode]);
 
   const run = useCallback(

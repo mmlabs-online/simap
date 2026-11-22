@@ -53,6 +53,7 @@ export const seatsCopy = {
       "This seat gained an occupant or a device in the meantime, so it was not deleted.",
     deleteGone: "This seat was already deleted.",
     noticeForSeat: (code: string, text: string) => `Seat ${code}: ${text}`,
+    noticeForAdd: (text: string) => `Add seats: ${text}`,
     release: "Release seat",
     releaseTitle: (code: string) => `Release seat ${code}?`,
     releaseBody:

@@ -75,3 +75,28 @@ None new.
 
 ### Scope self-check
 - Diff size (`git diff --numstat`, before this log and commit): copy/seats 1/0, SeatsPage 24/8, seat-actions.test 42/0, seat-actions 25/0, useSeatActions 18/11. Total +110 / -19.
+
+## Attempt 3 (rework) — 2026-11-22
+
+Fixed only Issue 5 and Issue 6 of review attempt 2. Nits untouched. No room switcher (AC1 stays deferred).
+
+### Files touched
+- `src/ui/copy/seats.ts` — Issue 5: `actions.noticeForAdd(text)` = "Add seats: <text>".
+- `src/ui/seats/seat-actions.ts` — Issue 5: `routeNotice` labels a `seatCode: null` notice with `noticeForAdd` when a panel is open; bare on the page.
+- `src/ui/seats/useSeatActions.ts` — Issue 6: the `[openCode]` effect clears every seat-bound notice when a seat opens (as specified).
+- `src/ui/seats/seat-actions.test.ts` — `routeNotice` test now covers Add notice on page (bare) and in panel (labelled).
+
+### Checks
+- `pnpm format:check` exit 0; `pnpm typecheck` exit 0; `pnpm check:layers` exit 0 ("check-layers: 340 files, no violations"); `pnpm build` exit 0.
+- `pnpm test` exit 0, "Test Files 138 passed (138); Tests 1401 passed | 3 skipped (1404)". One earlier run in the same session failed 1 test (log not kept); two re-runs passed. Cause not identified, likely load-related flake.
+- `pnpm test:db` not run (instructed).
+- Reviewer's scratch harness (read from scratchpad r123, not copied): 31 passed. S3 `reopenSameSeatPanel: null`; S5 and S6 show "Add seats: ..." in panels, bare text on the page; T9 and S8 unchanged ("Seat C302-01: ..."); S8 reopen still calls `replace` and closes. Issues 1-4 scenarios (T1-T4, S1, S2, S4) still pass.
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+None new.
+
+### Scope self-check
+- Diff size (`git diff --numstat`, before this log and commit): copy/seats 1/0, seat-actions.test 2/2, seat-actions 6/4, useSeatActions 2/4.

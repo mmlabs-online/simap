@@ -97,10 +97,12 @@ export function routeNotice(
   openCode: string | null,
 ): { panel: string | null; page: string | null } {
   if (!notice) return { panel: null, page: null };
-  const text =
-    notice.seatCode !== null && notice.seatCode !== openCode
-      ? seatsCopy.actions.noticeForSeat(notice.seatCode, notice.text)
-      : notice.text;
+  let text = notice.text;
+  if (notice.seatCode === null) {
+    if (openCode !== null) text = seatsCopy.actions.noticeForAdd(notice.text);
+  } else if (notice.seatCode !== openCode) {
+    text = seatsCopy.actions.noticeForSeat(notice.seatCode, notice.text);
+  }
   return openCode !== null ? { panel: text, page: null } : { panel: null, page: text };
 }
 

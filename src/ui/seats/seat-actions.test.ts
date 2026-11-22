@@ -44,10 +44,10 @@ describe("routeNotice", () => {
       page: seatsCopy.actions.noticeForSeat("C302-01", "x"),
     });
   });
-  it("keeps a room-level notice unprefixed", () => {
+  it("keeps an Add notice bare on the page and labels it in an open panel", () => {
     expect(routeNotice({ seatCode: null, text: "x" }, null)).toEqual({ panel: null, page: "x" });
     expect(routeNotice({ seatCode: null, text: "x" }, "C302-01")).toEqual({
-      panel: "x",
+      panel: seatsCopy.actions.noticeForAdd("x"),
       page: null,
     });
   });
