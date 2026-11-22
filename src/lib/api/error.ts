@@ -12,6 +12,7 @@ export const API_ERROR_CODES = [
   "employee_code_taken",
   "member_not_empty",
   "cannot_deactivate_self",
+  "role_not_allowed",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

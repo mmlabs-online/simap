@@ -118,6 +118,14 @@ export const authCopy = {
     token_invalid: "This link is not valid or has expired.",
     email_already_verified: "Your email is already verified. You can sign in.",
     org_access_denied: "You no longer have access to that organization.",
+    org_invite_forbidden: "You are not allowed to invite people to this organization.",
+    invite_role_forbidden: "You can't invite someone with this role.",
+    invitation_limit_reached: "The invitation limit is reached for now. Try again later.",
+    org_invite_unavailable:
+      "Invitations are not available for simap right now. Contact the operator.",
+    invitation_email_mismatch:
+      "This invitation was sent to a different email address. Sign in with the invited address.",
+    unknown_role: "This role is not available. Reload the page and try again.",
     no_access:
       "This account has no access to simap. Sign in with another account or try again later.",
     unknown: "Something went wrong. Try again later.",
