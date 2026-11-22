@@ -89,3 +89,94 @@ None. No review trigger matches this diff.
 - Create SIM-012.6 for the AC parts listed above.
 - Accent-insensitive member search (DSH-02) needs a server and DB change (plan assumption 5).
 - A small hook test harness would let `writeOccupant` and `useMemberPicker` be tested directly.
+
+## Attempt 2 — 2026-11-22
+Verdict: PASS
+
+Scope judged: slice 1 only, as `plan.md` `## Split proposal` defines it. Branch `ticket/SIM-012.4` confirmed checked out
+at `b401c28`, working tree clean. `origin/main` is 4 commits ahead, all board-only (`work/backlog.md`). The rework
+changes one source file, `src/ui/seats/useSeatActions.ts` (+13 / -4).
+
+### Checks (run by reviewer)
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck` — exit 0.
+- `pnpm check:layers` — exit 0, "349 files, no violations".
+- `pnpm test` — exit 0, Test Files 142 passed (142); Tests 1457 passed | 3 skipped (1460).
+- `pnpm build` — exit 0.
+- `pnpm test:db` — not run, CI-only by instruction; this diff touches no server or DB code.
+
+The results match `impl-log.md` Attempt 2.
+
+### Issue 1 and Issue 2: every path through `writeOccupant`
+Verified by reading the code. The rework adds no test, and no existing test runs the hook, so this wiring has no
+automated or browser evidence yet. The pure `actionOutcome` and `decideReask` contracts it follows are tested.
+
+| PUT result | Refetch | Dialog | Reload | Focus signal | Panel |
+|---|---|---|---|---|---|
+| ok | — | closes | yes | yes | stays |
+| auth code, `invalid_request` | — | closes, notice | **no** | **no** | stays |
+| `member_not_assignable` | — | **picker stays**, list reloads, error shown | yes | no while open | stays |
+| `not_found` | — | closes, notice | yes | no | closes |
+| `seat_cannot_seat`, `unavailable`, `internal` | — | closes, notice | yes | yes | stays |
+| `occupant_changed` | new occupant or now empty | **re-ask**, confirm remounts | yes | no while open | stays |
+| `occupant_changed` | already the chosen member | closes | yes | yes | stays |
+| `occupant_changed` | now cannot-seat | closes, reason | yes | yes | stays |
+| `occupant_changed` | auth code, `invalid_request` | closes, notice | **no** | **no** | stays |
+| `occupant_changed` | `not_found` | **closes**, notice | yes | no | **closes** |
+| `occupant_changed` | `unavailable`, `internal` | picker stays, error shown | yes | no while open | stays |
+
+- **Issue 1: fixed.** `reload` comes from `actionOutcome` on both failure branches (`useSeatActions.ts:134`, `:146`) and gates `refresh()` (`:155`) and the focus signal (`:159`). An auth failure no longer reaches `useRoomSeats.ts:71-76`, so the rows stay. The picker's `reloadToken` is no longer bumped on an auth failure.
+- **Issue 2: fixed.** A refetch `not_found` has `closePanel: true`, so it takes `finish(null, ...)` at `:140` and `onDeleted` at `:154`.
+- **No regression in the requested behaviour.** The re-ask branch (`:125-127`) is unchanged, and no refusal path reaches a PUT. `member_not_assignable` still uses `refusedDialog` with `closed = !still()` (`:147-149`). Normal success still reloads and bumps the focus signal. `busy` is released on every path, because `seatsApi` methods never throw.
+- **Focus on the no-reload path:** the dialog close and `setBusy(false)` run in the same tick, so the Assign button is enabled again when `EntityFormDialog.tsx:47-50` returns focus to it. The missing focus signal is correct here. Unverified in a browser.
+
+### Acceptance criteria
+Unit evidence is unchanged from Attempt 1 and was re-run in the full suite above.
+
+- [x] AC1 (slice 1: Assign and Replace only) — evidence: `seat-actions.test.ts › seatButtons`; `SeatActions.test.tsx › assign role matrix; Replace when occupied`.
+- [x] AC2 Picker lists, searches, loads more, Enter does not submit — evidence: `seats-api.test.ts › activeMembers`; `member-picker.test.ts`; `MemberPickerDialog.test.tsx`; `MemberPickerDialog.tsx:49-51`. The real key press is B2.
+- [x] AC3 Assign to an empty seat updates table and panel — evidence: `pickStep › empty seat sends expected null`; `actionOutcome assign › ok reloads and keeps the panel`; `useSeatActions.ts:120-121`, `:155`. Real update is B1.
+- [x] AC4 Replace text — evidence: `pickStep › occupied builds one snapshot with the shown id and name`; `confirmText › exact replace text with diacritics`.
+- [x] AC5 Re-ask, nothing sent until confirmed — evidence: `decideReask`; `reaskDialog`; `useSeatActions.ts:122-142` has no PUT. Real concurrency is B3.
+- [x] AC6 (slice 1: reason shown, Assign/Replace disabled) — evidence: `SeatActions.test.tsx › cannot-seat disables assign and replace`; `SeatDetailPanel.test.tsx › shows the reason inside the clip container`.
+- [x] AC7 Unassignable member refused, picker reloads, dialog stays — evidence: `actionOutcome assign › member_not_assignable keeps the dialog`; `refusedDialog`; `useSeatActions.ts:147-149`. Real flow is B4.
+- [x] AC8 (slice 1: all except the reason check) — evidence: the tests above, plus `member-picker.test.ts › a stale search response is dropped` and `seats-api.test.ts › setOccupant`.
+
+**Parts of the ticket's AC left for the proposed SIM-012.6 (not failed here):**
+- AC1: gating of **Remove** and **set/clear cannot-seat** for Manager and Admin, including "a Manager who is the occupant sees Release, not Remove".
+- AC6: **setting the flag requires a valid reason** (`validateCannotSeat`), plus the set and clear actions themselves.
+- AC8: unit tests for **the reason check**.
+
+**Browser checks B1-B6: none has been run, so all six remain unverified in a browser.** From the code:
+- B1 Assign: the path looks correct.
+- B2 Picker: the Enter guard looks correct. IME behaviour, list scrolling and the 390 px layout cannot be judged from code.
+- B3 Re-ask: the keyed remount should put focus on Cancel. Real focus and two-tab behaviour are unverified.
+- B4 Unassignable: the message, list reload and open dialog look correct. Focus after a refusal from the replace confirm is likely lost (see Nits).
+- B5 Stacked dialogs: Esc and scrim handling are per dialog. Native top-layer order and focus return are unverified.
+- B6 Cannot-seat: covered by markup tests only.
+
+These stay under `Ming verification after merge` and must be carried into the PR.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found.
+- R1: `pnpm check:layers` is clean.
+- R2, R3, R6: not touched; the diff has no server, schema or env change.
+- R4: every changed `src/` file is in the plan's file list, and the rework touches only the file Issues 1 and 2 named. No High path changed.
+- R5: checks are green. `writeOccupant` still has no direct test; see Follow-ups.
+- R7: no route handler changed. The plan's client-side auth rule now holds on both failure branches.
+- D36: no new string in this rework.
+
+### Blockers from review agents
+None. No review trigger matches this diff.
+
+### Nits (do not block)
+- `SeatsPage.tsx:185` with `useSeatActions.ts:136-138`, `:147-149`: when a refusal closes the replace confirm and keeps the picker open, `busy` is still true during the reload, so the picker's submit button is disabled at the moment `EntityFormDialog.tsx:49` tries to return focus to it. Focus likely falls to `body` inside the modal. Tab recovers it and the error is announced through `role="alert"`, so nothing is lost. This predates the rework. Check it during B4.
+- The Attempt 1 nits at `MemberPickerDialog.tsx:154`, `ConfirmSeatDialog.tsx:34` and `MemberPickerDialog.tsx:53-58` still stand.
+
+### Follow-ups (out of scope)
+- Create SIM-012.6 for the AC parts listed above.
+- Accent-insensitive member search (DSH-02) needs a server and DB change (plan assumption 5).
+- A small hook test harness would let `writeOccupant` and `useMemberPicker` be tested directly, including the path table above.
