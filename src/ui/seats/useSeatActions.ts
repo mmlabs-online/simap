@@ -116,6 +116,7 @@ export function useSeatActions({
     };
     let closed = true;
     let closePanel = false;
+    let reload = true;
     if (result.ok) {
       finish(null, null);
     } else if (result.code === "occupant_changed") {
@@ -129,12 +130,20 @@ export function useSeatActions({
       } else if (step.kind === "cannotSeat") {
         finish(null, apiErrorMessage("seat_cannot_seat"));
       } else {
-        finish(refusedDialog(started, apiErrorMessage(step.code)), apiErrorMessage(step.code));
-        closed = !still();
+        const failed = actionOutcome("assign", { ok: false, code: step.code });
+        reload = failed.reload;
+        closePanel = failed.closePanel;
+        if (failed.reload && !failed.closePanel) {
+          finish(refusedDialog(started, failed.message ?? ""), failed.message);
+          closed = !still();
+        } else {
+          finish(null, failed.message);
+        }
       }
     } else {
       const outcome = actionOutcome("assign", result);
       closePanel = outcome.closePanel;
+      reload = outcome.reload;
       if (outcome.keepDialog) {
         finish(refusedDialog(started, outcome.message ?? ""), outcome.message);
         closed = !still();
@@ -143,11 +152,11 @@ export function useSeatActions({
       }
     }
     if (closePanel) onDeleted(code);
-    await refresh();
+    if (reload) await refresh();
     busyRef.current = false;
     setBusy(false);
     // With the dialog still open the panel heading is inert, so focus moves only when it closed.
-    if (closed && !closePanel) setFocusSignal((n) => n + 1);
+    if (reload && closed && !closePanel) setFocusSignal((n) => n + 1);
   };
 
   return {

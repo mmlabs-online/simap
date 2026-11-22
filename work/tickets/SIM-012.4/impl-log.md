@@ -41,3 +41,26 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No; each piece is listed in the plan.
 - Diff size: about +690 / -26 lines including tests (production roughly 450).
+
+## Attempt 2 (REWORK for review attempt 1)
+
+### Files touched
+- `src/ui/seats/useSeatActions.ts` — required because Issue 1 and Issue 2: `writeOccupant` now tracks `reload`. The PUT outcome sets it from `outcome.reload`. The refetch-failure branch goes through `actionOutcome("assign", ...)`, so auth codes and `invalid_request` do not reload or bump the focus signal, and `not_found` closes the dialog and panel (Issue 2) instead of keeping the picker open. `refresh()` and the focus signal now run only when `reload` is true.
+
+### Tests added
+None. The fix is hook wiring, and the pure `actionOutcome` tests already cover the contract. The review's follow-up notes a hook harness; that is not part of this rework.
+
+### Checks (actual output summary)
+- typecheck: exit 0; check:layers: 349 files, no violations
+- format:check: formatter finished with no changes (run via `pnpm format` first)
+- test: Test Files 142 passed (142); Tests 1457 passed | 3 skipped
+- build: exit 0
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+None new.
+
+### Scope self-check
+- Only Issues 1 and 2 were addressed. The diff is about +12 / -3 lines in one file.
