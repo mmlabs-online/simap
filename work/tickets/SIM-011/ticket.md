@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-22T04:19:30Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/36 |
 
 ## Goal
 Managers see the org's members and their footprint, edit simap fields, and deactivate or reactivate members without touching Identity accounts.
@@ -57,4 +57,10 @@ Waiting for Ming: plan approval (High tier)
 - Done: consult (api, ui; security skipped by Max consultants = 2), plan READY. The plan edits `src/server/http/with-auth.ts` and its test (High path `src/server/http/**`), so Gate was raised from `none` to `plan-approval`.
 - In progress / next: Ming approves `plan.md` (M-22: assumptions A1–A11, split into SIM-011 server slice + SIM-011.2 Members page UI). After approval, `/run SIM-011` resumes at IMPLEMENT; SIM-011.2 gets added to the board then.
 - Gotchas: A9 changes the lock order (member row before room/seats); SIM-012/SIM-014 must follow it. Local Postgres 16 runs as a system service here (no Docker); role/db `simap` created for `pnpm test:db`.
+
+### 2026-11-22 — claude — DONE
+- Agent calls: 3 this run, ~228k tokens (implementer×1 opus 105.9k, reviewer×1 opus 66.3k, security-ai-generated-code-auditor×1 opus 56.4k; per-call in/out split not reported). Whole ticket: 6 calls, ~440k.
+- Done: plan approved (M-22); attempt 1 implemented; review PASS with all checks green (incl. `pnpm test:db` locally); security review has no 🔴. PR https://github.com/mmlabs-online/simap/pull/36.
+- In progress / next: Ming reviews and merges PR #36 and decides on security 🟡1 (A4). Then SIM-011.2 (Members page UI) is runnable.
+- Gotchas: every guarded route now needs the DB (503 without it). SIM-012/SIM-014 must lock the member row first (A9). Worked on the session branch `claude/confident-cerf-67q5le`, not `ticket/SIM-011`.
 
