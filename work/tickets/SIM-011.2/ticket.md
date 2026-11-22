@@ -36,7 +36,7 @@ spec MEM-01, MEM-02; D12, D16 (a), D17, D34, D36. `work/tickets/SIM-011/plan.md`
 
 ## Technical notes
 - Files: see Scope. Build from `work/tickets/SIM-011/consult-frontend-developer.md` §Recommendations 2-3 and the SIM-011 API contract.
-- Risks / open questions: none beyond SIM-011's assumptions A1–A11.
+- Risks / open questions: none beyond SIM-011's assumptions A1–A11. SIM-009 adds `<InvitePeople />` to `src/app/(app)/members/page.tsx` and `src/ui/index.ts`; keep it when replacing the page.
 
 ## Test plan
 - Unit: `MembersView` (renderToStaticMarkup: User vs Manager, states), `members-api` with a fake fetcher, dialog flow logic.
