@@ -116,3 +116,94 @@ Not run by the reviewer; these need a real browser.
 - Create SIM-012.3 and SIM-012.4. This PR must not close the full ticket scope: add and delete, assign and replace, release, cannot-seat, role gating, picker and room switcher remain.
 - SIM-012.3: a failed reload currently clears the rows (`useRoomSeats.ts:69`). Keep them once reloads follow writes (plan Approach 4).
 - Reject room codes `.` and `..` in `src/lib/validate/room.ts` (plan assumption 6).
+
+## Attempt 2 — 2026-11-22
+Verdict: PASS
+
+Scope judged: slice 1, the read path, at rework commit `17d2dee`. Write actions, role gating, the member picker and the room
+switcher stay deferred to the proposed SIM-012.3 and SIM-012.4, so this PR must not close the full ticket scope.
+
+### Checks (run by reviewer)
+- `pnpm format:check` — exit 0, `All matched files use the correct format.`
+- `pnpm typecheck` — exit 0
+- `pnpm check:layers` — exit 0, `332 files, no violations`
+- `pnpm test` — exit 0, `Test Files 135 passed (135)`, `Tests 1368 passed | 3 skipped (1371)`. Matches impl-log.
+- `pnpm build` — exit 0, `/rooms/[roomCode]` listed as dynamic
+- `pnpm test:db` — not run, as instructed. The diff has no `src/server`, API route, SQL or migration file.
+
+Scratch harness (outside the repo, nothing added to it): the Attempt 1 harness, updated for the new `panelView` signature and
+extended with `retryTarget`, the dialog's real pointer and cancel handlers, and extra cases. It drives the real `useRoomSeats`,
+`panelView`, `retryTarget` and `SeatDetailPanel` with a minimal fake React hook runtime and fake DOM objects, and the real
+`SeatsView` with `renderToStaticMarkup`. This is evidence for state logic only. It is not a browser. No dev server, database,
+token or browser was used. Result: 14 of 14 scenarios ran and passed.
+
+| Run | Scenario | Attempt 1 | Attempt 2 |
+|---|---|---|---|
+| S1 | Unknown room with `?seat=` | stuck on loading | `missing`, panel `notFound`, 0 list calls |
+| S2 | `GET /api/rooms` fails, panel Try again | stuck on loading | error, retries rooms, then list and detail, `ready` |
+| S3 | Seat list 503, panel Try again | dead button | error, retries seats (2 list calls), `ready` |
+| S3b | Detail 503, panel Try again | not run | error, retries detail (2 get calls), `ready` |
+| S4 | Two list responses out of order | OK | newest kept |
+| S5 | Detail A then B, A resolves last | OK | B shown |
+| S6 | Response after unmount | OK | 0 renders |
+| S7 | Close and reopen the same seat | old data committed | `loading`, `loading`, then new data; old data never shown |
+| S8 | Close with a request in flight, reopen | not run | late response dropped, reopen shows `loading` |
+| S9 | Room deleted while the panel is open | not run | `missing`, panel `notFound` |
+| F1 | Close a URL-opened panel | StrictMode focused `main` | row in production and StrictMode; `main` for a not-found seat |
+| P1 | Pointer closes | empty panel space closed it | scrim closes; empty space, right edge, drag either way and content do not |
+| E1 | Esc / native `cancel` | OK | default prevented, `onClose` called once, dialog stays open until the URL changes |
+| V1 | Room deleted (list 404) | card, alert and retry | not-found card only |
+
+### Attempt 1 issues
+- [x] Issue 1 (blocker) closed — `seat-view.ts:106-108`, `SeatsPage.tsx:49`; S1, S2.
+- [x] Issue 2 (blocker) closed — `seat-view.ts:129-136`, `SeatsPage.tsx:32-37`; S2, S3, S3b.
+- [x] Issue 3 (blocker) closed — `SeatsView.tsx:38-43`, `SeatsView.test.tsx:105`; V1.
+- [x] Issue 4 (should-fix) closed — `useRoomSeats.ts:81-85`; S7, S8.
+- [x] Issue 5 (should-fix) closed at state level — `SeatDetailPanel.tsx:137-142`; F1. The row target is the focusable button at `SeatsView.tsx:125-127`, and `main` has `tabIndex={-1}` at `AppShellView.tsx:158-159`. Real focus is B2.
+- [x] Issue 6 (should-fix) closed at state level — `SeatDetailPanel.tsx:159-173`, `seat-view.ts:139-145`; P1. Real scrollbar behaviour is B3.
+- [x] Issue 7 (should-fix) closed — `git diff --numstat` confirms +1,453 in `src` (841 production, 612 test) and +148 / -27 for the rework. The whole branch at `17d2dee` is **+2,038**, not "about +2,006", because the earlier count left out the new impl-log section. The PR should state +2,038.
+
+### Settled behaviour
+Not broken: stale-response drops (S4, S5, S6, S8), URL as the only open state (`SeatsPage.tsx:22-23`, E1), Esc and cancel (E1).
+
+### Scope
+`17d2dee` changed only the seven `src/ui/seats` files named in impl-log, plus `impl-log.md`. `6e2382a` changed only `ticket.md`. No High path and no out-of-plan file.
+
+### Acceptance criteria
+- [x] 1. Room page lists every seat — unchanged from Attempt 1.
+- [x] 2. Row targets `?seat=<code>`; open state comes only from the URL — unchanged, E1. Real history behaviour is B1.
+- [x] 3. Unknown room code shows not-found — S1, S9, V1, `SeatsView.test.tsx:105`.
+- [x] 4. Seat code not in this room shows not-found — unchanged from Attempt 1.
+- [x] 5. Loading, empty, error and `truncated` states — S2, S3, S3b, `panelView` tests.
+- [x] 6. SEA-05 panel fields — unchanged from Attempt 1.
+- [x] 7. Cannot-seat reason clipped — unchanged from Attempt 1.
+- [x] 8. Status not colour alone — unchanged from Attempt 1.
+- [x] 9. 390 px and keyboard — code and state evidence: F1, P1, E1. Real behaviour is B2 and B3, for Ming.
+- [x] 10. Unit tests — new `panelView`, `retryTarget`, `isOutsideRect` and deleted-room cases; suite green.
+- [x] 11. Project checks and rules — all green.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1 by `pnpm check:layers`; R2, R3, R6 and R7 not touched; R4 no out-of-plan file; R5 checks green and the new logic has tests.
+
+### Blockers from review agents
+None. No configured review trigger path changed.
+
+### Nits (do not block)
+- `src/ui/seats/SeatDetailPanel.tsx:105`: the comment still says focus returns to the opener first. The code now prefers the seat's row.
+- `src/ui/rooms/useRooms.ts:22-31`: a rooms retry shows no loading state, so the panel keeps the old error until the response arrives.
+- Still open from Attempt 1: singular form at `src/ui/copy/seats.ts:34`, long room code in the `h1` at `src/ui/seats/SeatsView.tsx:45`, shared `CLIP`.
+
+### Ming verification after merge (carry into the PR)
+Not run by the reviewer; these need a real browser.
+- **B1 URL:** open a row, Back closes it, Forward reopens it, refresh restores it, close button clears `?seat`, row scroll position is kept.
+- **B2 Keyboard:** Tab to a row, Enter opens the panel, focus is trapped, Esc closes it and focus returns to that row. After a refresh with `?seat=`, closing focuses that row, also under `pnpm dev`. For a not-found seat, closing focuses `main`.
+- **B3 390 px and desktop:** table scrolls sideways (also by keyboard), panel is a full-width sheet, a press on empty panel space or the dialog scrollbar does not close it, a press on the desktop scrim does, a long reason and stacked combining marks stay clipped, light and dark themes.
+- **B4 Not-found:** `/rooms/NOPE`, `/rooms/NOPE?seat=NOPE-01`, and a seat code from another room.
+
+### Follow-ups (out of scope)
+- Create SIM-012.3 and SIM-012.4. This PR must not close the full ticket scope: add and delete, assign and replace, release, cannot-seat, role gating, picker and room switcher remain.
+- SIM-012.3: a failed reload currently clears the rows (`useRoomSeats.ts:69`). Keep them once reloads follow writes (plan Approach 4).
+- Reject room codes `.` and `..` in `src/lib/validate/room.ts` (plan assumption 6).
