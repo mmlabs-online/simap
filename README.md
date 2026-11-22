@@ -22,8 +22,8 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
 1. Prerequisites: `.env.local` with `DATABASE_URL` and the Identity issuer/JWKS names the server already reads, and
    the app `simap` registered in org-admin-api (M-1 in `work/ming-todo.md`).
 2. `pnpm dev:token --org <org-uuid>` (or `SIMAP_DEV_ORG`). It asks for the email (or `SIMAP_DEV_EMAIL`) and the
-   password with hidden input; it needs an interactive terminal (PowerShell, Windows Terminal, macOS Terminal; not Git
-   Bash). Example: `$env:SIMAP_DEV_EMAIL = "you@example.com"; pnpm dev:token --org <org-uuid>`. Without an org the
+   password with hidden input; it needs an interactive terminal (PowerShell, Windows Terminal, macOS Terminal; for a direct
+   `pnpm dev:token` not Git Bash, use `scripts/start-dev.sh` there). Example: `$env:SIMAP_DEV_EMAIL = "you@example.com"; pnpm dev:token --org <org-uuid>`. Without an org the
    token is unscoped and every `/api/*` call answers 403 `org_required`.
 3. The token goes to `~/.config/simap/dev-token` (override `SIMAP_DEV_TOKEN_FILE`). On Windows the file mode is
    advisory; your profile directory ACL protects it. The script never prints the password or token.
@@ -48,8 +48,79 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
 
 ## Production database (dev)
 
+> **Every change you make in this mode is real production data.**
+
+### Quick start
+
+You need Docker Desktop running, an Identity account in the org, the org UUID, the password of the database role
+`simap`, and a Cloudflare Access account allowed on `db.mmlabs.online`.
+
+1. Start the tunnel (from the `pg-tunnel` project):
+
+   ```
+   docker compose up -d
+   docker ps --filter name=pg-tunnel
+   ```
+
+2. If the Cloudflare Access session is missing or expired, sign in. `cloudflared` saves the token by itself and prints
+   it: do not copy or share it.
+
+   ```
+   docker exec -it pg-tunnel-pg-tunnel-1 cloudflared access login https://db.mmlabs.online
+   docker restart pg-tunnel-pg-tunnel-1
+   ```
+
+3. Start the app.
+
+   Windows PowerShell (this checkout on a Windows drive):
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\start-dev.ps1 --port 3100
+   ```
+
+   Git Bash, macOS or Linux:
+
+   ```bash
+   scripts/start-dev.sh --port 3100
+   ```
+
+   WSL: use a separate clone on the Linux disk with its own `node_modules`, for example `~/project/simap-game-ui`, then
+   run `pnpm install --frozen-lockfile` and `scripts/start-dev.sh`. Next.js was seen to crash with `SIGBUS` when run from
+   WSL on `/mnt/d`.
+
+4. Open the printed URL and check the red **Production data** badge. `--port` is optional (default 3000); use it to run
+   beside another app.
+
+5. Press Ctrl-C to stop. The app and its child processes stop, and the tunnel keeps running.
+
+The command does not need `.env.local`. It asks for the Identity email and password and the database password with
+hidden input (under Git Bash it uses `winpty`), and for the org UUID once when no token on disk names an org. Then it
+waits up to 30 s for `/api/readyz`, checks that the app we started owns the port, and prints the local URL and
+`PRODUCTION DATA: every change is real.`
+A hard kill of the launcher (Task Manager, `SIGKILL`) cannot clean up; the next run then refuses the busy port.
+A hidden child that holds no port and was never seen by a snapshot can survive a stop; `stop` reports clean only if nothing still listens on the app port.
+
+### Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| `could not log in to the production database through the tunnel` | The tunnel did not reach Postgres. Check `docker logs --tail 20 pg-tunnel-pg-tunnel-1`. On `websocket: bad handshake`, the connection can be intermittent: run again a few times. If it never passes, renew the Access login (step 2) |
+| `the database rejected the password for role simap` | Wrong password. Stop and check it; do not keep retrying against production |
+| `port <n> is in use` | Another app holds the port. Pass another `--port` |
+| `the app exited before it was ready` under WSL | The checkout is on `/mnt/*`. Use a clone on the Linux disk or PowerShell |
+| `did not become ready in 30 s` on a first run | The first compile can be slow. Run again |
+| **No usable dev token** in the browser | Compare the clocks first: Identity tokens are refused when the machine clock is more than 30 s behind. On Windows use Settings → Time & language → Date & time → Sync now, then **Check again**. Otherwise run `pnpm dev:token --org <the org in the banner>`; no restart needed |
+
+### How it works
+
 `pnpm dev:prod` runs the local app against the production database through the Cloudflare pg-tunnel (D56). It needs
-an interactive terminal and, in order, stops at the first failure with nothing started:
+an interactive terminal. All read-only checks run first, before any sign-in, tunnel start or prompt: the `.env*`
+refusals (exit 2: none of the four files may set `DATABASE_URL`, any letter case, so comment that line out while using
+`dev:prod` and restore it for local work; none may set `SIMAP_DEV_ORG`, set it in the shell; `pnpm dev` and `dev:prod`
+both refuse `NEXT_PUBLIC_SIMAP_DEV_PROD` in any letter case, and `dev:prod` refuses `MM_IDENTITY_ISSUER` in a letter
+case other than exactly that; values are never printed), the tools (docker CLI and daemon, `next`, `powershell` on Windows, `lsof` and `ps` elsewhere) and
+that the app port is free (the port is always passed explicitly: `--port`, else `PORT`, else 3000). Then, in order, it
+stops at the first failure with nothing started:
 
 1. A fresh dev token with an `org` claim (runs `pnpm dev:token` when the token is missing, expires within 2
    minutes, has no org, or is for another org than `SIMAP_DEV_ORG`; a token still wrong after that stops the run).
@@ -57,11 +128,10 @@ an interactive terminal and, in order, stops at the first failure with nothing s
    app as `SIMAP_DEV_EXPECTED_ORG` (set by `dev:prod` only, never by hand).
 2. The tunnel container (`pg-tunnel-pg-tunnel-1`, override `SIMAP_PG_TUNNEL`): started if stopped, then `127.0.0.1:15432` (override
    `SIMAP_PROD_TUNNEL_PORT`) must answer.
-3. `.env.local` must not set `DATABASE_URL`: comment that line out while using `dev:prod` and restore it for local
-   work. None of `.env.development.local`, `.env.local`, `.env.development` or `.env` may set `SIMAP_DEV_ORG`: set it
-   in the shell (exit 2 otherwise, the value is not printed). Both `pnpm dev` and `dev:prod` also exit 2 if any of those
-   four files sets `NEXT_PUBLIC_SIMAP_DEV_PROD` (any letter case). `dev:prod` also exits 2 if one of them sets `MM_IDENTITY_ISSUER` in a letter case other than exactly that (the value is not printed). Then `dev:prod` asks for the password of the database role `simap` with hidden input, on every run.
-4. It starts `next dev -H 127.0.0.1` (same port option as `pnpm dev`) with a banner. The URL and password live only
+3. The password of the database role `simap`, asked with hidden input on every run. One login check follows before
+   the app starts: a wrong password (`28P01`) or an unreachable database stops the run with a fixed message, no retry.
+4. It starts `next dev -H 127.0.0.1` with a banner, waits for `/api/readyz` (a 200 proves the app reached Postgres
+   through the tunnel, not the schema version or write access), and stops the whole process tree on a failed check. The URL and password live only
    in the app's child environment: never printed, never written to disk. `dev:prod` pins `MM_IDENTITY_ISSUER=https://api.mmlabs.online` in the child, so a `.env*` or shell value is ignored. `dev:prod` itself skips `.env.local`, but the `next dev` child loads it, so set
    any `SIMAP_*` override in the shell. If you run `pnpm dev:token --org <other org>` while it runs, the next API call
    gets 401 with a `[dev-token]` warning (`another org`): run `pnpm dev:token --org <the org in the banner>` again, no
