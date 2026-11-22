@@ -1,5 +1,13 @@
 import { spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -68,4 +76,69 @@ describe.skipIf(!usable)("start-dev.sh", () => {
     expect(r.stderr).toBe("");
     expect(r.status).toBe(0);
   });
+});
+
+describe.skipIf(!WIN)("start-dev.ps1", () => {
+  const sys32 = join(process.env.SystemRoot ?? "C:\\Windows", "System32");
+  const ps = join(sys32, "WindowsPowerShell", "v1.0", "powershell.exe");
+  const psLog = join(dir, "ps-log.txt");
+  const nodeOnly = join(dir, "ps-node");
+  const withFnm = join(dir, "ps-fnm");
+  mkdirSync(nodeOnly);
+  mkdirSync(withFnm);
+  writeFileSync(
+    join(nodeOnly, "node.cmd"),
+    '@echo off\r\nif "%~1"=="--version" (echo %STUB_VERSION%& exit /b 0)\r\necho node %*>>"%STUB_LOG%"\r\nexit /b 7\r\n',
+  );
+  writeFileSync(
+    join(withFnm, "fnm.cmd"),
+    '@echo off\r\necho fnm %*>>"%STUB_LOG%"\r\nexit /b 5\r\n',
+  );
+  const run = (args: string[], path: string[], version = "v22.1.0") => {
+    rmSync(psLog, { force: true });
+    return spawnSync(
+      ps,
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        join(ROOT, "scripts", "start-dev.ps1"),
+        ...args,
+      ],
+      {
+        cwd: dir,
+        encoding: "utf8",
+        timeout: 30_000,
+        env: {
+          ...process.env,
+          PATH: [...path, sys32].join(delimiter),
+          STUB_LOG: psLog,
+          STUB_VERSION: version,
+        },
+      },
+    );
+  };
+
+  it("Node 22: hands off with the arguments and keeps the exit code", () => {
+    const r = run(["--port", "3456"], [nodeOnly]);
+    expect(r.status).toBe(7);
+    expect(readFileSync(psLog, "utf8").trim()).toBe("node scripts/dev-prod.mjs --port 3456");
+  }, 40_000);
+
+  it("another Node with fnm: runs through fnm on Node 22", () => {
+    const r = run(["--port", "3456"], [nodeOnly, withFnm], "v20.1.0");
+    expect(r.status).toBe(5);
+    expect(readFileSync(psLog, "utf8").trim()).toBe(
+      "fnm exec --using=22 -- node scripts/dev-prod.mjs --port 3456",
+    );
+  }, 40_000);
+
+  it("no Node 22 and no fnm: exit 1, names Node 22, launcher not run", () => {
+    const r = run([], [nodeOnly], "v20.1.0");
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("Node 22 not found");
+    expect(existsSync(psLog)).toBe(false);
+  }, 40_000);
 });

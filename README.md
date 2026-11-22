@@ -48,14 +48,70 @@ from Node and writes a token outside the repo; under `pnpm dev` the server adds 
 
 ## Production database (dev)
 
-**One command:** `scripts/start-dev.sh` (Git Bash, macOS or Linux; PowerShell users run `pnpm dev:prod`) runs
-`pnpm dev:prod` below without any `.env.local`. It asks for the Identity email and password and the database password
-(hidden input; under Git Bash it uses `winpty`), and for the org UUID once when no token on disk names an org. Then it
+> **Every change you make in this mode is real production data.**
+
+### Quick start
+
+You need Docker Desktop running, an Identity account in the org, the org UUID, the password of the database role
+`simap`, and a Cloudflare Access account allowed on `db.mmlabs.online`.
+
+1. Start the tunnel (from the `pg-tunnel` project):
+
+   ```
+   docker compose up -d
+   docker ps --filter name=pg-tunnel
+   ```
+
+2. If the Cloudflare Access session is missing or expired, sign in. `cloudflared` saves the token by itself and prints
+   it: do not copy or share it.
+
+   ```
+   docker exec -it pg-tunnel-pg-tunnel-1 cloudflared access login https://db.mmlabs.online
+   docker restart pg-tunnel-pg-tunnel-1
+   ```
+
+3. Start the app.
+
+   Windows PowerShell (this checkout on a Windows drive):
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\start-dev.ps1 --port 3100
+   ```
+
+   Git Bash, macOS or Linux:
+
+   ```bash
+   scripts/start-dev.sh --port 3100
+   ```
+
+   WSL: use a separate clone on the Linux disk with its own `node_modules`, for example `~/project/simap-game-ui`, then
+   run `pnpm install --frozen-lockfile` and `scripts/start-dev.sh`. Next.js was seen to crash with `SIGBUS` when run from
+   WSL on `/mnt/d`.
+
+4. Open the printed URL and check the red **Production data** badge. `--port` is optional (default 3000); use it to run
+   beside another app.
+
+5. Press Ctrl-C to stop. The app and its child processes stop, and the tunnel keeps running.
+
+The command does not need `.env.local`. It asks for the Identity email and password and the database password with
+hidden input (under Git Bash it uses `winpty`), and for the org UUID once when no token on disk names an org. Then it
 waits up to 30 s for `/api/readyz`, checks that the app we started owns the port, and prints the local URL and
-`PRODUCTION DATA: every change is real.` Ctrl-C stops the app and its child processes and leaves the tunnel running.
+`PRODUCTION DATA: every change is real.`
 A hard kill of the launcher (Task Manager, `SIGKILL`) cannot clean up; the next run then refuses the busy port.
 A hidden child that holds no port and was never seen by a snapshot can survive a stop; `stop` reports clean only if nothing still listens on the app port.
-Before the first run take a `pg_dump` of the `simap` database and keep it outside the repo.
+
+### Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| `could not log in to the production database through the tunnel` | The tunnel did not reach Postgres. Check `docker logs --tail 20 pg-tunnel-pg-tunnel-1`. On `websocket: bad handshake`, the connection can be intermittent: run again a few times. If it never passes, renew the Access login (step 2) |
+| `the database rejected the password for role simap` | Wrong password. Stop and check it; do not keep retrying against production |
+| `port <n> is in use` | Another app holds the port. Pass another `--port` |
+| `the app exited before it was ready` under WSL | The checkout is on `/mnt/*`. Use a clone on the Linux disk or PowerShell |
+| `did not become ready in 30 s` on a first run | The first compile can be slow. Run again |
+| **No usable dev token** in the browser | Compare the clocks first: Identity tokens are refused when the machine clock is more than 30 s behind. On Windows use Settings → Time & language → Date & time → Sync now, then **Check again**. Otherwise run `pnpm dev:token --org <the org in the banner>`; no restart needed |
+
+### How it works
 
 `pnpm dev:prod` runs the local app against the production database through the Cloudflare pg-tunnel (D56). It needs
 an interactive terminal. All read-only checks run first, before any sign-in, tunnel start or prompt: the `.env*`
