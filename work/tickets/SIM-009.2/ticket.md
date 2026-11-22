@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | security, ui |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-22 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/38 |
 
 ## Goal
 Invitees accept an org invitation on simap's `/accept-invitation` page and land in the org as a new member. Slice 2 of SIM-009 (split proposed in `work/tickets/SIM-009/plan.md` → *Split proposal*).
@@ -44,3 +44,10 @@ spec AUT-03; D11, D14, D16 (a), D53 (referrer meta tag). Identity contract: org-
 —
 
 ## Handoff
+
+### 2026-11-22 — claude — DONE
+- Agent calls: 5, ~323k tokens (frontend-developer×1 opus 63.9k, planner×1 opus 75.6k, implementer×1 opus 69.9k, reviewer×1 opus 54.8k, security-ai-generated-code-auditor×1 opus 58.5k; per-call in/out split not reported)
+- Done: consult (ui), plan READY (no High path), implemented in one attempt, review PASS with checks green, security review no 🔴/🟡. PR https://github.com/mmlabs-online/simap/pull/38.
+- In progress / next: Ming reviews and merges PR #38, then runs the manual checks (needs M-1). Next runnable: SIM-011.2.
+- Gotchas: sign-in on this page can need a second submit when the remembered org is refused (follow-up). Worked on the session branch `claude/confident-cerf-67q5le`.
+

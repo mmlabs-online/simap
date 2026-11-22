@@ -23,6 +23,15 @@ const accounts = [
 ];
 
 describe("SignInView", () => {
+  it("renders intro and footer when given", () => {
+    const out = html(
+      <SignInView {...base} intro={<p id="the-intro" />} footer={<p id="the-footer" />} />,
+    );
+    expect(out).toContain('id="the-intro"');
+    expect(out).toContain('id="the-footer"');
+    expect(html(<SignInView {...base} />)).not.toContain("the-intro");
+  });
+
   it("renders the form and one Continue as button per account", () => {
     const out = html(<SignInView {...base} accounts={accounts} onContinueAs={noop} />);
     expect(out).toContain('type="email"');

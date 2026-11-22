@@ -13,6 +13,24 @@ export const invitationsCopy = {
   another: "Invite someone else",
   close: "Close",
   unavailable: "Invitations are not available right now. Sign in again and retry.",
+  accept: {
+    pageTitle: "Accept invitation",
+    title: "Join an organization",
+    signInHint: "Sign in with the email address the invitation was sent to.",
+    newAccountHint:
+      "Don't have an account? Create one with the invited address in a new tab, verify it, then come back to this tab and sign in.",
+    createAccount: "Create an account",
+    forgotPassword: "Forgot your password?",
+    acceptAs: (email: string) => `Accept as ${email}`,
+    accept: "Accept",
+    accepting: "Accepting...",
+    otherAccount: "Use another account",
+    joining: "Joining...",
+    invalidTitle: "Invitation not valid",
+    invalid:
+      "This invitation link is not valid, has expired or was already used. If you opened it before, open the link from your email again; if you already accepted, go to simap.",
+    goHome: "Go to simap",
+  },
   fieldErrors: {
     required: "Enter an email address.",
     invalid: "Enter a valid email address.",
