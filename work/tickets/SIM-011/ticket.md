@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-22T04:19:30Z |
 | PR | — |
 
 ## Goal
@@ -48,6 +48,7 @@ spec MEM-01, MEM-02; D12, D16 (a), D17, D34.
 —
 
 Waiting for Ming: plan approval (High tier)
+- 2026-11-22 Plan approved (Ming, in the /run session; covers assumptions A1–A11 and the split into SIM-011 + SIM-011.2).
 
 ## Handoff
 
