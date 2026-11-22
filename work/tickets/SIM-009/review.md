@@ -62,7 +62,7 @@ No violations found.
 - R5: checks green; new logic has tests.
 
 ### Blockers from review agents
-None.
+None. `security-review.md` Attempt 1 has no 🔴; its two 🟡 (no per-inviter cap on records; upsert overwrites role/inviter without tracing the previous values) and the NFC note are listed as follow-ups in the PR.
 
 ### Nits (do not block)
 - `src/ui/invitations/InviteDialog.tsx:66-87`: the email/role field errors set `aria-invalid` but the message is shown
