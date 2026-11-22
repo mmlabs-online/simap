@@ -122,3 +122,88 @@ None. No review trigger path changed.
 ### Ming verification after merge (carry to the PR)
 B1 Roles, B2 Add, B3 Delete, B4 Delete refused, B5 Release, B6 In flight, as listed in `plan.md`, at 390 px and desktop, in
 light and dark. These need a real browser: native dialog stacking, Esc and scrim, focus, Next.js navigation and layout.
+
+## Attempt 2 — 2026-11-22
+Verdict: REWORK
+
+Attempt 1 blockers 1 and 2 and should-fix 4 are closed. Should-fix 3 is closed for seat notices, but its fix opened a
+regression: an Add error now shows inside any seat panel with no label (Issue 5). A stale notice can also contradict the
+seat on screen after reopening (Issue 6). Both fixes are small. **Ticket AC1 (room switcher) stays deferred** to the proposed
+SIM-012.5, pending Ming's decision, and is not counted against this attempt. The PR must state it.
+
+### Checks (run by reviewer)
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck && pnpm check:layers` — both exit 0, "check-layers: 340 files, no violations"
+- `pnpm test` — exit 0, "Test Files 138 passed (138); Tests 1401 passed | 3 skipped (1404)"
+- `pnpm build` — exit 0
+- `pnpm test:db` — not run, as instructed. No file under `src/server`, `src/app/api`, `src/lib` or `db/`, and no `.sql` file, changed.
+- Scratch harness (not committed, not a browser): 31 scenarios passed as runs, with results read from their output. T1 to
+  T11 are the Attempt 1 set, run unchanged and again with one line added for the StrictMode option; S1 to S9 are new. It
+  drives the real `SeatsPageInner`, `useSeatActions`, `useRoomSeats` and `seats-api` on a fake hook runtime with stubbed
+  router, fetch and DOM. It proves state order and calls. It does not prove native dialog, focus or Next.js router behaviour.
+  Files: `C:\Users\ttngo\AppData\Local\Temp\claude\a3e515fd31dc05c9\370082c2-0d8c-4461-9583-1eabecf44bf5\scratchpad\r123\a2.test.tsx`
+- Not run: any dev server, database, real browser. B1 to B6 stay on Ming's list.
+
+### Attempt 1 issues
+- [x] Issue 1 (in-flight navigation) closed. T1: C302-02 stays open with no router call. T2: no router call after leaving.
+      S1: same under a simulated StrictMode effect re-run, and a normal delete still calls `replace`. S8: delete, Back,
+      reopen the same seat: `replace` runs and the panel closes with no "not found" view.
+- [x] Issue 2 (confirm comes back) closed. T3: `afterReopenNoClick` is `false` for Delete and Release. S2: a legitimate
+      confirm survives an effect re-run, a list reload and a same-URL render; an open Add survives a seat change.
+- [~] Issue 3 (late result on the wrong seat) closed for seat notices. T9: C302-02's panel shows "Seat C302-01: …". S8: same
+      for "already deleted". The same change misroutes Add errors, see Issue 5.
+- [x] Issue 4 (write closes a newer dialog) closed. T4: `addOpenAfterFirstWrite` is `true` with one write. S4: a recreated
+      confirm object closes on its own write; after Esc during flight, the confirm stays closed and the result still shows.
+
+### Acceptance criteria
+- [ ] AC1 Room switcher — **NOT DELIVERED**, deferred to proposed SIM-012.5 (Ming undecided). Not counted against this attempt.
+- [x] AC2, AC3, AC6, AC7 — unchanged from Attempt 1; suite and harness T5, T8, T10, T11 still pass.
+- [x] AC4 Delete confirms, removes, closes and moves focus — T6, T7, and the in-flight path now passes (T1, T2, S9). Real focus: B3.
+- [x] AC5 Occupied or device seat is refused with a message — `deleteBlock` tests, T9, S3. Stale case: Issue 6.
+- [x] Plan row 8, project checks and rules — Checks above.
+
+### Scope
+`git diff --name-only 140a024 89f1e51` lists exactly the expected files: `src/ui/copy/seats.ts`, `src/ui/seats/SeatsPage.tsx`,
+`seat-actions.ts`, `seat-actions.test.ts`, `useSeatActions.ts`, and `impl-log.md`. No High path changed.
+
+### Issues
+#### Issue 5 — 🟡 should-fix — an Add error appears as if it were about the open seat (regression from Issue 3's fix)
+- **Where**: `src/ui/seats/seat-actions.ts:100-104`
+- **Expected**: Attempt 1 Issue 3: no result lands on the wrong seat. A notice from Add, which has `seatCode: null`, must not
+  read as a statement about the seat in the open panel.
+- **Actual**: harness S5: Add fails, then the user opens C302-01. Its ready panel shows the bare alert "This item was not
+  found." (`not_found`) or "You don't have permission" (`forbidden`). It follows to C302-02. S6: same when the Add result
+  lands while the panel is open.
+- **Fix instruction**: add `seatsCopy.actions.noticeForAdd: (text: string) => \`Add seats: ${text}\``. In `routeNotice`, when
+  `notice.seatCode === null` and `openCode !== null`, return that text in `panel`. Keep the bare text on the page when no
+  panel is open. Add a `routeNotice` unit test for both cases. Re-run S5 and S6.
+
+#### Issue 6 — 🟡 should-fix — a reopened seat shows an old refusal that contradicts its data
+- **Where**: `src/ui/seats/useSeatActions.ts:39-43`
+- **Expected**: opening a seat shows that seat's current state.
+- **Actual**: harness S3: Delete is refused on an occupied C302-01, Back, the occupant leaves and the list reloads, reopen
+  C302-01. The panel shows Occupant empty (`occupantNow: null`) with the alert "This seat has an occupant, so it cannot be
+  deleted."
+- **Fix instruction**: this effect runs only when `openCode` changes, so clear every seat-bound notice when a seat opens:
+  `setNotice((n) => (n && n.seatCode !== null && openCode !== null ? null : n))`. A result that lands later is unaffected
+  because the effect does not re-run. Re-run S3: `reopenSameSeatPanel` must be `null`; re-run T9 and S8 unchanged.
+
+### Rules (CLAUDE.md)
+No violations found. R1 `check:layers` clean; R2, R6, R7 no server, route or migration change; R3 no config or secret; R4 the
+rework stays in the plan's files; R5 checks green, new pure functions have tests; D36 new text is in `src/ui/copy/seats.ts`.
+
+### Blockers from review agents
+None. No review trigger path changed.
+
+### Nits (do not block)
+- S7: if history lands on an invalid `?seat=` URL during a write, the panel shows "not found" (`openCode` is `null`), so the
+  result goes to the page behind the modal. Rare, and it is still there after the panel closes.
+- Attempt 1 nits remain open and do not block.
+
+### Follow-ups (out of scope)
+- Ming to decide proposed SIM-012.5 (room switcher, ticket AC1, spec SHL-01).
+- Writes have no client timeout (from Attempt 1).
+
+### Ming verification after merge (carry to the PR)
+B1 Roles, B2 Add, B3 Delete, B4 Delete refused, B5 Release, B6 In flight, as listed in `plan.md`, at 390 px and desktop, in
+light and dark. These need a real browser: native dialog stacking, Esc and scrim, focus, Next.js navigation and layout.
