@@ -33,7 +33,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-031 | Pin the Identity issuer for pnpm dev:prod | MERGED | P1 | S | security | SIM-028.1 | none | 1 | 2026-11-21 |
 | SIM-032 | One-command local start on production data | REWORK | P1 | M | security | SIM-031 | none | 4 | 2026-11-21 |
 | SIM-009 | Invite people to an org | BACKLOG | P1 | M | security, ui, api | SIM-007 | none | 0 | 2026-11-20 |
-| SIM-011 | Members page, profile fields and deactivation | BLOCKED | P1 | M | api, ui, security | SIM-007 | plan-approval | 0 | 2026-11-22 |
+| SIM-011 | Members page, profile fields and deactivation | IN_PROGRESS | P1 | M | api, ui, security | SIM-007 | plan-approval | 0 | 2026-11-22 |
+| SIM-011.2 | Members page UI: list, edit and deactivate dialogs | BACKLOG | P1 | M | ui | SIM-011 | none | 0 | 2026-11-22 |
 | SIM-012 | Seat list, add/delete seats, seat detail and occupancy | BACKLOG | P1 | L | api, ui | SIM-010, SIM-011 | none | 0 | 2026-11-20 |
 | SIM-013 | Devices | BACKLOG | P1 | M | api, ui | SIM-012 | none | 0 | 2026-11-20 |
 | SIM-014 | Seat requests and approvals | BACKLOG | P1 | M | api, ui, ux | SIM-012 | none | 0 | 2026-11-20 |
