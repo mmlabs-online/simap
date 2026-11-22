@@ -34,7 +34,7 @@ No violations found.
 - High path `src/server/http/with-auth.ts` (+ test) is named in the plan, and plan approval is recorded (ticket.md Notes, M-22 checked).
 
 ### Blockers from review agents
-None (the orchestrator fills this in from security-review.md if that agent runs).
+None. `security-review.md` Attempt 1 has no 🔴; its two 🟡 (A4 Manager can deactivate Admins; `"dup"` marker in `member-query.ts`) are listed as follow-ups in the PR.
 
 ### Nits (do not block)
 - `src/server/http/with-auth.ts:4`: the `@/server/members/gate` import sits between two `@/server/identity/*` imports. Put it after them so the imports stay in order.
