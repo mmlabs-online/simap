@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
-| Claimed by | claude@2026-11-22T11:01:04Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/46 |
 
 ## Goal
 Managers and Admins can remove an occupant from a seat and block or unblock a seat with a reason, from the seat panel.
@@ -68,3 +68,8 @@ Managers and Admins can remove an occupant from a seat and block or unblock a se
 - 2026-11-22: Ming asked to create this ticket from the SIM-012.4 split proposal and run it.
 
 ## Handoff
+### 2026-11-22 — claude — DONE
+- Agent calls: 3, tokens about 221k total, in/out split not reported (planner×1 sonnet 55k; implementer×1 default model 74k; reviewer×1 default model 92k).
+- Done: Remove occupant, Release-not-Remove for an occupant Manager or Admin, Block and Unblock with the reason check. Review attempt 1 PASS. PR #46 opened.
+- In progress / next: Ming runs the browser checks listed in the PR, decides on the reason-error copy fix (review Issue 1), then reviews and merges PR #46.
+- Gotchas: Node and pnpm need fnm activated. `useSeatActions` has no direct test. Remove on an already emptied seat returns success with no message; showing one needs a server change.
