@@ -54,3 +54,9 @@ export function isActive(item: NavItem, pathname: string): boolean {
 export function roomEditorHref(code: string): string {
   return `/rooms/${encodeURIComponent(code)}/edit`;
 }
+
+/** Link to the room detail page, or null for a dot segment a browser would collapse out of the URL. */
+export function roomDetailHref(code: string): string | null {
+  if (code === "." || code === "..") return null;
+  return `/rooms/${encodeURIComponent(code)}`;
+}
