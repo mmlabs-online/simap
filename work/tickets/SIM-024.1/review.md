@@ -92,3 +92,79 @@ None. No review trigger matches this diff.
 - Plan A10 stands: align ticket AC 1 and style guide §2 with the spec zoom once Ming confirms; add `pnpm check:dev-bundle`
   to CI; fix the static import in `src/app/dev/shell/page.tsx`; SIM-015.1 device drawing.
 - SIM-015.1 must cap zoom or room size (A8) and decide how touch users see tag information (A5).
+
+## Attempt 2 — 2026-11-22
+Verdict: PASS
+
+### Checks (run by reviewer)
+Run in `d:\project\simap-wt\SIM-024.1` on HEAD `5567544`, Node 22.23.5.
+- `pnpm format:check` — exit 0, "All matched files use the correct format", 351 files.
+- `pnpm typecheck` — exit 0.
+- `pnpm check:layers` — exit 0, "check-layers: 297 files, no violations".
+- `pnpm test` — exit 0, 123 files, 1224 passed, 3 skipped. Matches impl-log Attempt 2.
+- `pnpm build` — exit 0, `/dev/roommap` listed as dynamic.
+- `pnpm check:dev-bundle` — exit 0, "no dev-token strings in .next/static".
+- `pnpm test:db` — not run, by instruction (CI only; this ticket has no schema or server change).
+
+Attempt 1 blocker, checked in the built `.next/static/chunks/02wgcykuki3lk.css`:
+- `SeatOverlay.tsx:40` no longer has `outline-none`. A word diff against `16c0880` shows that token as the only change to
+  the file, and no file in `src/ui/roomlayout` or `src/app/dev/roommap` uses the class outside the new test's negative
+  assertion.
+- Hover, inside `@media (hover:hover)`: `.hover\:outline-2:hover{outline-style:var(--tw-outline-style);outline-width:2px}`
+  and `.hover\:outline-white:hover{outline-color:var(--color-white)}`.
+- Focus: `.focus-visible\:outline-2:focus-visible{outline-style:var(--tw-outline-style);outline-width:2px}`,
+  `.focus-visible\:outline-white:focus-visible{outline-color:var(--color-white)}`, plus `focus-visible:ring-2` and
+  `focus-visible:ring-teal-500`.
+- The variable resolves to `solid`: `@property --tw-outline-style{syntax:"*";inherits:false;initial-value:solid}`, and the
+  `@layer properties` fallback for browsers without `@property` also sets `solid`. `--color-white` and `--color-teal-500`
+  are defined. The stylesheet has no global `button`, `*` or `:focus` outline reset.
+- The focus outline no longer depends on the `box-shadow` ring, which closes the forced-colors gap from Issue 1. This is
+  read from the CSS and not observed in a browser.
+
+Rework scope:
+- `5724ea6` changes three files: `SeatOverlay.tsx` (the one token), `SeatOverlay.test.tsx` (one new case, 7 lines) and
+  `impl-log.md`. `5567544` changes only the ticket state line. All are in the plan or are ticket records.
+- `SeatOverlay.test.tsx` re-run alone: 6 passed, including "button keeps a visible hover and focus outline (no
+  outline-none)".
+
+Not verified (no real browser, by instruction): rendered outline and ring, real hover and keyboard use, forced-colors
+mode, contrast of the white outline on light art, and everything in the list below. `pnpm dev` was not run, and no
+database, tunnel or `.env*` file was used by this review.
+
+### Acceptance criteria
+- [x] 1. Renders at 2x/3x/4x, no smoothing, every seat state — settled in Attempt 1; the rework does not touch it.
+- [x] 2. Atlas swap without code changes — settled in Attempt 1; the rework does not touch it.
+- [x] 3. Bad manifest or atlas reaches the error state — settled in Attempt 1; the rework does not touch it.
+- [x] 4. Avatar colours stable and different — settled in Attempt 1; the rework does not touch it.
+- [x] 5. Name tags on hover or focus only, every seat keyboard reachable — evidence: `SeatOverlay.test.tsx` (6 passed);
+  compiled `group-hover:flex` and `group-focus-visible:flex`; hover and focus outline rules above. Real keyboard use: Ming
+  verification.
+- [x] 6. Demo absent from production, atlas placeholder-only — settled in Attempt 1; `check:dev-bundle` re-run and passing.
+- [x] 7. Unit tests cover hash, placement, draw order, rotation, overlay — settled in Attempt 1; full suite re-run and passing.
+
+Ming verification after merge (plan, not verified here; the PR must carry them):
+1. Crisp pixels at 2x, 3x, 4x, and states recognisable by shape.
+2. 390 px and desktop, light and dark theme; map scrolls, tags not clipped.
+3. Tab order row then column, focus ring visible, tag only on hover or focus. Also confirm the white outline shows on hover
+   and on keyboard focus.
+4. 125% and 150% display scaling: record the result in the PR.
+5. Rotation-0 desk shows the person from behind, facing the screen (A1).
+6. With the local Imersa atlas (do not commit): tall plants not clipped, no desk tint seam; then `git restore public/sprites`.
+7. `/dev/roommap` returns 404 in a production build or deployment.
+
+### Issues
+None. Attempt 1 Issue 1 is fixed.
+
+### Rules (CLAUDE.md)
+No violations found. R1 passes `check:layers`. R2, R6, R7 do not apply. R3: no config or secrets added. R4: the rework stays
+inside the plan's files and no High path changed. R5: checks are green and the fix has a test.
+
+### Blockers from review agents
+None. No review trigger matches this diff.
+
+### Nits (do not block)
+- The three Attempt 1 nits stand (`placement.ts:199`, `RoomMap` ignoring `list.unknown`, `check-dev-bundle.mjs:57`).
+
+### Follow-ups (out of scope)
+- The Attempt 1 follow-ups stand. The PR must state the zoom divergence (2/3/4 from the spec over the ticket's 1/2/3) and
+  the diff size note.
