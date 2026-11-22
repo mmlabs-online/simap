@@ -48,6 +48,8 @@ Any org member can read a room's map data through the API, including a usable de
 - Files: `src/server/layout/layout.ts`, `src/server/layout/layout.db.test.ts`, `src/app/api/rooms/[id]/layout/route.ts` and
   its route test.
 - `pnpm build` confirms the `[id]/layout` route path.
+- Security (SIM-015.4 review, 🟡 1): add the type guard at the start of `take` in `resolve-layout.ts` (object, string sprite, integer x, y and rotation), test the five bad shapes, and map an unplaced seat to `null`.
+- Security (SIM-015.4 review, finding 2): in SQL, return `floor_zones` only when it has at most 64 items and 262,144 bytes, and select `left(sprite_key, 129)`. Pass `s.occupant_id` as the avatar seed.
 - GitHub CI may be unavailable (billing), so record local evidence with `node scripts/test-db.mjs` on the local Postgres.
 
 ## Test plan
