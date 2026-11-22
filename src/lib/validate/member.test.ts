@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { defaultDisplayName, normalizeDisplayName, validateMePatch } from "./member";
+import {
+  defaultDisplayName,
+  normalizeDisplayName,
+  normalizeEmployeeCode,
+  validateDeactivateBody,
+  validateMePatch,
+  validateMemberPatch,
+} from "./member";
 
 const NFD = "Nguyễn Văn A".normalize("NFD");
 
@@ -79,4 +86,97 @@ describe("validateMePatch", () => {
       expect(validateMePatch(b).ok).toBe(false);
     },
   );
+});
+
+const GID = "44444444-4444-4444-8444-444444444444";
+
+describe("normalizeEmployeeCode", () => {
+  it("trims, uppercases, accepts A-Z 0-9 . _ - up to 32", () => {
+    expect(normalizeEmployeeCode("  e1 ")).toBe("E1");
+    expect(normalizeEmployeeCode("ab.c_d-9")).toBe("AB.C_D-9");
+    expect(normalizeEmployeeCode("A".repeat(32))).toBe("A".repeat(32));
+  });
+  it("rejects inner spaces, diacritics, control chars, 33 chars, empty, non-strings", () => {
+    for (const v of ["a b", "É1", "ß", "a\u0007", "a\nb", "A".repeat(33), "", "  ", 5, null, {}]) {
+      expect(normalizeEmployeeCode(v)).toBeNull();
+    }
+  });
+});
+
+describe("validateMemberPatch", () => {
+  it("each field alone and all three", () => {
+    expect(validateMemberPatch({ displayName: " Nguyễn  Văn " })).toEqual({
+      ok: true,
+      value: { displayName: "Nguyễn Văn" },
+    });
+    expect(validateMemberPatch({ employeeCode: "e1" })).toEqual({
+      ok: true,
+      value: { employeeCode: "E1" },
+    });
+    expect(validateMemberPatch({ groupId: GID })).toEqual({ ok: true, value: { groupId: GID } });
+    expect(validateMemberPatch({ displayName: "A", employeeCode: "x", groupId: null })).toEqual({
+      ok: true,
+      value: { displayName: "A", employeeCode: "X", groupId: null },
+    });
+  });
+  it("keeps Vietnamese NFC", () => {
+    expect(validateMemberPatch({ displayName: NFD })).toEqual({
+      ok: true,
+      value: { displayName: "Nguyễn Văn A" },
+    });
+  });
+  it("empty object, array, unknown key -> field error", () => {
+    expect(validateMemberPatch({})).toEqual({ ok: false, field: "body" });
+    expect(validateMemberPatch([])).toEqual({ ok: false, field: "body" });
+    expect(validateMemberPatch(null)).toEqual({ ok: false, field: "body" });
+    expect(validateMemberPatch({ email: "a@b" })).toEqual({ ok: false, field: "email" });
+    expect(validateMemberPatch({ displayName: "A", status: "x" })).toEqual({
+      ok: false,
+      field: "status",
+    });
+  });
+  it("employeeCode empty, blank or null -> null; bad -> error", () => {
+    for (const v of ["", "  ", null]) {
+      expect(validateMemberPatch({ employeeCode: v })).toEqual({
+        ok: true,
+        value: { employeeCode: null },
+      });
+    }
+    expect(validateMemberPatch({ employeeCode: "a b" })).toEqual({
+      ok: false,
+      field: "employeeCode",
+    });
+    expect(validateMemberPatch({ employeeCode: 3 })).toEqual({
+      ok: false,
+      field: "employeeCode",
+    });
+  });
+  it("groupId non-canonical -> error; displayName invalid -> error", () => {
+    expect(validateMemberPatch({ groupId: "nope" })).toEqual({ ok: false, field: "groupId" });
+    expect(validateMemberPatch({ groupId: "" })).toEqual({ ok: false, field: "groupId" });
+    expect(validateMemberPatch({ displayName: "   " })).toEqual({
+      ok: false,
+      field: "displayName",
+    });
+  });
+});
+
+describe("validateDeactivateBody", () => {
+  it("{release:true/false} ok", () => {
+    expect(validateDeactivateBody({ release: true })).toEqual({
+      ok: true,
+      value: { release: true },
+    });
+    expect(validateDeactivateBody({ release: false })).toEqual({
+      ok: true,
+      value: { release: false },
+    });
+  });
+  it("missing, non-boolean, extra key, non-object -> error", () => {
+    expect(validateDeactivateBody({})).toEqual({ ok: false, field: "release" });
+    expect(validateDeactivateBody({ release: "true" })).toEqual({ ok: false, field: "release" });
+    expect(validateDeactivateBody({ release: true, x: 1 })).toEqual({ ok: false, field: "x" });
+    expect(validateDeactivateBody(null)).toEqual({ ok: false, field: "body" });
+    expect(validateDeactivateBody([])).toEqual({ ok: false, field: "body" });
+  });
 });
