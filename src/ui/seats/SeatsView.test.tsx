@@ -136,4 +136,16 @@ describe("SeatsView", () => {
     expect(html).toContain("Nguyễn Văn Ân");
     expect(html).toContain("Phòng họp");
   });
+  it("Add shows only with onAdd, also in an empty room, never without the room", () => {
+    expect(render()).not.toContain("data-add-seats");
+    expect(render({ onAdd: noop })).toContain("data-add-seats");
+    expect(render({ onAdd: noop, list: ready({ seats: [] }) })).toContain(seatsCopy.actions.add);
+    expect(render({ onAdd: noop, resolution: { kind: "missing" } })).not.toContain(
+      "data-add-seats",
+    );
+  });
+  it("notice renders as an alert", () => {
+    const html = render({ notice: "Seat gone" });
+    expect(html).toMatch(/role="alert"[^>]*>Seat gone</);
+  });
 });

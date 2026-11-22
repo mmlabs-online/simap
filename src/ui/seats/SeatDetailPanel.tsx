@@ -102,7 +102,9 @@ function SeatBody({ seat }: { seat: SeatDto }) {
 
 /**
  * Seat detail on a native `<dialog>` (focus trap, Esc, inert background). Props-driven: the page owns
- * the URL. On close, focus returns to the opener, else the row of that seat, else `main`.
+ * the URL. On close, focus goes to the row of that seat if it still exists, else the opener, else `main`.
+ * `focusSignal` (bumped after a write that keeps the panel open) moves focus to the heading, but only
+ * when focus was lost to `body`, so a control the user is on keeps it.
  */
 export function SeatDetailPanel({
   view,
@@ -110,22 +112,31 @@ export function SeatDetailPanel({
   onClose,
   onRetry,
   actions,
+  focusSignal = 0,
 }: {
   view: PanelView;
   seatCode: string | null;
   onClose: () => void;
   onRetry: () => void;
   actions?: ReactNode;
+  focusSignal?: number;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const pressedOnScrim = useRef(false);
   const codeRef = useRef<string | null>(seatCode);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const titleId = useId();
   const open = view.kind !== "closed";
 
   useEffect(() => {
     codeRef.current = seatCode;
   }, [seatCode]);
+
+  useEffect(() => {
+    if (focusSignal === 0) return;
+    const active = document.activeElement;
+    if (!active || active === document.body) headingRef.current?.focus();
+  }, [focusSignal]);
 
   useEffect(() => {
     const el = ref.current;
@@ -176,8 +187,10 @@ export function SeatDetailPanel({
       <div className="flex flex-col gap-4 p-5">
         <div className="flex items-start justify-between gap-3">
           <h2
+            ref={headingRef}
+            tabIndex={-1}
             id={titleId}
-            className={`text-[20px] font-extrabold text-on-surface max-h-14 ${CLIP}`}
+            className={`text-[20px] font-extrabold text-on-surface max-h-14 outline-none ${CLIP}`}
           >
             {title}
           </h2>
