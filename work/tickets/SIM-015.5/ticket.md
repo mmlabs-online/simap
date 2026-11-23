@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P1 |
 | Size | M |
 | Areas | api, security |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-015.6 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-23T08:50:23Z |
 | PR | — |
 
 ## Goal
@@ -55,5 +55,6 @@ An Admin can save a whole room layout in one safe step, without losing another A
 
 ## Notes / answers from Ming
 - 2026-11-22 (D59): split from SIM-015.1; Ming approved the split and defaults A1-A14.
+- 2026-11-23: Plan approved in advance: Ming waived the plan-approval stop for this ticket ("chạy luôn SIM-015.5 k cần duyệt plan"). Ming still reviews and merges the PR.
 
 ## Handoff
