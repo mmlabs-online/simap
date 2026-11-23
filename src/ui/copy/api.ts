@@ -27,6 +27,9 @@ export const apiCopy = {
     layout_overlap: "Two items in this layout are on the same tile.",
     layout_bad_rotation: "An item in this layout has a rotation it can't use.",
     layout_unknown_sprite: "This layout uses an item that doesn't exist.",
+    layout_stale: "This room changed while you were editing. Reload to see the latest layout.",
+    layout_seats_changed: "The room's seats changed while you were editing. Reload and try again.",
+    layout_too_many_seats: "This room has too many seats to save a layout.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

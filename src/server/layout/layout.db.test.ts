@@ -1,9 +1,20 @@
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { addMember, addRoom, addSeat, assertTestDb, newOrg, testPool } from "@/test/db/fixtures";
+import {
+  addDevice,
+  addMember,
+  addRoom,
+  addSeat,
+  assertTestDb,
+  newOrg,
+  testPool,
+  waitForLockWait,
+} from "@/test/db/fixtures";
+import type { LayoutSaveValue } from "@/lib/sprites/layout";
 import type { TxClient, TxPool } from "@/server/db/tx";
 import { getRoomLayout } from "./layout";
+import { saveRoomLayout } from "./save";
 
 let pool: pg.Pool;
 
@@ -297,5 +308,230 @@ describe("getRoomLayout (db)", () => {
     expect(Object.keys(res.seatViews)).toEqual([s1]);
     expect(res.layout.fixtures).toEqual([]);
     expect((await value(o)).seatViews[s1]!.state).toBe("occupied");
+  });
+});
+
+describe("saveRoomLayout (db)", () => {
+  type O = { scope: any; orgId: string; roomId: string };
+  const save = (o: O, v: LayoutSaveValue, p: TxPool = pool as never, sub: string = randomUUID()) =>
+    saveRoomLayout(p, o.scope, sub, o.roomId, v);
+  const val = (baseVersion: number, seatIds: string[], over: Partial<LayoutSaveValue> = {}) =>
+    ({
+      baseVersion,
+      w: 12,
+      h: 8,
+      floors: [{ sprite: "floor.wood", x: 0, y: 0, w: 6, h: 4 }],
+      seats: seatIds.map((id, i) => ({
+        id,
+        sprite: "desk.single",
+        x: 2 + i * 3,
+        y: 2,
+        rotation: 0 as const,
+      })),
+      fixtures: [{ sprite: "plant.large", x: 10, y: 5, rotation: 0 as const }],
+      ...over,
+    }) satisfies LayoutSaveValue;
+  const seatsOf = async (o: O, n: number) => {
+    const ids: string[] = [];
+    for (let i = 1; i <= n; i++) ids.push(await addSeat(pool, o.orgId, o.roomId, "C302", i));
+    return ids;
+  };
+  const refusal = (r: { ok: boolean }) => JSON.stringify(r);
+
+  it("valid save survives a fresh GET", async () => {
+    const o = await room();
+    const ids = await seatsOf(o, 2);
+    const v = val(0, ids);
+    const r = await save(o, v);
+    expect(r.ok).toBe(true);
+    const got = await value(o);
+    expect(got.saved).toBe(true);
+    expect(got.version).toBe(1);
+    expect(got.layout.w).toBe(12);
+    expect(got.layout.floors).toEqual(v.floors);
+    expect(got.layout.seats.map(({ code: _c, ...s }) => s).sort((a, b) => a.x - b.x)).toEqual(
+      v.seats,
+    );
+    expect(got.layout.fixtures.map(({ id: _i, ...f }) => f)).toEqual(v.fixtures);
+  });
+
+  it("version increments by exactly 1 and writes one room.layout_save audit row with counts only", async () => {
+    const o = await room("C302", { w: 12, h: 8, version: 4 });
+    const ids = await seatsOf(o, 1);
+    await save(o, val(4, ids));
+    const room1 = await one("select layout_version from rooms where id = $1", [o.roomId]);
+    expect(room1.layout_version).toBe(5);
+    const rows = (await run("select * from audit_log where org_id = $1", [o.orgId])).rows;
+    expect(rows).toHaveLength(1);
+    expect(rows[0].action).toBe("room.layout_save");
+    expect(rows[0].meta).toEqual({ seats: 1, fixtures: 1, floors: 1, baseVersion: 4, version: 5 });
+  });
+
+  it("saved default layout from GET passes unchanged", async () => {
+    const o = await room();
+    await seatsOf(o, 3);
+    const d = await value(o);
+    const v: LayoutSaveValue = {
+      baseVersion: d.version,
+      w: d.layout.w,
+      h: d.layout.h,
+      floors: d.layout.floors,
+      seats: d.layout.seats.map(({ code: _c, ...s }) => s),
+      fixtures: d.layout.fixtures.map(({ id: _i, ...f }) => f),
+    };
+    expect((await save(o, v)).ok).toBe(true);
+  });
+
+  it("a second save replaces placed fixtures", async () => {
+    const o = await room();
+    const ids = await seatsOf(o, 1);
+    await save(o, val(0, ids));
+    await save(o, val(1, ids, { fixtures: [{ sprite: "plant.large", x: 0, y: 6, rotation: 0 }] }));
+    const q = "select tile_x, tile_y from layout_fixtures where room_id = $1";
+    expect((await run(q, [o.roomId])).rows).toEqual([{ tile_x: 0, tile_y: 6 }]);
+  });
+
+  it("rollback: a failure at the audit insert leaves rooms, seats, fixtures and audit unchanged", async () => {
+    const o = await room();
+    const ids = await seatsOf(o, 1);
+    await addFixture(o.orgId, o.roomId, "plant.large", 1, 1);
+    const before = await snapshotOf(o.orgId);
+    const rec = recording(async (text) => {
+      if (text.includes("insert into audit_log")) throw new Error("boom");
+    });
+    await expect(save(o, val(0, ids), rec.pool)).rejects.toThrow("boom");
+    expect(await snapshotOf(o.orgId)).toBe(before);
+  });
+
+  it("stale baseVersion gives 409 and changes nothing", async () => {
+    const o = await room("C302", { w: 12, h: 8, version: 3 });
+    const ids = await seatsOf(o, 1);
+    const before = await snapshotOf(o.orgId);
+    expect(await save(o, val(2, ids))).toEqual({ ok: false, status: 409, code: "layout_stale" });
+    expect(await snapshotOf(o.orgId)).toBe(before);
+  });
+
+  it("two concurrent saves: one 200, one layout_stale", async () => {
+    const o = await room();
+    const ids = await seatsOf(o, 1);
+    let locked!: () => void;
+    const aLocked = new Promise<void>((r) => (locked = r));
+    let release!: () => void;
+    const hold = new Promise<void>((r) => (release = r));
+    const rec = recording(async (text) => {
+      if (text.includes("for update") && text.includes("from rooms")) {
+        locked();
+        await hold;
+      }
+    });
+    const a = save(o, val(0, ids), rec.pool);
+    await aLocked;
+    const b = save(o, val(0, ids, { w: 10 }));
+    expect(await waitForLockWait(pool, 3000)).toBe(true);
+    release();
+    const results = await Promise.all([a, b]);
+    expect(results[0].ok).toBe(true);
+    expect(results[1]).toEqual({ ok: false, status: 409, code: "layout_stale" });
+    expect((await one("select grid_w from rooms where id = $1", [o.roomId])).grid_w).toBe(12);
+  });
+
+  it("missing, extra and foreign id all give the identical refusal and change nothing", async () => {
+    const o = await room();
+    const other = await room("D1");
+    const ids = await seatsOf(o, 2);
+    const foreign = await addSeat(pool, other.orgId, other.roomId, "D1", 1);
+    const before = await snapshotOf(o.orgId);
+    const missing = await save(o, val(0, ids.slice(0, 1)));
+    const extra = await save(o, val(0, [...ids, randomUUID()]));
+    const swapped = await save(o, val(0, [ids[0]!, foreign]));
+    expect(missing).toEqual({ ok: false, status: 409, code: "layout_seats_changed" });
+    expect(refusal(extra)).toBe(refusal(missing));
+    expect(refusal(swapped)).toBe(refusal(missing));
+    expect(await snapshotOf(o.orgId)).toBe(before);
+  });
+
+  it("seat from another room in the same org gives layout_seats_changed", async () => {
+    const o = await room();
+    const otherRoom = await addRoom(pool, o.orgId, "C303", { seatCounter: 0 });
+    const mine = await seatsOf(o, 1);
+    const theirs = await addSeat(pool, o.orgId, otherRoom, "C303", 1);
+    const before = await snapshotOf(o.orgId);
+    const r = await save(o, val(0, [mine[0]!, theirs]));
+    expect(r).toMatchObject({ code: "layout_seats_changed" });
+    expect(await snapshotOf(o.orgId)).toBe(before);
+  });
+
+  it("foreign-org seat id changes neither org", async () => {
+    const o = await room();
+    const f = await room("F1");
+    const mine = await seatsOf(o, 1);
+    const foreign = await addSeat(pool, f.orgId, f.roomId, "F1", 1);
+    const [bo, bf] = [await snapshotOf(o.orgId), await snapshotOf(f.orgId)];
+    expect(await save(o, val(0, [foreign]))).toMatchObject({ code: "layout_seats_changed" });
+    const both = await save(o, val(0, [mine[0]!, foreign]));
+    expect(both).toMatchObject({ code: "layout_seats_changed" });
+    expect([await snapshotOf(o.orgId), await snapshotOf(f.orgId)]).toEqual([bo, bf]);
+  });
+
+  it("another org's room id is 404 and changes neither org", async () => {
+    const o = await room();
+    const f = await room("F2");
+    await seatsOf(o, 1);
+    const [bo, bf] = [await snapshotOf(o.orgId), await snapshotOf(f.orgId)];
+    const r = await saveRoomLayout(pool as never, f.scope, randomUUID(), o.roomId, val(0, []));
+    expect(r).toEqual({ ok: false, status: 404, code: "not_found" });
+    expect([await snapshotOf(o.orgId), await snapshotOf(f.orgId)]).toEqual([bo, bf]);
+  });
+
+  it("501-seat room gives 422 layout_too_many_seats; 500-seat room saves", async () => {
+    const big = await room();
+    await bulkSeats(big.orgId, big.roomId, 501);
+    expect(await save(big, val(0, []))).toEqual({
+      ok: false,
+      status: 422,
+      code: "layout_too_many_seats",
+    });
+    const ok = await room("C500");
+    await bulkSeats(ok.orgId, ok.roomId, 500);
+    const found = await run("select id from seats where room_id = $1 order by seq", [ok.roomId]);
+    const seats = found.rows.map((r, i) => ({
+      id: r.id as string,
+      sprite: "desk.single",
+      x: (i % 32) * 2,
+      y: Math.floor(i / 32) * 3,
+      rotation: 0 as const,
+    }));
+    const v: LayoutSaveValue = { baseVersion: 0, w: 64, h: 64, floors: [], seats, fixtures: [] };
+    expect((await save(ok, v)).ok).toBe(true);
+  });
+
+  it("leaves occupants, cannot_seat, seat_counter, devices and legacy fixtures unchanged", async () => {
+    const o = await room();
+    const m = await addMember(pool, o.orgId);
+    const s1 = await addSeat(pool, o.orgId, o.roomId, "C302", 1, { occupantId: m });
+    const s2 = await addSeat(pool, o.orgId, o.roomId, "C302", 2);
+    await run("update seats set cannot_seat = true where id = $1", [s2]);
+    await run("update rooms set seat_counter = 9 where id = $1", [o.roomId]);
+    await addDevice(pool, o.orgId, m, s1, "primary");
+    await run("insert into layout_fixtures (org_id, room_id, kind) values ($1, $2, 'door')", [
+      o.orgId,
+      o.roomId,
+    ]);
+    const q = async () => {
+      const t = (sql: string, v: unknown[]) => run(sql, v).then((r) => r.rows);
+      return JSON.stringify([
+        await t("select id, occupant_id, cannot_seat from seats where org_id = $1 order by id", [
+          o.orgId,
+        ]),
+        await t("select seat_counter from rooms where id = $1", [o.roomId]),
+        await t("select * from devices where org_id = $1 order by id", [o.orgId]),
+        await t("select * from layout_fixtures where org_id = $1 and sprite_key is null", [
+          o.orgId,
+        ]),
+      ]);
+    };
+    const before = await q();
+    expect((await save(o, val(0, [s1, s2]))).ok).toBe(true);
+    expect(await q()).toBe(before);
   });
 });

@@ -305,3 +305,35 @@ describe("floorCellsWithinCap", () => {
     expect(floorCellsWithinCap([zone(12, 8)], 12, 8)).toBe(true);
   });
 });
+
+describe("validateLayoutSave floor and version caps", () => {
+  const zone = (w: number, h: number, x = 0, y = 0) => ({ sprite: "floor.wood", x, y, w, h });
+  const field = (body: unknown) => {
+    const r = validateLayoutSave(body);
+    return r.ok ? "ok" : "field" in r ? `${r.code}:${r.field}` : r.code;
+  };
+
+  it("accepts baseVersion 2147483647, refuses 2147483648", () => {
+    expect(field(save({ baseVersion: 2_147_483_647 }))).toBe("ok");
+    expect(field(save({ baseVersion: 2_147_483_648 }))).toBe("invalid_request:baseVersion");
+  });
+
+  it("refuses 64 full-grid zones on a 64 x 64 grid with invalid_request, field floors", () => {
+    const floors = Array.from({ length: 64 }, () => zone(64, 64));
+    expect(field(save({ w: 64, h: 64, floors, seats: [], fixtures: [] }))).toBe(
+      "invalid_request:floors",
+    );
+  });
+
+  it("accepts exactly twice the grid area, refuses one cell more", () => {
+    const twice = [zone(12, 8), zone(12, 8)];
+    expect(field(save({ floors: twice, seats: [], fixtures: [] }))).toBe("ok");
+    const more = [...twice, zone(1, 1)];
+    expect(field(save({ floors: more, seats: [], fixtures: [] }))).toBe("invalid_request:floors");
+  });
+
+  it("an out-of-bounds zone over the cap still returns layout_out_of_bounds", () => {
+    const floors = [...Array.from({ length: 10 }, () => zone(12, 8)), zone(13, 8)];
+    expect(field(save({ floors, seats: [], fixtures: [] }))).toBe("layout_out_of_bounds");
+  });
+});
