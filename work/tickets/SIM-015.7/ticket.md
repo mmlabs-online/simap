@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | claude@2026-11-23T11:41:55Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/53 |
 
 ## Goal
 Slice 2 of 3 of the tile layout editor: an Admin opens `/rooms/[roomCode]/edit`, moves, rotates and deletes fixtures,
@@ -57,3 +57,9 @@ A6, A8–A13 (approved 2026-11-23).
 - Done: consults saved; plan.md READY: slice 2a (editor page and states, edit link, `MapView.version`, `seatsApi.saveLayout`, reducer, canvas with click selection, Inspector, toolbar, save with conflict Reload, leave guard); assumptions A1–A16 with defaults.
 - In progress / next: Ming approves. Then file SIM-015.9 (palette, tray placement, room resize) and SIM-015.10 (pointer drag, marquee, shortcuts) on main, and make SIM-015.8 depend on SIM-015.9 (A2).
 - Gotchas: no jsdom/testing-library in the repo (A3): "component tests" are static-render plus pure handler tests. Node in bash: `eval "$(fnm env --shell bash)"`; no Python.
+
+### 2026-11-23 — claude — DONE
+- Agent calls: 2 this run (implementer×1 inherit 134k, reviewer×1 inherit 79k; in/out split not reported); 5 in total for the ticket (~423k).
+- Done: slice 2a (editor page, gates, Edit link, selection, Inspector, toolbar, save with pre-PUT check, conflict Reload, leave guard); review PASS on attempt 1; PR #53.
+- In progress / next: Ming merges PR #53 and runs the 6 manual checks in the PR; then SIM-015.9.
+- Gotchas: no DOM test environment (A3); non-link navigation (sign-out) and browser Back are not guarded; large bash heredocs with non-ASCII text can fail to parse here, so use Write.
