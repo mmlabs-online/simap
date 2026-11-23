@@ -51,7 +51,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-015.5 | Save a room layout through the API | BACKLOG | P1 | M | api, security | SIM-015.6 | none | 0 | 2026-11-22 |
 | SIM-015.2 | Tile-based layout editor | BACKLOG | P1 | M | ui, ux | SIM-015.3, SIM-015.5 | none | 0 | 2026-11-22 |
 | SIM-033 | Ship the real room art and an in-app Credits page | BACKLOG | P1 | S | ui, architecture | SIM-015.3 | none | 0 | 2026-11-22 |
-| SIM-011.2 | Members page UI: list, edit and deactivate dialogs | PLANNING | P1 | M | ui | SIM-011 | none | 0 | 2026-11-23 |
+| SIM-011.2 | Members page UI: list, edit and deactivate dialogs | ESCALATED | P1 | M | ui | SIM-011 | none | 0 | 2026-11-23 |
 | SIM-013 | Devices | BACKLOG | P1 | M | api, ui | SIM-012 | none | 0 | 2026-11-20 |
 | SIM-014 | Seat requests and approvals | BACKLOG | P1 | M | api, ui, ux | SIM-012 | none | 0 | 2026-11-20 |
 | SIM-016 | Groups, projects and seat tags | BACKLOG | P2 | S | api, ui | SIM-012 | none | 0 | 2026-11-20 |
