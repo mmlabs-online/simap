@@ -17,10 +17,12 @@ export function SeatOverlay({
   list,
   views,
   zoom,
+  onSelect,
 }: {
   list: DrawList;
   views: Readonly<Record<string, SeatView>>;
   zoom: number;
+  onSelect?: (seatCode: string) => void;
 }) {
   const { bounds } = list;
   const widthPx = bounds.w * zoom;
@@ -36,6 +38,9 @@ export function SeatOverlay({
           <button
             key={seat.id}
             type="button"
+            data-map-seat={seat.code}
+            aria-haspopup="dialog"
+            onClick={() => onSelect?.(seat.code)}
             aria-label={roomlayoutCopy.seatLabel(seat.code, state, view.name)}
             className="group absolute cursor-pointer rounded-sm hover:outline-2 hover:outline-white focus-visible:outline-2 focus-visible:outline-white focus-visible:ring-2 focus-visible:ring-teal-500"
             style={{ left, top, width: seat.w * zoom, height: seat.h * zoom }}

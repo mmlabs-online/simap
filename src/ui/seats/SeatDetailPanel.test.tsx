@@ -4,7 +4,7 @@ import type { SeatDto } from "@/lib/seats/types";
 import { apiCopy } from "../copy/api";
 import { seatsCopy } from "../copy/seats";
 import type { PanelView } from "./seat-view";
-import { SeatDetailPanel } from "./SeatDetailPanel";
+import { SeatDetailPanel, returnFocusTarget } from "./SeatDetailPanel";
 
 const owner = { id: "m1", displayName: "Nguyễn Văn Ân" };
 const seat: SeatDto = {
@@ -104,5 +104,23 @@ describe("SeatDetailPanel", () => {
   });
   it("the heading is focusable for the focus fallback", () => {
     expect(render({ kind: "loading" })).toMatch(/<h2[^>]*tabindex="-1"/);
+  });
+
+  it("returnFocusTarget prefers a connected map opener; otherwise row, then previous, then null", () => {
+    const el = (map: boolean, connected = true) => ({
+      isConnected: connected,
+      hasAttribute: (n: string) => map && n === "data-map-seat",
+    });
+    const row = el(false);
+    const mapSeat = el(true);
+    expect(returnFocusTarget(row, mapSeat)).toBe(mapSeat);
+    expect(returnFocusTarget(row, el(true, false))).toBe(row);
+    expect(returnFocusTarget(row, el(false))).toBe(row);
+    const plain = el(false);
+    expect(returnFocusTarget(null, plain)).toBe(plain);
+    expect(returnFocusTarget(null, el(false, false))).toBeNull();
+    expect(returnFocusTarget(null, null)).toBeNull();
+    const body = el(false);
+    expect(returnFocusTarget(null, body, body)).toBeNull();
   });
 });

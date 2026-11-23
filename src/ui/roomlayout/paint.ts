@@ -1,4 +1,5 @@
 import type { DrawList } from "@/lib/sprites/placement";
+import { fitsCanvas } from "@/lib/sprites/zoom";
 import type { Atlas } from "./loadAtlas";
 
 const SHADOW_FILL = "rgba(32,42,58,.18)";
@@ -41,7 +42,7 @@ export function tintedFrame(
   return out;
 }
 
-/** Draws the list at an integer zoom. Returns false when the canvas has no 2D context. */
+/** Draws the list at an integer zoom. Returns false when the canvas is over the budget, did not take the size, or has no 2D context. */
 export function paintRoom(
   canvas: HTMLCanvasElement,
   atlas: Atlas,
@@ -50,8 +51,12 @@ export function paintRoom(
   createCanvas: () => HTMLCanvasElement = defaultCanvas,
 ): boolean {
   // Resizing resets the context state, so size first and set smoothing after.
-  canvas.width = list.bounds.w * zoom;
-  canvas.height = list.bounds.h * zoom;
+  const w = list.bounds.w * zoom;
+  const h = list.bounds.h * zoom;
+  if (!fitsCanvas(w, h)) return false;
+  canvas.width = w;
+  canvas.height = h;
+  if (canvas.width !== w || canvas.height !== h) return false;
   const ctx = canvas.getContext("2d");
   if (!ctx) return false;
   ctx.imageSmoothingEnabled = false;

@@ -254,3 +254,17 @@ describe("chairs, shadows and avatars", () => {
     expect(at(180)).toContain("avatar.body.front");
   });
 });
+
+describe("seat state sprites with the real atlas", () => {
+  it("cannot and mine seats emit their state sprites from the real atlas", () => {
+    const seat = (id: string, x: number) => ({ ...place(id, "desk.single", x, 2), code: id });
+    const list = buildDrawList(
+      room({ seats: [seat("a", 1), seat("b", 6)] }),
+      { a: view({ state: "cannot" }), b: view({ state: "mine", avatarSeed: "u" }) },
+      manifest,
+    );
+    const keys = frames(list.ops);
+    expect(keys).toContain("state.cannot");
+    expect(keys).toContain("state.mine.tint");
+  });
+});

@@ -39,6 +39,30 @@ describe("seats-api requests", () => {
   });
 });
 
+describe("seats-api layout", () => {
+  const layoutBody = {
+    room: { id: "a/b", code: "C1", name: "N" },
+    version: 1,
+    saved: false,
+    layout: { w: 4, h: 3, floors: [], seats: [], fixtures: [] },
+    seatViews: {},
+    unplaced: [],
+    truncated: false,
+  };
+  it("layout calls GET /api/rooms/{id}/layout with an encoded id", async () => {
+    const a = fake(() => jsonRes(layoutBody));
+    const r = await a.api.layout("a/b");
+    expect(r.ok && r.value.empty).toBe(true);
+    expect(a.calls[0][0]).toBe("/api/rooms/a%2Fb/layout");
+    expect(a.calls[0][1]?.method).toBe("GET");
+  });
+  it("layout returns internal for a bad shape, and the server error code for a non-2xx", async () => {
+    expect(await fake(() => jsonRes({})).api.layout("r")).toEqual({ ok: false, code: "internal" });
+    const a = fake(() => jsonRes({ error: { code: "not_found" } }, 404));
+    expect(await a.api.layout("r")).toEqual({ ok: false, code: "not_found" });
+  });
+});
+
 describe("seats-api errors", () => {
   it("reads the error code from the body", async () => {
     const a = fake(() => jsonRes({ error: { code: "not_found" } }, 404));
