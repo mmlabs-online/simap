@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui |
 | Gate | plan-approval |
 | Depends on | SIM-012 |
-| Needs Ming | — |
+| Needs Ming | M-31 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-23T14:35:30Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -45,6 +45,12 @@ spec DEV-01..06, REG-03 (device); D19, D22, D31.
 - Manual: lend and move devices between seats.
 
 ## Notes / answers from Ming
-—
+Waiting for Ming: plan approval (P1 policy)
 
 ## Handoff
+
+### 2026-11-23 — claude — BLOCKED (plan approval)
+- Agent calls: 3, tokens ~170k total (api-platform-engineer×1 inherit 37k, frontend-developer×1 inherit 48k, planner×1 inherit 85k; in/out split not reported)
+- Done: Gate set to plan-approval (P1 policy); consults saved; plan.md READY as slice 1 of 4 (API only: rules, list/detail, placement endpoint; no migration, no High path).
+- In progress / next: Ming approves (M-31). Then the orchestrator re-scopes this ticket to slice 1 and files SIM-013.1 (create/edit/delete API), SIM-013.2 (Devices page UI), SIM-013.3 (place/move dialog) on the board.
+- Gotchas: slice 1 is ~480 source lines; `src/lib/api/error.ts` and `src/ui/copy/api.ts` are shared with SIM-014 (rebase likely). Node in bash: `eval "$(fnm env --shell bash)"`.
