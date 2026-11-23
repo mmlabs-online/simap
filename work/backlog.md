@@ -47,7 +47,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-015.1 | Room layout tile-grid schema and validator | MERGED | P1 | M | db, api, security | SIM-010, SIM-012, SIM-024.1 | plan-approval | 1 | 2026-11-22 |
 | SIM-015.4 | Default room layout and stored-layout resolver | MERGED | P1 | M | api, security | SIM-015.1 | none | 0 | 2026-11-22 |
 | SIM-015.6 | Room layout read API | MERGED | P1 | M | api, security | SIM-015.4 | none | 1 | 2026-11-23 |
-| SIM-015.3 | Read-only pixel room map on the room page | IN_PROGRESS | P1 | M | ui, ux | SIM-015.6 | plan-approval | 0 | 2026-11-23 |
+| SIM-015.3 | Read-only pixel room map on the room page | DONE | P1 | M | ui, ux | SIM-015.6 | plan-approval | 0 | 2026-11-23 |
 | SIM-015.5 | Save a room layout through the API | BACKLOG | P1 | M | api, security | SIM-015.6 | none | 0 | 2026-11-22 |
 | SIM-015.2 | Tile-based layout editor | BACKLOG | P1 | M | ui, ux | SIM-015.3, SIM-015.5 | none | 0 | 2026-11-22 |
 | SIM-033 | Ship the real room art and an in-app Credits page | BACKLOG | P1 | S | ui, architecture | SIM-015.3 | none | 0 | 2026-11-22 |
