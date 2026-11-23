@@ -11,8 +11,8 @@
 | Needs Ming | M-31 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-23T14:44:34Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/57 |
 
 ## Goal
 Slice 1 of 4 of Devices: the pure placement and permission rules, the device list/detail read API with placement, and one
@@ -54,3 +54,9 @@ spec DEV-01..05, REG-03 (device); D19, D22. Re-scoped 2026-11-23 by the approved
 - Done: Gate set to plan-approval (P1 policy); consults saved; plan.md READY as slice 1 of 4 (API only: rules, list/detail, placement endpoint; no migration, no High path).
 - In progress / next: Ming approves (M-31). Then the orchestrator re-scopes this ticket to slice 1 and files SIM-013.1 (create/edit/delete API), SIM-013.2 (Devices page UI), SIM-013.3 (place/move dialog) on the board.
 - Gotchas: slice 1 is ~480 source lines; `src/lib/api/error.ts` and `src/ui/copy/api.ts` are shared with SIM-014 (rebase likely). Node in bash: `eval "$(fnm env --shell bash)"`.
+
+### 2026-11-23 — claude — DONE
+- Agent calls: 3 this run (implementer×1 inherit 88k, reviewer×1 inherit 64k, security-ai-generated-code-auditor×1 inherit 42k; in/out split not reported); 6 in total for the ticket (~364k).
+- Done: slice 1 (rules, device read API, placement API), review PASS on attempt 1, security no 🔴, PR #57.
+- In progress / next: Ming merges PR #57; watch the first CI run of `pnpm test:db` (`devices.db.test.ts` never ran locally). Then SIM-013.1.
+- Gotchas: security 🟡 — `placeDevice` decides on the owner read before the device lock; fix when SIM-013.1 makes owner changeable. SIM-017 depends on SIM-013 but likely needs SIM-013.3.
