@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-015.6 |
-| Needs Ming | — |
+| Needs Ming | M-25 |
 | Attempts | 0 |
 | Created | 2026-11-22 |
-| Claimed by | claude@2026-11-23T07:28:00Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -57,4 +57,12 @@ Everyone opens a room and sees who sits where on its pixel map, then opens a sea
 ## Notes / answers from Ming
 - 2026-11-22 (D58): split from SIM-015.1 after Ming lifted D47.
 
+Waiting for Ming: plan approval (workspace CLAUDE.md section 8 requires it for P1; loop.config.md policy is `high-paths`, so the two disagree)
+
 ## Handoff
+
+### 2026-11-23 — claude — BLOCKED
+- Agent calls: 3 + 1 resume (frontend-developer×1 55.7k, ux-architect×1 51.2k, planner×2 92.6k reported on the resume; the first planner run stopped on a rate limit and its usage was not reported). In/out split not reported.
+- Done: consults saved; plan.md is `Status: READY` (no server, API, schema or High-path changes). No product code written.
+- In progress / next: Ming approves the plan (M-25) by adding a dated "Plan approved" line under *Notes / answers from Ming*; then `/run SIM-015.3` continues at IMPLEMENT without re-planning.
+- Gotchas: rooms near 64 x 64 tiles exceed the canvas budget even at 2x and show a "too large" view (plan assumption 3), a partial miss on AC1 for those rooms. Gate conflict between workspace CLAUDE.md section 8 (P1 needs plan approval) and loop.config.md (`high-paths`) is open. `work/ming-todo.md` has two items numbered M-24.
