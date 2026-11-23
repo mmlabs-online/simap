@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | claude@2026-11-23T11:17:54Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -48,5 +48,12 @@ A6, A8–A13 (approved 2026-11-23).
 - Component: leave guard, error mapping. Manual: edit and save a room with 20+ seats, and a 64×64 room.
 
 ## Notes / answers from Ming
+- Waiting for Ming: plan approval (P1 gate)
 
 ## Handoff
+
+### 2026-11-23 — claude — BLOCKED (plan approval)
+- Agent calls: 3, tokens ~74k consult + planner (frontend-developer×1 inherit 41k, ux-architect×1 inherit 34k, planner×1 inherit; in/out split not reported)
+- Done: consults saved; plan.md READY: slice 2a (editor page and states, edit link, `MapView.version`, `seatsApi.saveLayout`, reducer, canvas with click selection, Inspector, toolbar, save with conflict Reload, leave guard); assumptions A1–A16 with defaults.
+- In progress / next: Ming approves. Then file SIM-015.9 (palette, tray placement, room resize) and SIM-015.10 (pointer drag, marquee, shortcuts) on main, and make SIM-015.8 depend on SIM-015.9 (A2).
+- Gotchas: no jsdom/testing-library in the repo (A3): "component tests" are static-render plus pure handler tests. Node in bash: `eval "$(fnm env --shell bash)"`; no Python.
