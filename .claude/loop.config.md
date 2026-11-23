@@ -36,7 +36,7 @@ Bug test level: Vitest unit test; a one-off scripted check recorded in
 impl-log when that level cannot see the bug.
 
 ## Plan approval gate
-- Policy: `high-paths`
+- Policy: `high-paths+P1`
 
 ## High paths
 <!-- Mirror of `high:` in .github/risk-tiers.yml. -->
