@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-23T10:50:28Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/52 |
 
 ## Goal
 Slice 1 of 3 of the tile layout editor (D43, D48): a pure, framework-free editor model in `src/lib/layout-editor/`
@@ -65,3 +65,9 @@ seatMGT's `LayoutEditor` is now reference only.
 - Done: consults saved; plan.md READY: slice 1 of 3 (pure editor core in `src/lib/layout-editor/`, no UI/API/High path), assumptions A1–A14 with defaults.
 - In progress / next: Ming approves the plan. Then the orchestrator rewrites this ticket's scope to slice 1 and files the two follow-up slices.
 - Gotchas: the plan names the follow-up slices SIM-015.6 and SIM-015.7, but SIM-015.6 already exists (Room layout read API, MERGED); use SIM-015.7 (editor UI, save, leave guard) and SIM-015.8 (desk add/delete) instead. Node in bash: `eval "$(fnm env --shell bash)"`.
+
+### 2026-11-23 — claude — DONE
+- Agent calls: 2 this run (implementer×1 inherit 81k, reviewer×1 inherit 68k; in/out split not reported); 5 in total for the ticket (~341k).
+- Done: slice 1 (pure editor core, `src/lib/layout-editor/*`), review PASS on attempt 1, PR #52.
+- In progress / next: Ming merges PR #52; then SIM-015.7 (editor UI and save) and SIM-015.8 (desk add/delete).
+- Gotchas: layout rules don't enforce count limits (check before PUT in slice 2/3); new desk keys `n:<k>` become `s:<id>` after save (remap selection in slice 2).
