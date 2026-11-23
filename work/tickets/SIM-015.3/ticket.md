@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | M-25 |
 | Attempts | 0 |
 | Created | 2026-11-22 |
-| Claimed by | claude@2026-11-23T08:17:06Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -66,3 +66,9 @@ Everyone opens a room and sees who sits where on its pixel map, then opens a sea
 - Done: consults saved; plan.md is `Status: READY` (no server, API, schema or High-path changes). No product code written.
 - In progress / next: Ming approves the plan (M-25) by adding a dated "Plan approved" line under *Notes / answers from Ming*; then `/run SIM-015.3` continues at IMPLEMENT without re-planning.
 - Gotchas: rooms near 64 x 64 tiles exceed the canvas budget even at 2x and show a "too large" view (plan assumption 3), a partial miss on AC1 for those rooms. Gate conflict between workspace CLAUDE.md section 8 (P1 needs plan approval) and loop.config.md (`high-paths`) is open. `work/ming-todo.md` has two items numbered M-24.
+
+### 2026-11-23 — claude — DONE
+- Agent calls: 7 (frontend-developer×1 55.7k, ux-architect×1 51.2k, planner×2 92.6k, implementer×1 94.8k, reviewer×2 91.6k; figures as reported, the first planner run's usage is unknown, in/out split not reported).
+- Done: read-only map on the room page, zoom cap, map reload after seat actions. Review attempt 1 PASS: format, typecheck, layers and build green; 8 complete unit-test runs green (1593 passed, 8 skipped). The load test for the flake was skipped on Ming's instruction.
+- In progress / next: `gh` is not installed, so the PR is not open yet. Ming opens it from the prefilled compare link, then runs the 6 browser checks in review.md.
+- Gotchas: `debt` issues are NOT created (no `gh`): viewport-only rendering, mouse drag-to-pan, unidentified one-off test failure, Safari focus return (`SeatDetailPanel.tsx:157,164`), direct test for `useRoomLayout`. Branch was merged with main instead of rebased, to avoid a force-push.
