@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-23T12:06:09Z |
 | PR | — |
 
 ## Goal
@@ -42,7 +42,7 @@ spec LAY-01 (room size), LAY-03 (adds), LAY-05 (palette); SIM-015.7 `plan.md` �
 - Unit / static-render tests as in SIM-015.7 (A3). Manual: place fixtures and tray seats, resize a room.
 
 ## Notes / answers from Ming
-- Waiting for Ming: plan approval (P1 gate)
+- 2026-11-23: Plan approved (all defaults A1–A14; Ming: "duyệt plan SIM-015.9, chạy luôn").
 
 ## Handoff
 
