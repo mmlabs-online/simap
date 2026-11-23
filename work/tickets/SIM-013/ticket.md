@@ -1,40 +1,40 @@
-# SIM-013: Devices
+# SIM-013: Devices — placement rules, read and placement API
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
-| Areas | api, ui |
+| Areas | api |
 | Gate | plan-approval |
 | Depends on | SIM-012 |
 | Needs Ming | M-31 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-23T14:44:34Z |
 | PR | — |
 
 ## Goal
-People track their devices and where they are; Managers place and move any device; the primary/secondary rules always hold.
+Slice 1 of 4 of Devices: the pure placement and permission rules, the device list/detail read API with placement, and one
+placement API for place, lend, move and return. The primary/secondary rules always hold. Slices 2–4 are SIM-013.1
+(create/edit/delete API), SIM-013.2 (Devices page UI) and SIM-013.3 (place/move dialog).
 
 ## Scope reference
-spec DEV-01..06, REG-03 (device); D19, D22, D31.
+spec DEV-01..05, REG-03 (device); D19, D22. Re-scoped 2026-11-23 by the approved plan (`plan.md`, Split proposal).
 
 ## Scope
-- CRUD (owner or Admin edits/deletes; any member creates their own); MAC format and uniqueness per org.
-- Placement: primary (owner = occupant, one per seat) / secondary; lend; move; return to inventory (owner, Manager+).
-- Delete blocked while placed, with "Move to inventory" (D31).
-- Devices page with all / placed / inventory filter; seatMGT `DeviceTable`, `DeviceFormDialog`.
+- `src/lib/devices/*` (types, rules), `src/lib/validate/device.ts` (query and placement body), `src/server/devices/*`,
+  `GET /api/devices`, `GET /api/devices/[id]`, `PUT /api/devices/[id]/placement`, four new error codes.
 
 ## Out of scope
-- Bulk import.
+- Device create/edit/delete and MAC (SIM-013.1), any UI (SIM-013.2, SIM-013.3), bulk import, any migration.
 
 ## Acceptance criteria
 - [ ] Placing as primary is refused unless the seat's occupant owns the device and the seat has no primary.
 - [ ] A Manager can move another member's device; a User cannot.
-- [ ] Deleting a placed device is refused until it is in inventory.
-- [ ] Devices list shows placement for every device.
+- [ ] The device list API shows placement for every device (UI in SIM-013.2).
 - [ ] Unit tests cover placement rules and permission matrix.
+- Moved to SIM-013.1: deleting a placed device is refused until it is in inventory.
 
 ## Technical notes
 - Files: `src/server/devices/*`, `src/app/api/devices/**`, `src/app/(app)/devices/*`, `src/ui/devices/*`; reference seatMGT `src/lib/actions/devices.ts` + tests.
@@ -42,10 +42,10 @@ spec DEV-01..06, REG-03 (device); D19, D22, D31.
 
 ## Test plan
 - Unit: placement rules, permissions.
-- Manual: lend and move devices between seats.
+- Manual: none for this slice (lend and move between seats is checked after SIM-013.3).
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (P1 policy)
+- 2026-11-23: Plan approved (all defaults, assumptions 1-9; Ming: "duyệt plan SIM-013, chạy luôn"). Ticket re-scoped to slice 1 (API only); SIM-013.1 (create/edit/delete API), SIM-013.2 (Devices page UI), SIM-013.3 (place/move dialog) filed on the board.
 
 ## Handoff
 
