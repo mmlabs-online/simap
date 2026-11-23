@@ -37,8 +37,8 @@ export type LayoutRulesInput = {
 };
 
 const ROTATIONS: readonly number[] = [0, 90, 180, 270];
-const SEAT_SPRITES: readonly string[] = ["desk.single"];
-const FIXTURE_GROUPS: readonly string[] = [
+export const SEAT_SPRITES: readonly string[] = ["desk.single"];
+export const FIXTURE_GROUPS: readonly string[] = [
   "cabinet",
   "circulation",
   "door",
@@ -70,6 +70,11 @@ const SPRITES: ReadonlyMap<string, SpriteInfo> = (() => {
   }
   return map;
 })();
+
+/** Group and directional flag of a base sprite key, or null when the registry has none. */
+export function spriteInfo(sprite: string): SpriteInfo | null {
+  return SPRITES.get(sprite) ?? null;
+}
 
 /** Footprint in tiles for a base key at a rotation, read from the registry (never swapped here). */
 export function footprintOf(sprite: string, rotation: Rotation): [number, number] | null {
