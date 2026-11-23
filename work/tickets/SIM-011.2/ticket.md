@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | ESCALATED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
-| Claimed by | claude@2026-11-23T10:20:18+07:00 |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -46,3 +46,9 @@ spec MEM-01, MEM-02; D12, D16 (a), D17, D34, D36. `work/tickets/SIM-011/plan.md`
 —
 
 ## Handoff
+
+### 2026-11-23 — claude — ESCALATED
+- Agent calls: 2, tokens 0/0 (frontend-developer×2 model unknown — launch failed).
+- Done: Selected the next runnable ticket, published its claim, prepared dependencies, and attempted the required frontend consult.
+- In progress / next: No implementation or plan work completed. Retry requires an available frontend/planner model.
+- Gotchas: Both frontend-developer subagent launches returned `400 The requested model is not supported`; no consult or product files were changed.
