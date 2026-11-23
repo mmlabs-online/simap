@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | claude@2026-11-23T11:56:58Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -42,5 +42,12 @@ spec LAY-01 (room size), LAY-03 (adds), LAY-05 (palette); SIM-015.7 `plan.md` �
 - Unit / static-render tests as in SIM-015.7 (A3). Manual: place fixtures and tray seats, resize a room.
 
 ## Notes / answers from Ming
+- Waiting for Ming: plan approval (P1 gate)
 
 ## Handoff
+
+### 2026-11-23 — claude — BLOCKED (plan approval)
+- Agent calls: 3 (frontend-developer×1 inherit 38k, ux-architect×1 inherit 40k, planner×1 inherit; in/out split not reported)
+- Done: consults saved; plan.md READY (palette of fixtures only, tray placement, room resize, fixture-limit refusal, ghost, keyboard place panel); assumptions A1–A14 with defaults.
+- In progress / next: Ming approves; then implement.
+- Gotchas: ~450 source lines; A13 fallback moves room resize to SIM-015.11 if the diff passes ~550 lines.
