@@ -31,3 +31,15 @@ export function paletteEntries(): PaletteEntry[] {
   fixtures.sort((a, b) => cmp(a.group, b.group) || cmp(a.sprite, b.sprite));
   return [...seats, ...fixtures];
 }
+
+/** Fixture entries only (desks come with SIM-015.8), grouped in palette order. */
+export function fixturePalette(): { group: string; entries: PaletteEntry[] }[] {
+  const groups: { group: string; entries: PaletteEntry[] }[] = [];
+  for (const e of paletteEntries()) {
+    if (e.kind !== "fixture") continue;
+    const last = groups[groups.length - 1];
+    if (last && last.group === e.group) last.entries.push(e);
+    else groups.push({ group: e.group, entries: [e] });
+  }
+  return groups;
+}

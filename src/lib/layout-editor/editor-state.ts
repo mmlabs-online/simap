@@ -1,15 +1,19 @@
 import type { LayoutSaveValue } from "@/lib/sprites/layout";
 import type { MapView } from "@/lib/sprites/map-view";
-import { validateLayoutSave, type LayoutRuleCode } from "@/lib/validate/layout";
-import { deleteItems, draftFromLayout, moveItems, rotateItems } from "./draft";
+import { LAYOUT_LIMITS, validateLayoutSave, type LayoutRuleCode } from "@/lib/validate/layout";
+import { deleteItems, draftFromLayout, moveItems, resizeRoom, rotateItems } from "./draft";
 import { canUndo, commit, startHistory, undo, type History } from "./history";
+import { nextTool, reconcileTool, sameTool, tryPlace, type Tool } from "./place-tool";
 import { buildSavePayload, isDirty, planSave } from "./save-plan";
 import { saveErrorKind } from "./save-errors";
 import type { Draft, OpResult } from "./types";
 
 export type EditorNotice =
-  | { kind: "refused"; code: LayoutRuleCode | "seat_delete" }
-  | { kind: "done"; what: "moved" | "rotated" | "deleted" | "undone" | "saved" };
+  | { kind: "refused"; code: LayoutRuleCode | "seat_delete" | "fixture_limit" | "resize_cut" }
+  | {
+      kind: "done";
+      what: "moved" | "rotated" | "deleted" | "undone" | "saved" | "placed" | "resized";
+    };
 
 export type EditorState = {
   history: History;
@@ -17,6 +21,7 @@ export type EditorState = {
   baseVersion: number;
   readOnly: boolean;
   selection: string[];
+  tool: Tool | null;
   notice: EditorNotice | null;
   save: { status: "idle" | "saving" } | { status: "error"; code: string };
 };
@@ -27,6 +32,10 @@ export type EditorAction =
   | { type: "move"; dx: number; dy: number }
   | { type: "rotate" }
   | { type: "delete" }
+  | { type: "arm"; tool: Tool }
+  | { type: "disarm" }
+  | { type: "place"; x: number; y: number }
+  | { type: "resize"; w: number; h: number }
   | { type: "undo" }
   | { type: "saveStart" }
   | { type: "saveDone"; view: MapView }
@@ -40,6 +49,7 @@ export function initEditor(view: MapView): EditorState {
     baseVersion: view.version,
     readOnly: view.truncated,
     selection: [],
+    tool: null,
     notice: null,
     save: { status: "idle" },
   };
@@ -92,7 +102,7 @@ export function editorFlags(state: EditorState): {
 function applyEdit(
   state: EditorState,
   result: OpResult,
-  what: "moved" | "rotated" | "deleted",
+  what: "moved" | "rotated" | "deleted" | "placed" | "resized",
   selection: string[] = state.selection,
 ): EditorState {
   if (!result.ok) return { ...state, notice: { kind: "refused", code: result.code } };
@@ -138,6 +148,29 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       if (hasSeat) return { ...state, notice: { kind: "refused", code: "seat_delete" } };
       return applyEdit(state, deleteItems(present, state.selection), "deleted", []);
     }
+    case "arm": {
+      if (frozen) return state;
+      if (sameTool(state.tool, action.tool)) return { ...state, tool: null };
+      if (reconcileTool(action.tool, present) === null) return state;
+      return { ...state, tool: action.tool, selection: [] };
+    }
+    case "disarm":
+      return state.tool === null ? state : { ...state, tool: null };
+    case "place": {
+      if (frozen || !state.tool) return state;
+      const r = tryPlace(present, state.tool, action.x, action.y);
+      if (!r.ok) return { ...state, notice: { kind: "refused", code: r.code } };
+      const next = applyEdit(state, { ok: true, draft: r.draft }, "placed", [r.key]);
+      return { ...next, tool: nextTool(state.tool, r.draft) };
+    }
+    case "resize": {
+      if (frozen || (action.w === present.w && action.h === present.h)) return state;
+      const r = resizeRoom(present, action.w, action.h);
+      if (r.ok) return applyEdit(state, r, "resized");
+      const max = LAYOUT_LIMITS.grid;
+      const inRange = [action.w, action.h].every((n) => Number.isInteger(n) && n >= 1 && n <= max);
+      return { ...state, notice: { kind: "refused", code: inRange ? "resize_cut" : r.code } };
+    }
     case "undo": {
       if (frozen || !canUndo(state.history)) return state;
       const history = undo(state.history);
@@ -146,6 +179,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         ...state,
         history,
         selection: state.selection.filter((k) => keys.has(k)),
+        tool: reconcileTool(state.tool, history.present),
         notice: { kind: "done", what: "undone" },
       };
     }

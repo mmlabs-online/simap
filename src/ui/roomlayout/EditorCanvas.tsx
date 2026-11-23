@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { canvasTile } from "@/lib/layout-editor/canvas-point";
 import { draftToRoomLayout } from "@/lib/layout-editor/draft";
-import { footprintCells, itemAt } from "@/lib/layout-editor/tiles";
+import { placementPreview, type Tool } from "@/lib/layout-editor/place-tool";
+import { footprintCells, itemAt, type Point } from "@/lib/layout-editor/tiles";
 import type { Draft } from "@/lib/layout-editor/types";
 import { ZOOM_LEVELS, type Zoom } from "@/lib/sprites/layout";
 import { buildDrawList, TILE } from "@/lib/sprites/placement";
@@ -17,6 +18,9 @@ type Props = {
   draft: Draft;
   selection: readonly string[];
   zoom: Zoom;
+  /** The armed tool: a click places instead of selecting. */
+  tool: Tool | null;
+  onPlace: (x: number, y: number) => void;
   /** A click on an item, or on nothing (`key` null). */
   onPick: (key: string | null, additive: boolean) => void;
 };
@@ -25,8 +29,9 @@ type Props = {
  * The draft painted as the room map, with a click layer and outlines for the selection. Seats show no
  * occupancy here. The click layer is hidden from assistive tech: the Items list is the accessible path.
  */
-export function EditorCanvas({ draft, selection, zoom, onPick }: Props) {
+export function EditorCanvas({ draft, selection, zoom, tool, onPlace, onPick }: Props) {
   const { atlas, failed, setFailed } = useAtlas();
+  const [hover, setHover] = useState<Point | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const list = useMemo(
@@ -35,6 +40,7 @@ export function EditorCanvas({ draft, selection, zoom, onPick }: Props) {
   );
   const allowed = useMemo(() => (list ? allowedZooms(list.bounds) : []), [list]);
   const effective = clampZoom(zoom, allowed);
+  const preview = useMemo(() => placementPreview(draft, tool, hover), [draft, tool, hover]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -50,15 +56,28 @@ export function EditorCanvas({ draft, selection, zoom, onPick }: Props) {
   const width = bounds.w * effective;
   const height = bounds.h * effective;
 
-  const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const tileOf = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const tile = canvasTile(
+    return canvasTile(
       { x: e.clientX - rect.left, y: e.clientY - rect.top },
       bounds,
       effective,
       draft.w,
       draft.h,
     );
+  };
+
+  const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const tile = tileOf(e);
+    setHover((h) => (h?.x === tile?.x && h?.y === tile?.y ? h : tile));
+  };
+
+  const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const tile = tileOf(e);
+    if (tool) {
+      if (tile) onPlace(tile.x, tile.y);
+      return;
+    }
     const hit = tile ? itemAt(draft, tile.x, tile.y) : null;
     onPick(hit ? hit.key : null, e.shiftKey);
   };
@@ -85,10 +104,24 @@ export function EditorCanvas({ draft, selection, zoom, onPick }: Props) {
           />
           <div
             aria-hidden="true"
-            className="absolute inset-0 cursor-pointer"
+            className={`absolute inset-0 ${tool ? "cursor-crosshair" : "cursor-pointer"}`}
             data-testid="editor-click-layer"
             onClick={onClick}
+            onMouseMove={onMove}
+            onMouseLeave={() => setHover(null)}
           >
+            {preview && (
+              <div
+                data-testid="place-ghost"
+                className={`pointer-events-none absolute border-2 ${preview.ok ? "border-primary bg-primary/20" : "border-dashed border-error bg-error/20"}`}
+                style={{
+                  left: (preview.x * TILE - bounds.x) * effective,
+                  top: (preview.y * TILE - bounds.y) * effective,
+                  width: preview.w * TILE * effective,
+                  height: preview.h * TILE * effective,
+                }}
+              />
+            )}
             {draft.items
               .filter((i) => selection.includes(i.key))
               .map((i) => {
