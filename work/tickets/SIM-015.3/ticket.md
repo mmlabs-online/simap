@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | M-25 |
 | Attempts | 0 |
 | Created | 2026-11-22 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-23T08:17:06Z |
 | PR | — |
 
 ## Goal
@@ -57,7 +57,7 @@ Everyone opens a room and sees who sits where on its pixel map, then opens a sea
 ## Notes / answers from Ming
 - 2026-11-22 (D58): split from SIM-015.1 after Ming lifted D47.
 
-Waiting for Ming: plan approval (workspace CLAUDE.md section 8 requires it for P1; loop.config.md policy is `high-paths`, so the two disagree)
+- 2026-11-23: Plan approved by Ming with all defaults: (1) rooms too large for the canvas budget show a "too large" view, seats stay usable through the table, viewport-only rendering becomes a `debt` issue; (2) pan is native scrolling only, mouse drag is a follow-up; (3) focus shows the name tag, Enter or Space opens the panel; (4) keep workspace CLAUDE.md section 8, simap gate policy is now `high-paths+P1`.
 
 ## Handoff
 
