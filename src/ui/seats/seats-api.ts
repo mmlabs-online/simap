@@ -1,5 +1,6 @@
 import { ApiAccessError, type ApiFetch } from "@/lib/api/fetch";
 import type { RoomSeatsResponse, SeatDto } from "@/lib/seats/types";
+import type { LayoutSaveValue } from "@/lib/sprites/layout";
 import { toMapView, type MapView } from "@/lib/sprites/map-view";
 
 import {
@@ -69,6 +70,19 @@ export function createSeatsApi(fetcher: ApiFetch) {
       call<MapView>(
         `/api/rooms/${encodeURIComponent(roomId)}/layout`,
         { method: "GET" },
+        async (res) => {
+          const view = toMapView(await res.json());
+          return view ? { ok: true, value: view } : fail("internal");
+        },
+      ),
+    saveLayout: (roomId: string, body: LayoutSaveValue) =>
+      call<MapView>(
+        `/api/rooms/${encodeURIComponent(roomId)}/layout`,
+        {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        },
         async (res) => {
           const view = toMapView(await res.json());
           return view ? { ok: true, value: view } : fail("internal");

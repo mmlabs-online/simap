@@ -21,5 +21,6 @@ export { ResetPasswordPage } from "./auth/ResetPasswordPage";
 export { AcceptInvitationPage } from "./auth/AcceptInvitationPage";
 export { RoomsPage } from "./rooms/RoomsPage";
 export { SeatsPage } from "./seats/SeatsPage";
+export { LayoutEditorPage } from "./roomlayout/LayoutEditorPage";
 export { AuditPage } from "./audit/AuditPage";
 export { InvitePeople } from "./invitations/InvitePeople";

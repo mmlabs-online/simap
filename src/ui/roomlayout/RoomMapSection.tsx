@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Zoom } from "@/lib/sprites/layout";
 import type { MapLoadState } from "@/lib/sprites/map-view";
 import { LAYOUT_LIMITS } from "@/lib/validate/layout";
@@ -10,10 +11,16 @@ import { apiErrorMessage } from "../copy/api";
 import { roomlayoutCopy } from "../copy/roomlayout";
 import { RoomMap, RoomMapStatus } from "./RoomMap";
 
-type Props = { state: MapLoadState; onRetry: () => void; onSelect: (seatCode: string) => void };
+type Props = {
+  state: MapLoadState;
+  onRetry: () => void;
+  onSelect: (seatCode: string) => void;
+  /** The editor link; given to admins only. */
+  editHref?: string;
+};
 
 /** The map card of the room page. A layout failure never hides the seat table. */
-export function RoomMapSection({ state, onRetry, onSelect }: Props) {
+export function RoomMapSection({ state, onRetry, onSelect, editHref }: Props) {
   const [zoom, setZoom] = useState<Zoom>(2);
   const { view } = state;
   const failure =
@@ -47,9 +54,19 @@ export function RoomMapSection({ state, onRetry, onSelect }: Props) {
 
   return (
     <Card as="section" className="flex flex-col gap-3 p-4">
-      <div>
-        <h2 className="text-base font-extrabold text-on-surface">{roomlayoutCopy.heading}</h2>
-        <p className="text-sm font-medium text-on-surface-variant">{roomlayoutCopy.panHint}</p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-base font-extrabold text-on-surface">{roomlayoutCopy.heading}</h2>
+          <p className="text-sm font-medium text-on-surface-variant">{roomlayoutCopy.panHint}</p>
+        </div>
+        {editHref && !view?.truncated && (
+          <Link
+            href={editHref}
+            className="state-layer shrink-0 rounded-full border border-outline-variant bg-surface px-4 py-2 text-[13px] font-bold text-on-surface hover:border-outline"
+          >
+            {roomlayoutCopy.editLayout}
+          </Link>
+        )}
       </div>
       {failure}
       {body}

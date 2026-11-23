@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { roomEditorHref } from "@/lib/nav";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { Card } from "../Card";
 import { seatsCopy } from "../copy/seats";
@@ -177,7 +178,12 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
         onRetry={onRetry}
         onOpen={openSeat}
         map={
-          <RoomMapSection state={map.state} onRetry={() => void map.reload()} onSelect={openSeat} />
+          <RoomMapSection
+            state={map.state}
+            onRetry={() => void map.reload()}
+            onSelect={openSeat}
+            editHref={canManageSeats(tier) ? roomEditorHref(roomCode) : undefined}
+          />
         }
         onAdd={canManageSeats(tier) ? actions.openAdd : undefined}
         notice={pageNotice}

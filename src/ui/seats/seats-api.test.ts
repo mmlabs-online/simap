@@ -61,6 +61,24 @@ describe("seats-api layout", () => {
     const a = fake(() => jsonRes({ error: { code: "not_found" } }, 404));
     expect(await a.api.layout("r")).toEqual({ ok: false, code: "not_found" });
   });
+  const save = { baseVersion: 1, w: 4, h: 3, floors: [], seats: [], fixtures: [] };
+  it("saveLayout PUTs the JSON body to /api/rooms/{id}/layout and maps the response with its version", async () => {
+    const a = fake(() => jsonRes({ ...layoutBody, version: 2 }));
+    const r = await a.api.saveLayout("a/b", save);
+    expect(r.ok && r.value.version).toBe(2);
+    expect(a.calls[0][0]).toBe("/api/rooms/a%2Fb/layout");
+    expect(a.calls[0][1]?.method).toBe("PUT");
+    expect(a.calls[0][1]?.body).toBe(JSON.stringify(save));
+    expect(new Headers(a.calls[0][1]?.headers).get("content-type")).toBe("application/json");
+  });
+  it("saveLayout returns the error code for 409 layout_stale and fail('internal') for a bad body", async () => {
+    const stale = fake(() => jsonRes({ error: { code: "layout_stale" } }, 409));
+    expect(await stale.api.saveLayout("r", save)).toEqual({ ok: false, code: "layout_stale" });
+    expect(await fake(() => jsonRes({})).api.saveLayout("r", save)).toEqual({
+      ok: false,
+      code: "internal",
+    });
+  });
 });
 
 describe("seats-api errors", () => {
