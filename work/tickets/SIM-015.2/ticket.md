@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-015.3, SIM-015.5 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-23T10:29:40Z |
 | PR | — |
 
 ## Goal
