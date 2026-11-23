@@ -7,7 +7,8 @@ import {
   initEditor,
   savePayload,
 } from "@/lib/layout-editor/editor-state";
-import { fixturePalette } from "@/lib/layout-editor/palette";
+import { editorPalette } from "@/lib/layout-editor/palette";
+import { runSave } from "@/lib/layout-editor/save-run";
 import { isTextField, keyAction } from "@/lib/layout-editor/shortcuts";
 import { roomDetailHref } from "@/lib/nav";
 import type { Zoom } from "@/lib/sprites/layout";
@@ -22,7 +23,7 @@ import { Palette, PlacePanel } from "./Palette";
 import { ShortcutList } from "./ShortcutList";
 import { useLeaveGuard } from "./useLeaveGuard";
 
-const GROUPS = fixturePalette();
+const GROUPS = editorPalette();
 
 type Props = {
   view: MapView;
@@ -39,7 +40,7 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, onReload }: Pro
   const [zoom, setZoom] = useState<Zoom>(2);
   const flags = editorFlags(state);
   const saving = state.save.status === "saving";
-  const guard = useLeaveGuard(flags.dirty && !saving);
+  const guard = useLeaveGuard(flags.dirty);
   const draft = state.history.present;
   const { tool } = state;
   const frozen = state.readOnly || saving;
@@ -65,9 +66,23 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, onReload }: Pro
     inFlight.current = true;
     dispatch({ type: "saveStart" });
     try {
-      const result = await seatsApi.saveLayout(roomId, payload.value);
-      if (result.ok) dispatch({ type: "saveDone", view: result.value });
-      else dispatch({ type: "saveFailed", code: result.code });
+      const out = await runSave(
+        {
+          draft: state.history.present,
+          baseline: state.baseline,
+          baseVersion: state.baseVersion,
+          roomId,
+        },
+        seatsApi,
+      );
+      if (out.status === "saved") dispatch({ type: "saveDone", view: out.view });
+      else
+        dispatch({
+          type: "saveFailed",
+          code: out.code,
+          detail: out.detail,
+          progress: out.progress,
+        });
     } finally {
       inFlight.current = false;
     }
@@ -120,6 +135,7 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, onReload }: Pro
       {state.save.status === "error" && (
         <SaveErrorBanner
           code={state.save.code}
+          detail={state.save.detail}
           roomHref={backHref}
           onReload={onReload}
           onRetry={() => void save()}
@@ -144,9 +160,16 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, onReload }: Pro
           />
           <Palette
             groups={GROUPS}
-            armed={tool?.kind === "fixture" ? tool.sprite : null}
+            armed={
+              tool?.kind === "fixture" ? tool.sprite : tool?.kind === "desk" ? "desk.single" : null
+            }
             disabled={frozen}
-            onArm={(sprite) => dispatch({ type: "arm", tool: { kind: "fixture", sprite } })}
+            onArm={(e) =>
+              dispatch({
+                type: "arm",
+                tool: e.kind === "seat" ? { kind: "desk" } : { kind: "fixture", sprite: e.sprite },
+              })
+            }
           />
           <EditorInspector
             draft={draft}

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { draftFromLayout } from "@/lib/layout-editor/draft";
 import { apiErrorMessage } from "../copy/api";
 import { roomlayoutCopy } from "../copy/roomlayout";
-import { fixturePalette } from "@/lib/layout-editor/palette";
+import { editorPalette } from "@/lib/layout-editor/palette";
 import { FIXTURE_GROUPS } from "@/lib/validate/layout";
 import { EditorInspector } from "./EditorInspector";
 import { Palette, PlacePanel } from "./Palette";
@@ -118,14 +118,16 @@ describe("editor views", () => {
       />,
     );
 
-  it("inspector disables Delete for a seat with the reason via aria-describedby; Items list names a seat with a diacritic code (Phòng-A-01)", () => {
+  it("inspector enables Delete for a seat with the save note; new desk is named New desk in the Items list; Items list names a seat with a diacritic code (Phòng-A-01)", () => {
     const seat = inspector(["s:s1"]);
-    expect(seat).toMatch(/<button[^>]*disabled=""[^>]*aria-describedby="editor-delete-reason"/);
-    expect(seat).toContain('id="editor-delete-reason"');
+    const del = seat.match(/<button[^>]*>Delete<\/button>/)?.[0] ?? "";
+    expect(del).toContain('aria-describedby="editor-delete-note"');
+    expect(del).not.toContain('disabled=""');
+    expect(seat).toContain(copy.inspector.deleteSeatNote);
     expect(seat).toContain("Desk Phòng-A-01 at 4, 7");
     expect(seat).toContain("cabinet filing at 0, 3");
     const fixture = inspector(["f:0"]);
-    expect(fixture).not.toContain("editor-delete-reason");
+    expect(fixture).not.toContain("editor-delete-note");
     expect(inspector([])).toContain(roomlayoutCopy.editor.inspector.none);
   });
 
@@ -150,15 +152,20 @@ describe("editor views", () => {
       />,
     );
 
-  it("palette renders a heading per group and aria-pressed buttons; the armed sprite is pressed; no desk.single entry; all buttons disabled when disabled", () => {
-    const groups = fixturePalette();
-    const first = groups[0].entries[0].sprite;
+  it("palette renders the Desks group first with New desk; pressed when the desk tool is armed; every group has a heading; all buttons disabled when disabled", () => {
+    const groups = editorPalette();
+    const first = groups[1].entries[0].sprite;
     const html = renderToStaticMarkup(
       <Palette groups={groups} armed={first} disabled={false} onArm={noop} />,
     );
     expect(html.match(/<h3/g)).toHaveLength(groups.length);
     expect(html).toContain('aria-pressed="true"');
-    expect(html).not.toContain("desk single");
+    expect(html.indexOf(copy.palette.groups.desk)).toBeLessThan(html.indexOf("<li"));
+    expect(html).toContain("New desk");
+    const desk = renderToStaticMarkup(
+      <Palette groups={groups} armed="desk.single" disabled={false} onArm={noop} />,
+    );
+    expect(desk).toMatch(/aria-pressed="true"[^>]*>New desk/);
     const off = renderToStaticMarkup(
       <Palette groups={groups} armed={null} disabled onArm={noop} />,
     );
@@ -167,7 +174,8 @@ describe("editor views", () => {
     expect(buttons.every((b) => b.includes('disabled=""'))).toBe(true);
   });
 
-  it("every FIXTURE_GROUPS entry has a palette heading in the copy", () => {
+  it("every FIXTURE_GROUPS entry and the desk group have a palette heading in the copy", () => {
+    expect(copy.palette.groups.desk).toBe("Desks");
     for (const g of FIXTURE_GROUPS) expect(copy.palette.groups[g]).toBeTruthy();
   });
 
@@ -266,5 +274,92 @@ describe("editor views", () => {
     expect(m).toContain("border-dashed border-primary");
     expect(m.match(/marquee-item/g)).toHaveLength(1);
     expect(render(null)).toBe("");
+  });
+
+  it("new desk is named New desk in the Items list and the tool name", () => {
+    const withNew = {
+      ...draft,
+      items: [
+        ...draft.items,
+        {
+          key: "n:5",
+          kind: "seat" as const,
+          sprite: "desk.single",
+          x: 1,
+          y: 1,
+          rotation: 0 as const,
+          seatId: null,
+          code: null,
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(
+      <EditorInspector
+        draft={withNew}
+        selection={["n:5"]}
+        disabled={false}
+        tool={null}
+        resizeRefused={false}
+        onArmTray={noop}
+        onResize={noop}
+        onSelect={noop}
+        onMove={noop}
+        onRotate={noop}
+        onDelete={noop}
+      />,
+    );
+    expect(html).toContain("New desk at 1, 1");
+    expect(html).not.toContain("editor-delete-note");
+  });
+
+  it("save error banner for seat_not_empty shows the SEA-01 message, the seat code (Phòng-A-02) and where the desk is back, and no button; seats_unmatched shows Reload; a put detail names the created count", () => {
+    const banner = (code: string, detail?: Parameters<typeof SaveErrorBanner>[0]["detail"]) =>
+      renderToStaticMarkup(
+        <SaveErrorBanner
+          code={code}
+          detail={detail}
+          roomHref="/rooms/C1"
+          onReload={noop}
+          onRetry={noop}
+        />,
+      );
+    const refused = banner("seat_not_empty", {
+      stage: "delete",
+      deleted: 1,
+      created: 0,
+      seat: "Phòng-A-02",
+      restored: "map",
+    });
+    expect(refused).toContain(apiErrorMessage("seat_not_empty"));
+    expect(refused).toContain("Desk Phòng-A-02 was not deleted and is back on the map.");
+    expect(refused).toContain("1 seat was deleted.");
+    expect(refused).not.toContain("<button");
+    const tray = banner("seat_not_empty", {
+      stage: "delete",
+      deleted: 0,
+      created: 0,
+      seat: "Phòng-A-02",
+      restored: "tray",
+    });
+    expect(tray).toContain("is back in Seats not placed.");
+    const unmatched = banner("seats_unmatched");
+    expect(unmatched).toContain(copy.saveErrors.seats_unmatched.replace("'", "&#x27;"));
+    expect(unmatched).toContain(copy.reload);
+    const put = banner("unavailable", {
+      stage: "put",
+      deleted: 0,
+      created: 2,
+      seat: null,
+      restored: null,
+    });
+    expect(put).toContain("2 new seats were created, but the layout was not saved.");
+    expect(put).toContain(copy.tryAgain);
+  });
+
+  it("EditorStatusLine shows seat_limit copy", () => {
+    const html = renderToStaticMarkup(
+      <EditorStatusLine notice={{ kind: "refused", code: "seat_limit" }} />,
+    );
+    expect(html).toContain(copy.refused.seat_limit);
   });
 });

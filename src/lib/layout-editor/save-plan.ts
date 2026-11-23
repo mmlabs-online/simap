@@ -104,3 +104,22 @@ export function restoreRemovedSeat(draft: Draft, baseline: Draft, id: string): D
   const placed = placeFromTray(trayed, id, at.x, at.y, at.rotation);
   return placed.ok ? placed.draft : trayed;
 }
+
+/** Dry-run ids for new desks (`n:<k>`), so the PUT rules can be checked before any seat exists. Never sent. */
+export function withPlaceholderSeatIds(draft: Draft): Draft {
+  return {
+    ...draft,
+    items: draft.items.map((i) => {
+      if (!isNewDesk(i)) return i;
+      const k = Number(i.key.slice(2));
+      return { ...i, seatId: `00000000-0000-4000-8000-${k.toString(16).padStart(12, "0")}` };
+    }),
+  };
+}
+
+/** A seat the server deleted is gone from the baseline too (items and tray). */
+export const dropSeat = (draft: Draft, id: string): Draft => ({
+  ...draft,
+  items: draft.items.filter((i) => i.seatId !== id),
+  tray: draft.tray.filter((t) => t.id !== id),
+});

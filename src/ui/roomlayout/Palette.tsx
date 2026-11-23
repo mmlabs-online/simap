@@ -14,13 +14,13 @@ export const inputClass =
 
 type PaletteProps = {
   groups: { group: string; entries: PaletteEntry[] }[];
-  /** Sprite of the armed fixture tool. */
+  /** Sprite of the armed fixture tool, or "desk.single" while the desk tool is armed. */
   armed: string | null;
   disabled: boolean;
-  onArm: (sprite: string) => void;
+  onArm: (entry: PaletteEntry) => void;
 };
 
-/** Fixture sprites by group; a pressed entry is the armed tool and a second press disarms it. */
+/** Desks and fixture sprites by group; a pressed entry is the armed tool and a second press disarms it. */
 export function Palette({ groups, armed, disabled, onArm }: PaletteProps) {
   return (
     <section className="flex flex-col gap-2 text-sm text-on-surface">
@@ -36,10 +36,10 @@ export function Palette({ groups, armed, disabled, onArm }: PaletteProps) {
                     type="button"
                     aria-pressed={armed === e.sprite}
                     disabled={disabled}
-                    onClick={() => onArm(e.sprite)}
+                    onClick={() => onArm(e)}
                     className="w-full cursor-pointer px-2 py-1 text-left text-[13px] hover:bg-surface-high disabled:cursor-not-allowed disabled:opacity-50 aria-pressed:font-extrabold aria-pressed:text-primary"
                   >
-                    {copy.itemName({ kind: "fixture", sprite: e.sprite, code: null })}
+                    {copy.itemName({ kind: e.kind, sprite: e.sprite, code: null })}
                   </button>
                 </li>
               ))}

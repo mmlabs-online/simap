@@ -29,4 +29,9 @@ describe("saveErrorKind", () => {
       expect(saveErrorKind(c)).toBe("retry");
     }
   });
+
+  it("seat_not_empty is invalid; seats_unmatched is conflict", () => {
+    expect(saveErrorKind("seat_not_empty")).toBe("invalid");
+    expect(saveErrorKind("seats_unmatched")).toBe("conflict");
+  });
 });

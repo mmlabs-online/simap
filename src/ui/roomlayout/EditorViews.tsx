@@ -7,6 +7,7 @@ import { roomlayoutCopy } from "../copy/roomlayout";
 import { EntityFormDialog } from "../EntityFormDialog";
 import type { EditorGate } from "./editor-page";
 import type { EditorNotice } from "@/lib/layout-editor/editor-state";
+import type { SaveDetail } from "@/lib/layout-editor/save-run";
 
 const copy = roomlayoutCopy.editor;
 const BOX = "flex max-w-xl flex-col items-start gap-3 rounded-md border border-outline-variant p-4";
@@ -73,20 +74,23 @@ export function EditorGateView({ gate, backHref, onRetry }: GateProps) {
 
 type BannerProps = {
   code: string;
+  detail?: SaveDetail;
   roomHref: string;
   onReload: () => void;
   onRetry: () => void;
 };
 
 /** A failed save. A conflict offers Reload, a transient failure offers Try again, a rule code offers nothing. */
-export function SaveErrorBanner({ code, roomHref, onReload, onRetry }: BannerProps) {
+export function SaveErrorBanner({ code, detail, roomHref, onReload, onRetry }: BannerProps) {
   const kind = saveErrorKind(code);
+  const detailText = detail ? copy.saveDetail(detail) : "";
   return (
     <div
       role="alert"
       className="flex flex-col items-start gap-2 rounded-md border border-error/40 p-3 text-sm"
     >
-      <p className="font-semibold text-error">{apiErrorMessage(code)}</p>
+      <p className="font-semibold text-error">{copy.saveErrors[code] ?? apiErrorMessage(code)}</p>
+      {detailText && <p className="text-on-surface-variant">{detailText}</p>}
       {kind === "conflict" && (
         <>
           <p className="text-on-surface-variant">{copy.conflictNote}</p>

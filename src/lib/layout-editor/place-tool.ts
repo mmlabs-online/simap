@@ -8,24 +8,34 @@ import { placeFromTray, placeItem } from "./draft";
 import type { Point } from "./tiles";
 import type { Draft } from "./types";
 
-/** What a map click places: a fixture sprite, or one seat from the tray. */
-export type Tool = { kind: "fixture"; sprite: string } | { kind: "tray"; seatId: string };
+/** What a map click places: a fixture sprite, a new desk, or one seat from the tray. */
+export type Tool =
+  | { kind: "fixture"; sprite: string }
+  | { kind: "desk" }
+  | { kind: "tray"; seatId: string };
 
 export type PlaceResult =
   | { ok: true; draft: Draft; key: string }
-  | { ok: false; code: LayoutRuleCode | "fixture_limit" };
+  | { ok: false; code: LayoutRuleCode | "fixture_limit" | "seat_limit" };
 
 export function sameTool(a: Tool | null, b: Tool | null): boolean {
   if (a === null || b === null) return a === b;
+  if (a.kind === "desk") return b.kind === "desk";
   if (a.kind === "fixture") return b.kind === "fixture" && a.sprite === b.sprite;
   return b.kind === "tray" && a.seatId === b.seatId;
 }
 
-/** Place the tool's item at a tile, rotation 0. Seat sprites are refused (desks come with SIM-015.8). */
+/** Place the tool's item at a tile, rotation 0. A fixture tool never places a seat sprite. */
 export function tryPlace(draft: Draft, tool: Tool, x: number, y: number): PlaceResult {
   if (tool.kind === "tray") {
     const r = placeFromTray(draft, tool.seatId, x, y, 0);
     return r.ok ? { ok: true, draft: r.draft, key: `s:${tool.seatId}` } : r;
+  }
+  if (tool.kind === "desk") {
+    const seats = draft.items.filter((i) => i.kind === "seat").length + draft.tray.length;
+    if (seats >= LAYOUT_LIMITS.seats) return { ok: false, code: "seat_limit" };
+    const r = placeItem(draft, "desk.single", x, y, 0);
+    return r.ok ? { ok: true, draft: r.draft, key: `n:${draft.nextKey}` } : r;
   }
   if (SEAT_SPRITES.includes(tool.sprite)) return { ok: false, code: "layout_unknown_sprite" };
   if (draft.items.filter((i) => i.kind === "fixture").length >= LAYOUT_LIMITS.fixtures) {
@@ -48,9 +58,9 @@ export function placementPreview(
   return { x: tile.x, y: tile.y, w, h, ok: tryPlace(draft, tool, tile.x, tile.y).ok };
 }
 
-/** After a place: a fixture tool stays, a tray tool moves to the next tray seat or ends. */
+/** After a place: a fixture or desk tool stays, a tray tool moves to the next tray seat or ends. */
 export function nextTool(tool: Tool, draft: Draft): Tool | null {
-  if (tool.kind === "fixture") return tool;
+  if (tool.kind !== "tray") return tool;
   const next = draft.tray[0];
   return next ? { kind: "tray", seatId: next.id } : null;
 }

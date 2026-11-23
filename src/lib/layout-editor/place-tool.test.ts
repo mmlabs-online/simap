@@ -9,6 +9,7 @@ import {
   parseWhole,
   placementPreview,
   reconcileTool,
+  sameTool,
   tryPlace,
   type Tool,
 } from "./place-tool";
@@ -93,6 +94,35 @@ describe("place tool", () => {
     expect(nextTool(fx, d)).toBe(fx);
     expect(nextTool({ kind: "tray", seatId: SEAT_A }, d)).toEqual({ kind: "tray", seatId: SEAT_A });
     expect(nextTool({ kind: "tray", seatId: SEAT_A }, { ...d, tray: [] })).toBeNull();
+  });
+
+  it("tryPlace desk: ok gives key n:<nextKey>, seatId null; refused on a taken tile; seat_limit when seats plus tray reach LAYOUT_LIMITS.seats; a fixture tool with desk.single is still refused", () => {
+    const d = room(1, 12, 8);
+    const desk: Tool = { kind: "desk" };
+    const r = tryPlace(d, desk, 5, 5);
+    expect(r.ok && r.key).toBe(`n:${d.nextKey}`);
+    const item = r.ok ? r.draft.items.find((i) => i.key === r.key) : undefined;
+    expect(item).toMatchObject({ kind: "seat", sprite: "desk.single", seatId: null, code: null });
+    expect(tryPlace(d, desk, 0, 0)).toEqual({ ok: false, code: "layout_overlap" });
+    const tray = (n: number) =>
+      Array.from({ length: n }, (_, k) => ({ id: `t${k}`, code: `R-${k}` }));
+    expect(tryPlace({ ...d, tray: tray(LAYOUT_LIMITS.seats - 1) }, desk, 5, 5).ok).toBe(true);
+    expect(tryPlace({ ...d, tray: tray(LAYOUT_LIMITS.seats) }, desk, 5, 5)).toEqual({
+      ok: false,
+      code: "seat_limit",
+    });
+    expect(tryPlace(d, { kind: "fixture", sprite: "desk.single" }, 5, 5).ok).toBe(false);
+  });
+
+  it("placementPreview with a desk tool uses the desk.single footprint; sameTool desk = desk; nextTool keeps a desk tool", () => {
+    const d = room(1, 12, 8);
+    const desk: Tool = { kind: "desk" };
+    const [w, h] = footprintOf("desk.single", 0) ?? [1, 1];
+    expect(placementPreview(d, desk, { x: 4, y: 4 })).toEqual({ x: 4, y: 4, w, h, ok: true });
+    expect(sameTool(desk, { kind: "desk" })).toBe(true);
+    expect(sameTool(desk, fx)).toBe(false);
+    expect(sameTool(fx, desk)).toBe(false);
+    expect(nextTool(desk, d)).toBe(desk);
   });
 
   it("reconcileTool clears a tray tool whose seat is not in the tray; keeps fixture tools", () => {

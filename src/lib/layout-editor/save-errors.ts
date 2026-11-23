@@ -8,11 +8,14 @@ const INVALID = [
   "layout_unknown_sprite",
   "layout_too_many_seats",
   "invalid_request",
+  "seat_not_empty",
 ];
 
 /** How the editor reacts to a failed save. Unknown codes read as retryable. */
 export function saveErrorKind(code: string): SaveErrorKind {
-  if (code === "layout_stale" || code === "layout_seats_changed") return "conflict";
+  if (code === "layout_stale" || code === "layout_seats_changed" || code === "seats_unmatched") {
+    return "conflict";
+  }
   if (ACCESS.includes(code)) return "access";
   if (code === "not_found") return "gone";
   if (INVALID.includes(code)) return "invalid";
