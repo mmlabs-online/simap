@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { SEAT_LIMITS } from "@/lib/seats/types";
 import { apiErrorMessage } from "../copy/api";
@@ -15,6 +16,8 @@ export type SeatsViewProps = {
   onOpen: (seatCode: string) => void;
   onAdd?: () => void;
   notice?: string | null;
+  /** The pixel map card; shown above the table when the room is found. */
+  map?: ReactNode;
 };
 
 /** Clips untrusted text (the validator allows combining marks) inside its own box. */
@@ -40,6 +43,7 @@ export function SeatsView({
   onOpen,
   onAdd,
   notice,
+  map,
 }: SeatsViewProps) {
   const room = resolution.kind === "found" ? resolution.room : null;
   const loading =
@@ -107,6 +111,8 @@ export function SeatsView({
           {seatsCopy.truncated(SEAT_LIMITS.list)}
         </p>
       )}
+
+      {room && map}
 
       {room && list.status === "ready" && list.seats.length === 0 && (
         <Card className="px-6 py-12 text-center">

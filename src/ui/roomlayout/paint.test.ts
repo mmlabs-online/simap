@@ -77,6 +77,21 @@ describe("paintRoom", () => {
     expect(log).toContainEqual(["translate", -list.bounds.x, -list.bounds.y]);
   });
 
+  it("refuses a canvas over the cap without resizing", () => {
+    const big: RoomLayout = { ...layout, w: 64, h: 64 };
+    const list = buildDrawList(big, {}, manifest);
+    const canvas = fakeCanvas([]);
+    expect(paintRoom(canvas, atlas(), list, 3)).toBe(false);
+    expect([canvas.width, canvas.height]).toEqual([0, 0]);
+  });
+
+  it("returns false when the canvas did not take the requested size", () => {
+    const list = buildDrawList(layout, {}, manifest);
+    const canvas = fakeCanvas([]);
+    Object.defineProperty(canvas, "width", { get: () => 0, set: () => {} });
+    expect(paintRoom(canvas, atlas(), list, 2)).toBe(false);
+  });
+
   it("returns false without a 2D context", () => {
     const list = buildDrawList(layout, {}, manifest);
     expect(paintRoom(fakeCanvas([], false), atlas(), list, 2)).toBe(false);

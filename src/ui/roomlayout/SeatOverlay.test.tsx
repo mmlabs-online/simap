@@ -81,4 +81,24 @@ describe("SeatOverlay", () => {
     expect(html).toContain("left:192px");
     expect(html).toContain("top:144px");
   });
+
+  it("seat buttons are real buttons with data-map-seat and aria-haspopup=dialog, and no data-seat-code", () => {
+    const html = render();
+    expect(html).toContain('data-map-seat="A1"');
+    expect((html.match(/aria-haspopup="dialog"/g) ?? []).length).toBe(3);
+    expect(html).not.toContain("data-seat-code");
+  });
+
+  it("tag classes are the same at zoom 2, 3 and 4", () => {
+    const classes = (zoom: number) =>
+      (/<span aria-hidden="true" class="([^"]*)"/.exec(render(manifest, zoom))?.[1] ?? "")
+        .split(" ")
+        .filter((c) => !/^(left|right|top|bottom)/.test(c) && !/translate/.test(c))
+        .sort();
+    expect(classes(2)).toEqual(classes(3));
+    expect(classes(3)).toEqual(classes(4));
+    expect(classes(4)).toEqual(
+      expect.arrayContaining(["hidden", "group-hover:flex", "group-focus-visible:flex"]),
+    );
+  });
 });

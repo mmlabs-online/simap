@@ -148,4 +148,16 @@ describe("SeatsView", () => {
     const html = render({ notice: "Seat gone" });
     expect(html).toMatch(/role="alert"[^>]*>Seat gone</);
   });
+
+  it("renders the map slot above the table and keeps every table row", () => {
+    const html = render({ map: <section>MAP</section> });
+    expect(html.indexOf("MAP")).toBeGreaterThan(-1);
+    expect(html.indexOf("MAP")).toBeLessThan(html.indexOf("<table"));
+    for (const s of seats) expect(html).toContain(`data-seat-code="${s.code}"`);
+  });
+
+  it("does not render the map slot when the room is missing", () => {
+    const html = render({ resolution: { kind: "missing" }, map: <p>MAP</p> });
+    expect(html).not.toContain("MAP");
+  });
 });

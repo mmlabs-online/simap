@@ -100,6 +100,19 @@ function SeatBody({ seat }: { seat: SeatDto }) {
   );
 }
 
+type Focusable = { isConnected: boolean; hasAttribute(name: string): boolean };
+
+/** Where focus goes on close: a connected map seat opener, else the table row, else the opener, else null. */
+export function returnFocusTarget<T extends Focusable>(
+  row: T | null,
+  previous: (T & object) | null,
+  body?: unknown,
+): T | null {
+  const usable = previous !== null && previous.isConnected && previous !== body;
+  if (usable && previous.hasAttribute("data-map-seat")) return previous;
+  return row ?? (usable ? previous : null);
+}
+
 /**
  * Seat detail on a native `<dialog>` (focus trap, Esc, inert background). Props-driven: the page owns
  * the URL. On close, focus goes to the row of that seat if it still exists, else the opener, else `main`.
@@ -148,8 +161,7 @@ export function SeatDetailPanel({
       const row = codeRef.current
         ? document.querySelector<HTMLElement>(`[data-seat-code="${CSS.escape(codeRef.current)}"]`)
         : null;
-      const target =
-        row ?? (previous && previous.isConnected && previous !== document.body ? previous : null);
+      const target = returnFocusTarget(row, previous, document.body);
       (target ?? document.getElementById("main"))?.focus?.();
     };
   }, [open]);

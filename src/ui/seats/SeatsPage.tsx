@@ -6,6 +6,7 @@ import { useApiFetch } from "../auth/api-fetch-context";
 import { Card } from "../Card";
 import { seatsCopy } from "../copy/seats";
 import { createRoomsApi } from "../rooms/rooms-api";
+import { RoomMapSection } from "../roomlayout";
 import { useSession } from "../session";
 import { AddSeatsDialog } from "./AddSeatsDialog";
 import { CannotSeatDialog } from "./CannotSeatDialog";
@@ -23,6 +24,7 @@ import { SeatDetailPanel } from "./SeatDetailPanel";
 import { panelView, parseSeatParam, retryTarget, seatHref } from "./seat-view";
 import { createSeatsApi } from "./seats-api";
 import { SeatsView } from "./SeatsView";
+import { useRoomLayout } from "./useRoomLayout";
 import { useRoomSeats } from "./useRoomSeats";
 import { useSeatActions } from "./useSeatActions";
 
@@ -52,6 +54,13 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
     openCode,
   );
   const roomId = resolution.kind === "found" ? resolution.room.id : null;
+  const map = useRoomLayout(seatsApi, roomId);
+  const reloadMap = map.reload;
+  const refreshAll = useCallback(
+    () => Promise.all([refresh(), reloadMap()]).then(() => undefined),
+    [refresh, reloadMap],
+  );
+  const openSeat = (code: string) => router.push(seatHref(pathname, code), { scroll: false });
 
   useEffect(() => {
     if (dismissedCode !== null && !(urlParam.kind === "code" && urlParam.code === dismissedCode)) {
@@ -82,7 +91,7 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
     },
     [list.seats, router],
   );
-  const actions = useSeatActions({ seatsApi, roomId, openCode, refresh, onDeleted });
+  const actions = useSeatActions({ seatsApi, roomId, openCode, refresh: refreshAll, onDeleted });
 
   // After a delete, wait for the reload, then focus the next row, the previous row, Add, or main.
   useEffect(() => {
@@ -166,7 +175,10 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
         resolution={resolution}
         list={list}
         onRetry={onRetry}
-        onOpen={(code) => router.push(seatHref(pathname, code), { scroll: false })}
+        onOpen={openSeat}
+        map={
+          <RoomMapSection state={map.state} onRetry={() => void map.reload()} onSelect={openSeat} />
+        }
         onAdd={canManageSeats(tier) ? actions.openAdd : undefined}
         notice={pageNotice}
       />

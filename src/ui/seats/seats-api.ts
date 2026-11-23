@@ -1,5 +1,6 @@
 import { ApiAccessError, type ApiFetch } from "@/lib/api/fetch";
 import type { RoomSeatsResponse, SeatDto } from "@/lib/seats/types";
+import { toMapView, type MapView } from "@/lib/sprites/map-view";
 
 import {
   normalizePickerQuery,
@@ -63,6 +64,15 @@ export function createSeatsApi(fetcher: ApiFetch) {
         roomSeatsPath(roomId),
         { method: "GET" },
         json((b) => isObject(b) && Array.isArray(b.items) && typeof b.truncated === "boolean"),
+      ),
+    layout: (roomId: string) =>
+      call<MapView>(
+        `/api/rooms/${encodeURIComponent(roomId)}/layout`,
+        { method: "GET" },
+        async (res) => {
+          const view = toMapView(await res.json());
+          return view ? { ok: true, value: view } : fail("internal");
+        },
       ),
     get: (seatId: string) => call<SeatDto>(seatPath(seatId), { method: "GET" }, json(isSeat)),
     add: (roomId: string, count: number) =>
