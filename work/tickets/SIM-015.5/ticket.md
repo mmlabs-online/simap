@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-22 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/51 |
 
 ## Goal
 An Admin can save a whole room layout in one safe step, without losing another Admin's work.
