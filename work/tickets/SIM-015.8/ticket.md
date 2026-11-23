@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | claude@2026-11-23T13:05:15Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -40,5 +40,12 @@ spec LAY-02, SEA-01, ROO-02; SIM-015.2 `plan.md` → Split proposal (slice 3) an
 - Component: Save sequence (fake `seatsApi`). Manual: add and delete desks, incl. one with an occupant.
 
 ## Notes / answers from Ming
+- Waiting for Ming: plan approval (P1 gate)
 
 ## Handoff
+
+### 2026-11-23 — claude — BLOCKED (plan approval)
+- Agent calls: 2 (frontend-developer×1 inherit 29k, planner×1 inherit; in/out split not reported)
+- Done: consult saved; plan.md READY (pure async `save-run.ts` with injected seat API: DELETE → POST in chunks of 50 → PUT, progress kept on failure for retry without duplicates; palette "New desk"; seat delete allowed; dry-run payload check); assumptions A1–A12 with defaults.
+- In progress / next: Ming approves; then implement.
+- Gotchas: ~300 source lines; seat limit and copy polish move to SIM-015.11 if it passes ~450. The board sync for SIM-015.10 raced with the merge: always `git fetch` before reading PR state into the board.
