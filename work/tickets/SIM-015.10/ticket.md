@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | claude@2026-11-23T12:16:46Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -41,5 +41,12 @@ spec LAY-05 ("click/drag", "rotate (R)", "multi-select"); SIM-015.7 `plan.md` �
 - Pure tests for the pointer state machine and key handling; manual drag and shortcut run on a 20+ seat room.
 
 ## Notes / answers from Ming
+- Waiting for Ming: plan approval (P1 gate)
 
 ## Handoff
+
+### 2026-11-23 — claude — BLOCKED (plan approval)
+- Agent calls: 3 (frontend-developer×1 inherit 33k, ux-architect×1 inherit 38k, planner×1 inherit; in/out split not reported)
+- Done: consults saved; plan.md READY (pure pointer-gesture and shortcuts modules, selectMany/nudge with clock-free arrow coalescing, pointer-only click layer, drag ghost and marquee overlay, shortcut list); assumptions A1–A17 with defaults.
+- In progress / next: Ming approves; then implement.
+- Gotchas: ~430 source lines; A15 moves the keyboard part to SIM-015.11 if the diff passes ~550.
