@@ -32,11 +32,10 @@ export function paletteEntries(): PaletteEntry[] {
   return [...seats, ...fixtures];
 }
 
-/** Fixture entries only (desks come with SIM-015.8), grouped in palette order. */
-export function fixturePalette(): { group: string; entries: PaletteEntry[] }[] {
+/** All entries grouped in palette order: the desk group first, then the fixture groups. */
+export function editorPalette(): { group: string; entries: PaletteEntry[] }[] {
   const groups: { group: string; entries: PaletteEntry[] }[] = [];
   for (const e of paletteEntries()) {
-    if (e.kind !== "fixture") continue;
     const last = groups[groups.length - 1];
     if (last && last.group === e.group) last.entries.push(e);
     else groups.push({ group: e.group, entries: [e] });

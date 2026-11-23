@@ -101,7 +101,7 @@ describe("editor state", () => {
     expect(plant.history.past).toHaveLength(0);
   });
 
-  it("delete removes selected fixtures; a selection with a seat is refused with the seat reason and changes nothing", () => {
+  it("delete of an existing seat moves it to removed in one undo step; a new desk is dropped; undo brings the seat back with removed empty", () => {
     const s = run(base(), sel("f:0"), { type: "delete" });
     expect(present(s).items).toHaveLength(3);
     expect(s.selection).toEqual([]);
@@ -112,9 +112,23 @@ describe("editor state", () => {
       { type: "select", key: `s:${S1}`, additive: true },
       { type: "delete" },
     );
-    expect(mixed.notice).toEqual({ kind: "refused", code: "seat_delete" });
-    expect(present(mixed).items).toHaveLength(4);
-    expect(mixed.history.past).toHaveLength(0);
+    expect(present(mixed).items).toHaveLength(2);
+    expect(present(mixed).removed).toEqual([{ id: S1, code: "Phòng-A-01" }]);
+    expect(mixed.history.past).toHaveLength(1);
+    const back = run(mixed, { type: "undo" });
+    expect(present(back).items).toHaveLength(4);
+    expect(present(back).removed).toEqual([]);
+    expect(editorFlags(back).dirty).toBe(false);
+    const withNew = run(
+      base(),
+      { type: "arm", tool: { kind: "desk" } },
+      { type: "place", x: 1, y: 6 },
+      { type: "disarm" },
+      sel("n:2"),
+      { type: "delete" },
+    );
+    expect(present(withNew).removed).toEqual([]);
+    expect(present(withNew).items).toHaveLength(4);
   });
 
   it("undo restores the previous draft and drops selected keys that no longer exist", () => {
@@ -139,7 +153,7 @@ describe("editor state", () => {
     expect(editorFlags(s).canSave).toBe(true);
   });
 
-  it("savePayload refuses: unplaced (tray not empty), invalid payload (fixtures over LAYOUT_LIMITS.fixtures → no PUT), pending seat changes (removed or new desks present)", () => {
+  it("savePayload refuses: unplaced (tray not empty), invalid payload (fixtures over LAYOUT_LIMITS.fixtures → no PUT)", () => {
     const tray = initEditor(view({ unplaced: [{ id: S3, code: "Phòng-A-03" }] }));
     expect(savePayload(tray)).toEqual({ ok: false, reason: "unplaced" });
     expect(editorFlags(tray).saveBlock).toBe("unplaced");
@@ -156,30 +170,31 @@ describe("editor state", () => {
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toBe("invalid");
     expect(editorFlags(big).saveBlock).toBe("invalid");
+  });
 
-    const s = base();
-    const withDraft = (patch: Partial<ReturnType<typeof present>>): EditorState => ({
-      ...s,
-      history: { ...s.history, present: { ...present(s), ...patch } },
-    });
-    expect(savePayload(withDraft({ removed: [{ id: S3, code: "x" }] }))).toEqual({
-      ok: false,
-      reason: "pending_seats",
-    });
-    const desk = {
-      key: "n:9",
-      kind: "seat" as const,
-      sprite: "desk.single",
-      x: 1,
-      y: 6,
+  it("savePayload accepts removed seats and new desks (dry-run ids); a fixture count over the cap still refuses as invalid", () => {
+    const s = run(
+      base(),
+      sel(`s:${S1}`),
+      { type: "delete" },
+      { type: "arm", tool: { kind: "desk" } },
+      { type: "place", x: 1, y: 6 },
+    );
+    const p = savePayload(s);
+    expect(p.ok).toBe(true);
+    if (!p.ok) return;
+    expect(p.value.seats.map((x) => x.id)).toHaveLength(2);
+    expect(p.value.seats.some((x) => x.id === S1)).toBe(false);
+    expect(validateLayoutSave(p.value).ok).toBe(true);
+    expect(editorFlags(s).canSave).toBe(true);
+    const many = Array.from({ length: LAYOUT_LIMITS.fixtures + 1 }, () => ({
+      id: "",
+      sprite: "plant.large",
+      x: 0,
+      y: 0,
       rotation: 0 as const,
-      seatId: null,
-      code: null,
-    };
-    expect(savePayload(withDraft({ items: [...present(s).items, desk] }))).toEqual({
-      ok: false,
-      reason: "pending_seats",
-    });
+    }));
+    expect(savePayload(initEditor(view({}, { fixtures: many }))).ok).toBe(false);
   });
 
   it("saveDone resets baseline, history, selection and version from the response; dirty false", () => {
@@ -439,5 +454,70 @@ describe("editor state", () => {
     expect(run(s0, { type: "saveStart" }, nudge(1, 0))).toEqual(run(s0, { type: "saveStart" }));
     expect(steps(run(base(), nudge(1, 0)))).toBe(0);
     expect(run(s0, nudge(0, 0))).toBe(s0);
+  });
+
+  it("place with a desk tool adds an n:<k> desk, selects it, keeps the tool armed; dirty and canSave true", () => {
+    const s = run(base(), { type: "arm", tool: { kind: "desk" } }, { type: "place", x: 1, y: 6 });
+    expect(s.selection).toEqual(["n:2"]);
+    expect(s.tool).toEqual({ kind: "desk" });
+    expect(present(s).items.find((i) => i.key === "n:2")).toMatchObject({ seatId: null, y: 6 });
+    const f = editorFlags(s);
+    expect(f.dirty).toBe(true);
+    expect(f.canSave).toBe(true);
+  });
+
+  it("saveFailed with progress reset: present and baseline replaced, history cleared, selection kept only for existing keys, tool reconciled; without reset the past stays; without progress only the error is set", () => {
+    const edited = run(base(), sel(`s:${S1}`), { type: "move", dx: 1, dy: 0 }, sel(`s:${S2}`));
+    const prog = (reset: boolean) => ({
+      draft: { ...present(edited), items: present(edited).items.filter((i) => i.seatId !== S1) },
+      baseline: { ...edited.baseline, tray: [] },
+      reset,
+    });
+    const detail = {
+      stage: "delete" as const,
+      deleted: 1,
+      created: 0,
+      seat: null,
+      restored: null,
+    };
+    const withTool: EditorState = { ...edited, tool: { kind: "tray", seatId: "gone" } };
+    const reset = run(withTool, {
+      type: "saveFailed",
+      code: "unavailable",
+      detail,
+      progress: prog(true),
+    });
+    expect(reset.history.past).toEqual([]);
+    expect(present(reset).items.some((i) => i.seatId === S1)).toBe(false);
+    expect(reset.baseline.tray).toEqual([]);
+    expect(reset.selection).toEqual([`s:${S2}`]);
+    expect(reset.tool).toBeNull();
+    expect(reset.save).toEqual({ status: "error", code: "unavailable", detail });
+    const keep = run(edited, {
+      type: "saveFailed",
+      code: "seat_not_empty",
+      progress: prog(false),
+    });
+    expect(keep.history.past).toHaveLength(edited.history.past.length);
+    expect(present(keep).items.some((i) => i.seatId === S1)).toBe(false);
+    const none = run(edited, { type: "saveFailed", code: "unavailable", progress: null });
+    expect(none.history).toBe(edited.history);
+    expect(none.baseline).toBe(edited.baseline);
+  });
+
+  it("saveDone after desk add: the desk carries its code from the view, dirty false", () => {
+    const s = run(base(), { type: "arm", tool: { kind: "desk" } }, { type: "place", x: 1, y: 6 });
+    const NEW = "44444444-4444-4444-8444-444444444444";
+    const next = view({ version: 8 });
+    next.layout = {
+      ...next.layout,
+      seats: [
+        ...next.layout.seats,
+        { id: NEW, code: "Phòng-A-06", sprite: "desk.single", x: 1, y: 6, rotation: 0 },
+      ],
+    };
+    const done = run(s, { type: "saveStart" }, { type: "saveDone", view: next });
+    expect(present(done).items.find((i) => i.seatId === NEW)?.code).toBe("Phòng-A-06");
+    expect(editorFlags(done).dirty).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
 import type { ShortcutId } from "@/lib/layout-editor/shortcuts";
+import type { SaveDetail } from "@/lib/layout-editor/save-run";
 
 /** English strings of the room map (D36). Seat codes and names come from data and are not translated here. */
 export const roomlayoutCopy = {
@@ -53,6 +54,30 @@ export const roomlayoutCopy = {
     reload: "Reload",
     tryAgain: "Try again",
     conflictNote: "Reloading discards your unsaved changes.",
+    saveErrors: {
+      seats_unmatched:
+        "New seats were created but could not be matched to desks. Reload the editor; they will be in Seats not placed.",
+    } as Record<string, string>,
+    saveDetail: (d: SaveDetail) => {
+      const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+      const parts: string[] = [];
+      if (d.seat !== null) {
+        parts.push(
+          `Desk ${d.seat} was not deleted and is back ${d.restored === "tray" ? "in Seats not placed" : "on the map"}.`,
+        );
+      }
+      if (d.deleted > 0) {
+        parts.push(`${d.deleted} ${plural(d.deleted, "seat was", "seats were")} deleted.`);
+      }
+      if (d.created > 0) {
+        parts.push(
+          `${d.created} new ${plural(d.created, "seat was", "seats were")} created${
+            d.stage === "assign" ? "." : ", but the layout was not saved. Save again to place them."
+          }`,
+        );
+      }
+      return parts.join(" ");
+    },
     saveBlock: {
       unplaced: "Place all seats before saving.",
       read_only: "This layout is read-only.",
@@ -63,7 +88,7 @@ export const roomlayoutCopy = {
       layout_overlap: "That tile is taken.",
       layout_bad_rotation: "Nothing selected can turn.",
       layout_unknown_sprite: "That item doesn't exist.",
-      seat_delete: "To remove a desk, delete its seat in the seat table.",
+      seat_limit: "This room already has the most seats it can hold.",
       fixture_limit: "This room already has the most fixtures it can hold.",
       resize_cut: "Some items would be outside the smaller room. Move or delete them first.",
     },
@@ -79,6 +104,7 @@ export const roomlayoutCopy = {
     palette: {
       heading: "Add items",
       groups: {
+        desk: "Desks",
         cabinet: "Cabinets",
         circulation: "Stairs and lifts",
         door: "Doors",
@@ -132,6 +158,8 @@ export const roomlayoutCopy = {
       sizeBad: "Enter a whole number from 1 to 64.",
       itemsHeading: "Items",
       itemsEmpty: "This room has no items.",
+      deleteSeatNote:
+        "Deleting a desk deletes its seat when you save. A seat with an occupant or devices is kept.",
     },
     shortcuts: {
       summary: "Keyboard shortcuts",
@@ -154,7 +182,11 @@ export const roomlayoutCopy = {
       ],
     },
     itemName: (item: { kind: "seat" | "fixture"; sprite: string; code: string | null }) =>
-      item.kind === "seat" ? `Desk ${item.code ?? ""}`.trim() : item.sprite.replaceAll(".", " "),
+      item.kind === "seat"
+        ? item.code === null
+          ? "New desk"
+          : `Desk ${item.code}`
+        : item.sprite.replaceAll(".", " "),
     itemAt: (name: string, x: number, y: number) => `${name} at ${x}, ${y}`,
   },
 } as const;

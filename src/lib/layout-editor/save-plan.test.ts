@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
 import type { RoomLayout } from "@/lib/sprites/layout";
 import { validateLayoutSave } from "@/lib/validate/layout";
+import { isCanonicalUuid } from "@/lib/validate/uuid";
 import { deleteItems, draftFromLayout, moveItems, placeItem } from "./draft";
 import { commit, startHistory, undo } from "./history";
 import {
   assignCreatedSeats,
   buildSavePayload,
+  dropSeat,
   forgetDeletedSeat,
   isDirty,
   planSave,
   restoreRemovedSeat,
+  withPlaceholderSeatIds,
 } from "./save-plan";
 import type { Draft, OpResult } from "./types";
 
@@ -146,5 +149,30 @@ describe("refused delete recovery", () => {
   it("forgetDeletedSeat drops the seat from removed", () => {
     const removed = ok(deleteItems(draftFromLayout(layout(), []), [`s:${A}`, `s:${B}`]));
     expect(forgetDeletedSeat(removed, A).removed).toEqual([{ id: B, code: "R-02" }]);
+  });
+
+  it("withPlaceholderSeatIds gives each new desk a canonical UUID, stable per key, leaves real ids alone; the payload passes validateLayoutSave", () => {
+    let d = draftFromLayout(layout(), []);
+    d = ok(placeItem(d, "desk.single", 8, 0));
+    d = ok(placeItem(d, "desk.single", 8, 2));
+    const out = withPlaceholderSeatIds(d);
+    const fresh = out.items.filter((i) => i.key.startsWith("n:"));
+    expect(fresh).toHaveLength(2);
+    for (const i of fresh) expect(isCanonicalUuid(i.seatId)).toBe(true);
+    expect(new Set(fresh.map((i) => i.seatId)).size).toBe(2);
+    expect(withPlaceholderSeatIds(d).items.map((i) => i.seatId)).toEqual(
+      out.items.map((i) => i.seatId),
+    );
+    expect(out.items.find((i) => i.key === `s:${A}`)?.seatId).toBe(A);
+    const built = buildSavePayload(out, 3);
+    expect(built.ok && validateLayoutSave(built.value).ok).toBe(true);
+  });
+
+  it("dropSeat removes the seat from the items and the tray and keeps everything else", () => {
+    const d = draftFromLayout(layout(), [{ id: C, code: "R-03" }]);
+    const gone = dropSeat(dropSeat(d, A), C);
+    expect(gone.items.map((i) => i.seatId)).toEqual([B, null]);
+    expect(gone.tray).toEqual([]);
+    expect(gone.w).toBe(d.w);
   });
 });

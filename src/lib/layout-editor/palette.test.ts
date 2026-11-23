@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { REGISTRY } from "@/lib/sprites/registry";
 import { FIXTURE_GROUPS } from "@/lib/validate/layout";
-import { fixturePalette, paletteEntries } from "./palette";
+import { editorPalette, paletteEntries } from "./palette";
 
 describe("paletteEntries", () => {
   const entries = paletteEntries();
@@ -35,12 +35,13 @@ describe("paletteEntries", () => {
   });
 });
 
-describe("fixturePalette", () => {
-  it("fixturePalette has no seat entries, groups in paletteEntries order, and the flattened entries equal the fixture entries of paletteEntries", () => {
-    const groups = fixturePalette();
+describe("editorPalette", () => {
+  it("editorPalette: the desk group comes first with desk.single only, then the fixture groups in paletteEntries order", () => {
+    const groups = editorPalette();
+    expect(groups[0].group).toBe("desk");
+    expect(groups[0].entries.map((e) => e.sprite)).toEqual(["desk.single"]);
     const flat = groups.flatMap((g) => g.entries);
-    expect(flat.some((e) => e.kind === "seat")).toBe(false);
-    expect(flat).toEqual(paletteEntries().filter((e) => e.kind === "fixture"));
+    expect(flat).toEqual(paletteEntries());
     expect(new Set(groups.map((g) => g.group)).size).toBe(groups.length);
     for (const g of groups) for (const e of g.entries) expect(e.group).toBe(g.group);
   });

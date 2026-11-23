@@ -4,12 +4,16 @@ import { LAYOUT_LIMITS, validateLayoutSave, type LayoutRuleCode } from "@/lib/va
 import { deleteItems, draftFromLayout, moveItems, resizeRoom, rotateItems } from "./draft";
 import { canUndo, commit, replacePresent, startHistory, undo, type History } from "./history";
 import { nextTool, reconcileTool, sameTool, tryPlace, type Tool } from "./place-tool";
-import { buildSavePayload, isDirty, planSave } from "./save-plan";
+import { buildSavePayload, isDirty, planSave, withPlaceholderSeatIds } from "./save-plan";
 import { saveErrorKind } from "./save-errors";
+import type { SaveDetail, SaveProgress } from "./save-run";
 import type { Draft, OpResult } from "./types";
 
 export type EditorNotice =
-  | { kind: "refused"; code: LayoutRuleCode | "seat_delete" | "fixture_limit" | "resize_cut" }
+  | {
+      kind: "refused";
+      code: LayoutRuleCode | "fixture_limit" | "seat_limit" | "resize_cut";
+    }
   | {
       kind: "done";
       what: "moved" | "rotated" | "deleted" | "undone" | "saved" | "placed" | "resized";
@@ -25,7 +29,7 @@ export type EditorState = {
   nudge: string | null;
   tool: Tool | null;
   notice: EditorNotice | null;
-  save: { status: "idle" | "saving" } | { status: "error"; code: string };
+  save: { status: "idle" | "saving" } | { status: "error"; code: string; detail?: SaveDetail };
 };
 
 export type EditorAction =
@@ -43,7 +47,7 @@ export type EditorAction =
   | { type: "undo" }
   | { type: "saveStart" }
   | { type: "saveDone"; view: MapView }
-  | { type: "saveFailed"; code: string };
+  | { type: "saveFailed"; code: string; detail?: SaveDetail; progress?: SaveProgress | null };
 
 export function initEditor(view: MapView): EditorState {
   const draft = draftFromLayout(view.layout, view.unplaced);
@@ -61,10 +65,13 @@ export function initEditor(view: MapView): EditorState {
 }
 
 export type SaveRefusal =
-  | { ok: false; reason: "read_only" | "unplaced" | "pending_seats" }
+  | { ok: false; reason: "read_only" | "unplaced" }
   | { ok: false; reason: "invalid"; code: string };
 
-/** The PUT body, or why the draft cannot be saved. Nothing is sent when it fails (no PUT). */
+/**
+ * The pre-Save check: the PUT body built with dry-run ids for new desks, or why the draft cannot be saved.
+ * The body is for validation only; the runner builds the real one after the seats are created.
+ */
 export function savePayload(
   state: EditorState,
 ): { ok: true; value: LayoutSaveValue } | SaveRefusal {
@@ -72,12 +79,8 @@ export function savePayload(
   const draft = state.history.present;
   const plan = planSave(draft);
   if (!plan.ok) return { ok: false, reason: "unplaced" };
-  // New and removed seats need the DELETE/POST sequence of SIM-015.8.
-  if (plan.deletes.length > 0 || plan.createKeys.length > 0) {
-    return { ok: false, reason: "pending_seats" };
-  }
-  const built = buildSavePayload(draft, state.baseVersion);
-  if (!built.ok) return { ok: false, reason: "pending_seats" };
+  const built = buildSavePayload(withPlaceholderSeatIds(draft), state.baseVersion);
+  if (!built.ok) return { ok: false, reason: "invalid", code: built.reason };
   const checked = validateLayoutSave(built.value);
   if (!checked.ok) return { ok: false, reason: "invalid", code: checked.code };
   return { ok: true, value: built.value };
@@ -94,7 +97,7 @@ export function editorFlags(state: EditorState): {
   const dirty = isDirty(state.baseline, state.history.present);
   const payload = savePayload(state);
   let saveBlock: SaveBlock = null;
-  if (!payload.ok) saveBlock = payload.reason === "pending_seats" ? "invalid" : payload.reason;
+  if (!payload.ok) saveBlock = payload.reason;
   const conflict = state.save.status === "error" && saveErrorKind(state.save.code) === "conflict";
   return {
     dirty,
@@ -169,10 +172,6 @@ function reduce(state: EditorState, action: EditorAction): EditorState {
       return applyEdit(state, rotateItems(present, state.selection), "rotated");
     case "delete": {
       if (frozen || state.selection.length === 0) return state;
-      const hasSeat = present.items.some(
-        (i) => i.kind === "seat" && state.selection.includes(i.key),
-      );
-      if (hasSeat) return { ...state, notice: { kind: "refused", code: "seat_delete" } };
       return applyEdit(state, deleteItems(present, state.selection), "deleted", []);
     }
     case "arm": {
@@ -214,8 +213,21 @@ function reduce(state: EditorState, action: EditorAction): EditorState {
       return state.save.status === "saving" ? state : { ...state, save: { status: "saving" } };
     case "saveDone":
       return { ...initEditor(action.view), notice: { kind: "done", what: "saved" } };
-    case "saveFailed":
-      return { ...state, save: { status: "error", code: action.code } };
+    case "saveFailed": {
+      const save = { status: "error" as const, code: action.code, detail: action.detail };
+      const p = action.progress;
+      if (!p) return { ...state, save };
+      // After a server change an undo would resend a DELETE or create a duplicate: start a new history.
+      const keys = new Set(p.draft.items.map((i) => i.key));
+      return {
+        ...state,
+        history: p.reset ? startHistory(p.draft) : replacePresent(state.history, p.draft),
+        baseline: p.baseline,
+        selection: state.selection.filter((k) => keys.has(k)),
+        tool: reconcileTool(state.tool, p.draft),
+        save,
+      };
+    }
   }
 }
 

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { parseRoomSize, type Tool } from "@/lib/layout-editor/place-tool";
 import type { Draft, EditorItem } from "@/lib/layout-editor/types";
@@ -43,7 +45,7 @@ export function EditorInspector({
 }: Props) {
   const selected = draft.items.filter((i) => selection.includes(i.key));
   const none = selected.length === 0;
-  const hasSeat = selected.some((i) => i.kind === "seat");
+  const hasSavedSeat = selected.some((i) => i.seatId !== null);
   const off = disabled || none;
   const items = [...draft.items].sort(byReadingOrder);
   const moves: [string, number, number][] = [
@@ -73,17 +75,17 @@ export function EditorInspector({
           <Button
             variant="danger"
             size="sm"
-            disabled={off || hasSeat}
+            disabled={off}
             aria-keyshortcuts="Delete Backspace"
-            aria-describedby={hasSeat ? "editor-delete-reason" : undefined}
+            aria-describedby={hasSavedSeat ? "editor-delete-note" : undefined}
             onClick={onDelete}
           >
             {c.delete}
           </Button>
         </div>
-        {hasSeat && (
-          <p id="editor-delete-reason" className="text-on-surface-variant">
-            {copy.refused.seat_delete}
+        {hasSavedSeat && (
+          <p id="editor-delete-note" className="text-on-surface-variant">
+            {c.deleteSeatNote}
           </p>
         )}
         <div role="group" aria-label={c.moveLabel} className="flex flex-wrap gap-2">
