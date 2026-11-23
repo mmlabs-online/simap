@@ -2,11 +2,11 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | api, security |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-015.6 |
 | Needs Ming | — |
 | Attempts | 0 |
@@ -55,5 +55,12 @@ An Admin can save a whole room layout in one safe step, without losing another A
 
 ## Notes / answers from Ming
 - 2026-11-22 (D59): split from SIM-015.1; Ming approved the split and defaults A1-A14.
+- 2026-11-23: Plan approved in advance: Ming waived the plan-approval stop for this ticket ("chạy luôn SIM-015.5 k cần duyệt plan"). Ming still reviews and merges the PR.
 
 ## Handoff
+
+### 2026-11-23 — claude — DONE (merge conditional on CI)
+- Agent calls: 6 (api-platform-engineer×1 55.4k, planner×1 114.9k, implementer×1 80.2k, reviewer×1 usage not yet reported, security review×1 via general-purpose opus 123.4k, plus one failed dispatch of the unavailable security agent type). In/out split not reported.
+- Done: `PUT /api/rooms/{id}/layout`, save transaction, validator caps, 3 error codes. Review attempt 1 PASS, conditional on CI; security review has no 🔴. Local format, typecheck, layers, build and unit tests green (1613 passed, 8 skipped, on Node 24; the repo targets 22).
+- In progress / next: `gh` is not installed, so Ming opens the PR from the prefilled link. **Do not merge until the PR's `db integration tests` step is green**: the 13 DB tests and all new SQL have never been executed. A failure returns the ticket to REWORK.
+- Gotchas: `debt` issues NOT created (no `gh`): security F1 (no `lock_timeout`, parallel saves can exhaust the shared 5-connection pool), fixture ids change on each save so paint order on a shared tile may flip (SIM-015.2), no audit label for `room.layout_save`. Plan approval was waived by Ming for this ticket.

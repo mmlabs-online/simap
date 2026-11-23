@@ -12,6 +12,7 @@ export const LAYOUT_LIMITS = {
   floors: 64,
   floorCells: 2,
   bodyBytes: 262_144,
+  maxVersion: 2_147_483_647,
 } as const;
 
 export type LayoutRuleCode = Extract<
@@ -192,7 +193,13 @@ export function validateLayoutSave(
   ) {
     return bad("body");
   }
-  if (!isInt(body.baseVersion) || body.baseVersion < 0) return bad("baseVersion");
+  if (
+    !isInt(body.baseVersion) ||
+    body.baseVersion < 0 ||
+    body.baseVersion > LAYOUT_LIMITS.maxVersion
+  ) {
+    return bad("baseVersion");
+  }
   if (!isInt(body.w)) return bad("w");
   if (!isInt(body.h)) return bad("h");
   const { floors, seats, fixtures } = body;
@@ -243,5 +250,7 @@ export function validateLayoutSave(
     fixtures: outFixtures,
   };
   const rules = checkLayoutRules(value);
-  return rules.ok ? { ok: true, value } : rules;
+  if (!rules.ok) return rules;
+  if (!floorCellsWithinCap(value.floors, value.w, value.h)) return bad("floors");
+  return { ok: true, value };
 }
