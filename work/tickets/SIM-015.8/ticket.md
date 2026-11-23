@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-23T13:19:54Z |
 | PR | — |
 
 ## Goal
@@ -40,7 +40,7 @@ spec LAY-02, SEA-01, ROO-02; SIM-015.2 `plan.md` → Split proposal (slice 3) an
 - Component: Save sequence (fake `seatsApi`). Manual: add and delete desks, incl. one with an occupant.
 
 ## Notes / answers from Ming
-- Waiting for Ming: plan approval (P1 gate)
+- 2026-11-23: Plan approved (all defaults A1–A12; Ming: "duyệt plan SIM-015.8, chạy luôn").
 
 ## Handoff
 
