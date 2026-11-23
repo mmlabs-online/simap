@@ -9,6 +9,7 @@ import {
   type EditorAction,
   type EditorState,
 } from "./editor-state";
+import type { Tool } from "./place-tool";
 
 const S1 = "11111111-1111-4111-8111-111111111111";
 const S2 = "22222222-2222-4222-8222-222222222222";
@@ -232,5 +233,157 @@ describe("editor state", () => {
     expect(editorFlags(ro).saveBlock).toBe("read_only");
     expect(editorFlags(ro).canSave).toBe(false);
     expect(run(ro, sel(`s:${S1}`), { type: "move", dx: 1, dy: 0 }).history.past).toHaveLength(0);
+  });
+
+  const S4 = "44444444-4444-4444-8444-444444444444";
+  const plant: Tool = { kind: "fixture", sprite: "plant.large" };
+  const trayView = () =>
+    initEditor(
+      view({
+        unplaced: [
+          { id: S3, code: "Phòng-A-03" },
+          { id: S4, code: "Phòng-A-04" },
+        ],
+      }),
+    );
+  const arm = (tool: Tool): EditorAction => ({ type: "arm", tool });
+  const place = (x: number, y: number): EditorAction => ({ type: "place", x, y });
+
+  it("arm sets the tool and clears the selection; arming the same tool again disarms; disarm clears; arming a tray seat not in the tray does nothing", () => {
+    const s = run(base(), sel(`s:${S1}`), arm(plant));
+    expect(s.tool).toEqual(plant);
+    expect(s.selection).toEqual([]);
+    expect(run(s, arm(plant)).tool).toBeNull();
+    expect(run(s, { type: "disarm" }).tool).toBeNull();
+    const none = run(base(), arm({ kind: "tray", seatId: "nope" }));
+    expect(none.tool).toBeNull();
+  });
+
+  it("place with a fixture tool commits one step, selects the new f: key, keeps the tool armed, notice placed", () => {
+    const s = run(base(), arm(plant), place(4, 5));
+    expect(s.history.past).toHaveLength(1);
+    expect(s.selection).toEqual(["f:2"]);
+    expect(s.tool).toEqual(plant);
+    expect(s.notice).toEqual({ kind: "done", what: "placed" });
+    expect(present(s).items).toHaveLength(5);
+  });
+
+  it("place without a tool, or on a taken tile, adds no step; the refusal sets the notice", () => {
+    const b = base();
+    expect(run(b, place(4, 5))).toBe(b);
+    const s = run(b, arm(plant), place(2, 2));
+    expect(s.history.past).toHaveLength(0);
+    expect(s.notice).toEqual({ kind: "refused", code: "layout_overlap" });
+    expect(s.tool).toEqual(plant);
+  });
+
+  it("place at the fixture limit sets the fixture_limit notice and adds no step", () => {
+    const fixtures = Array.from({ length: LAYOUT_LIMITS.fixtures }, (_, k) => ({
+      id: "",
+      sprite: "plant.small",
+      x: k % 64,
+      y: Math.floor(k / 64),
+      rotation: 0 as const,
+    }));
+    const s = run(
+      initEditor(view({}, { w: 64, h: 64, seats: [], fixtures })),
+      arm({ kind: "fixture", sprite: "plant.small" }),
+      place(63, 63),
+    );
+    expect(s.notice).toEqual({ kind: "refused", code: "fixture_limit" });
+    expect(s.history.past).toHaveLength(0);
+  });
+
+  it("a placed fixture is in savePayload and passes validateLayoutSave; saveDone with that view keeps it and is clean", () => {
+    const s = run(base(), arm(plant), place(4, 5));
+    const p = savePayload(s);
+    expect(p.ok).toBe(true);
+    if (!p.ok) return;
+    expect(validateLayoutSave(p.value).ok).toBe(true);
+    expect(p.value.fixtures).toContainEqual(
+      expect.objectContaining({ sprite: "plant.large", x: 4, y: 5 }),
+    );
+    const fixtures = [
+      ...view().layout.fixtures,
+      { id: "", sprite: "plant.large", x: 4, y: 5, rotation: 0 as const },
+    ];
+    const done = run(s, { type: "saveDone", view: view({ version: 8 }, { fixtures }) });
+    expect(present(done).items).toHaveLength(5);
+    expect(editorFlags(done).dirty).toBe(false);
+    expect(done.tool).toBeNull();
+  });
+
+  it("tray tool advances to the next tray seat, then disarms", () => {
+    let s = run(trayView(), arm({ kind: "tray", seatId: S3 }), place(4, 5));
+    expect(s.tool).toEqual({ kind: "tray", seatId: S4 });
+    expect(s.selection).toEqual([`s:${S3}`]);
+    s = run(s, place(10, 0));
+    expect(s.tool).toBeNull();
+    expect(present(s).tray).toEqual([]);
+  });
+
+  it("placing the last tray seat empties the tray: canSave true, saveBlock null, savePayload has the seat at its tile", () => {
+    const one = initEditor(view({ unplaced: [{ id: S3, code: "Phòng-A-03" }] }));
+    expect(editorFlags(one).saveBlock).toBe("unplaced");
+    const s = run(one, arm({ kind: "tray", seatId: S3 }), place(4, 5));
+    const flags = editorFlags(s);
+    expect(flags.canSave).toBe(true);
+    expect(flags.saveBlock).toBeNull();
+    const p = savePayload(s);
+    expect(p.ok && p.value.seats).toContainEqual(expect.objectContaining({ id: S3, x: 4, y: 5 }));
+  });
+
+  it("resize to a larger size commits one step, savePayload has the new w/h; the same size is a no-op", () => {
+    const b = base();
+    expect(run(b, { type: "resize", w: 12, h: 8 })).toBe(b);
+    const s = run(b, { type: "resize", w: 20, h: 10 });
+    expect(s.history.past).toHaveLength(1);
+    expect(s.notice).toEqual({ kind: "done", what: "resized" });
+    const p = savePayload(s);
+    expect(p.ok && [p.value.w, p.value.h]).toEqual([20, 10]);
+  });
+
+  it("resize that cuts off an item is refused as resize_cut and keeps the draft and history", () => {
+    const s = run(base(), { type: "resize", w: 8, h: 8 });
+    expect(s.notice).toEqual({ kind: "refused", code: "resize_cut" });
+    expect(s.history.past).toHaveLength(0);
+    expect(present(s).w).toBe(12);
+  });
+
+  it("resize out of 1–64 is refused as layout_out_of_bounds", () => {
+    for (const [w, h] of [
+      [0, 8],
+      [65, 8],
+      [12, 100],
+    ]) {
+      const s = run(base(), { type: "resize", w, h });
+      expect(s.notice).toEqual({ kind: "refused", code: "layout_out_of_bounds" });
+      expect(s.history.past).toHaveLength(0);
+    }
+  });
+
+  it("place, arm and resize are ignored while saving", () => {
+    const s = run(run(base(), arm(plant)), { type: "saveStart" });
+    expect(run(s, place(4, 5))).toBe(s);
+    expect(run(s, arm({ kind: "fixture", sprite: "door" }))).toBe(s);
+    expect(run(s, { type: "resize", w: 20, h: 10 })).toBe(s);
+    const ro = initEditor(view({ truncated: true }));
+    expect(run(ro, arm(plant))).toBe(ro);
+  });
+
+  it("undo of a place and of a resize; a tray tool whose seat is no longer in the tray is cleared", () => {
+    const placed = run(base(), arm(plant), place(4, 5), { type: "undo" });
+    expect(present(placed).items).toHaveLength(4);
+    const resized = run(base(), { type: "resize", w: 20, h: 10 }, { type: "undo" });
+    expect(present(resized).w).toBe(12);
+    const t = run(trayView(), arm({ kind: "tray", seatId: S3 }), place(4, 5));
+    expect(run(t, { type: "undo" }).tool).toEqual({ kind: "tray", seatId: S4 });
+    const gone = { ...t, tool: { kind: "tray", seatId: "S9" } as Tool };
+    expect(run(gone, { type: "undo" }).tool).toBeNull();
+  });
+
+  it("saveDone clears the tool", () => {
+    const s = run(base(), arm(plant), { type: "saveStart" }, { type: "saveDone", view: view() });
+    expect(s.tool).toBeNull();
   });
 });
