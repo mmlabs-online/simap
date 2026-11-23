@@ -17,6 +17,7 @@ const view = (over: Partial<MapView> = {}): MapView => ({
   unplaced: [],
   truncated: false,
   saved: true,
+  version: 1,
   empty: false,
   ...over,
 });
@@ -55,5 +56,23 @@ describe("RoomMapSection", () => {
     expect(three).toContain(roomlayoutCopy.unplacedNote(3));
     expect(three).toContain(roomlayoutCopy.truncated(500));
     expect(render(ready(view()))).not.toContain("not placed");
+  });
+
+  it("Edit layout link only with editHref, also on an empty map, hidden when truncated", () => {
+    const withLink = (state: MapLoadState) =>
+      renderToStaticMarkup(
+        <RoomMapSection
+          state={state}
+          onRetry={() => {}}
+          onSelect={() => {}}
+          editHref="/rooms/C1/edit"
+        />,
+      );
+    expect(withLink(ready(view()))).toContain('href="/rooms/C1/edit"');
+    expect(withLink(ready(view()))).toContain(roomlayoutCopy.editLayout);
+    expect(render(ready(view()))).not.toContain(roomlayoutCopy.editLayout);
+    const empty = view({ empty: true });
+    expect(withLink(ready(empty))).toContain(roomlayoutCopy.editLayout);
+    expect(withLink(ready(view({ truncated: true })))).not.toContain(roomlayoutCopy.editLayout);
   });
 });

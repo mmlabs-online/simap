@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { ZOOM_LEVELS, type RoomLayout, type SeatView, type Zoom } from "@/lib/sprites/layout";
 import { buildDrawList } from "@/lib/sprites/placement";
 import { allowedZooms, clampZoom } from "@/lib/sprites/zoom";
 import { roomlayoutCopy } from "../copy/roomlayout";
-import { loadAtlas, type Atlas } from "./loadAtlas";
 import { paintRoom } from "./paint";
 import { SeatOverlay } from "./SeatOverlay";
+import { useAtlas } from "./useAtlas";
 import { ZoomControl } from "./ZoomControl";
 
 const STATUS = "rounded-md border border-outline-variant p-4 text-sm text-on-surface";
@@ -39,23 +39,8 @@ type Props = {
 
 /** Canvas art plus an HTML seat overlay. Loads `/sprites/office.png|json`; a bad atlas shows an error view. */
 export function RoomMap({ layout, seatViews, zoom, onZoom, onSelect }: Props) {
-  const [atlas, setAtlas] = useState<Atlas | null>(null);
-  const [failed, setFailed] = useState(false);
+  const { atlas, failed, setFailed } = useAtlas();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    loadAtlas({
-      fetch: (url, init) => window.fetch(url, init),
-      createImage: () => new Image(),
-      signal: controller.signal,
-    }).then((result) => {
-      if (controller.signal.aborted) return;
-      if (result.ok) setAtlas(result.atlas);
-      else setFailed(true);
-    });
-    return () => controller.abort();
-  }, []);
 
   const list = useMemo(
     () => (atlas ? buildDrawList(layout, seatViews, atlas.manifest) : null),
@@ -69,7 +54,7 @@ export function RoomMap({ layout, seatViews, zoom, onZoom, onSelect }: Props) {
     const canvas = canvasRef.current;
     if (!atlas || !list || !canvas || effective === null) return;
     if (!paintRoom(canvas, atlas, list, effective)) setFailed(true);
-  }, [atlas, list, effective]);
+  }, [atlas, list, effective, setFailed]);
 
   if (failed) return <RoomMapStatus status="error" />;
   if (!atlas || !list) return <RoomMapStatus status="loading" />;

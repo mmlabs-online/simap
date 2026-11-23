@@ -27,6 +27,13 @@ const layoutWith = (over: Record<string, unknown>) => ({ ...body().layout, ...ov
 const NONE = { seats: [], fixtures: [], floors: [] };
 
 describe("toMapView", () => {
+  it("toMapView keeps version; a missing or negative version gives null", () => {
+    expect(toMapView(body({ version: 5 }))?.version).toBe(5);
+    expect(toMapView(body({ version: undefined }))).toBeNull();
+    expect(toMapView(body({ version: -1 }))).toBeNull();
+    expect(toMapView(body({ version: 1.5 }))).toBeNull();
+  });
+
   it("keeps every placed seat and fixture with its tile", () => {
     const b = body() as unknown as LayoutResponse;
     const view = toMapView(b);

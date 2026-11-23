@@ -1,12 +1,10 @@
-import { PageSkeleton } from "@/ui";
-import { shellCopy } from "@/ui/copy/shell";
+import { LayoutEditorPage } from "@/ui";
 
-export default function RoomEditorPage() {
-  return (
-    <PageSkeleton
-      title={shellCopy.pages.roomEditor.title}
-      emptyText={shellCopy.pages.roomEditor.empty}
-      icon="edit_square"
-    />
-  );
+export default async function RoomEditorPage({
+  params,
+}: {
+  params: Promise<{ roomCode: string }>;
+}) {
+  const { roomCode } = await params;
+  return <LayoutEditorPage key={roomCode} roomCode={roomCode} />;
 }

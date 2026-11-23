@@ -9,6 +9,8 @@ export type MapView = {
   unplaced: { id: string; code: string }[];
   truncated: boolean;
   saved: boolean;
+  /** The layout version the save must send as `baseVersion`. */
+  version: number;
   /** True when there is nothing to draw: no seats, fixtures or floors. */
   empty: boolean;
 };
@@ -57,7 +59,9 @@ export function toMapView(body: unknown): MapView | null {
     !Array.isArray(l.fixtures) ||
     !Array.isArray(l.floors) ||
     !Array.isArray(body.unplaced) ||
-    typeof body.truncated !== "boolean"
+    typeof body.truncated !== "boolean" ||
+    !isInt(body.version) ||
+    body.version < 0
   ) {
     return null;
   }
@@ -78,6 +82,7 @@ export function toMapView(body: unknown): MapView | null {
     })),
     truncated: body.truncated,
     saved: body.saved === true,
+    version: body.version,
     empty: layout.seats.length === 0 && layout.fixtures.length === 0 && layout.floors.length === 0,
   };
 }
