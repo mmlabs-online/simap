@@ -51,8 +51,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-015.5 | Save a room layout through the API | MERGED | P1 | M | api, security | SIM-015.6 | plan-approval | 0 | 2026-11-23 |
 | SIM-015.2 | Tile-based layout editor (slice 1: editor core) | MERGED | P1 | M | ui, ux | SIM-015.3, SIM-015.5 | plan-approval | 0 | 2026-11-23 |
 | SIM-015.7 | Layout editor UI and save of placement | MERGED | P1 | M | ui, ux | SIM-015.2 | plan-approval | 0 | 2026-11-23 |
-| SIM-015.9 | Layout editor palette, tray placement and room resize | DONE | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
-| SIM-015.10 | Layout editor drag, marquee and keyboard shortcuts | BACKLOG | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
+| SIM-015.9 | Layout editor palette, tray placement and room resize | MERGED | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
+| SIM-015.10 | Layout editor drag, marquee and keyboard shortcuts | PLANNING | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
 | SIM-015.8 | Layout editor desk add and delete | BACKLOG | P1 | S | ui | SIM-015.7, SIM-015.9 | plan-approval | 0 | 2026-11-23 |
 | SIM-033 | Ship the real room art and an in-app Credits page | BACKLOG | P1 | S | ui, architecture | SIM-015.3 | none | 0 | 2026-11-22 |
 | SIM-011.2 | Members page UI: list, edit and deactivate dialogs | ESCALATED | P1 | M | ui | SIM-011 | none | 0 | 2026-11-23 |
