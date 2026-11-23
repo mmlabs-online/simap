@@ -8,6 +8,9 @@ import { FIXTURE_GROUPS } from "@/lib/validate/layout";
 import { EditorInspector } from "./EditorInspector";
 import { Palette, PlacePanel } from "./Palette";
 import { EditorToolbar } from "./EditorToolbar";
+import { GestureOverlay } from "./GestureOverlay";
+import { ShortcutList } from "./ShortcutList";
+import { SHORTCUTS } from "@/lib/layout-editor/shortcuts";
 import { EditorGateView, EditorStatusLine, LeaveDialog, SaveErrorBanner } from "./EditorViews";
 
 const copy = roomlayoutCopy.editor;
@@ -214,5 +217,54 @@ describe("editor views", () => {
     expect(line({ kind: "done", what: "resized" })).toContain(copy.done.resized);
     expect(line({ kind: "refused", code: "fixture_limit" })).toContain(copy.refused.fixture_limit);
     expect(line({ kind: "refused", code: "resize_cut" })).toContain(copy.refused.resize_cut);
+  });
+
+  it("shortcut list: a details with the summary, a row with <kbd> keys for every SHORTCUTS id, and the mouse rows", () => {
+    const html = renderToStaticMarkup(<ShortcutList />);
+    expect(html).toMatch(/^<details/);
+    expect(html).not.toContain(" open");
+    expect(html).toContain(copy.shortcuts.summary);
+    for (const id of SHORTCUTS) {
+      expect(html).toContain(`data-testid="shortcut-${id}"`);
+      for (const k of copy.shortcuts.rows[id].keys) expect(html).toContain(`${k}</kbd>`);
+      expect(html).toContain(copy.shortcuts.rows[id].action);
+    }
+    for (const m of copy.shortcuts.mouse) expect(html).toContain(m.action);
+  });
+
+  it("Undo and Save (toolbar) and Rotate and Delete (inspector) carry aria-keyshortcuts", () => {
+    const bar = toolbar();
+    expect(bar).toContain('aria-keyshortcuts="Control+Z Meta+Z"');
+    expect(bar).toContain('aria-keyshortcuts="Control+S Meta+S"');
+    const side = inspector([]);
+    expect(side).toContain('aria-keyshortcuts="R"');
+    expect(side).toContain('aria-keyshortcuts="Delete Backspace"');
+  });
+
+  it("GestureOverlay: an ok drag ghost is solid primary, a refused one is dashed error, a marquee is a dashed rect with outlines for its items, nothing for an idle gesture", () => {
+    const bounds = { x: 0, y: 0, w: 384, h: 256 };
+    const render = (
+      drag: Parameters<typeof GestureOverlay>[0]["drag"],
+      marquee: Parameters<typeof GestureOverlay>[0]["marquee"] = null,
+    ) =>
+      renderToStaticMarkup(
+        <GestureOverlay bounds={bounds} zoom={2} drag={drag} marquee={marquee} />,
+      );
+    const box = { x: 1, y: 2, w: 2, h: 1 };
+    const ok = render({ ok: true, boxes: [box] });
+    expect(ok).toContain('data-testid="drag-ghost"');
+    expect(ok).toContain("border-primary");
+    expect(ok).not.toContain("border-dashed");
+    expect(ok).toContain("left:64px;top:128px;width:128px;height:64px");
+    const refused = render({ ok: false, boxes: [box] });
+    expect(refused).toContain("border-dashed border-error");
+    const m = render(null, {
+      box: { x: 0, y: 0, w: 3, h: 2 },
+      items: [box],
+    });
+    expect(m).toContain('data-testid="marquee"');
+    expect(m).toContain("border-dashed border-primary");
+    expect(m.match(/marquee-item/g)).toHaveLength(1);
+    expect(render(null)).toBe("");
   });
 });

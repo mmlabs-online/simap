@@ -35,6 +35,12 @@ export function footprintCells(item: EditorItem): Point[] {
   return cells;
 }
 
+/** Top-left tile and size of an item's footprint. */
+export function footprintBox(item: EditorItem): { x: number; y: number; w: number; h: number } {
+  const [w, h] = footprintOf(item.sprite, item.rotation) ?? [1, 1];
+  return { x: item.x, y: item.y, w, h };
+}
+
 /** Topmost item covering a tile: seats first, then fixtures, later items first. */
 export function itemAt(draft: Draft, tx: number, ty: number): EditorItem | null {
   const covers = (i: EditorItem) => footprintCells(i).some((c) => c.x === tx && c.y === ty);

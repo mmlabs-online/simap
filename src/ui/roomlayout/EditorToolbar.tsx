@@ -27,7 +27,13 @@ export function EditorToolbar(p: Props) {
         <Button variant="text" size="sm" onClick={p.onBack}>
           {copy.backToRoom}
         </Button>
-        <Button variant="tonal" size="sm" disabled={!p.canUndo} onClick={p.onUndo}>
+        <Button
+          variant="tonal"
+          size="sm"
+          disabled={!p.canUndo}
+          aria-keyshortcuts="Control+Z Meta+Z"
+          onClick={p.onUndo}
+        >
           {copy.undo}
         </Button>
         <ZoomControl zoom={p.zoom} onZoom={p.onZoom} />
@@ -37,6 +43,7 @@ export function EditorToolbar(p: Props) {
           size="sm"
           disabled={!p.canSave}
           aria-busy={p.saving}
+          aria-keyshortcuts="Control+S Meta+S"
           aria-describedby={p.saveBlock ? "editor-save-reason" : undefined}
           onClick={p.onSave}
         >

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { draftFromLayout, moveItems, placeItem } from "./draft";
-import { UNDO_LIMIT, canUndo, commit, startHistory, undo } from "./history";
+import { UNDO_LIMIT, canUndo, commit, replacePresent, startHistory, undo } from "./history";
 import type { Draft } from "./types";
 
 const start = (): Draft =>
@@ -18,6 +18,17 @@ describe("history", () => {
     expect(h.present).toBe(d0);
     expect(canUndo(h)).toBe(false);
     expect(undo(h)).toBe(h);
+  });
+
+  it("replacePresent keeps past and swaps present", () => {
+    const d0 = start();
+    const r = placeItem(d0, "plant.large", 1, 1);
+    if (!r.ok) throw new Error("refused");
+    const h = replacePresent(startHistory(d0), r.draft);
+    expect(h.past).toEqual([]);
+    expect(h.present).toBe(r.draft);
+    const c = commit(startHistory(d0), r.draft);
+    expect(replacePresent(c, d0).past).toBe(c.past);
   });
 
   it("a refused op is not committed (no step)", () => {

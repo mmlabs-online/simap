@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canvasTile } from "./canvas-point";
+import { canvasCell, canvasTile, clampTile } from "./canvas-point";
 
 const bounds = { x: 0, y: 0, w: 320, h: 256 };
 
@@ -23,5 +23,16 @@ describe("canvasTile", () => {
     expect(canvasTile({ x: 640, y: 10 }, bounds, 2, 10, 8)).toBeNull();
     expect(canvasTile({ x: 10, y: 512 }, bounds, 2, 10, 8)).toBeNull();
     expect(canvasTile({ x: 639, y: 511 }, bounds, 2, 10, 8)).toEqual({ x: 9, y: 7 });
+  });
+});
+
+describe("canvasCell and clampTile", () => {
+  it("canvasCell adds negative bounds and is not clamped (negative and past-the-room cells); clampTile clamps into 0..w-1 and 0..h-1", () => {
+    const b = { x: -32, y: -64, w: 352, h: 320 };
+    expect(canvasCell({ x: 0, y: 0 }, b, 2)).toEqual({ x: -1, y: -2 });
+    expect(canvasCell({ x: 1000, y: 1000 }, bounds, 2)).toEqual({ x: 15, y: 15 });
+    expect(clampTile({ x: -1, y: -2 }, 10, 8)).toEqual({ x: 0, y: 0 });
+    expect(clampTile({ x: 15, y: 15 }, 10, 8)).toEqual({ x: 9, y: 7 });
+    expect(clampTile({ x: 3, y: 4 }, 10, 8)).toEqual({ x: 3, y: 4 });
   });
 });

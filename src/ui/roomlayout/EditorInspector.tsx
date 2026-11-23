@@ -67,13 +67,14 @@ export function EditorInspector({
         )}
         {selected.length > 1 && <p className="font-semibold">{c.count(selected.length)}</p>}
         <div className="flex flex-wrap gap-2">
-          <Button variant="tonal" size="sm" disabled={off} onClick={onRotate}>
+          <Button variant="tonal" size="sm" disabled={off} aria-keyshortcuts="R" onClick={onRotate}>
             {c.rotate}
           </Button>
           <Button
             variant="danger"
             size="sm"
             disabled={off || hasSeat}
+            aria-keyshortcuts="Delete Backspace"
             aria-describedby={hasSeat ? "editor-delete-reason" : undefined}
             onClick={onDelete}
           >

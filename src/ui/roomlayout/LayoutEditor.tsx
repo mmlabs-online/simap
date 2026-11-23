@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useState } from "react";
+import { useReducer, useRef, useState } from "react";
 import {
   editorFlags,
   editorReducer,
@@ -8,7 +8,7 @@ import {
   savePayload,
 } from "@/lib/layout-editor/editor-state";
 import { fixturePalette } from "@/lib/layout-editor/palette";
-import { escDisarms } from "@/lib/layout-editor/place-tool";
+import { isTextField, keyAction } from "@/lib/layout-editor/shortcuts";
 import { roomDetailHref } from "@/lib/nav";
 import type { Zoom } from "@/lib/sprites/layout";
 import type { MapView } from "@/lib/sprites/map-view";
@@ -19,6 +19,7 @@ import { EditorInspector } from "./EditorInspector";
 import { EditorToolbar } from "./EditorToolbar";
 import { EditorStatusLine, LeaveDialog, SaveErrorBanner } from "./EditorViews";
 import { Palette, PlacePanel } from "./Palette";
+import { ShortcutList } from "./ShortcutList";
 import { useLeaveGuard } from "./useLeaveGuard";
 
 const GROUPS = fixturePalette();
@@ -55,25 +56,53 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, onReload }: Pro
         );
   const backHref = roomDetailHref(roomCode) ?? "/rooms";
 
+  // Ctrl+S is a second trigger: the ref makes a duplicate PUT impossible before the next render.
+  const inFlight = useRef(false);
   const save = async () => {
-    if (!flags.canSave) return;
+    if (inFlight.current || !flags.canSave) return;
     const payload = savePayload(state);
     if (!payload.ok) return;
+    inFlight.current = true;
     dispatch({ type: "saveStart" });
-    const result = await seatsApi.saveLayout(roomId, payload.value);
-    if (result.ok) dispatch({ type: "saveDone", view: result.value });
-    else dispatch({ type: "saveFailed", code: result.code });
+    try {
+      const result = await seatsApi.saveLayout(roomId, payload.value);
+      if (result.ok) dispatch({ type: "saveDone", view: result.value });
+      else dispatch({ type: "saveFailed", code: result.code });
+    } finally {
+      inFlight.current = false;
+    }
   };
 
   return (
     <div
       className="flex flex-col gap-3"
       onKeyDown={(e) => {
-        const armed = tool !== null;
-        const dialogOpen = guard.pending !== null;
-        if (escDisarms(e.key, { armed, dialogOpen, defaultPrevented: e.defaultPrevented })) {
-          dispatch({ type: "disarm" });
-        }
+        const r = keyAction(
+          {
+            key: e.key,
+            ctrl: e.ctrlKey,
+            meta: e.metaKey,
+            shift: e.shiftKey,
+            alt: e.altKey,
+            repeat: e.repeat,
+            composing: e.nativeEvent.isComposing,
+            defaultPrevented: e.defaultPrevented,
+            inTextField: isTextField(e.target as HTMLElement | null),
+          },
+          // The canvas stops keys while a gesture runs, so none reach this handler then.
+          {
+            dialogOpen: guard.pending !== null,
+            gesturing: false,
+            armed: tool !== null,
+            hasSelection: state.selection.length > 0,
+          },
+        );
+        if (!r) return;
+        e.preventDefault();
+        if (r.type === "nudge") dispatch(r);
+        else if (r.type === "save") void save();
+        else if (r.type === "escape") dispatch({ type: tool ? "disarm" : "selectNone" });
+        else dispatch({ type: r.type });
       }}
     >
       <EditorToolbar
@@ -103,10 +132,8 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, onReload }: Pro
           selection={state.selection}
           zoom={zoom}
           tool={tool}
-          onPlace={(x, y) => dispatch({ type: "place", x, y })}
-          onPick={(key, additive) =>
-            dispatch(key === null ? { type: "selectNone" } : { type: "select", key, additive })
-          }
+          frozen={frozen}
+          onAction={dispatch}
         />
         <div className="flex flex-col gap-4">
           <PlacePanel
@@ -134,6 +161,7 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, onReload }: Pro
             onRotate={() => dispatch({ type: "rotate" })}
             onDelete={() => dispatch({ type: "delete" })}
           />
+          <ShortcutList />
         </div>
       </div>
       <LeaveDialog open={guard.pending !== null} onStay={guard.stay} onLeave={guard.leave} />
