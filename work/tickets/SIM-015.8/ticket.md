@@ -7,7 +7,7 @@
 | Size | S |
 | Areas | ui |
 | Gate | plan-approval |
-| Depends on | SIM-015.7 |
+| Depends on | SIM-015.7, SIM-015.9 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
