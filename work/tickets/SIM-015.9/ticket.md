@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | claude@2026-11-23T12:06:09Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/54 |
 
 ## Goal
 Slice 2b of the tile layout editor: Admins add fixtures from a sprite palette, place unplaced (tray) seats on the map,
@@ -51,3 +51,9 @@ spec LAY-01 (room size), LAY-03 (adds), LAY-05 (palette); SIM-015.7 `plan.md` �
 - Done: consults saved; plan.md READY (palette of fixtures only, tray placement, room resize, fixture-limit refusal, ghost, keyboard place panel); assumptions A1–A14 with defaults.
 - In progress / next: Ming approves; then implement.
 - Gotchas: ~450 source lines; A13 fallback moves room resize to SIM-015.11 if the diff passes ~550 lines.
+
+### 2026-11-23 — claude — DONE
+- Agent calls: 2 this run (implementer×1 inherit 88k, reviewer×1 inherit 66k; in/out split not reported); 5 in total for the ticket (~334k).
+- Done: palette, tray placement, room resize, fixture-limit refusal, ghost, keyboard place panel; review PASS on attempt 1; PR #54.
+- In progress / next: Ming merges PR #54 and runs the 6 manual checks; then SIM-015.10 and SIM-015.8.
+- Gotchas: no DOM test environment, so click/hover/Esc are manual-only; non-blocking sprites may overlap by design.
