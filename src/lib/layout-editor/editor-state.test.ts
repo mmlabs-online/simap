@@ -386,4 +386,58 @@ describe("editor state", () => {
     const s = run(base(), arm(plant), { type: "saveStart" }, { type: "saveDone", view: view() });
     expect(s.tool).toBeNull();
   });
+
+  it("selectMany replaces; additive unions without toggling; unknown keys are dropped; an empty non-additive list clears", () => {
+    const a = `s:${S1}`;
+    const b = `s:${S2}`;
+    const s1 = run(base(), { type: "selectMany", keys: [a, "nope"], additive: false });
+    expect(s1.selection).toEqual([a]);
+    const s2 = run(s1, { type: "selectMany", keys: [a, b], additive: true });
+    expect(s2.selection).toEqual([a, b]);
+    expect(run(s2, { type: "selectMany", keys: [b], additive: false }).selection).toEqual([b]);
+    expect(run(s2, { type: "selectMany", keys: [], additive: false }).selection).toEqual([]);
+  });
+
+  const nudge = (dx: number, dy: number): EditorAction => ({ type: "nudge", dx, dy });
+  const steps = (s: EditorState) => s.history.past.length;
+
+  it("consecutive nudges with the same selection are one undo step; one undo returns to the state before the run", () => {
+    const s0 = run(base(), sel(`s:${S1}`));
+    const s = run(s0, nudge(1, 0), nudge(1, 0), nudge(0, 1));
+    expect(steps(s)).toBe(1);
+    expect(present(s).items.find((i) => i.seatId === S1)).toMatchObject({ x: 4, y: 3 });
+    const u = run(s, { type: "undo" });
+    expect(present(u)).toBe(present(s0));
+  });
+
+  it("a nudge after another action (inspector move, select, selectMany, undo) starts a new undo step", () => {
+    const s0 = run(base(), sel(`s:${S1}`), nudge(1, 0));
+    expect(steps(run(s0, { type: "move", dx: 0, dy: 1 }, nudge(0, 1)))).toBe(3);
+    expect(steps(run(s0, sel(`s:${S1}`), nudge(1, 0)))).toBe(2);
+    const many: EditorAction = { type: "selectMany", keys: [`s:${S1}`], additive: false };
+    expect(steps(run(s0, many, nudge(0, 1)))).toBe(2);
+  });
+
+  it("undo after a run, then a nudge, commits a new step and does not overwrite the restored state", () => {
+    const s0 = run(base(), sel(`s:${S1}`));
+    const s = run(s0, nudge(1, 0), nudge(1, 0), { type: "undo" }, nudge(0, 1));
+    expect(steps(s)).toBe(1);
+    expect(seatX(s, S1)).toBe(2);
+    expect(present(run(s, { type: "undo" }))).toBe(present(s0));
+  });
+
+  it("a refused nudge sets the refusal notice, keeps the draft and does not end the run", () => {
+    const s0 = run(base(), sel(`s:${S1}`), nudge(1, 0));
+    const refused = run(s0, nudge(-10, 0));
+    expect(refused.notice).toEqual({ kind: "refused", code: "layout_out_of_bounds" });
+    expect(present(refused)).toBe(present(s0));
+    expect(steps(run(refused, nudge(1, 0)))).toBe(1);
+  });
+
+  it("nudge is ignored while saving, with an empty selection and for (0,0)", () => {
+    const s0 = run(base(), sel(`s:${S1}`));
+    expect(run(s0, { type: "saveStart" }, nudge(1, 0))).toEqual(run(s0, { type: "saveStart" }));
+    expect(steps(run(base(), nudge(1, 0)))).toBe(0);
+    expect(run(s0, nudge(0, 0))).toBe(s0);
+  });
 });

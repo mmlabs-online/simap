@@ -2,7 +2,7 @@ import type { LayoutSaveValue } from "@/lib/sprites/layout";
 import type { MapView } from "@/lib/sprites/map-view";
 import { LAYOUT_LIMITS, validateLayoutSave, type LayoutRuleCode } from "@/lib/validate/layout";
 import { deleteItems, draftFromLayout, moveItems, resizeRoom, rotateItems } from "./draft";
-import { canUndo, commit, startHistory, undo, type History } from "./history";
+import { canUndo, commit, replacePresent, startHistory, undo, type History } from "./history";
 import { nextTool, reconcileTool, sameTool, tryPlace, type Tool } from "./place-tool";
 import { buildSavePayload, isDirty, planSave } from "./save-plan";
 import { saveErrorKind } from "./save-errors";
@@ -21,6 +21,8 @@ export type EditorState = {
   baseVersion: number;
   readOnly: boolean;
   selection: string[];
+  /** Selection signature of the running arrow-key run (one undo step), else null. */
+  nudge: string | null;
   tool: Tool | null;
   notice: EditorNotice | null;
   save: { status: "idle" | "saving" } | { status: "error"; code: string };
@@ -29,6 +31,8 @@ export type EditorState = {
 export type EditorAction =
   | { type: "select"; key: string; additive: boolean }
   | { type: "selectNone" }
+  | { type: "selectMany"; keys: string[]; additive: boolean }
+  | { type: "nudge"; dx: number; dy: number }
   | { type: "move"; dx: number; dy: number }
   | { type: "rotate" }
   | { type: "delete" }
@@ -49,6 +53,7 @@ export function initEditor(view: MapView): EditorState {
     baseVersion: view.version,
     readOnly: view.truncated,
     selection: [],
+    nudge: null,
     tool: null,
     notice: null,
     save: { status: "idle" },
@@ -116,7 +121,7 @@ function applyEdit(
   };
 }
 
-export function editorReducer(state: EditorState, action: EditorAction): EditorState {
+function reduce(state: EditorState, action: EditorAction): EditorState {
   const present = state.history.present;
   const frozen = state.readOnly || state.save.status === "saving";
   switch (action.type) {
@@ -132,6 +137,28 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     }
     case "selectNone":
       return state.selection.length === 0 ? state : { ...state, selection: [] };
+    case "selectMany": {
+      const known = new Set(present.items.map((i) => i.key));
+      const keys = action.keys.filter((k) => known.has(k));
+      const selection = action.additive
+        ? [...state.selection, ...keys.filter((k) => !state.selection.includes(k))]
+        : keys;
+      return { ...state, selection };
+    }
+    case "nudge": {
+      if (frozen || state.selection.length === 0 || (action.dx === 0 && action.dy === 0)) {
+        return state;
+      }
+      const r = moveItems(present, state.selection, action.dx, action.dy);
+      if (!r.ok) return { ...state, notice: { kind: "refused", code: r.code } };
+      const sig = state.selection.join(",");
+      if (state.nudge !== sig) return { ...applyEdit(state, r, "moved"), nudge: sig };
+      return {
+        ...state,
+        history: replacePresent(state.history, r.draft),
+        notice: { kind: "done", what: "moved" },
+      };
+    }
     case "move":
       if (frozen || state.selection.length === 0 || (action.dx === 0 && action.dy === 0)) {
         return state;
@@ -190,4 +217,10 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case "saveFailed":
       return { ...state, save: { status: "error", code: action.code } };
   }
+}
+
+/** Any action other than `nudge` ends a run of arrow moves (the next nudge starts a new undo step). */
+export function editorReducer(state: EditorState, action: EditorAction): EditorState {
+  const next = reduce(state, action);
+  return action.type !== "nudge" && next.nudge !== null ? { ...next, nudge: null } : next;
 }

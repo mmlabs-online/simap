@@ -1,3 +1,5 @@
+import type { ShortcutId } from "@/lib/layout-editor/shortcuts";
+
 /** English strings of the room map (D36). Seat codes and names come from data and are not translated here. */
 export const roomlayoutCopy = {
   loading: "Loading the room map...",
@@ -130,6 +132,26 @@ export const roomlayoutCopy = {
       sizeBad: "Enter a whole number from 1 to 64.",
       itemsHeading: "Items",
       itemsEmpty: "This room has no items.",
+    },
+    shortcuts: {
+      summary: "Keyboard shortcuts",
+      rows: {
+        rotate: { keys: ["R"], action: "Turn the selection" },
+        delete: { keys: ["Delete", "Backspace"], action: "Delete the selection" },
+        nudge: {
+          keys: ["Arrow keys"],
+          action: "Move the selection by one tile. Moves in a row undo together.",
+        },
+        undo: { keys: ["Ctrl+Z", "Cmd+Z"], action: "Undo" },
+        save: { keys: ["Ctrl+S", "Cmd+S"], action: "Save the layout" },
+        escape: { keys: ["Esc"], action: "Cancel a drag, stop placing, or clear the selection" },
+      } satisfies Record<ShortcutId, { keys: readonly string[]; action: string }>,
+      mouseHeading: "Mouse",
+      mouse: [
+        { keys: "Drag an item", action: "Move the selection" },
+        { keys: "Drag on empty floor", action: "Select an area" },
+        { keys: "Shift", action: "Add to the selection" },
+      ],
     },
     itemName: (item: { kind: "seat" | "fixture"; sprite: string; code: string | null }) =>
       item.kind === "seat" ? `Desk ${item.code ?? ""}`.trim() : item.sprite.replaceAll(".", " "),

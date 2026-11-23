@@ -61,13 +61,6 @@ export function reconcileTool(tool: Tool | null, draft: Draft): Tool | null {
   return tool;
 }
 
-export function escDisarms(
-  key: string,
-  s: { armed: boolean; dialogOpen: boolean; defaultPrevented: boolean },
-): boolean {
-  return key === "Escape" && s.armed && !s.dialogOpen && !s.defaultPrevented;
-}
-
 /** A whole number from digits only (spaces around are fine), else null. */
 export function parseWhole(s: string): number | null {
   return /^\s*\d+\s*$/.test(s) ? Number(s) : null;

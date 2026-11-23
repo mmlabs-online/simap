@@ -11,6 +11,12 @@ export function commit(h: History, next: Draft): History {
   return { past: [...h.past, h.present].slice(-UNDO_LIMIT), present: next };
 }
 
+/** Swap the present without a new undo step (a run of coalesced moves). */
+export const replacePresent = (h: History, next: Draft): History => ({
+  past: h.past,
+  present: next,
+});
+
 export function undo(h: History): History {
   if (h.past.length === 0) return h;
   return { past: h.past.slice(0, -1), present: h.past[h.past.length - 1] };

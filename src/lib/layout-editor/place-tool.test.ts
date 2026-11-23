@@ -4,7 +4,6 @@ import { LAYOUT_LIMITS, footprintOf } from "@/lib/validate/layout";
 import { draftFromLayout } from "./draft";
 import { paletteEntries } from "./palette";
 import {
-  escDisarms,
   nextTool,
   parseRoomSize,
   parseWhole,
@@ -103,15 +102,6 @@ describe("place tool", () => {
     expect(reconcileTool(t, d)).toBe(t);
     expect(reconcileTool(fx, d)).toBe(fx);
     expect(reconcileTool(null, d)).toBeNull();
-  });
-
-  it("escDisarms only for Escape, with a tool armed, no dialog open, not defaultPrevented", () => {
-    const ok = { armed: true, dialogOpen: false, defaultPrevented: false };
-    expect(escDisarms("Escape", ok)).toBe(true);
-    expect(escDisarms("Enter", ok)).toBe(false);
-    expect(escDisarms("Escape", { ...ok, armed: false })).toBe(false);
-    expect(escDisarms("Escape", { ...ok, dialogOpen: true })).toBe(false);
-    expect(escDisarms("Escape", { ...ok, defaultPrevented: true })).toBe(false);
   });
 
   it("parseWhole accepts '0', ' 12 '; rejects '', '1.5', '-1', '1e2', 'abc'", () => {

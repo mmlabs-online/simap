@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { draftFromLayout } from "./draft";
-import { dragDelta, itemAt, itemsInRect, pointToTile } from "./tiles";
+import { dragDelta, footprintBox, itemAt, itemsInRect, pointToTile } from "./tiles";
 
 const fx = (sprite: string, x: number, y: number) => ({
   id: "",
@@ -59,6 +59,16 @@ describe("hit tests", () => {
     expect(itemAt(draft, 3, 2)?.kind).toBe("seat");
     expect(itemAt(draft, 8, 6)?.sprite).toBe("plant.small");
     expect(itemAt(draft, 0, 0)).toBeNull();
+  });
+
+  it("footprintBox gives x, y, w, h from the rotated footprint (a 2×1 sprite at 90 is 1×2)", () => {
+    const d = draftFromLayout(
+      { w: 12, h: 8, floors: [], seats: [seat("a", 2, 3)], fixtures: [] },
+      [],
+    );
+    const desk = d.items[0];
+    expect(footprintBox(desk)).toEqual({ x: 2, y: 3, w: 2, h: 1 });
+    expect(footprintBox({ ...desk, rotation: 90 })).toEqual({ x: 2, y: 3, w: 1, h: 2 });
   });
 
   it("itemsInRect selects items whose footprint intersects the rectangle, in either drag direction", () => {
