@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-23T11:41:55Z |
 | PR | — |
 
 ## Goal
@@ -48,7 +48,7 @@ A6, A8–A13 (approved 2026-11-23).
 - Component: leave guard, error mapping. Manual: edit and save a room with 20+ seats, and a 64×64 room.
 
 ## Notes / answers from Ming
-- Waiting for Ming: plan approval (P1 gate)
+- 2026-11-23: Plan approved (all defaults A1–A16; Ming: "duyệt plan SIM-015.7, chạy luôn"). Further slices filed as SIM-015.9 and SIM-015.10; SIM-015.8 now also depends on SIM-015.9.
 
 ## Handoff
 
