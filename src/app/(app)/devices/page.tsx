@@ -1,12 +1,5 @@
-import { PageSkeleton } from "@/ui";
-import { shellCopy } from "@/ui/copy/shell";
+import { DevicesPage } from "@/ui";
 
-export default function DevicesPage() {
-  return (
-    <PageSkeleton
-      title={shellCopy.pages.devices.title}
-      emptyText={shellCopy.pages.devices.empty}
-      icon="lan"
-    />
-  );
+export default function Page() {
+  return <DevicesPage />;
 }

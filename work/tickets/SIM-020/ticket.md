@@ -8,7 +8,7 @@
 | Areas | api, security |
 | Gate | plan-approval |
 | Depends on | SIM-011 |
-| Needs Ming | M-4 |
+| Needs Ming | M-42, M-43 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
 | Claimed by | — |
@@ -35,7 +35,13 @@ spec MEM-01; D16 (b), D34.
 
 ## Technical notes
 - Files: `src/server/identity/sync*`, `.env.example`.
-- Risks / open questions: Blocked until org-admin-api ships the endpoints (M-4).
+- Contract: org-admin-api `docs/consumers.md` (USR-29 members read, USR-30 remove from org; both merged 2026-11-24).
+  Read the contract there before planning; `docs/requests/org-admin-api-org-members.md` lists how it differs from the
+  request: `org-members:read` runtime key (ADR-0025), permission `simap:org:remove-member`, remove answers
+  `403 org_access_denied` for an unknown or suspended org (an upstream error, not a simap route code; map it to a
+  simap domain refusal, R7), `member_outranks_caller`, and remove also revokes the member's pending invitations.
+- Risks / open questions: Blocked until Ming does M-42 (key) and M-43 (permission). Display names from Identity and
+  invitations in the members read are not shipped (org-admin-api follow-ups USR-31, USR-32).
 
 ## Test plan
 - Unit: sync diff.

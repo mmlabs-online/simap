@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | MERGED |
 | Priority | P1 |
 | Size | L |
 | Areas | api, ui |
 | Gate | none |
 | Depends on | SIM-010, SIM-011 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 2 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/41 |
 
 ## Goal
 Admins add and delete a room's seats without the map, everyone sees the room's seats as a list, and anyone sees a seat's full detail; Managers assign, replace and remove occupants safely; users release their own seat.
@@ -52,6 +52,7 @@ spec SEA-01..05, ROO-02, DEV-06, REG-03 (seat); D18, D22, D26, D30, D32, D47 (se
 - Manual: assign, replace, release on a seeded room.
 
 ## Notes / answers from Ming
+- 2026-11-22: Ming approved one more rework beyond the limit of 2: fix the open security 🟡 items (Attempt 2 findings 1-3, Attempt 1 finding 2). Ming also asked to create SIM-012.2.
 - 2026-11-20 (D47): seat add/delete and the seat list fold into this ticket (SIM-010 was already approved); clean UI kit only, no map. The planner may propose a split.
 
 ## Handoff
@@ -59,3 +60,15 @@ spec SEA-01..05, ROO-02, DEV-06, REG-03 (seat); D18, D22, D26, D30, D32, D47 (se
 ### 2026-11-20 — claude — BACKLOG (board update, D47)
 - Done: scope extended per Ming (D47): seat add/delete API, room detail page with a seats table, panel opened via `?seat=<code>`; map work excluded; Size M → L.
 - Next: plan after SIM-010 and SIM-011 merge; the planner should consider an API/UI split.
+
+### 2026-11-22 — claude — DONE (API slice)
+- Agent calls: 9, tokens 699k, in/out split not reported (api-platform-engineer×1 60k, frontend-developer×1 54k, planner×1 135k, implementer×2 137k, reviewer×2 181k, security-ai-generated-code-auditor×2 134k; models from agent files, no overrides)
+- Done: seat API, occupancy rules and tests. Reviewer PASS on attempt 2. Checks green (1195 unit, 51 DB tests). PR: https://github.com/mmlabs-online/simap/pull/41
+- In progress / next: Ming decides on the open security 🟡 items and on creating SIM-012.2 (UI) from the plan's split proposal.
+- Gotchas: security Attempt 2 says REWORK with no 🔴, so it does not block under the loop rules. The UI halves of AC3-AC6 are not done. Real HTTP with a real Identity token is unverified.
+
+### 2026-11-22 — claude — DONE (API slice, security rework)
+- Agent calls: 3 more (implementer×1 35k, security-ai-generated-code-auditor×1 44k, reviewer×1 58k); session total 836k.
+- Done: closed security Attempt 2 findings 1-3 and Attempt 1 finding 2. Reviewer and security PASS on attempt 3. Checks green (1195 unit, 52 DB tests). PR: https://github.com/mmlabs-online/simap/pull/41
+- In progress / next: Ming merged PR #41 (`64771cb`), which includes the security fix `9dec4ff`. Plan defaults A1-A13 still need confirming. SIM-012.2 is runnable.
+- Gotchas: the cross-org test proves the outcome, not an `org_id` filter on each statement. Real HTTP with a real Identity token is unverified.

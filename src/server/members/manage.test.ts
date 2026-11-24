@@ -195,8 +195,14 @@ describe("listMembers", () => {
     expect(r.items).toHaveLength(1);
     expect(r.nextCursor).not.toBeNull();
     const [sql, values] = t.calls[0]!;
-    expect(sql).toContain("ilike $3");
+    expect(sql).toContain("like $3 escape");
+    expect(sql).not.toContain("ilike");
     expect(values).toEqual([scope.orgId, "active", "%50\\%\\_%", 2]);
     expect(sql).not.toContain("50%");
+  });
+  it("folds q: Nguyễn binds %nguyen%", async () => {
+    const t = fakeDb(() => []);
+    await listMembers(t.db, scope, { status: "active", limit: 1, q: "Nguyễn" });
+    expect(t.calls[0]![1]).toEqual([scope.orgId, "active", "%nguyen%", 2]);
   });
 });

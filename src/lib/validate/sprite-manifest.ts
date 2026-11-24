@@ -72,6 +72,13 @@ export function validateSpriteManifest(
     }
     if (!isPair(f.anchor, false)) err(`${p}.anchor`, "must be a pair of integers");
     if (!isPair(f.tiles, true)) err(`${p}.tiles`, "must be a pair of integers > 0");
+    else {
+      const want = REGISTRY[key].tiles ?? [1, 1];
+      const got = f.tiles as number[];
+      if (got[0] !== want[0] || got[1] !== want[1]) {
+        err(`${p}.tiles`, `must match the registry footprint ${want[0]}x${want[1]}`);
+      }
+    }
     if (typeof f.blocks !== "boolean") err(`${p}.blocks`, "must be a boolean");
   }
   return errors.length > 0 ? { ok: false, errors } : { ok: true, value: json as SpriteManifest };

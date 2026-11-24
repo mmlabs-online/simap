@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { isActive, navItemsFor } from "@/lib/nav";
+import { isActive, navItemsFor, type NavId } from "@/lib/nav";
 import type { Session } from "@/lib/session";
 import { Avatar } from "./Avatar";
 import { Button, IconButton } from "./Button";
 import { Card } from "./Card";
 import { shellCopy } from "./copy/shell";
 import { Icon } from "./Icon";
+import { badgeText } from "./requests/request-badge";
 import { RoleBadge } from "./RoleBadge";
 import type { ShellActions } from "./session";
 import { ThemeToggle } from "./ThemeToggle";
@@ -20,11 +21,16 @@ export function AppShellView({
   session,
   pathname,
   actions,
+  roomSwitcher,
+  badges,
   children,
 }: {
   session: Session | null;
   pathname: string;
   actions: ShellActions;
+  roomSwitcher?: ReactNode;
+  /** A count per nav entry (0 or missing: no badge). Only entries the tier can see render. */
+  badges?: Partial<Record<NavId, number>>;
   children: ReactNode;
 }) {
   const navItems = session
@@ -56,30 +62,43 @@ export function AppShellView({
               <Icon name="grid_view" filled size={24} />
             </div>
           </div>
-          <div className="flex lg:flex-col gap-1.5 w-full justify-around lg:justify-start">
+          <div className="flex lg:flex-col gap-1.5 w-full justify-start overflow-x-auto lg:overflow-visible">
             {navItems.map((item) => {
               const active = isActive(item, pathname);
+              const count = badges?.[item.id] ?? 0;
+              const text = badgeText(count);
               return (
                 <Link
                   key={item.id}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className="state-layer flex flex-col items-center gap-1 lg:w-16 min-h-11 px-1 py-1.5 rounded-md3
+                  className="state-layer flex flex-col items-center gap-1 flex-1 min-w-16 lg:flex-none lg:min-w-0 lg:w-16 min-h-11 px-1 py-1.5 rounded-md3
                              no-underline text-on-surface-variant aria-[current=page]:text-on-surface"
                 >
                   <span
                     className={[
-                      "w-14 h-8 rounded-md3 flex items-center justify-center transition-colors duration-150",
+                      "relative w-14 h-8 rounded-md3 flex items-center justify-center transition-colors duration-150",
                       active
                         ? "bg-secondary-container text-on-secondary-container border border-outline-variant"
                         : "",
                     ].join(" ")}
                   >
                     <Icon name={item.icon} filled={active} size={22} />
+                    {text !== null && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-error-container text-on-error-container border border-surface text-[10px] font-extrabold leading-[18px] text-center"
+                      >
+                        {text}
+                      </span>
+                    )}
                   </span>
                   <span className="text-[11px] font-semibold tracking-[0.02em]">
                     {shellCopy.nav[item.id]}
                   </span>
+                  {text !== null && (
+                    <span className="sr-only">{shellCopy.badge.newDecisions(count)}</span>
+                  )}
                 </Link>
               );
             })}
@@ -121,9 +140,6 @@ export function AppShellView({
 
           <div className="flex-1" />
 
-          {/* Room switcher slot: wired by SIM-010 (spec SHL-01). */}
-          {session && <div data-slot="room-switcher" />}
-
           <ThemeToggle />
 
           {session && (
@@ -153,6 +169,12 @@ export function AppShellView({
             </>
           )}
         </header>
+
+        {session && roomSwitcher && (
+          <div className="flex-none flex items-center gap-2 px-4 lg:px-5 py-2 bg-surface border-b border-outline-variant">
+            {roomSwitcher}
+          </div>
+        )}
 
         <main
           id="main"

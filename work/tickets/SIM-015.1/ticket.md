@@ -1,63 +1,86 @@
-# SIM-015.1: Room layout API and read-only room view
+# SIM-015.1: Room layout tile-grid schema and validator
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
-| Areas | api, ui |
-| Gate | none |
-| Depends on | SIM-010 |
-| Needs Ming | — |
-| Attempts | 0 |
+| Areas | db, api, security |
+| Gate | plan-approval |
+| Depends on | SIM-010, SIM-012, SIM-024.1 |
+| Needs Ming | M-24 |
+| Attempts | 1 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/47 |
 
 ## Goal
-Everyone opens a room and sees its saved layout with seat status, and the layout has one clean data shape for the editor.
+A room's map has one clean, saved tile-grid data shape that the read-only view (SIM-015.3) and the editor (SIM-015.2) both
+use.
 
 ## Scope reference
-spec LAY (Room view), LAY-03, SEA-02; D20.
+- Spec LAY "Visual style", LAY-01, LAY-02, LAY-03, SEA-02.
+- D41, D43, D48, D49, D55, D58. D43 and D48 supersede D20's free-form geometry.
 
 ## Scope
-- One geometry model for seats (x, y, rotation, w, h) and fixtures; `GET /api/rooms/{code}/layout`, `PUT` for SIM-015.2 (Admin).
-- `/rooms/<code>` read-only view: seat tiles with derived status, cannot-seat grey, fixtures, opens seat detail via `?seat=<code>`.
-- Port seatMGT `RoomView` without the legacy coordinate systems.
+- A forward-only migration adding the room size in tiles and tile placement (tile x/y, rotation 0/90/180/270, sprite key)
+  for seats and layout fixtures. SIM-008's free-form columns stay until a later contract migration (R2).
+- A validated layout payload in `src/lib`: bounds, whole tiles, the four rotations, known sprite keys, and the manifest's
+  blocking rule.
+- `GET /api/rooms/{code}/layout` for any org member, with seat status derived and never read from storage.
+- `PUT /api/rooms/{code}/layout` for Admin: one save of the room size, the existing seats' placement and the fixtures.
+- Every query scoped by the verified token's org (R6), and domain refusals as 409/422 (R7).
 
 ## Out of scope
-- Editing (SIM-015.2). Seat actions (SIM-012).
+- Any map UI (SIM-015.3) or editor UI (SIM-015.2).
+- Creating or deleting seats from the layout save (LAY-02, decided in SIM-015.2's plan).
+- Dropping the free-form columns.
+- Real art, the Credits page and M-10 (SIM-033).
+- Device and pending-request overlays (after SIM-013 and SIM-014).
 
 ## Acceptance criteria
-- [ ] The room view renders every seat and fixture of the room at its saved position.
-- [ ] Seat status is derived from the occupant; no status is read from storage.
-- [ ] A seat code in the URL opens its detail panel.
-- [ ] Works at 390 px (pan/zoom) and in dark mode.
-- [ ] Unit tests cover the layout payload validation.
+- [ ] The migration is forward-only, and the previous image keeps working after it is applied.
+- [ ] GET returns the room size, each seat's placement and derived status, and the fixtures, for the caller's org only.
+- [ ] A room with no saved layout returns a usable default, and its seats stay reachable.
+- [ ] PUT is Admin-only, and a valid layout survives a reload.
+- [ ] An out-of-bounds, overlapping, wrongly rotated or unknown-sprite payload, or a seat from another room or org, is
+      refused and saves nothing.
+- [ ] Unit tests cover the payload validation, and DB integration tests cover org scoping and the save.
 
 ## Technical notes
-- Files: `src/server/layout/*`, `src/app/api/rooms/[code]/layout/*`, `src/ui/roomlayout/RoomView*`; reference seatMGT `src/components/roomlayout/RoomView.tsx`, `src/lib/roomLayout.ts`.
-- Risks / open questions: seatMGT has three overlapping coordinate sets; keep only one.
+- Files: `db/migrations/*`, `src/lib/validate/*`, `src/server/layout/*`, `src/app/api/rooms/[code]/layout/*`.
+- High path (`db/migrations/**`), so the plan needs Ming's approval.
+- Risks / open questions: concurrent saves by two Admins, and how existing seats get a default placement.
 
 ## Test plan
 - Unit: layout validation.
-- Manual: view a seeded room on mobile and desktop.
+- DB: `pnpm schema:check`, `pnpm test:db`.
+- Manual: none in a browser, because this ticket has no UI.
 
 ## Notes / answers from Ming
 - 2026-11-20 (D47): BLOCKED — waiting for pixel-art decisions (D41–D46). Do not start until Ming lifts it; the map tickets bring the tile-grid model and are re-scoped then.
+- 2026-11-22 (D58): Ming lifted D47 for the room map tickets and accepted the proposed order. This ticket is re-scoped to the schema and API; the read-only view moved to SIM-015.3.
 
-## Change from Ming (2026-11-20, D41–D44)
-Supersedes the free-form parts above. The room view is **pixel-art on a 32 px tile grid** (D48; style D46, name tags on hover D50) drawn from a sprite atlas +
-manifest (spec LAY "Visual style", LAY-06):
-- Layout data: room size in tiles; items with tile x/y, rotation 0/90/180/270, sprite key; needs a forward-only
-  migration adding these to `seats` / `layout_fixtures` and room grid size (SIM-008's double x/y/rotation/w/h stay
-  until a later contract migration).
-- Read-only view renders desks, fixtures, LAY-06 overlays (state sprites, device sprites by type, generated avatars),
-  integer zoom 2×/3×/4×, pan, keyboard focus on seats.
-- Depends on SIM-024 (sprite atlas + renderer; placeholder art is enough; final art is M-9).
+- 2026-11-22: Plan approved (Ming), with defaults A1-A14 and the split (D59). This ticket delivers slice 1 only: ACs 1, 5a and 6a. SIM-015.4 and SIM-015.5 carry ACs 2, 3, 4, 5b and 6b.
 
 ## Handoff
 
 ### 2026-11-20 — claude — BLOCKED (board update, D47)
 - Done: set BLOCKED on Ming's instruction (2026-11-20): the room map becomes pixel art; art style and tile size are not decided (D41–D46 on branch `claude/confident-cerf-67q5le`).
 - Next: wait for Ming; re-scope against D41–D46 before planning. Seat add/delete without the map moved to SIM-012.
+
+### 2026-11-22 — claude — BACKLOG (re-scope, D58)
+- Done: unblocked and re-scoped to the tile-grid schema and API. The original free-form scope is in git history.
+- Next: `/run SIM-015.1`; stops at plan approval.
+
+### 2026-11-22 — claude — BLOCKED (plan approval)
+- Agent calls: 3, tokens about 253k total, in/out split not reported (database-optimizer×1 default model 46k; api-platform-engineer×1 default model 68k; planner×1 default model 138k).
+- Done: consults saved; plan READY with no blocking question. It implements slice 1 only: migration, schema check, shared type, pure validator, unit tests and 4 error codes.
+- In progress / next: Ming answers A1–A14 in `plan.md` and approves (M-24). If A1 is accepted, create SIM-015.4 (default layout, GET) and SIM-015.5 (save, PUT), carry ACs 2, 3, 4, 5b and 6b to them, and repoint SIM-015.3 to SIM-015.4 and SIM-015.2 to SIM-015.5.
+- Gotchas: no code or check has run for this plan. SIM-015.2's scope text still describes the old free-form editor and must be re-scoped before planning.
+
+### 2026-11-22 — claude — DONE (slice 1)
+- Agent calls: 6 since plan approval, tokens about 357k total, in/out split not reported (implementer×2 default model 78k, 21k; reviewer×2 default model 85k, 40k; security-ai-generated-code-auditor×2 default model 69k, 64k).
+- Done: forward-only tile-grid migration, schema checks, shared type, pure validator, tests and 4 error codes. Review attempt 1 found a wrong check count in impl-log and a missing fixture sprite-key check; both fixed. Review attempt 2 PASS, security no 🔴. PR #47 opened.
+- In progress / next: Ming reviews the migration and merges PR #47. Next ticket: SIM-015.4.
+- Gotchas: Node and pnpm need fnm activated. The local `simap` database does not have this migration applied yet. Security follow-ups are in SIM-015.3, SIM-015.4 and SIM-015.5.

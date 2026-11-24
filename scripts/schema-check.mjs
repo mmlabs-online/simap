@@ -300,6 +300,151 @@ try {
     ),
   );
 
+  // 8 tile layout (SIM-015.1)
+  const insSeat = (/** @type {string} */ cols, /** @type {string} */ vals, seq = 90) =>
+    q(
+      `insert into seats (org_id, room_id, seq, code${cols}) values ($1, $2, ${seq}, 'C302-90'${vals})`,
+      [A.org, roomA],
+    );
+  const insFixture = (
+    /** @type {string} */ kind,
+    /** @type {string} */ cols,
+    /** @type {string} */ vals,
+  ) =>
+    q(
+      `insert into layout_fixtures (org_id, room_id, kind${cols}) values ($1, $2, ${kind}${vals})`,
+      [A.org, roomA],
+    );
+  const seatTile = ", tile_x, tile_y, tile_rotation, sprite_key";
+  check(
+    "8 old-shape room, seat and fixture inserts still work",
+    (await tx(async () => {
+      await c.query(`insert into rooms (org_id, code, name) values ($1, 'C8-OLD', 'old')`, [A.org]);
+      await insSeat("", "")();
+      await insFixture("'door'", ", x, y, rotation, w, h", ", 1, 2, 90, 3, 4")();
+    }, false)) === null,
+  );
+  check(
+    "8 partial seat placement refused (23514)",
+    refused(await tx(insSeat(", tile_x, tile_y", ", 1, 1")), "23514", "seats_tile_placement_check"),
+  );
+  check(
+    "8 partial fixture placement refused (23514)",
+    refused(
+      await tx(insFixture("'door'", ", tile_x, sprite_key", ", 1, 'door'")),
+      "23514",
+      "layout_fixtures_tile_placement_check",
+    ),
+  );
+  check(
+    "8 full seat placement accepted",
+    (await tx(insSeat(seatTile, ", 1, 2, 90, 'desk.single'"), false)) === null,
+  );
+  check(
+    "8 seat bad rotation refused (23514)",
+    refused(
+      await tx(insSeat(seatTile, ", 1, 2, 45, 'desk.single'")),
+      "23514",
+      "seats_tile_rotation_check",
+    ),
+  );
+  check(
+    "8 seat negative tile refused (23514)",
+    refused(
+      await tx(insSeat(seatTile, ", -1, 2, 0, 'desk.single'")),
+      "23514",
+      "seats_tile_xy_check",
+    ),
+  );
+  check(
+    "8 seat blank sprite key refused (23514)",
+    refused(await tx(insSeat(seatTile, ", 1, 2, 0, '  '")), "23514", "seats_sprite_key_check"),
+  );
+  check(
+    "8 fixture bad rotation refused (23514)",
+    refused(
+      await tx(insFixture("null", seatTile, ", 1, 2, 360, 'door'")),
+      "23514",
+      "layout_fixtures_tile_rotation_check",
+    ),
+  );
+  check(
+    "8 fixture negative tile refused (23514)",
+    refused(
+      await tx(insFixture("null", seatTile, ", 1, -2, 0, 'door'")),
+      "23514",
+      "layout_fixtures_tile_xy_check",
+    ),
+  );
+  check(
+    "8 fixture blank sprite key refused (23514)",
+    refused(
+      await tx(insFixture("null", seatTile, ", 1, 2, 0, '  '")),
+      "23514",
+      "layout_fixtures_sprite_key_check",
+    ),
+  );
+  check(
+    "8 partial grid refused (23514)",
+    refused(
+      await tx(
+        q(`insert into rooms (org_id, code, name, grid_w) values ($1, 'C8-G1', 'g', 5)`, [A.org]),
+      ),
+      "23514",
+      "rooms_grid_pair_check",
+    ),
+  );
+  check(
+    "8 non-positive grid refused (23514)",
+    refused(
+      await tx(
+        q(
+          `insert into rooms (org_id, code, name, grid_w, grid_h) values ($1, 'C8-G2', 'g', 0, 5)`,
+          [A.org],
+        ),
+      ),
+      "23514",
+      "rooms_grid_size_check",
+    ),
+  );
+  check(
+    "8 non-array floor_zones refused (23514)",
+    refused(
+      await tx(
+        q(
+          `insert into rooms (org_id, code, name, floor_zones) values ($1, 'C8-F', 'f', '{}'::jsonb)`,
+          [A.org],
+        ),
+      ),
+      "23514",
+      "rooms_floor_zones_check",
+    ),
+  );
+  check(
+    "8 negative layout_version refused (23514)",
+    refused(
+      await tx(
+        q(`insert into rooms (org_id, code, name, layout_version) values ($1, 'C8-V', 'v', -1)`, [
+          A.org,
+        ]),
+      ),
+      "23514",
+      "rooms_layout_version_check",
+    ),
+  );
+  check(
+    "8 fixture with neither kind nor sprite refused (23514)",
+    refused(await tx(insFixture("null", "", "")), "23514", "layout_fixtures_kind_or_sprite_check"),
+  );
+  check(
+    "8 placed fixture with null kind accepted",
+    (await tx(insFixture("null", seatTile, ", 1, 2, 0, 'door'"), false)) === null,
+  );
+  check(
+    "8 unknown legacy kind still refused (23514)",
+    refused(await tx(insFixture("'sofa'", "", "")), "23514", "layout_fixtures_kind_check"),
+  );
+
   // extras
   const reqIns = q(
     `insert into seat_requests (org_id, seat_id, subject_id, created_by_id) values ($1, $2, $3, $3)`,

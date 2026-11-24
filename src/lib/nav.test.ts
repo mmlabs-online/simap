@@ -1,17 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { isActive, navItemsFor, roomEditorHref } from "./nav";
+import { isActive, navItemsFor, roomDetailHref, roomEditorHref } from "./nav";
 
 const ids = (tier: Parameters<typeof navItemsFor>[0]) => navItemsFor(tier).map((i) => i.id);
 
 describe("navItemsFor", () => {
-  it("user sees dashboard, rooms, devices, members only", () => {
-    expect(ids("user")).toEqual(["dashboard", "rooms", "devices", "members"]);
+  it("user sees dashboard, rooms, devices, members, myRequests only", () => {
+    expect(ids("user")).toEqual(["dashboard", "rooms", "devices", "members", "myRequests"]);
   });
   it("manager adds approvals but not the editor", () => {
-    expect(ids("manager")).toEqual(["dashboard", "rooms", "devices", "members", "approvals"]);
+    expect(ids("manager")).toEqual([
+      "dashboard",
+      "rooms",
+      "devices",
+      "members",
+      "myRequests",
+      "approvals",
+      "groups",
+    ]);
+  });
+  it("groups is manager+", () => {
+    expect(ids("manager")).toContain("groups");
+    expect(ids("user")).not.toContain("groups");
+    expect(ids("admin")).toContain("groups");
   });
   it("admin sees all items incl. roomEditor", () => {
-    expect(ids("admin")).toHaveLength(7);
+    expect(ids("admin")).toHaveLength(9);
     expect(ids("admin")).toContain("roomEditor");
   });
   it("audit is admin only", () => {
@@ -26,7 +39,9 @@ describe("navItemsFor", () => {
       "rooms",
       "devices",
       "members",
+      "myRequests",
       "approvals",
+      "groups",
       "audit",
     ]);
     expect(items.find((i) => i.id === "roomEditor")?.placement).toBe("room");
@@ -43,6 +58,12 @@ describe("isActive", () => {
     }
     expect(isActive(item("rooms"), "/roomsx")).toBe(false);
   });
+  it("isActive: /requests and /requests/x are active for myRequests; /approvals and /requestsx are not", () => {
+    expect(isActive(item("myRequests"), "/requests")).toBe(true);
+    expect(isActive(item("myRequests"), "/requests/x")).toBe(true);
+    expect(isActive(item("myRequests"), "/approvals")).toBe(false);
+    expect(isActive(item("myRequests"), "/requestsx")).toBe(false);
+  });
 });
 
 describe("roomEditorHref", () => {
@@ -50,5 +71,17 @@ describe("roomEditorHref", () => {
     expect(roomEditorHref("A 1")).toBe("/rooms/A%201/edit");
     expect(roomEditorHref("Phòng")).toBe(`/rooms/${encodeURIComponent("Phòng")}/edit`);
     expect(roomEditorHref("Phòng")).not.toContain("ò");
+  });
+});
+
+describe("roomDetailHref", () => {
+  it("encodes the code", () => {
+    expect(roomDetailHref("C302")).toBe("/rooms/C302");
+    expect(roomDetailHref("A 1")).toBe("/rooms/A%201");
+  });
+  it("returns null for dot segments and keeps A..B", () => {
+    expect(roomDetailHref(".")).toBeNull();
+    expect(roomDetailHref("..")).toBeNull();
+    expect(roomDetailHref("A..B")).toBe("/rooms/A..B");
   });
 });

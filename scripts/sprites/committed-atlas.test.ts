@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { FRAME_KEYS } from "../../src/lib/sprites/registry";
+import { FRAME_KEYS, REGISTRY } from "../../src/lib/sprites/registry";
 import { validateSpriteManifest } from "../../src/lib/validate/sprite-manifest";
 import { readPngSize } from "./png.mjs";
 
@@ -15,6 +15,13 @@ describe("committed atlas", () => {
 
   it("committed manifest keys equal the registry", () => {
     expect(Object.keys(json.frames).sort()).toEqual([...FRAME_KEYS]);
+  });
+
+  it("committed manifest blocks equal the registry", () => {
+    // The server validates with the registry, the client draws with the manifest (placement.ts).
+    for (const [key, frame] of Object.entries<{ blocks: boolean }>(json.frames)) {
+      expect(frame.blocks, key).toBe(REGISTRY[key].blocks);
+    }
   });
 
   it("committed atlas is placeholder-only (M-10 default)", () => {

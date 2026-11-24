@@ -84,6 +84,14 @@ describe("validateSpriteManifest", () => {
     );
   });
 
+  it("rejects frame tiles that differ from the registry", () => {
+    const m = build();
+    m.frames["desk.single.s"].tiles = [1, 1];
+    expect(errorsOf(m)).toEqual([
+      { path: "frames.desk.single.s.tiles", message: "must match the registry footprint 2x1" },
+    ]);
+  });
+
   it("accepts negative anchors and an optional meta object; rejects unknown top-level fields", () => {
     const m = build();
     m.frames["sofa"].anchor = [-2, -21];

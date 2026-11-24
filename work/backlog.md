@@ -31,24 +31,53 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-029 | Guard dev scripts against the production DB and add dev:prod | MERGED | P1 | M | db, security | SIM-028 | plan-approval | 2 | 2026-11-21 |
 | SIM-030 | Pin the dev:prod org for the running server | MERGED | P1 | S | security | SIM-029 | plan-approval | 1 | 2026-11-21 |
 | SIM-031 | Pin the Identity issuer for pnpm dev:prod | MERGED | P1 | S | security | SIM-028.1 | none | 1 | 2026-11-21 |
-| SIM-032 | One-command local start on production data | REWORK | P1 | M | security | SIM-031 | none | 4 | 2026-11-21 |
+| SIM-032 | One-command local start on production data | MERGED | P1 | M | security | SIM-031 | none | 4 | 2026-11-22 |
 | SIM-009 | Invite people to an org | MERGED | P1 | M | security, ui, api | SIM-007 | none | 1 | 2026-11-22 |
-| SIM-009.2 | Accept-invitation page | IN_PROGRESS | P1 | M | security, ui | SIM-009 | none | 0 | 2026-11-22 |
+| SIM-009.2 | Accept-invitation page | MERGED | P1 | M | security, ui | SIM-009 | none | 1 | 2026-11-22 |
+| SIM-034 | Run simap's GitHub Actions on the Mac self-hosted runner | BACKLOG | P1 | S | security, architecture | — | plan-approval | 0 | 2026-11-23 |
 | SIM-011 | Members page, profile fields and deactivation | MERGED | P1 | M | api, ui, security | SIM-007 | plan-approval | 1 | 2026-11-22 |
-| SIM-011.2 | Members page UI: list, edit and deactivate dialogs | BACKLOG | P1 | M | ui | SIM-011 | none | 0 | 2026-11-22 |
-| SIM-012 | Seat list, add/delete seats, seat detail and occupancy | BACKLOG | P1 | L | api, ui | SIM-010, SIM-011 | none | 0 | 2026-11-20 |
-| SIM-013 | Devices | BACKLOG | P1 | M | api, ui | SIM-012 | none | 0 | 2026-11-20 |
-| SIM-014 | Seat requests and approvals | BACKLOG | P1 | M | api, ui, ux | SIM-012 | none | 0 | 2026-11-20 |
-| SIM-016 | Groups, projects and seat tags | BACKLOG | P2 | S | api, ui | SIM-012 | none | 0 | 2026-11-20 |
+| SIM-024 | Sprite atlas, manifest, placeholder art and map renderer | MERGED | P1 | M | ui, architecture | SIM-003 | none | 1 | 2026-11-21 |
+| SIM-024.1 | Room map renderer, avatars, name tags and dev demo | MERGED | P1 | M | ui, architecture | SIM-024 | none | 2 | 2026-11-22 |
+| SIM-012 | Seat list, add/delete seats, seat detail and occupancy | MERGED | P1 | L | api, ui | SIM-010, SIM-011 | none | 3 | 2026-11-22 |
+| SIM-012.2 | Room detail page, seat table and seat panel | MERGED | P1 | M | ui | SIM-012 | none | 2 | 2026-11-22 |
+| SIM-012.3 | Add and delete seats, release and role gating | MERGED | P1 | M | ui | SIM-012.2 | none | 3 | 2026-11-22 |
+| SIM-012.5 | Room switcher in the app shell | MERGED | P1 | S | ui | SIM-012.2 | none | 1 | 2026-11-22 |
+| SIM-012.4 | Member picker, assign, replace, remove and cannot-seat | MERGED | P1 | M | ui | SIM-012.3 | none | 1 | 2026-11-22 |
+| SIM-012.6 | Remove occupant and set or clear cannot-seat | MERGED | P1 | S | ui | SIM-012.4 | none | 0 | 2026-11-22 |
+| SIM-015.1 | Room layout tile-grid schema and validator | MERGED | P1 | M | db, api, security | SIM-010, SIM-012, SIM-024.1 | plan-approval | 1 | 2026-11-22 |
+| SIM-015.4 | Default room layout and stored-layout resolver | MERGED | P1 | M | api, security | SIM-015.1 | none | 0 | 2026-11-22 |
+| SIM-015.6 | Room layout read API | MERGED | P1 | M | api, security | SIM-015.4 | none | 1 | 2026-11-23 |
+| SIM-015.3 | Read-only pixel room map on the room page | MERGED | P1 | M | ui, ux | SIM-015.6 | plan-approval | 0 | 2026-11-23 |
+| SIM-015.5 | Save a room layout through the API | MERGED | P1 | M | api, security | SIM-015.6 | plan-approval | 0 | 2026-11-23 |
+| SIM-015.2 | Tile-based layout editor (slice 1: editor core) | MERGED | P1 | M | ui, ux | SIM-015.3, SIM-015.5 | plan-approval | 0 | 2026-11-23 |
+| SIM-015.7 | Layout editor UI and save of placement | MERGED | P1 | M | ui, ux | SIM-015.2 | plan-approval | 0 | 2026-11-23 |
+| SIM-015.9 | Layout editor palette, tray placement and room resize | MERGED | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
+| SIM-015.10 | Layout editor drag, marquee and keyboard shortcuts | MERGED | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
+| SIM-015.8 | Layout editor desk add and delete | MERGED | P1 | S | ui | SIM-015.7, SIM-015.9 | plan-approval | 0 | 2026-11-23 |
+| SIM-033 | Ship the real room art and an in-app Credits page | BACKLOG | P1 | S | ui, architecture | SIM-015.3 | none | 0 | 2026-11-22 |
+| SIM-011.2 | Members page UI: list, edit and deactivate dialogs | PLANNING | P1 | M | ui | SIM-011 | none | 0 | 2026-11-24 |
+| SIM-013 | Devices: placement rules, read and placement API | MERGED | P1 | M | api | SIM-012 | plan-approval | 0 | 2026-11-23 |
+| SIM-013.1 | Device create, edit and delete API | MERGED | P1 | S | api | SIM-013 | plan-approval | 0 | 2026-11-24 |
+| SIM-013.2 | Devices page (read-only list and filter) | MERGED | P1 | M | ui, ux | SIM-013.1 | plan-approval | 0 | 2026-11-24 |
+| SIM-013.3 | Device place, move and return dialog | MERGED | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
+| SIM-013.4 | Device create and edit dialog | MERGED | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
+| SIM-013.5 | Device delete dialog with Move to inventory | MERGED | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
+| SIM-014 | Seat requests: state machine and write API | MERGED | P1 | M | api | SIM-012 | plan-approval | 1 | 2026-11-24 |
+| SIM-014.1 | Requests read API and decided badge | MERGED | P1 | S | api | SIM-014 | plan-approval | 0 | 2026-11-24 |
+| SIM-014.2 | Approvals page UI | MERGED | P1 | M | ui, ux | SIM-014.1 | plan-approval | 0 | 2026-11-24 |
+| SIM-014.4 | Approvals: Approve and Reject dialogs | MERGED | P1 | M | ui, ux | SIM-014.2 | plan-approval | 0 | 2026-11-24 |
+| SIM-014.3 | Request a seat, My requests and nav badge | MERGED | P1 | M | ui, ux | SIM-014.1 | plan-approval | 0 | 2026-11-24 |
+| SIM-016 | Groups, projects and seat tags | MERGED | P2 | S | api, ui | SIM-012 | none | 0 | 2026-11-24 |
+| SIM-016.2 | Groups and Projects management page | MERGED | P2 | M | ui | SIM-016 | none | 0 | 2026-11-24 |
+| SIM-016.3 | Tag and untag a seat from the seat detail | MERGED | P2 | S | ui, api | SIM-016 | none | 0 | 2026-11-24 |
 | SIM-019 | Audit-log screen for org admins | MERGED | P2 | S | api, ui | SIM-010 | none | 0 | 2026-11-20 |
 | SIM-019.2 | Audit-log page UI for org admins | MERGED | P2 | S | ui | SIM-019, SIM-006.2, SIM-022 | none | 0 | 2026-11-20 |
-| SIM-017 | Dashboard and search | BACKLOG | P2 | M | api, ui | SIM-013, SIM-014 | none | 0 | 2026-11-20 |
+| SIM-017 | Dashboard and search | MERGED | P2 | M | api, ui | SIM-013, SIM-014 | none | 0 | 2026-11-24 |
+| SIM-017.2 | Search API, diacritics-insensitive | MERGED | P2 | M | api | SIM-017 | none | 0 | 2026-11-24 |
+| SIM-017.3 | Search page UI | IN_PROGRESS | P2 | M | ui | SIM-017.2 | none | 0 | 2026-11-24 |
 | SIM-018 | CSV export | BACKLOG | P2 | S | api, ui | SIM-017 | none | 0 | 2026-11-20 |
 | SIM-027 | Security headers, CSP and apiFetch hardening before go-live | MERGED | P1 | M | security, architecture | SIM-006.2 | plan-approval | 0 | 2026-11-20 |
 | SIM-021 | Go-live checklist and first production deploy | BACKLOG | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | none | 0 | 2026-11-20 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
-| SIM-024 | Sprite atlas, manifest, placeholder art and map renderer | MERGED | P1 | M | ui, architecture | SIM-003 | none | 1 | 2026-11-21 |
-| SIM-015.1 | Room layout API and read-only room view | BLOCKED | P1 | M | api, ui | SIM-010 | none | 0 | 2026-11-20 |
-| SIM-015.2 | Free-form layout editor | BLOCKED | P1 | M | ui, ux | SIM-015.1 | none | 0 | 2026-11-20 |
 
-Blocked (D47; SIM-024 unblocked by D55): SIM-015.1, SIM-015.2 and any later sprite/atlas/map ticket — waiting for pixel-art decisions (D41–D46).
+D47 is lifted for the room map tickets (D58). SIM-033 waits for Ming item M-10.

@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | security |
 | Gate | none |
 | Depends on | SIM-031 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 4 |
 | Created | 2026-11-21 |
-| Claimed by | — |
-| PR | — |
+| Claimed by | |
+| PR | https://github.com/mmlabs-online/simap/pull/39 |
 
 ## Goal
 Ming starts simap on production data with one command, `scripts/start-dev.sh`, without filling in `.env.local`. The
@@ -75,6 +75,30 @@ command signs in, connects through the tunnel, starts the app, and prints the lo
   warning, the red badge and `/api/readyz`; press Ctrl-C and confirm the app stops and the tunnel keeps running.
 
 ## Notes / answers from Ming
+- 2026-11-21: Ming chose option 1 of the second escalation (M-21): one more very small rework. Decide "port free" with the real bind probe `portBusy` and fix the flaky T1 test.
+- 2026-11-21: Ming chose escalation option 1 (M-20): one more small rework beyond the limit of 2. Fix T1 and reviewer Issue 1, report known survivors, and report a clean stop only if the app port has no listener. Document the remaining fork race.
 - 2026-11-21: Ming supplied the one-command brief after finding the `.env` variables too many to fill in.
 
 ## Handoff
+
+### 2026-11-21 — claude — ESCALATED
+- Agent calls: 10, tokens 826k plus reviewer Attempt 3 (usage not reported when this entry was written) (planner×1 103k, implementer×3 268k, reviewer×3 189k + pending, security-ai-generated-code-auditor×3 267k; in/out split not reported)
+- Done: wrapper, preflight before sign-in, org flow, readiness with a hard deadline, single database login check, `PG*` handling. Checks green (1034 tests). All work is on `ticket/SIM-032`; no PR.
+- In progress / next: Ming picks an option in `escalation.md` (M-20). Open: 🔴 T1 and reviewer Issue 1.
+- Gotchas: do not run `scripts/start-dev.sh` on production from this branch: stop can report success while a process survives. Winpty, real Ctrl-C, sign-in, tunnel and `/api/readyz` are unverified.
+
+### 2026-11-21 — claude — ESCALATED
+- Agent calls: 13, tokens 1017k plus reviewer Attempt 4 (usage not reported when this entry was written) (planner×1 103k, implementer×4 321k, reviewer×4 261k + pending, security-ai-generated-code-auditor×4 332k; in/out split not reported)
+- Done: T1, T2, Issue 2, root-PID N6 and the README limit line. Checks green (1037 tests). All work is on `ticket/SIM-032`; no PR.
+- In progress / next: Ming picks an option in the second section of `escalation.md` (M-21). Open: 🔴 U1 and the flaky T1 test.
+- Gotchas: do not run `scripts/start-dev.sh` on production from this branch: a failed listener query can report a clean stop while the app still serves.
+
+### 2026-11-22 — claude — REVIEW (PR opened at Ming's request)
+- Done: security Attempt 5 PASS; added `scripts/start-dev.ps1`, tests and a README usage guide; merged `origin/main`. Format, typecheck, layers, tests, build and dev-bundle checks pass. PR: https://github.com/mmlabs-online/simap/pull/39
+- In progress / next: reviewer Attempt 5 has no recorded verdict, and the PowerShell wrapper has had no agent review. State stays REVIEW. Ming decides whether to review first or merge.
+- Gotchas: Ming decided no `pg_dump` is needed. Tunnel handshakes are intermittent; Next gets SIGBUS from WSL on `/mnt/d`; a Windows clock behind Identity makes fresh tokens unusable.
+
+### 2026-11-22 — claude — MERGED
+- Done: Ming merged PR #39 (`2672852`) with CI green.
+- In progress / next: none on this ticket; the follow-ups are listed in the PR.
+- Gotchas: reviewer Attempt 5 has no recorded verdict, and the PowerShell wrapper had no agent review before merge.

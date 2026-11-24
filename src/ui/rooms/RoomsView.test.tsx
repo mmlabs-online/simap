@@ -68,6 +68,11 @@ describe("RoomsView", () => {
     expect(html).toContain(roomsCopy.percent(25));
     expect(html).toContain(roomsCopy.percent(0));
   });
+  it("the card code links to the room detail page", () => {
+    const html = render();
+    expect(html).toContain('href="/rooms/C302"');
+    expect(html).toContain('href="/rooms/C400"');
+  });
   it("hides New room, Edit and Delete unless canManage", () => {
     const hidden = render({ canManage: false });
     expect(hidden).not.toContain(roomsCopy.newRoom);

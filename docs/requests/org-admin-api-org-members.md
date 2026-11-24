@@ -1,7 +1,19 @@
 # Request to org-admin-api: org members read and remove-from-org (from simap)
 
-Status: to be filed by Ming in an org-admin-api session (`work/ming-todo.md` M-4). Decisions: simap D16 (b), D34.
-Paste the block below into that session.
+Status: **shipped** (2026-11-24) as org-admin-api USR-29 (#92, members read) and USR-30 (#93, remove from org).
+Decisions: simap D16 (b), D34. The contract is org-admin-api `docs/consumers.md`; it wins over the request below.
+
+Differences from the request (org-admin-api defaults):
+- Auth of the read: a separate runtime app key with scope `org-members:read` (ADR-0025), not a wider manifest
+  credential. simap needs that key (`work/ming-todo.md` M-42).
+- Remove: an unknown or suspended org answers `403 org_access_denied`, as invitations; the read route keeps the 404.
+- Permission name: `simap:org:remove-member` (the 4-part `simap:org:members:remove` is invalid under ADR-0003). simap
+  declares it in its manifest and staff grant it to `simap:admin` (M-43).
+- Added: a rank rule (`member_outranks_caller`), and removing a member also revokes their pending invitations.
+- Not done (possible follow-ups USR-31, USR-32, P2): pending invitations in the members read; a `name` claim in
+  access tokens.
+
+The original request, as sent:
 
 ```text
 /ticket "App-facing read of an org's members for org-mode apps (requested by simap) P1"
