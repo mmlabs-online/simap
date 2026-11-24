@@ -11,8 +11,8 @@
 | Needs Ming | M-32 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-24T03:59:20Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/58 |
 
 ## Goal
 Slice 1 of 4 of seat requests: the request state machine and the write API (create, approve, reject, cancel). Slices
@@ -55,3 +55,9 @@ spec REG-01, REG-02; D21, D23, D26. Re-scoped 2026-11-24 by the approved plan (`
 - Done: Gate set to plan-approval (P1 policy); consults saved (ux skipped: max 2 consultants); plan.md READY as slice 1 of 4 (state machine and write API; no migration, no High path).
 - In progress / next: Ming approves (M-32). Then the orchestrator re-scopes this ticket to slice 1 and files SIM-014.1 (read API), SIM-014.2 (Approvals UI), SIM-014.3 (request button, My requests, badge).
 - Gotchas: slice 1 changes `src/server/seats/seats.ts` (exports, `writeOccupant`); SIM-013 (PR #57) does not touch seats.ts but both append to `src/lib/api/error.ts` and `src/ui/copy/api.ts` (trivial rebase).
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 3 this run (implementer×1 inherit 77k, reviewer×1 inherit 64k, security-ai-generated-code-auditor×1 inherit 55k; in/out split not reported); 6 in total for the ticket (~379k).
+- Done: slice 1 (state machine and write API, `writeOccupant` extraction), review PASS on attempt 1, security no 🔴/🟡, PR #58.
+- In progress / next: Ming merges PR #58 after the first CI run of `pnpm test:db` (`requests.db.test.ts`) is green. Then SIM-014.1.
+- Gotchas: security 🟢1 duplicate-create 500 race (retry once or seat-lock reject/cancel); PR #57 and #58 both append to `src/lib/api/error.ts` and `src/ui/copy/api.ts` — the second to merge needs a rebase.
