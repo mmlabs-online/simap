@@ -69,7 +69,7 @@ Waiting for Ming: plan approval (ticket Gate)
 ## Handoff
 
 ### 2026-11-24 — claude — BLOCKED
-- Agent calls: 2, ~? tokens (api-platform-engineer×1 opus 45.8k, planner×1 opus — usage reported in the session)
+- Agent calls: 2, ~120k tokens (api-platform-engineer×1 opus 45.8k, planner×1 opus 74.4k; per-call in/out split not reported)
 - Done: consult (api; security has no consult agent), plan READY. No High path. Gate is `plan-approval` from the ticket.
 - In progress / next: Ming approves `plan.md` (M-50; key decision A1: no row lock across the Drive upload, compare-and-set plus 409 `image_changed`). Then `/run SIM-036.5` resumes at IMPLEMENT.
 - Gotchas: ~450 product + ~800 test lines (fallback: move the `deleteDeviceType` cleanup to a follow-up). Session branch `claude/confident-cerf-67q5le`.
