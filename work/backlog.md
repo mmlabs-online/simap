@@ -61,7 +61,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-013.2 | Devices page (read-only list and filter) | MERGED | P1 | M | ui, ux | SIM-013.1 | plan-approval | 0 | 2026-11-24 |
 | SIM-013.3 | Device place, move and return dialog | MERGED | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
 | SIM-013.4 | Device create and edit dialog | DONE | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
-| SIM-013.5 | Device delete dialog with Move to inventory | BACKLOG | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
+| SIM-013.5 | Device delete dialog with Move to inventory | PLANNING | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
 | SIM-014 | Seat requests: state machine and write API | MERGED | P1 | M | api | SIM-012 | plan-approval | 1 | 2026-11-24 |
 | SIM-014.1 | Requests read API and decided badge | MERGED | P1 | S | api | SIM-014 | plan-approval | 0 | 2026-11-24 |
 | SIM-014.2 | Approvals page UI | BACKLOG | P1 | M | ui, ux | SIM-014.1 | plan-approval | 0 | 2026-11-24 |
