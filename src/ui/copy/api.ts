@@ -30,6 +30,9 @@ export const apiCopy = {
     layout_stale: "This room changed while you were editing. Reload to see the latest layout.",
     layout_seats_changed: "The room's seats changed while you were editing. Reload and try again.",
     layout_too_many_seats: "This room has too many seats to save a layout.",
+    seat_taken: "Someone already sits in this seat.",
+    no_linked_member:
+      "Your member profile in this organization isn't set up yet. Open simap's home page to finish it.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

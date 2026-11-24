@@ -27,7 +27,9 @@ export type Refusal = {
     | "seat_cannot_seat"
     | "occupant_changed"
     | "not_allowed"
-    | "member_not_assignable";
+    | "member_not_assignable"
+    | "seat_taken"
+    | "no_linked_member";
 };
 export type Result<T> = { ok: true; value: T } | Refusal;
 
@@ -40,7 +42,7 @@ class Abort extends Error {
   }
 }
 
-async function inTx<T>(pool: Db, fn: (c: TxClient) => Promise<T>): Promise<Result<T>> {
+export async function inTx<T>(pool: Db, fn: (c: TxClient) => Promise<T>): Promise<Result<T>> {
   try {
     return { ok: true, value: await withTx(pool, fn) };
   } catch (err) {
@@ -50,7 +52,7 @@ async function inTx<T>(pool: Db, fn: (c: TxClient) => Promise<T>): Promise<Resul
   }
 }
 
-const refuse = (status: Refusal["status"], code: Refusal["code"]) =>
+export const refuse = (status: Refusal["status"], code: Refusal["code"]) =>
   new Abort({ ok: false, status, code });
 
 // ---- reads ----------------------------------------------------------------------------------------------------
@@ -196,7 +198,7 @@ async function lockRoom(
   return rows[0];
 }
 
-type SeatLock = {
+export type SeatLock = {
   id: string;
   code: string;
   occupant_id: string | null;
@@ -222,7 +224,7 @@ async function lockSeat(
   return lockSeatIn(c, scope, found[0].room_id, seatId, roomMode);
 }
 
-async function lockSeatIn(
+export async function lockSeatIn(
   c: Query,
   scope: OrgScope,
   roomId: string,
@@ -254,6 +256,41 @@ async function demotePrimary(c: Query, scope: OrgScope, seatId: string): Promise
 }
 
 // ---- writes ---------------------------------------------------------------------------------------------------
+
+/** The shared SEA-03 write step: demote the primary device (DEV-06), set occupant and group, audit. */
+export async function writeOccupant(
+  c: Query,
+  scope: OrgScope,
+  actorSub: string,
+  seat: SeatLock,
+  memberId: string | null,
+  groupId: string | null,
+  action: "seat.assign" | "seat.replace" | "seat.unassign",
+  extraMeta: Record<string, unknown> = {},
+): Promise<number> {
+  const demoted = await demotePrimary(c, scope, seat.id);
+  await orgQuery(
+    c,
+    scope,
+    "update seats set occupant_id = $3, group_id = $4, updated_at = now() where org_id = $1 and id = $2",
+    [seat.id, memberId, groupId],
+  );
+  await writeAudit(c, scope, {
+    actorSub,
+    action,
+    entity: "seat",
+    entityId: seat.id,
+    meta: {
+      code: seat.code,
+      memberId,
+      previousOccupantId: seat.occupant_id,
+      demoted,
+      groupInherited: seat.group_id === null && groupId !== null,
+      ...extraMeta,
+    },
+  });
+  return demoted;
+}
 
 export function addSeats(
   db: Db,
@@ -375,33 +412,21 @@ export function setOccupant(
     if (decision === "refuse_changed") throw refuse(409, "occupant_changed");
     if (decision === "refuse_cannot_seat") throw refuse(409, "seat_cannot_seat");
     if (decision === "noop") return loadSeat(c, scope, actorSub, seatId);
-    const demoted = await demotePrimary(c, scope, seatId);
     const groupId =
       decision === "remove" ? seat.group_id : inheritedGroup(seat.group_id, memberGroup);
-    await orgQuery(
+    await writeOccupant(
       c,
       scope,
-      "update seats set occupant_id = $3, group_id = $4, updated_at = now() where org_id = $1 and id = $2",
-      [seatId, v.memberId, groupId],
-    );
-    await writeAudit(c, scope, {
       actorSub,
-      action:
-        decision === "assign"
-          ? "seat.assign"
-          : decision === "replace"
-            ? "seat.replace"
-            : "seat.unassign",
-      entity: "seat",
-      entityId: seatId,
-      meta: {
-        code: seat.code,
-        memberId: v.memberId,
-        previousOccupantId: seat.occupant_id,
-        demoted,
-        groupInherited: seat.group_id === null && groupId !== null,
-      },
-    });
+      seat,
+      v.memberId,
+      groupId,
+      decision === "assign"
+        ? "seat.assign"
+        : decision === "replace"
+          ? "seat.replace"
+          : "seat.unassign",
+    );
     return loadSeat(c, scope, actorSub, seatId);
   });
 }
