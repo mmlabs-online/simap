@@ -1,12 +1,5 @@
-import { PageSkeleton } from "@/ui";
-import { shellCopy } from "@/ui/copy/shell";
+import { DashboardPage } from "@/ui";
 
-export default function DashboardPage() {
-  return (
-    <PageSkeleton
-      title={shellCopy.pages.dashboard.title}
-      emptyText={shellCopy.pages.dashboard.empty}
-      icon="space_dashboard"
-    />
-  );
+export default function Page() {
+  return <DashboardPage />;
 }

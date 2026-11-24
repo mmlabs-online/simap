@@ -19,6 +19,7 @@ export { ForgotPasswordPage } from "./auth/ForgotPasswordPage";
 export { VerifyEmailPage } from "./auth/VerifyEmailPage";
 export { ResetPasswordPage } from "./auth/ResetPasswordPage";
 export { AcceptInvitationPage } from "./auth/AcceptInvitationPage";
+export { DashboardPage } from "./dashboard/DashboardPage";
 export { RoomsPage } from "./rooms/RoomsPage";
 export { SeatsPage } from "./seats/SeatsPage";
 export { LayoutEditorPage } from "./roomlayout/LayoutEditorPage";
