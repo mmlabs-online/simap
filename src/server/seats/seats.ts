@@ -518,8 +518,9 @@ export function setSeatTags(
     if (next.group_id === seat.group_id && next.project_id === seat.project_id) {
       return loadSeat(c, scope, actorSub, seatId);
     }
-    // The referenced row is held `for share`: a concurrent delete waits (then clears this seat) or we fail here.
-    if (v.groupId) {
+    // A newly referenced row is held `for share`: a concurrent delete waits (then clears this seat) or we fail here.
+    // An unchanged id is not locked: the FK already keeps it, and locking it could deadlock with a forced delete.
+    if (v.groupId && v.groupId !== seat.group_id) {
       const { rows } = await orgQuery(
         c,
         scope,
@@ -528,7 +529,7 @@ export function setSeatTags(
       );
       if (!rows[0]) throw refuse(422, "invalid_group");
     }
-    if (v.projectId) {
+    if (v.projectId && v.projectId !== seat.project_id) {
       const { rows } = await orgQuery(
         c,
         scope,

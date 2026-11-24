@@ -242,6 +242,29 @@ describe("seatButtons", () => {
   });
 });
 
+describe("seatButtons tags", () => {
+  it("manager and admin only", () => {
+    for (const tier of [null, undefined, "user"] as const) {
+      expect(seatButtons(tier, seatOf()).tags).toBe(false);
+    }
+    for (const tier of ["manager", "admin"] as const) {
+      expect(seatButtons(tier, seatOf()).tags).toBe(true);
+    }
+  });
+});
+
+describe("actionOutcome setTags", () => {
+  it("invalid_group and invalid_project reload with the message", () => {
+    for (const code of ["invalid_group", "invalid_project"]) {
+      expect(actionOutcome("setTags", fail(code))).toEqual({
+        reload: true,
+        closePanel: false,
+        message: apiErrorMessage(code),
+      });
+    }
+  });
+});
+
 describe("pickStep", () => {
   it("empty seat sends expected null", () => {
     expect(pickStep(seatOf(), chosen)).toEqual({
@@ -476,7 +499,7 @@ describe("parseCannotSeatReason", () => {
 });
 
 describe("actionOutcome new actions", () => {
-  const actions = ["removeOccupant", "setCannotSeat", "clearCannotSeat"] as const;
+  const actions = ["removeOccupant", "setCannotSeat", "clearCannotSeat", "setTags"] as const;
   it("success reloads without message", () => {
     for (const a of actions) {
       expect(actionOutcome(a, { ok: true })).toEqual({

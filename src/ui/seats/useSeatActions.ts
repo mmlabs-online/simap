@@ -19,6 +19,7 @@ import {
   type OccupantConfirm,
   type RemoveDialog,
   type SeatAction,
+  type TagsDialog,
 } from "./seat-actions";
 import type { PickerMember } from "./member-picker";
 import type { RequestsApi } from "../requests/requests-api";
@@ -31,6 +32,7 @@ export type SeatDialog =
   | RemoveDialog
   | CannotSeatDialog
   | ClearCannotSeatDialog
+  | TagsDialog
   | AssignDialog;
 export type SeatNotice = { seatCode: string | null; text: string };
 export type SeatInfo = { seatCode: string; text: string };
@@ -200,6 +202,17 @@ export function useSeatActions({
     },
     requestSetCannotSeat: (seat: SeatDto) => setDialog({ kind: "cannotSeat", seat }),
     requestClearCannotSeat: (seat: SeatDto) => setDialog({ kind: "clearCannotSeat", seat }),
+    requestTags: (seat: SeatDto) => {
+      setNotice(null);
+      setDialog({ kind: "tags", seat });
+    },
+    setTags: (patch: { groupId?: string | null; projectId?: string | null }) => {
+      const started = shown;
+      if (started?.kind !== "tags") return Promise.resolve();
+      return run("setTags", started.seat.code, started, () =>
+        seatsApi.setTags(started.seat.id, patch),
+      );
+    },
     setCannotSeat: (reason: string) => {
       const started = shown;
       if (started?.kind !== "cannotSeat") return Promise.resolve();
@@ -245,7 +258,7 @@ export function useSeatActions({
       if (shown.kind === "assign") {
         return shown.confirm ? writeOccupant(shown, shown.confirm) : Promise.resolve();
       }
-      if (shown.kind === "cannotSeat") return Promise.resolve();
+      if (shown.kind === "cannotSeat" || shown.kind === "tags") return Promise.resolve();
       if (shown.kind === "remove") {
         const started = shown;
         return run("removeOccupant", started.seat.code, started, () =>

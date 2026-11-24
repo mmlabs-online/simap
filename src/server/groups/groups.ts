@@ -157,10 +157,12 @@ export async function getGroupImpact(
 }
 
 /**
- * Locks the group row (a concurrent tag write holds it `for share`, so it commits first and is counted, or
- * waits and then fails its row check), then clears members before seats (a racing SIM-012 assign holds the
- * member `for share` and copies its group onto the seat), each in ascending id order. No room lock is taken,
- * so this cannot deadlock with the room -> seat lock order documented on deleteRoom.
+ * Locks the group row (a tag write that newly sets this group holds it `for share`, so it commits first and is
+ * counted, or waits and then fails its row check; a tag write that keeps an unchanged group takes no group
+ * lock), then clears members before seats (a racing SIM-012 assign holds the member `for share` and copies its
+ * group onto the seat), each in ascending id order. No room lock is taken, so it does not conflict with the
+ * room -> seat lock order documented on deleteRoom. The SIM-012 assign vs delete race can still deadlock;
+ * Postgres detects it (40P01) and one side fails with a 500.
  */
 export function deleteGroup(
   db: Db,

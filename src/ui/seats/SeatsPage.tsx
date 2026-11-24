@@ -7,6 +7,7 @@ import { useApiFetch } from "../auth/api-fetch-context";
 import { Card } from "../Card";
 import { seatsCopy } from "../copy/seats";
 import { createRequestsApi } from "../requests/requests-api";
+import { createGroupsApi } from "../groups/groups-api";
 import { createRoomsApi } from "../rooms/rooms-api";
 import { RoomMapSection } from "../roomlayout";
 import { useSession } from "../session";
@@ -23,6 +24,7 @@ import {
 } from "./seat-actions";
 import { SeatActions } from "./SeatActions";
 import { SeatDetailPanel } from "./SeatDetailPanel";
+import { SeatTagsDialog } from "./SeatTagsDialog";
 import { panelView, parseSeatParam, retryTarget, seatHref } from "./seat-view";
 import { createSeatsApi } from "./seats-api";
 import { SeatsView } from "./SeatsView";
@@ -36,6 +38,7 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
   const roomsApi = useMemo(() => createRoomsApi(apiFetch), [apiFetch]);
   const seatsApi = useMemo(() => createSeatsApi(apiFetch), [apiFetch]);
   const requestsApi = useMemo(() => createRequestsApi(apiFetch), [apiFetch]);
+  const groupsApi = useMemo(() => createGroupsApi(apiFetch), [apiFetch]);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -217,6 +220,7 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
             onRemove={actions.requestRemove}
             onSetCannotSeat={actions.requestSetCannotSeat}
             onClearCannotSeat={actions.requestClearCannotSeat}
+            onTags={actions.requestTags}
           />
         }
       />
@@ -247,6 +251,14 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
         submitting={actions.busy}
         onClose={actions.closeDialog}
         onSubmit={(reason) => void actions.setCannotSeat(reason)}
+      />
+      <SeatTagsDialog
+        seat={dialog?.kind === "tags" ? dialog.seat : null}
+        submitting={actions.busy}
+        loadGroups={groupsApi.groups.list}
+        loadProjects={groupsApi.projects.list}
+        onClose={actions.closeDialog}
+        onSubmit={(patch) => void actions.setTags(patch)}
       />
       <AddSeatsDialog
         open={dialog?.kind === "add"}

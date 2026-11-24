@@ -242,6 +242,23 @@ describe("seats-api occupant removal and cannot-seat", () => {
     const err = fake(() => jsonRes({ error: { code: "not_found" } }, 404));
     expect(await err.api.setCannotSeat("s", "x")).toEqual({ ok: false, code: "not_found" });
   });
+  it("setTags: PATCH with the given body", async () => {
+    const a = fake(() => jsonRes(seatBody));
+    expect(await a.api.setTags("s/1", { groupId: "g", projectId: null })).toEqual({
+      ok: true,
+      value: seatBody,
+    });
+    expect(a.calls[0][0]).toBe("/api/seats/s%2F1/tags");
+    expect(a.calls[0][1]?.method).toBe("PATCH");
+    expect(JSON.parse(a.calls[0][1]?.body as string)).toEqual({ groupId: "g", projectId: null });
+    const err = fake(() => jsonRes({ error: { code: "invalid_group" } }, 422));
+    expect(await err.api.setTags("s", { groupId: "x" })).toEqual({
+      ok: false,
+      code: "invalid_group",
+    });
+    const denied = throwing(new ApiAccessError("forbidden"));
+    expect(await denied.setTags("s", {})).toEqual({ ok: false, code: "forbidden" });
+  });
   it("clearCannotSeat: body is exactly cannotSeat false", async () => {
     const a = fake(() => jsonRes(seatBody));
     await a.api.clearCannotSeat("s/1");
