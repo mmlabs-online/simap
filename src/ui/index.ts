@@ -23,6 +23,7 @@ export { RoomsPage } from "./rooms/RoomsPage";
 export { SeatsPage } from "./seats/SeatsPage";
 export { LayoutEditorPage } from "./roomlayout/LayoutEditorPage";
 export { AuditPage } from "./audit/AuditPage";
+export { GroupsPage } from "./groups/GroupsPage";
 export { ApprovalsPage } from "./requests/ApprovalsPage";
 export { MyRequestsPage } from "./requests/MyRequestsPage";
 export { DevicesPage } from "./devices/DevicesPage";
