@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T14:40:41Z |
 | PR | — |
 
 ## Goal
@@ -102,7 +102,7 @@ decorate desks with fixtures in the layout editor, so the desk top is reserved f
 - 2026-11-24: "Mỗi loại device sẽ có vị trí ưu tiên trên bàn khác nhau làm sao để khi chồng lên nhau vẫn không lỗi.
   Ví dụ Monitor primary thì lệch bên phải, monitor 2 sẽ lệch bên trái. PC sẽ nằm bên dưới bàn, Tai nghe thì đặt trên
   mặt bàn,..." → per-type slots added to scope. Admin-defined device types with an image → follow-up SIM-036.
-Waiting for Ming: plan approval (High tier)
+- 2026-11-24: Plan approved (Ming: "duyệt"), defaults A1-A6 as written in plan.md.
 
 ## Handoff
 
