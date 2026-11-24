@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T09:35:30Z |
 | PR | — |
 
 ## Goal
@@ -22,15 +22,16 @@ spec REG-01, REG-02; D21, D23, D24, D26. Split out of SIM-014 by its approved pl
 
 ## Scope
 - `src/app/(app)/approvals/page.tsx` (replace the stub), `src/ui/requests/requests-api.ts`, `requests-state.ts`, `useRequests.ts`, `ApprovalsView.tsx`.
-- Status filter in `?status=`; Approve and Reject confirm dialogs; per-row busy state; list reloads after a decision.
+- Status filter in `?status=`; Load more with `nextCursor`; no-access view for the User tier. (Re-scoped by the approved plan: read-only list, slice 1.)
 
 ## Out of scope
 - Email notifications (D24). Polling or push.
+- Approve and Reject confirm dialogs, per-row busy state, reload after a decision: moved to SIM-014.4 (approved split, 2026-11-24).
 
 ## Acceptance criteria
 - [ ] The Approvals page lists requests with a status filter (default pending).
-- [ ] Approve and Reject go through a confirm dialog and refresh the list; refusals show their message.
-- [ ] Static-render and pure-logic tests (no jsdom) cover the view, the filter and the action outcomes.
+- [ ] Static-render and pure-logic tests (no jsdom) cover the view and the filter.
+- (moved to SIM-014.4: Approve and Reject go through a confirm dialog and refresh the list; refusals show their message; tests cover the action outcomes.)
 
 ## Technical notes
 - Builds on `src/lib/requests/*`, `src/server/requests/*` and `src/app/api/requests/**` from SIM-014. UI copy in `src/ui/copy/requests.ts` (D36).
@@ -40,7 +41,7 @@ spec REG-01, REG-02; D21, D23, D24, D26. Split out of SIM-014 by its approved pl
 - Manual: request → approve with two rival requests.
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (P1 gate, M-39), including the proposed split into SIM-014.2 + SIM-014.4.
+- 2026-11-24: Plan approved (all defaults, split into SIM-014.2 + SIM-014.4; Ming: "duyệt plan SIM-014.2"). Ticket re-scoped to slice 1 (read-only list); SIM-014.4 filed on the board.
 
 ## Handoff
 
