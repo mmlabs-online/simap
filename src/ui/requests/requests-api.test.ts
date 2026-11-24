@@ -110,6 +110,47 @@ describe("requests-api", () => {
       await fake(() => jsonRes({ error: { code: "not_found" } }, 404)).api.cancel("x"),
     ).toEqual({ ok: false, code: "not_found" });
   });
+  it("approve: POST /api/requests/<encoded id>/approve with no body and no content-type; 200 -> DTO; 404 -> not_found; 409 seat_taken -> code; body without id -> internal", async () => {
+    const a = fake(() => jsonRes({ ...dto, status: "approved" }));
+    expect(await a.api.approve("a b/c")).toEqual({
+      ok: true,
+      value: { ...dto, status: "approved" },
+    });
+    expect(a.calls[0]).toBe("/api/requests/a%20b%2Fc/approve");
+    expect(a.inits[0]?.method).toBe("POST");
+    expect(a.inits[0]?.body).toBeUndefined();
+    expect(a.inits[0]?.headers).toBeUndefined();
+    expect(
+      await fake(() => jsonRes({ error: { code: "not_found" } }, 404)).api.approve("x"),
+    ).toEqual({ ok: false, code: "not_found" });
+    expect(
+      await fake(() => jsonRes({ error: { code: "seat_taken" } }, 409)).api.approve("x"),
+    ).toEqual({ ok: false, code: "seat_taken" });
+    expect(await fake(() => jsonRes({})).api.approve("x")).toEqual({
+      ok: false,
+      code: "internal",
+    });
+  });
+  it("reject: POST /api/requests/<encoded id>/reject with no body; 200 -> DTO; fetch throws -> unavailable; signed_out -> unauthenticated", async () => {
+    const a = fake(() => jsonRes({ ...dto, status: "rejected" }));
+    expect(await a.api.reject("a b/c")).toEqual({
+      ok: true,
+      value: { ...dto, status: "rejected" },
+    });
+    expect(a.calls[0]).toBe("/api/requests/a%20b%2Fc/reject");
+    expect(a.inits[0]?.method).toBe("POST");
+    expect(a.inits[0]?.body).toBeUndefined();
+    expect(
+      await fake(() => {
+        throw new Error("net");
+      }).api.reject("x"),
+    ).toEqual({ ok: false, code: "unavailable" });
+    expect(
+      await fake(() => {
+        throw new ApiAccessError("signed_out");
+      }).api.reject("x"),
+    ).toEqual({ ok: false, code: "unauthenticated" });
+  });
   it("mine: GET /api/requests/mine?limit=50, cursor appended and encoded; limit=1 when given; missing unseen or items not an array -> internal", async () => {
     const page = { items: [], unseen: 2, nextCursor: null };
     const a = fake(() => jsonRes(page));

@@ -59,6 +59,9 @@ export const formatRequestTime = formatAuditTime;
 
 const AUTH_CODES = ["unauthenticated", "forbidden", "member_deactivated", "org_required"];
 
+/** Shared id of the occupant line and the `aria-describedby` of a disabled Approve. */
+export const occupantHintId = (requestId: string) => `occupant-${requestId}`;
+
 export type CancelOutcome = {
   reload: boolean;
   notice: { tone: "status" | "error"; text: string };

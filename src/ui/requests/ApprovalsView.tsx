@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import type { RequestListItemDto, RequestStatus } from "@/lib/requests/types";
 import { apiErrorMessage } from "../copy/api";
 import { requestsCopy } from "../copy/requests";
@@ -6,7 +6,7 @@ import { shellCopy } from "../copy/shell";
 import { Button } from "../Button";
 import { Card } from "../Card";
 import { Chip, FilterChips } from "../Chip";
-import { formatRequestTime, statusOptions } from "./requests-state";
+import { formatRequestTime, occupantHintId, statusOptions } from "./requests-state";
 
 export type ApprovalsViewProps = {
   /** `forbidden` = the visitor may not review requests: no filter, no list, no request was made. */
@@ -21,6 +21,10 @@ export type ApprovalsViewProps = {
   onLoadMore: () => void;
   /** Slot for per-row controls (used by the decision dialogs slice). */
   actions?: (item: RequestListItemDto) => ReactNode;
+  /** Result of the last decision; status tone -> role=status, error tone -> role=alert. */
+  notice?: { tone: "status" | "error"; text: string } | null;
+  /** Focus target after a decision. */
+  headingRef?: Ref<HTMLHeadingElement>;
 };
 
 /** The Approvals page body. Pure: data and handlers come from props. */
@@ -35,9 +39,17 @@ export function ApprovalsView({
   onRetry,
   onLoadMore,
   actions,
+  notice,
+  headingRef,
 }: ApprovalsViewProps) {
   const title = (
-    <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.approvals.title}</h1>
+    <h1
+      ref={headingRef}
+      tabIndex={-1}
+      className="text-h2 font-extrabold text-on-surface outline-none"
+    >
+      {shellCopy.pages.approvals.title}
+    </h1>
   );
   if (state === "forbidden") {
     return (
@@ -55,6 +67,17 @@ export function ApprovalsView({
   return (
     <div className="p-4 lg:p-6 flex flex-col gap-4">
       {title}
+
+      {notice &&
+        (notice.tone === "error" ? (
+          <p role="alert" className="text-sm font-semibold text-error">
+            {notice.text}
+          </p>
+        ) : (
+          <p role="status" className="text-sm font-semibold text-on-surface">
+            {notice.text}
+          </p>
+        ))}
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="max-w-full overflow-x-auto">
@@ -110,7 +133,10 @@ export function ApprovalsView({
                   {requestsCopy.seatLine(it.seat.code, it.seat.roomCode)}
                 </p>
                 {it.status === "pending" && (
-                  <p className="text-sm text-on-surface-variant">
+                  <p
+                    id={it.currentOccupant ? occupantHintId(it.id) : undefined}
+                    className="text-sm text-on-surface-variant"
+                  >
                     {it.currentOccupant
                       ? requestsCopy.occupiedBy(it.currentOccupant.displayName)
                       : requestsCopy.seatEmpty}
