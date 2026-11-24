@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | ui |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-24 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/73 |
 
 ## Goal
 A search page that shows seats, devices and members for a query.
@@ -40,3 +40,9 @@ spec DSH-02; D36. Split out of SIM-017 by its plan (`work/tickets/SIM-017/plan.m
 —
 
 ## Handoff
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 3, tokens ~221k total (planner×1 default 94k, implementer×1 default 74k, reviewer×1 default 53k); consult reused from SIM-017 (same design).
+- Done: /search page with grouped results, per-group Load more, URL state and Search nav entry; 19 files +1435/−6; review PASS with no issues; PR #73 opened. With it, SIM-017 (.1–.3) is complete.
+- In progress / next: Ming merges PR #73 and decides A2 (one first-page error vs per-group). Next runnable: SIM-018 (CSV export).
+- Gotchas: none new.

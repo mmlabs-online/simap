@@ -4,12 +4,20 @@ import { isActive, navItemsFor, roomDetailHref, roomEditorHref } from "./nav";
 const ids = (tier: Parameters<typeof navItemsFor>[0]) => navItemsFor(tier).map((i) => i.id);
 
 describe("navItemsFor", () => {
-  it("user sees dashboard, rooms, devices, members, myRequests only", () => {
-    expect(ids("user")).toEqual(["dashboard", "rooms", "devices", "members", "myRequests"]);
+  it("user sees dashboard, search, rooms, devices, members, myRequests only", () => {
+    expect(ids("user")).toEqual([
+      "dashboard",
+      "search",
+      "rooms",
+      "devices",
+      "members",
+      "myRequests",
+    ]);
   });
   it("manager adds approvals but not the editor", () => {
     expect(ids("manager")).toEqual([
       "dashboard",
+      "search",
       "rooms",
       "devices",
       "members",
@@ -24,7 +32,7 @@ describe("navItemsFor", () => {
     expect(ids("admin")).toContain("groups");
   });
   it("admin sees all items incl. roomEditor", () => {
-    expect(ids("admin")).toHaveLength(9);
+    expect(ids("admin")).toHaveLength(10);
     expect(ids("admin")).toContain("roomEditor");
   });
   it("audit is admin only", () => {
@@ -36,6 +44,7 @@ describe("navItemsFor", () => {
     const items = navItemsFor("admin");
     expect(items.filter((i) => i.placement === "rail").map((i) => i.id)).toEqual([
       "dashboard",
+      "search",
       "rooms",
       "devices",
       "members",
@@ -63,6 +72,11 @@ describe("isActive", () => {
     expect(isActive(item("myRequests"), "/requests/x")).toBe(true);
     expect(isActive(item("myRequests"), "/approvals")).toBe(false);
     expect(isActive(item("myRequests"), "/requestsx")).toBe(false);
+  });
+  it("isActive: /search and /search/x active, /searchx not", () => {
+    expect(isActive(item("search"), "/search")).toBe(true);
+    expect(isActive(item("search"), "/search/x")).toBe(true);
+    expect(isActive(item("search"), "/searchx")).toBe(false);
   });
 });
 
