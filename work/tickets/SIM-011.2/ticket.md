@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T12:47:02Z |
 | PR | — |
 
 ## Goal
@@ -43,6 +43,13 @@ spec MEM-01, MEM-02; D12, D16 (a), D17, D34, D36. `work/tickets/SIM-011/plan.md`
 - Manual: deactivate a member who holds a seat.
 
 ## Notes / answers from Ming
-—
+- 2026-11-24: rerun after the 2026-11-23 escalation (option 1 in `escalation.md`: subagents launch again in this session); Ming ran `/run SIM-011.2`.
 
 ## Handoff
+
+### 2026-11-23 — claude — ESCALATED
+- Agent calls: 2, tokens 0/0 (frontend-developer×2 model unknown — launch failed).
+- Done: claim and Prepare only (on branch `ticket/SIM-011.2`).
+- In progress / next: retry once subagents can launch.
+- Gotchas: both frontend-developer launches returned `400 The requested model is not supported`; no consult or product files changed. Escalation copied to `escalation.md`.
+
