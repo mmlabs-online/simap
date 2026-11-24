@@ -11,8 +11,8 @@
 | Needs Ming | M-35 |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | claude@2026-11-24T06:01:09Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/61 |
 
 ## Goal
 A read-only Devices page that lists every device with its placement and filters it by all, placed or inventory.
@@ -55,3 +55,9 @@ spec DEV-02; D36. Split out of SIM-013 by its approved plan (`work/tickets/SIM-0
 - Done: consults saved; plan.md READY as slice 1 of 3 (read-only Devices page; no server/API change, no High path).
 - In progress / next: Ming approves (M-35). Then the orchestrator re-scopes this ticket to slice 1 and files SIM-013.4 (create/edit dialog) and SIM-013.5 (delete dialog, D31) on the board.
 - Gotchas: stale `expectedSeatId` → 409 `placement_changed`; 409 `device_placed` carries no seat (SIM-013.5 re-reads the device). Only shared file is a one-line export in `src/ui/index.ts`.
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 2 this run (implementer×1 inherit 59k, reviewer×1 inherit 50k; in/out split not reported); 5 in total for the ticket (~280k).
+- Done: read-only Devices page (placement, server-side filter, states, table + stacked list); review PASS on attempt 1 (no review-trigger agent: no server/db/auth path). PR #61.
+- In progress / next: Ming merges PR #61. Then SIM-013.3 / SIM-013.4 / SIM-013.5 (each depends only on SIM-013.2; the first to land adds the row-actions column).
+- Gotchas: `pnpm seed:dev` has no devices; view tests render table and stacked list together.
