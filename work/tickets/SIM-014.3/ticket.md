@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T09:43:03Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -42,6 +42,12 @@ spec REG-01, REG-02; D21, D23, D24, D26. Split out of SIM-014 by its approved pl
 - Manual: request a seat, see it approved, badge appears and clears.
 
 ## Notes / answers from Ming
-—
+Waiting for Ming: plan approval (P1 gate, M-40), including the proposed split into SIM-014.3 + SIM-014.5.
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 3, tokens ~200k total (frontend-developer×1 default 54k, ux-architect×1 default 46k, planner×1 default 100k)
+- Done: consults (frontend-developer, ux-architect), plan.md Status READY with a split proposal: SIM-014.3 = Request this seat + My requests page + nav entry (~430 src lines); SIM-014.5 = New markers, mark-seen and the nav badge.
+- In progress / next: Ming approves the plan and split (M-40). On approval: file SIM-014.5 on the board, narrow this ticket's AC3/AC4, then IMPLEMENT.
+- Gotchas: this slice changes `requests-api.ts`'s internal `call` to `call(path, init, read)`; SIM-014.4 builds approve/reject on it.
