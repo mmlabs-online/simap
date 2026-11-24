@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T09:35:30Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/65 |
 
 ## Goal
 Slice 3 of 4 of seat requests: Managers review requests on the Approvals page and approve or reject them.
@@ -50,3 +50,9 @@ spec REG-01, REG-02; D21, D23, D24, D26. Split out of SIM-014 by its approved pl
 - Done: consults (frontend-developer, ux-architect), plan.md Status READY with a split proposal: SIM-014.2 = read-only Approvals list (~450 src + ~350 test lines); SIM-014.4 = approve/reject dialogs and outcomes.
 - In progress / next: Ming approves the plan and the split (M-39). On approval: file SIM-014.4 on the board (after SIM-014.2), narrow this ticket's AC2/AC3, then IMPLEMENT.
 - Gotchas: SIM-014.3 also extends `requests-api.ts`, `copy/requests.ts` and `ui/index.ts`; whichever runs second rebases.
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 2, tokens ~103k total (implementer×1 default 55k, reviewer×1 default 49k)
+- Done: slice 1 implemented (18 files, +1157/−16), review PASS with no issues, all checks green, PR #65 opened. SIM-014.4 filed for the dialogs.
+- In progress / next: Ming merges PR #65. Then SIM-014.4 (dialogs, uses the `actions` slot) or SIM-014.3 (both extend `requests-api.ts` and `copy/requests.ts`).
+- Gotchas: none new.
