@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T08:05:46Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/64 |
 
 ## Goal
 Members delete their devices; a device at a seat is moved to inventory first (D31).
@@ -51,3 +51,9 @@ spec DEV-01, DEV-02; D31, D36. Split out of SIM-013.2 by its approved plan (`wor
 - Done: consult (consult-frontend-developer.md), plan.md Status READY, no split (~260 src + ~220 test lines), no High path.
 - In progress / next: Ming approves the plan (M-38), then IMPLEMENT. The branch is stacked on ticket/SIM-013.4; rebase onto main (`git rebase --onto origin/main origin/ticket/SIM-013.4`) once PR #63 is merged.
 - Gotchas: local shell needs Node via fnm (`fnm use 22`); no Python.
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 2, tokens ~112k total (implementer×1 default 64k, reviewer×1 default 48k)
+- Done: attempt 1 implemented (19 files, +840/−9), review PASS with no issues, all checks green (build exit 0 confirmed by the reviewer), PR #64 opened.
+- In progress / next: Ming merges PR #64. This completes the SIM-013 device slices (013, .1–.5).
+- Gotchas: in PowerShell use `pnpm.cmd` (pnpm.ps1 is blocked by the execution policy).
