@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P2 |
 | Size | M |
 | Areas | api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | M-46 (go-live only) |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T16:07:39Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -64,4 +64,13 @@ Google Drive (D61).
 - 2026-11-24: split approved with the SIM-036.2 plan (Ming: "duyệt").
 - 2026-11-24: Ming ran `/run SIM-036.5`; M-46 is go-live only ("code and tests do not need it"), so it does not block this run.
 
+Waiting for Ming: plan approval (ticket Gate)
+
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 2, ~? tokens (api-platform-engineer×1 opus 45.8k, planner×1 opus — usage reported in the session)
+- Done: consult (api; security has no consult agent), plan READY. No High path. Gate is `plan-approval` from the ticket.
+- In progress / next: Ming approves `plan.md` (M-50; key decision A1: no row lock across the Drive upload, compare-and-set plus 409 `image_changed`). Then `/run SIM-036.5` resumes at IMPLEMENT.
+- Gotchas: ~450 product + ~800 test lines (fallback: move the `deleteDeviceType` cleanup to a follow-up). Session branch `claude/confident-cerf-67q5le`.
+
