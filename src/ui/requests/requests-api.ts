@@ -16,6 +16,8 @@ function isRequestDto(b: unknown): b is RequestDto {
   return typeof o?.id === "string" && typeof o.status === "string";
 }
 
+const readDto = (b: unknown) => (isRequestDto(b) ? b : null);
+
 const fail = (code: string): { ok: false; code: string } => ({ ok: false, code });
 
 async function errorCode(res: Response): Promise<string> {
@@ -80,8 +82,22 @@ export function createRequestsApi(fetcher: ApiFetch) {
         (b, status) => (isRequestDto(b) ? { created: status === 201, request: b } : null),
       ),
     cancel: (id: string) =>
-      call<RequestDto>(`/api/requests/${encodeURIComponent(id)}/cancel`, { method: "POST" }, (b) =>
-        isRequestDto(b) ? b : null,
+      call<RequestDto>(
+        `/api/requests/${encodeURIComponent(id)}/cancel`,
+        { method: "POST" },
+        readDto,
+      ),
+    approve: (id: string) =>
+      call<RequestDto>(
+        `/api/requests/${encodeURIComponent(id)}/approve`,
+        { method: "POST" },
+        readDto,
+      ),
+    reject: (id: string) =>
+      call<RequestDto>(
+        `/api/requests/${encodeURIComponent(id)}/reject`,
+        { method: "POST" },
+        readDto,
       ),
     mine: (cursor?: string, limit: number = REQUEST_LIMITS.defaultLimit) => {
       const p = new URLSearchParams();

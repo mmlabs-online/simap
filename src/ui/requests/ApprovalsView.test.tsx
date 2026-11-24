@@ -4,7 +4,7 @@ import { REQUEST_STATUSES, type RequestListItemDto } from "@/lib/requests/types"
 import { apiErrorMessage } from "../copy/api";
 import { requestsCopy } from "../copy/requests";
 import { ApprovalsView, type ApprovalsViewProps } from "./ApprovalsView";
-import { formatRequestTime } from "./requests-state";
+import { formatRequestTime, occupantHintId } from "./requests-state";
 
 const noop = () => {};
 const req = (over: Partial<RequestListItemDto> & { id: string }): RequestListItemDto => ({
@@ -104,6 +104,36 @@ describe("ApprovalsView", () => {
       items: [req({ id: "1", subject: { id: "u", displayName: "Nguyễn Thị Ánh" } })],
     });
     expect(html).toContain("Nguyễn Thị Ánh");
+  });
+  it("h1 has tabindex=-1 (ready and forbidden)", () => {
+    expect(render()).toMatch(/<h1[^>]*tabindex="-1"/);
+    expect(render({ state: "forbidden" })).toMatch(/<h1[^>]*tabindex="-1"/);
+  });
+  it("notice: status tone -> role=status, error tone -> role=alert, null -> neither", () => {
+    expect(render({ notice: { tone: "status", text: "Done." } })).toMatch(
+      /role="status"[^>]*>Done\./,
+    );
+    expect(render({ notice: { tone: "error", text: "Oops." } })).toMatch(
+      /role="alert"[^>]*>Oops\./,
+    );
+    const none = render({ notice: null });
+    expect(none).not.toContain('role="status"');
+    expect(none).not.toContain('role="alert"');
+  });
+  it("occupied pending row: occupant line carries id occupantHintId(id); empty seat line has no id", () => {
+    const occ = render({
+      items: [req({ id: "7", currentOccupant: { id: "o", displayName: "Bob" } })],
+    });
+    expect(occ).toContain(`id="${occupantHintId("7")}"`);
+    expect(render()).not.toContain('id="occupant-');
+  });
+  it("actions slot output rendered inside each card", () => {
+    const html = render({
+      items: [req({ id: "1" }), req({ id: "2" })],
+      actions: (it) => <b>act-{it.id}</b>,
+    });
+    expect(html).toContain("<b>act-1</b>");
+    expect(html).toContain("<b>act-2</b>");
   });
   it("chip bar wrapper has overflow-x-auto", () => {
     expect(render()).toMatch(/overflow-x-auto[^>]*><div role="radiogroup"/);
