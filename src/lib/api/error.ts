@@ -34,6 +34,11 @@ export const API_ERROR_CODES = [
   "device_placed",
   "inventory_number_taken",
   "mac_taken",
+  "group_name_taken",
+  "project_code_taken",
+  "in_use",
+  "invalid_group",
+  "invalid_project",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

@@ -8,6 +8,7 @@ import {
 } from "@/lib/seats/rules";
 import { SEAT_LIMITS, type RoomSeatsResponse, type SeatDto } from "@/lib/seats/types";
 import { formatSeatCode } from "@/lib/rooms/seat-code";
+import type { SeatTagsValue } from "@/lib/validate/group";
 import type { CannotSeatValue, OccupantPutValue } from "@/lib/validate/seat";
 import { writeAudit } from "@/server/audit/write";
 import { withTx, type TxClient, type TxPool } from "@/server/db/tx";
@@ -29,7 +30,9 @@ export type Refusal = {
     | "not_allowed"
     | "member_not_assignable"
     | "seat_taken"
-    | "no_linked_member";
+    | "no_linked_member"
+    | "invalid_group"
+    | "invalid_project";
 };
 export type Result<T> = { ok: true; value: T } | Refusal;
 
@@ -203,6 +206,7 @@ export type SeatLock = {
   code: string;
   occupant_id: string | null;
   group_id: string | null;
+  project_id: string | null;
   cannot_seat: boolean;
   cannot_seat_reason: string | null;
 };
@@ -235,7 +239,7 @@ export async function lockSeatIn(
   const { rows } = await orgQuery<SeatLock>(
     c,
     scope,
-    `select id, code, occupant_id, group_id, cannot_seat, cannot_seat_reason
+    `select id, code, occupant_id, group_id, project_id, cannot_seat, cannot_seat_reason
      from seats where org_id = $1 and id = $2 for update`,
     [seatId],
   );
@@ -492,6 +496,60 @@ export function setCannotSeat(
       entity: "seat",
       entityId: seatId,
       meta: { code: seat.code, cannotSeat: v.cannotSeat, hasReason: reason !== null },
+    });
+    return loadSeat(c, scope, actorSub, seatId);
+  });
+}
+
+/** SEA-04 / GRP-02: sets or clears a seat's group and/or project; tags never affect permissions or the occupant. */
+export function setSeatTags(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  seatId: string,
+  v: SeatTagsValue,
+): Promise<Result<SeatDto>> {
+  return inTx(db, async (c) => {
+    const seat = await lockSeat(c, scope, seatId, "share");
+    const next = {
+      group_id: v.groupId === undefined ? seat.group_id : v.groupId,
+      project_id: v.projectId === undefined ? seat.project_id : v.projectId,
+    };
+    if (next.group_id === seat.group_id && next.project_id === seat.project_id) {
+      return loadSeat(c, scope, actorSub, seatId);
+    }
+    // The referenced row is held `for share`: a concurrent delete waits (then clears this seat) or we fail here.
+    if (v.groupId) {
+      const { rows } = await orgQuery(
+        c,
+        scope,
+        "select id from groups where org_id = $1 and id = $2 for share",
+        [v.groupId],
+      );
+      if (!rows[0]) throw refuse(422, "invalid_group");
+    }
+    if (v.projectId) {
+      const { rows } = await orgQuery(
+        c,
+        scope,
+        "select id from projects where org_id = $1 and id = $2 for share",
+        [v.projectId],
+      );
+      if (!rows[0]) throw refuse(422, "invalid_project");
+    }
+    await orgQuery(
+      c,
+      scope,
+      `update seats set group_id = $3, project_id = $4, updated_at = now()
+       where org_id = $1 and id = $2`,
+      [seatId, next.group_id, next.project_id],
+    );
+    await writeAudit(c, scope, {
+      actorSub,
+      action: "seat.tags",
+      entity: "seat",
+      entityId: seatId,
+      meta: { code: seat.code, groupId: next.group_id, projectId: next.project_id },
     });
     return loadSeat(c, scope, actorSub, seatId);
   });
