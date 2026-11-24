@@ -1,5 +1,5 @@
 /** Zoom levels of the room map: whole numbers only (spec LAY "Visual style"). */
-export const ZOOM_LEVELS = [2, 3, 4] as const;
+export const ZOOM_LEVELS = [1, 2, 3, 4] as const;
 export type Zoom = (typeof ZOOM_LEVELS)[number];
 
 export type Rotation = 0 | 90 | 180 | 270;
