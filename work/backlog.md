@@ -62,7 +62,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-013.3 | Device place, move and return dialog | MERGED | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
 | SIM-013.4 | Device create and edit dialog | MERGED | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
 | SIM-013.5 | Device delete dialog with Move to inventory | MERGED | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
-| SIM-035 | Draw a seat's devices on its desk and keep other items off desks | BACKLOG | P1 | M | ui, api, security | SIM-015.8, SIM-013 | plan-approval | 0 | 2026-11-24 |
+| SIM-035 | Draw a seat's devices on its desk and keep other items off desks | PLANNING | P1 | M | ui, api, security | SIM-015.8, SIM-013 | plan-approval | 0 | 2026-11-24 |
 | SIM-036.1 | Google Drive image storage client (tudocuatui pattern) | BACKLOG | P2 | M | architecture, security | — | plan-approval | 0 | 2026-11-24 |
 | SIM-036.2 | Device type catalog: schema and API | BACKLOG | P2 | M | db, api, security | SIM-035, SIM-036.1 | plan-approval | 0 | 2026-11-24 |
 | SIM-036.3 | Device types admin page | BACKLOG | P2 | M | ui, ux | SIM-036.2 | none | 0 | 2026-11-24 |
@@ -80,7 +80,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-017 | Dashboard and search | MERGED | P2 | M | api, ui | SIM-013, SIM-014 | none | 0 | 2026-11-24 |
 | SIM-017.2 | Search API, diacritics-insensitive | MERGED | P2 | M | api | SIM-017 | none | 0 | 2026-11-24 |
 | SIM-017.3 | Search page UI | MERGED | P2 | M | ui | SIM-017.2 | none | 0 | 2026-11-24 |
-| SIM-018 | CSV export | DONE | P2 | S | api, ui | SIM-017 | none | 0 | 2026-11-24 |
+| SIM-018 | CSV export | MERGED | P2 | S | api, ui | SIM-017 | none | 0 | 2026-11-24 |
 | SIM-027 | Security headers, CSP and apiFetch hardening before go-live | MERGED | P1 | M | security, architecture | SIM-006.2 | plan-approval | 0 | 2026-11-20 |
 | SIM-021 | Go-live checklist and first production deploy | BACKLOG | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | none | 0 | 2026-11-20 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
