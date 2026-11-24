@@ -1,12 +1,5 @@
-import { PageSkeleton } from "@/ui";
-import { shellCopy } from "@/ui/copy/shell";
+import { ApprovalsPage } from "@/ui";
 
-export default function ApprovalsPage() {
-  return (
-    <PageSkeleton
-      title={shellCopy.pages.approvals.title}
-      emptyText={shellCopy.pages.approvals.empty}
-      icon="fact_check"
-    />
-  );
+export default function Page() {
+  return <ApprovalsPage />;
 }
