@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { decideApprove, decideCancel, decideCreate, nextStatus, type RequestAction } from "./rules";
+import {
+  decideApprove,
+  decideCancel,
+  decideCreate,
+  isUnseen,
+  nextStatus,
+  type RequestAction,
+} from "./rules";
 import { REQUEST_STATUSES } from "./types";
 
 describe("nextStatus", () => {
@@ -56,5 +63,30 @@ describe("decideCancel", () => {
     for (const status of ["approved", "rejected", "cancelled"] as const) {
       expect(decideCancel({ status, isOwner: true })).toBe("noop");
     }
+  });
+});
+
+describe("isUnseen", () => {
+  const D = "2026-11-24T05:00:00.000100Z";
+  const before = "2026-11-24T05:00:00.000099Z";
+  const after = "2026-11-24T05:00:00.000101Z";
+
+  it("approved and rejected: unseen iff seenAt is null or earlier than decidedAt", () => {
+    for (const s of ["approved", "rejected"] as const) {
+      expect(isUnseen(s, D, null)).toBe(true);
+      expect(isUnseen(s, D, before)).toBe(true);
+      expect(isUnseen(s, D, D)).toBe(false);
+      expect(isUnseen(s, D, after)).toBe(false);
+    }
+  });
+
+  it("pending and cancelled are never unseen", () => {
+    for (const s of ["pending", "cancelled"] as const) {
+      for (const seen of [null, before, D, after]) expect(isUnseen(s, D, seen)).toBe(false);
+    }
+  });
+
+  it("a missing decidedAt is never unseen", () => {
+    expect(isUnseen("approved", null, null)).toBe(false);
   });
 });

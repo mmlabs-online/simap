@@ -36,7 +36,7 @@ async function lockMembers(
   return rows;
 }
 
-type RequestRow = {
+export type RequestRow = {
   id: string;
   status: RequestStatus;
   seat_id: string;
@@ -51,36 +51,39 @@ type RequestRow = {
   decided_by_name: string | null;
 };
 
-const ISO = `'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'`;
+export const ISO = `'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'`;
+
+export const REQUEST_SELECT = `q.id, q.status, q.seat_id, s.code as seat_code, s.room_id, r.code as room_code,
+       q.subject_id, m.display_name as subject_name,
+       to_char(q.created_at at time zone 'UTC', ${ISO}) as created_at,
+       to_char(q.decided_at at time zone 'UTC', ${ISO}) as decided_at,
+       q.decided_by_id, d.display_name as decided_by_name`;
 
 /** Every join repeats org_id (R6). */
+export const REQUEST_FROM = `seat_requests q
+       join seats s on s.org_id = q.org_id and s.id = q.seat_id
+       join rooms r on r.org_id = s.org_id and r.id = s.room_id
+       join members m on m.org_id = q.org_id and m.id = q.subject_id
+       left join members d on d.org_id = q.org_id and d.id = q.decided_by_id`;
+
+export const toRequestDto = (r: RequestRow): RequestDto => ({
+  id: r.id,
+  status: r.status,
+  seat: { id: r.seat_id, code: r.seat_code, roomId: r.room_id, roomCode: r.room_code },
+  subject: { id: r.subject_id, displayName: r.subject_name },
+  createdAt: r.created_at,
+  decidedAt: r.decided_at,
+  decidedBy: r.decided_by_id ? { id: r.decided_by_id, displayName: r.decided_by_name! } : null,
+});
+
 async function loadRequest(c: Query, scope: OrgScope, id: string): Promise<RequestDto> {
   const { rows } = await orgQuery<RequestRow>(
     c,
     scope,
-    `select q.id, q.status, q.seat_id, s.code as seat_code, s.room_id, r.code as room_code,
-       q.subject_id, m.display_name as subject_name,
-       to_char(q.created_at at time zone 'UTC', ${ISO}) as created_at,
-       to_char(q.decided_at at time zone 'UTC', ${ISO}) as decided_at,
-       q.decided_by_id, d.display_name as decided_by_name
-     from seat_requests q
-       join seats s on s.org_id = q.org_id and s.id = q.seat_id
-       join rooms r on r.org_id = s.org_id and r.id = s.room_id
-       join members m on m.org_id = q.org_id and m.id = q.subject_id
-       left join members d on d.org_id = q.org_id and d.id = q.decided_by_id
-     where q.org_id = $1 and q.id = $2`,
+    `select ${REQUEST_SELECT} from ${REQUEST_FROM} where q.org_id = $1 and q.id = $2`,
     [id],
   );
-  const r = rows[0]!;
-  return {
-    id: r.id,
-    status: r.status,
-    seat: { id: r.seat_id, code: r.seat_code, roomId: r.room_id, roomCode: r.room_code },
-    subject: { id: r.subject_id, displayName: r.subject_name },
-    createdAt: r.created_at,
-    decidedAt: r.decided_at,
-    decidedBy: r.decided_by_id ? { id: r.decided_by_id, displayName: r.decided_by_name! } : null,
-  };
+  return toRequestDto(rows[0]!);
 }
 
 /** The request row `for update`; null when it does not exist (or, with `subjectId`, is not that member's). */
