@@ -125,7 +125,9 @@ export function createRequest(
     const { rows: ins } = await orgQuery<{ id: string }>(
       c,
       scope,
-      `insert into seat_requests (org_id, seat_id, subject_id, created_by_id) values ($1, $2, $3, $3)
+      `insert into seat_requests (org_id, seat_id, subject_id, created_by_id)
+       select o.org_id, $2::uuid, $3::uuid, $3::uuid
+       from (select $1::uuid as org_id) o where o.org_id = $1::uuid
        on conflict (org_id, seat_id, subject_id) where status = 'pending' do nothing returning id`,
       [seatId, me.id],
     );

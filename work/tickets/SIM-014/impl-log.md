@@ -34,3 +34,18 @@ None. Deviation: `notFound` in seats.ts is not exported (the service uses `refus
 ### Scope self-check
 - Could the diff be smaller? No.
 - Diff size: about +1000 lines including tests (about 450 source); seats.ts net near zero.
+
+## Attempt 2 (REWORK: CI `pnpm test:db` red, run 45324267204)
+
+### Root causes
+1. Four create tests, `orgQuery: SQL must filter org_id = $1` at requests.ts:125. The `orgQuery` guard (`src/server/http/org-scope.ts`) requires the text `org_id = $1`; the insert used `values ($1, ...)`, which has no such predicate. Fix in `requests.ts`: use the repo's insert shape (`select o.org_id, ... from (select $1::uuid as org_id) o where o.org_id = $1::uuid`), as in members/rooms/audit inserts. All 13 other `orgQuery` calls in requests.ts were checked and contain `org_id = $1`.
+2. Approve test "two rivals", `devices_primary_owner_is_occupant` (23514) in the test fixture `addDevice(..., w.seat1, "primary")`. Test setup bug, not an approve bug: seat1 is empty (approve only works on empty seats), and the constraint trigger forbids a primary device on a seat whose occupant is not its owner, so such a state cannot exist. Fix: the test now places a secondary device on the empty seat and asserts it stays secondary and on seat1 after approve. Test renamed (no "primary demoted"). Demotion on assign is covered in seats tests and cannot occur in approve.
+
+### Files touched
+- `src/server/requests/requests.ts` (insert SQL), `src/server/requests/requests.db.test.ts` (fixture role and assertions).
+
+### Checks
+- format:check ok, typecheck ok, check:layers 425 files no violations, test ok, build ok. `pnpm test:db` not run locally (CI re-run on PR #58).
+
+### Out-of-plan files / Follow-ups
+None.

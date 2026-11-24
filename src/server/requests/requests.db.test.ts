@@ -153,10 +153,11 @@ describe("requests (db): create", () => {
 });
 
 describe("requests (db): approve", () => {
-  it("two rivals: occupant set, primary demoted, request approved, both rivals rejected, audit rows", async () => {
+  it("two rivals: occupant set, request approved, both rivals rejected, audit rows", async () => {
     const w = await world();
     const c = await addMember(pool, w.orgId);
-    const dev = await addDevice(pool, w.orgId, w.b, w.seat1, "primary");
+    // A primary device cannot sit on an empty seat (trigger), so the empty seat holds a secondary one.
+    const dev = await addDevice(pool, w.orgId, w.b, w.seat1, "secondary");
     const req = await addPendingRequest(pool, w.orgId, w.seat1, w.a);
     const rival1 = await addPendingRequest(pool, w.orgId, w.seat1, w.b);
     const rival2 = await addPendingRequest(pool, w.orgId, w.seat1, c);
@@ -169,6 +170,7 @@ describe("requests (db): approve", () => {
     });
     expect((await seatRow(w.seat1)).occupant_id).toBe(w.a);
     expect((await one("select role from devices where id = $1", [dev])).role).toBe("secondary");
+    expect((await one("select seat_id from devices where id = $1", [dev])).seat_id).toBe(w.seat1);
     const row = await reqRow(req);
     expect(row.status).toBe("approved");
     expect(row.decided_by_id).toBe(w.boss);
