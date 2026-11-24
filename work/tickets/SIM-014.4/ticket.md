@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T10:35:08Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -42,6 +42,12 @@ spec REG-01, REG-02; D18, D24, D26. Split out of SIM-014.2 by its approved plan 
 - Manual: request → approve with two rival requests.
 
 ## Notes / answers from Ming
-—
+Waiting for Ming: plan approval (P1 gate, M-41)
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 3, tokens ~143k total (frontend-developer×1 default 40k, ux-architect×1 default 34k, planner×1 default 70k)
+- Done: consults (re-check of the SIM-014.2 dialog advice against main), plan.md Status READY, no split (~330 src + ~320 test lines), no High path.
+- In progress / next: Ming approves the plan (M-41), then IMPLEMENT.
+- Gotchas: stage by explicit path; local shell needs Node via fnm and `cmd /c "pnpm ..."`.
