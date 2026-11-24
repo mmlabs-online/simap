@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T15:10:59Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/77 |
 
 ## Goal
 simap can store and read small images in Google Drive from the server only, the same way tudocuatui stores item
@@ -64,3 +64,9 @@ photos, so device types can carry an image (SIM-036.2).
 - Done: consult (architecture), plan.md READY with defaults A1-A12.
 - In progress / next: Ming approves the plan (M-48, High path `.env.example` and `src/server/drive/config.ts`), then /run SIM-036.1 implements.
 - Gotchas: planner could not grep `.env.example` names (permission); implementer must grep `^(GOOGLE_|DRIVE_)` before adding. Production env reaches the container only via `simap.env` (deploy writes only DATABASE_URL): passing the Drive values needs a separate deploy ticket before SIM-036.2 goes live.
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 3 this run (implementer×1 default 77k, reviewer×1 default 49k, security-ai-generated-code-auditor×1 default 43k); 5 in total for the ticket.
+- Done: implemented per plan (A1-A12); review PASS on attempt 1; security review no blockers; PR #77 opened.
+- In progress / next: Ming checks the `.env.example` diff and merges PR #77; deploy ticket for the Drive secrets is still to be created (Ming has not answered yet).
+- Gotchas: agents may not read `.env*`, so the `.env.example` duplicate check is Ming's; rebased on main before push (force-with-lease).
