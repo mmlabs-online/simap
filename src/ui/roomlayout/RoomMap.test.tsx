@@ -39,15 +39,17 @@ describe("RoomMap", () => {
 });
 
 describe("ZoomControl", () => {
-  it("renders 2x/3x/4x with aria-pressed on the value and disabled on levels not allowed", () => {
-    const html = renderToStaticMarkup(<ZoomControl zoom={2} onZoom={() => {}} allowed={[2]} />);
+  it("renders 1x/2x/3x/4x with aria-pressed on the value and disabled on levels not allowed", () => {
+    const html = renderToStaticMarkup(<ZoomControl zoom={2} onZoom={() => {}} allowed={[1, 2]} />);
     const buttons = html.match(/<button[^>]*>/g) ?? [];
-    expect(buttons).toHaveLength(3);
-    expect(buttons[0]).toContain('aria-pressed="true"');
-    expect(buttons[1]).toContain('aria-pressed="false"');
+    expect(buttons).toHaveLength(4);
+    expect(buttons[0]).toContain('aria-pressed="false"');
+    expect(buttons[1]).toContain('aria-pressed="true"');
     expect(buttons[0]).not.toContain('disabled=""');
-    expect(buttons[1]).toContain('disabled=""');
+    expect(buttons[1]).not.toContain('disabled=""');
     expect(buttons[2]).toContain('disabled=""');
+    expect(buttons[3]).toContain('disabled=""');
+    expect(html).toContain("1x");
     expect(html).toContain("2x");
   });
 });

@@ -45,8 +45,8 @@ describe("rotation and zoom", () => {
     expect(ROTATION_TO_DIR).toEqual({ 0: "s", 90: "e", 180: "n", 270: "w" });
   });
 
-  it("ZOOM_LEVELS is 2, 3, 4", () => {
-    expect([...ZOOM_LEVELS]).toEqual([2, 3, 4]);
+  it("ZOOM_LEVELS is 1, 2, 3, 4", () => {
+    expect([...ZOOM_LEVELS]).toEqual([1, 2, 3, 4]);
   });
 
   it("resolveFrameKey uses a real directional key", () => {
