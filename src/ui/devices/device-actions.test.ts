@@ -37,3 +37,28 @@ describe("hasAnyAction", () => {
     expect(hasAnyAction([d({ canPlace: false }), d()], h)).toBe(true);
   });
 });
+
+describe("edit action", () => {
+  it("Edit only when canEdit and onEdit", () => {
+    const onEdit = vi.fn();
+    expect(rowActions(d({ canPlace: false, canEdit: true }), {})).toEqual([]);
+    expect(rowActions(d({ canPlace: false, canEdit: false }), { onEdit })).toEqual([]);
+    const a = rowActions(d({ canPlace: false, canEdit: true }), { onEdit });
+    expect(a.map((x) => x.key)).toEqual(["edit"]);
+    expect(a[0].ariaLabel).toBe("Edit device INV-7");
+    a[0].run();
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: "d1" }));
+  });
+  it("place and edit actions are independent", () => {
+    const row = d({ canEdit: true });
+    expect(rowActions(row, { onEdit: vi.fn() }).map((x) => x.key)).toEqual(["edit"]);
+    expect(rowActions(row, { onPlace: vi.fn(), onEdit: vi.fn() }).map((x) => x.key)).toEqual([
+      "place",
+      "edit",
+    ]);
+    expect(rowActions(row, {})).toEqual([]);
+  });
+  it("hasAnyAction is true for a canEdit-only row with onEdit", () => {
+    expect(hasAnyAction([d({ canPlace: false, canEdit: true })], { onEdit: vi.fn() })).toBe(true);
+  });
+});

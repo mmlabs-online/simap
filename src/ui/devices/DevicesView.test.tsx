@@ -145,3 +145,20 @@ describe("DevicesView filter and states", () => {
     expect(render({ truncated: false })).not.toContain("Showing the first");
   });
 });
+
+describe("DevicesView create and edit entries", () => {
+  it("New device button when onNew is given", () => {
+    expect(render({ onNew: noop })).toContain(devicesCopy.newDevice);
+    expect(render()).not.toContain(devicesCopy.newDevice);
+  });
+  it("Edit buttons on canEdit rows", () => {
+    const html = render({
+      actions: { onEdit: noop },
+      devices: [
+        { ...base, canEdit: true },
+        { ...secondary, canEdit: false },
+      ],
+    });
+    expect(html.match(/aria-label="Edit device INV-1"/g)).toHaveLength(2);
+  });
+});
