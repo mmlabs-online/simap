@@ -1,32 +1,34 @@
-# SIM-014: Seat requests and approvals
+# SIM-014: Seat requests — state machine and write API
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
-| Areas | api, ui, ux |
+| Areas | api |
 | Gate | plan-approval |
 | Depends on | SIM-012 |
 | Needs Ming | M-32 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T03:59:20Z |
 | PR | — |
 
 ## Goal
-Users ask for an empty seat for themselves, Managers approve or reject, and users follow their requests in the app.
+Slice 1 of 4 of seat requests: the request state machine and the write API (create, approve, reject, cancel). Slices
+2–4 are SIM-014.1 (read API and decided badge), SIM-014.2 (Approvals page UI) and SIM-014.3 (request button, My
+requests page, nav badge).
 
 ## Scope reference
-spec REG-01, REG-02; D21, D23, D24, D26.
+spec REG-01, REG-02; D21, D23, D26. Re-scoped 2026-11-24 by the approved plan (`plan.md`, Split proposal).
 
 ## Scope
-- Request from an empty, seatable seat in any room, for self only; dedupe pending.
-- Approvals page (Manager+): filter by status, approve (assign + reject rivals in one transaction), reject.
-- "My requests" with status and a badge of newly decided requests; cancel own pending request.
+- `src/lib/requests/*` (types, rules), `src/lib/validate/request.ts`, `src/server/requests/*`, `writeOccupant`
+  extracted from `src/server/seats/seats.ts`, `POST /api/requests`, `POST /api/requests/[id]/approve|reject|cancel`,
+  two new error codes.
 
 ## Out of scope
-- Email notifications (D24: none).
+- Email notifications (D24: none). Any read/list endpoint (SIM-014.1) and any UI (SIM-014.2, SIM-014.3).
 
 ## Acceptance criteria
 - [ ] A second pending request for the same seat by the same member creates nothing.
@@ -41,10 +43,10 @@ spec REG-01, REG-02; D21, D23, D24, D26.
 
 ## Test plan
 - Unit: state machine.
-- Manual: request → approve with two rival requests.
+- Manual: none for this slice (request → approve with two rivals is checked after SIM-014.2).
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (P1 policy)
+- 2026-11-24: Plan approved (all defaults, assumptions 1-11; Ming: "duyệt plan SIM-014, chạy luôn"). Ticket re-scoped to slice 1 (state machine and write API); SIM-014.1 (read API), SIM-014.2 (Approvals UI), SIM-014.3 (request button, My requests, badge) filed on the board.
 
 ## Handoff
 
