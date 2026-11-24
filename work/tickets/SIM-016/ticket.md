@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | S |
 | Areas | api, ui |
@@ -21,12 +21,14 @@ Managers maintain group and project labels and tag seats with them.
 spec GRP-01, GRP-02, SEA-04; D34 (delete warns, clears tags).
 
 ## Scope
-- CRUD for groups (name, colour) and projects (code, name), unique per org.
-- Tag/untag a seat from the seat detail.
-- Delete in use: warn with counts, clear tags on confirm.
+Re-scoped by the plan's split (slice 1 = API and logic):
+- CRUD API for groups (name, colour) and projects (code, name), unique per org.
+- Tag/untag a seat through the API (`PATCH /api/seats/[id]/tags`).
+- Delete in use: delete-impact counts; refuse without `force`, clear tags on a forced delete.
 
 ## Out of scope
 - Reporting by group.
+- Groups/Projects management page (SIM-016.2) and the seat-detail tag dialog (SIM-016.3).
 
 ## Acceptance criteria
 - [ ] Names/codes are unique within the org.
