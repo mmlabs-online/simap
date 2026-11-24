@@ -58,7 +58,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-011.2 | Members page UI: list, edit and deactivate dialogs | ESCALATED | P1 | M | ui | SIM-011 | none | 0 | 2026-11-23 |
 | SIM-013 | Devices: placement rules, read and placement API | MERGED | P1 | M | api | SIM-012 | plan-approval | 0 | 2026-11-23 |
 | SIM-013.1 | Device create, edit and delete API | MERGED | P1 | S | api | SIM-013 | plan-approval | 0 | 2026-11-24 |
-| SIM-013.2 | Devices page (read-only list and filter) | IN_PROGRESS | P1 | M | ui, ux | SIM-013.1 | plan-approval | 0 | 2026-11-24 |
+| SIM-013.2 | Devices page (read-only list and filter) | REVIEW | P1 | M | ui, ux | SIM-013.1 | plan-approval | 0 | 2026-11-24 |
 | SIM-013.3 | Device place, move and return dialog | BACKLOG | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-23 |
 | SIM-013.4 | Device create and edit dialog | BACKLOG | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
 | SIM-013.5 | Device delete dialog with Move to inventory | BACKLOG | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
