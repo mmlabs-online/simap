@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-24T10:52:20Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/68 |
 
 ## Goal
 Managers maintain group and project labels and tag seats with them.
@@ -48,3 +48,9 @@ Re-scoped by the plan's split (slice 1 = API and logic):
 —
 
 ## Handoff
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 4, tokens ~242k total (planner×1 sonnet 48k, implementer×1 default 92k, reviewer×1 default 57k, security-ai-generated-code-auditor×1 default 46k)
+- Done: slice 1 (API and logic) implemented, 25 files +1794/−7, no migration; review PASS with one should-fix (seat-tag vs forced-delete deadlock → 500, wrong "cannot deadlock" comment); security review no 🔴/🟡; PR #68 opened. SIM-016.2 (management page) and SIM-016.3 (seat tag dialog) filed.
+- In progress / next: Ming decides whether the deadlock fix goes into this PR or SIM-016.3 (default SIM-016.3), then merges PR #68.
+- Gotchas: `test:db` runs locally with `docker compose -f compose.dev.yml up -d` and DATABASE_URL=postgres://simap@127.0.0.1:5432/simap.
