@@ -12,7 +12,15 @@ import {
   testPool,
   waitForLockWait,
 } from "@/test/db/fixtures";
-import { getDevice, listDevices, placeDevice } from "./devices";
+import { validateDeviceCreate } from "@/lib/validate/device";
+import {
+  createDevice,
+  deleteDevice,
+  getDevice,
+  listDevices,
+  placeDevice,
+  updateDevice,
+} from "./devices";
 
 let pool: pg.Pool;
 
@@ -291,5 +299,234 @@ describe("devices (db): placement", () => {
       holder.release();
     }
     expect(await devRow(dev)).toEqual({ seat_id: null, role: "secondary" });
+  });
+});
+
+const dto = (v: Record<string, unknown>) => {
+  const r = validateDeviceCreate({ name: "Laptop", type: "laptop", inventoryNumber: "INV", ...v });
+  if (!r.ok) throw new Error(`bad fixture: ${r.field}`);
+  return r.value;
+};
+const devCount = (orgId: string) =>
+  count("select count(*)::int as n from devices where org_id = $1", [orgId]);
+
+describe("devices (db): create / edit / delete", () => {
+  it("create permission matrix: own device in inventory with audit; Admin for another; User/Manager for another -> 422; deactivated owner -> 422; unknown or other-org owner -> 404", async () => {
+    const w = await world();
+    const other = await world();
+    const subX = await subOf(w.x);
+    for (const [i, tier] of (["user", "manager", "admin"] as const).entries()) {
+      const r = await createDevice(pool, w.scope, subX, tier, dto({ inventoryNumber: `own-${i}` }));
+      expect(r.ok && r.value).toMatchObject({
+        placement: null,
+        mine: true,
+        owner: { id: w.x },
+        canEdit: true,
+      });
+    }
+    expect(await auditCount(w.orgId, "device.create")).toBe(3);
+    const row = await one("select seat_id, role from devices where org_id = $1 limit 1", [w.orgId]);
+    expect(row).toEqual({ seat_id: null, role: "secondary" });
+
+    const forY = await createDevice(
+      pool,
+      w.scope,
+      subX,
+      "admin",
+      dto({ inventoryNumber: "y", ownerId: w.y }),
+    );
+    expect(forY.ok && forY.value.owner.id).toBe(w.y);
+    for (const tier of ["user", "manager"] as const) {
+      expect(
+        await createDevice(pool, w.scope, subX, tier, dto({ inventoryNumber: "n", ownerId: w.y })),
+      ).toEqual({ ok: false, status: 422, code: "not_allowed" });
+    }
+    await pool.query("update members set status = 'deactivated' where id = $1", [w.z]);
+    expect(
+      await createDevice(pool, w.scope, subX, "admin", dto({ inventoryNumber: "z", ownerId: w.z })),
+    ).toEqual({ ok: false, status: 422, code: "member_not_assignable" });
+    for (const ownerId of [randomUUID(), other.x]) {
+      expect(
+        await createDevice(pool, w.scope, subX, "admin", dto({ inventoryNumber: "u", ownerId })),
+      ).toEqual({ ok: false, status: 404, code: "not_found" });
+    }
+    expect(await devCount(w.orgId)).toBe(4);
+    expect(await auditCount(w.orgId, "device.create")).toBe(4);
+  });
+
+  it("create without a member row and no ownerId -> 422 no_linked_member", async () => {
+    const w = await world();
+    expect(await createDevice(pool, w.scope, randomUUID(), "user", dto({}))).toEqual({
+      ok: false,
+      status: 422,
+      code: "no_linked_member",
+    });
+  });
+
+  it("edit permission matrix: owner edits own; User/Manager editing another one -> 422 and row unchanged; Admin edits another one; a placed device keeps its placement; audit lists the changed fields only", async () => {
+    const w = await world();
+    const dev = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
+    const subX = await subOf(w.x);
+    const subY = await subOf(w.y);
+    const r = await updateDevice(pool, w.scope, subX, "user", dev, {
+      name: "Renamed",
+      mac: "aa:bb:cc:dd:ee:ff",
+    });
+    expect(r.ok && r.value).toMatchObject({
+      name: "Renamed",
+      mac: "aa:bb:cc:dd:ee:ff",
+      placement: { seatId: w.a1, role: "primary" },
+    });
+    const audit = await one(
+      "select meta from audit_log where org_id = $1 and action = 'device.update'",
+      [w.orgId],
+    );
+    expect(audit.meta).toEqual({ fields: ["name", "mac"] });
+    for (const tier of ["user", "manager"] as const) {
+      expect(await updateDevice(pool, w.scope, subY, tier, dev, { name: "Nope" })).toEqual({
+        ok: false,
+        status: 422,
+        code: "not_allowed",
+      });
+    }
+    expect((await one("select name from devices where id = $1", [dev])).name).toBe("Renamed");
+    const asAdmin = await updateDevice(pool, w.scope, subY, "admin", dev, {
+      type: "Desktop",
+      mac: null,
+    });
+    expect(asAdmin.ok && asAdmin.value).toMatchObject({ type: "Desktop", mac: null });
+    expect(await devRow(dev)).toEqual({ seat_id: w.a1, role: "primary" });
+    // no-op: nothing written
+    expect((await updateDevice(pool, w.scope, subX, "user", dev, { name: "Renamed" })).ok).toBe(
+      true,
+    );
+    expect(await auditCount(w.orgId, "device.update")).toBe(2);
+    expect(await updateDevice(pool, w.scope, subX, "user", randomUUID(), { name: "x" })).toEqual({
+      ok: false,
+      status: 404,
+      code: "not_found",
+    });
+  });
+
+  it("delete permission matrix: owner deletes own inventory device; User/Manager deleting another one -> 422; Admin deletes another one", async () => {
+    const w = await world();
+    const subX = await subOf(w.x);
+    const subY = await subOf(w.y);
+    const mine = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    expect(await deleteDevice(pool, w.scope, subX, "user", mine)).toEqual({
+      ok: true,
+      value: null,
+    });
+    const theirs = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    for (const tier of ["user", "manager"] as const) {
+      expect(await deleteDevice(pool, w.scope, subY, tier, theirs)).toEqual({
+        ok: false,
+        status: 422,
+        code: "not_allowed",
+      });
+    }
+    expect(await devCount(w.orgId)).toBe(1);
+    expect(await deleteDevice(pool, w.scope, subY, "admin", theirs)).toEqual({
+      ok: true,
+      value: null,
+    });
+    expect(await devCount(w.orgId)).toBe(0);
+    expect(await auditCount(w.orgId, "device.delete")).toBe(2);
+  });
+
+  it("delete: placed -> 409 device_placed and row kept; after return to inventory the delete succeeds; a deleted device then answers 404 to get and to place", async () => {
+    const w = await world();
+    const subX = await subOf(w.x);
+    const dev = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
+    expect(await deleteDevice(pool, w.scope, subX, "user", dev)).toEqual({
+      ok: false,
+      status: 409,
+      code: "device_placed",
+    });
+    expect(await devCount(w.orgId)).toBe(1);
+    expect(await auditCount(w.orgId, "device.delete")).toBe(0);
+    expect(
+      (await placeDevice(pool, w.scope, subX, "user", dev, put(null, "secondary", w.a1))).ok,
+    ).toBe(true);
+    expect(await deleteDevice(pool, w.scope, subX, "user", dev)).toEqual({
+      ok: true,
+      value: null,
+    });
+    expect(await auditCount(w.orgId, "device.delete")).toBe(1);
+    const notFound = { ok: false, status: 404, code: "not_found" };
+    expect(await getDevice(pool, w.scope, subX, "user", dev)).toEqual(notFound);
+    expect(
+      await placeDevice(pool, w.scope, subX, "user", dev, put(null, "secondary", null)),
+    ).toEqual(notFound);
+  });
+
+  it("uniqueness: duplicate inventory number -> 409 (create and patch); same MAC in another spelling -> 409; null MACs coexist; same values in another org are fine", async () => {
+    const w = await world();
+    const other = await world();
+    const subX = await subOf(w.x);
+    const a = await createDevice(
+      pool,
+      w.scope,
+      subX,
+      "user",
+      dto({ inventoryNumber: "INV-1", mac: "AA-BB-CC-DD-EE-FF" }),
+    );
+    expect(a.ok).toBe(true);
+    expect(
+      await createDevice(pool, w.scope, subX, "user", dto({ inventoryNumber: "INV-1" })),
+    ).toEqual({ ok: false, status: 409, code: "inventory_number_taken" });
+    expect(
+      await createDevice(
+        pool,
+        w.scope,
+        subX,
+        "user",
+        dto({ inventoryNumber: "INV-2", mac: "aabb.ccdd.eeff" }),
+      ),
+    ).toEqual({ ok: false, status: 409, code: "mac_taken" });
+    const b = await createDevice(pool, w.scope, subX, "user", dto({ inventoryNumber: "INV-2" }));
+    const c = await createDevice(pool, w.scope, subX, "user", dto({ inventoryNumber: "INV-3" }));
+    expect(b.ok && c.ok).toBe(true);
+    const bId = b.ok ? b.value.id : "";
+    expect(
+      await updateDevice(pool, w.scope, subX, "user", bId, { inventoryNumber: "INV-1" }),
+    ).toEqual({ ok: false, status: 409, code: "inventory_number_taken" });
+    expect(
+      await updateDevice(pool, w.scope, subX, "user", bId, { mac: "aa:bb:cc:dd:ee:ff" }),
+    ).toEqual({ ok: false, status: 409, code: "mac_taken" });
+    const kept = await one("select inventory_number from devices where id = $1", [bId]);
+    expect(kept.inventory_number).toBe("INV-2");
+    const cross = await createDevice(
+      pool,
+      other.scope,
+      await subOf(other.x),
+      "user",
+      dto({ inventoryNumber: "INV-1", mac: "aa:bb:cc:dd:ee:ff" }),
+    );
+    expect(cross.ok).toBe(true);
+  });
+
+  it("delete and place race: delete holds the device lock, place waits, delete commits -> place answers 404, no error", async () => {
+    const w = await world();
+    const dev = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const holder = await pool.connect();
+    try {
+      await holder.query("begin");
+      await holder.query("select id from devices where id = $1 for update", [dev]);
+      const pending = placeDevice(
+        pool,
+        w.scope,
+        await subOf(w.x),
+        "user",
+        dev,
+        put(w.a2, "secondary", null),
+      );
+      expect(await waitForLockWait(pool, 5000)).toBe(true);
+      await holder.query("delete from devices where id = $1", [dev]);
+      await holder.query("commit");
+      expect(await pending).toEqual({ ok: false, status: 404, code: "not_found" });
+    } finally {
+      holder.release();
+    }
   });
 });

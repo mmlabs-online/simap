@@ -10,7 +10,12 @@ describe("deviceConflict", () => {
     expect(deviceConflict(pgErr("23514", "devices_primary_owner_is_occupant"))).toBe(
       "owner_not_occupant",
     );
-    expect(deviceConflict(pgErr("23505", "devices_org_mac_key"))).toBeNull();
+    expect(deviceConflict(pgErr("23505", "devices_org_inventory_number_key"))).toBe(
+      "inventory_number_taken",
+    );
+    expect(deviceConflict(pgErr("23505", "devices_org_mac_key"))).toBe("mac_taken");
+    expect(deviceConflict(pgErr("23505", "devices_pkey"))).toBeNull();
+    expect(deviceConflict(pgErr("23514", "devices_org_mac_key"))).toBeNull();
     expect(deviceConflict(pgErr("23514", "devices_role_check"))).toBeNull();
     expect(deviceConflict(pgErr("23503", "devices_seat_fkey"))).toBeNull();
     expect(deviceConflict(new Error("boom"))).toBeNull();

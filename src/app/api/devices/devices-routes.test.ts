@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const svc = vi.hoisted(() => ({
+  createDevice: vi.fn(),
+  updateDevice: vi.fn(),
+  deleteDevice: vi.fn(),
   getDevice: vi.fn(),
   listDevices: vi.fn(),
   placeDevice: vi.fn(),
@@ -8,8 +11,8 @@ const svc = vi.hoisted(() => ({
 vi.mock("@/server/devices/devices", () => svc);
 vi.mock("@/server/db/pool", () => ({ getPool: () => ({}) }));
 
-import { GET as listGET } from "./route";
-import { GET } from "./[id]/route";
+import { GET as listGET, POST } from "./route";
+import { DELETE, GET, PATCH } from "./[id]/route";
 import { PUT } from "./[id]/placement/route";
 
 const ISSUER = "https://api.mmlabs.online";
@@ -106,5 +109,62 @@ describe("devices routes", () => {
     const g = await GET(req("GET"), idRoute);
     expect(g.status).toBe(404);
     for (const r of [p, g]) expect(r.headers.get("Cache-Control")).toBe("no-store");
+  });
+});
+
+describe("devices write routes", () => {
+  const create = { name: "Laptop", type: "Laptop", inventoryNumber: "INV-1" };
+  const createValue = { ...create, mac: null, ownerId: null };
+
+  it("POST 201, PATCH 200, DELETE 204 call the service with ctx.scope, ctx.sub, ctx.tier; all no-store", async () => {
+    fakeAuth(["simap:manager"]);
+    svc.createDevice.mockResolvedValue({ ok: true, value: { id: ID } });
+    svc.updateDevice.mockResolvedValue({ ok: true, value: { id: ID } });
+    svc.deleteDevice.mockResolvedValue({ ok: true, value: null });
+    const post = await POST(req("POST", undefined, create), noParams);
+    const patch = await PATCH(req("PATCH", undefined, { mac: "AA-BB-CC-DD-EE-FF" }), idRoute);
+    const del = await DELETE(req("DELETE"), idRoute);
+    expect([post.status, patch.status, del.status]).toEqual([201, 200, 204]);
+    for (const r of [post, patch, del]) expect(r.headers.get("Cache-Control")).toBe("no-store");
+    expect(await del.text()).toBe("");
+    expect(svc.createDevice.mock.calls[0]!.slice(2)).toEqual(["s1", "manager", createValue]);
+    expect(svc.updateDevice.mock.calls[0]!.slice(2)).toEqual([
+      "s1",
+      "manager",
+      ID,
+      { mac: "aa:bb:cc:dd:ee:ff" },
+    ]);
+    expect(svc.deleteDevice.mock.calls[0]!.slice(2)).toEqual(["s1", "manager", ID]);
+    expect(svc.createDevice.mock.calls[0]![1]).toBeTruthy();
+  });
+
+  it("non-uuid id -> 404 and bad JSON or invalid body (ownerId on PATCH) -> 400, service not called", async () => {
+    fakeAuth(["simap:user"]);
+    const bad = { params: Promise.resolve({ id: "nope" }) };
+    expect((await PATCH(req("PATCH", undefined, { name: "x" }), bad)).status).toBe(404);
+    expect((await DELETE(req("DELETE"), bad)).status).toBe(404);
+    const badJson = new Request("http://x/api/devices", {
+      method: "POST",
+      body: "{",
+      headers: { "content-type": "application/json", authorization: "Bearer t" },
+    });
+    expect((await POST(badJson, noParams)).status).toBe(400);
+    expect((await POST(req("POST", undefined, { name: "x" }), noParams)).status).toBe(400);
+    expect((await PATCH(req("PATCH", undefined, { ownerId: SEAT }), idRoute)).status).toBe(400);
+    expect((await PATCH(req("PATCH", undefined, {}), idRoute)).status).toBe(400);
+    for (const f of Object.values(svc)) expect(f).not.toHaveBeenCalled();
+  });
+
+  it("refusal -> apiError(status, code)", async () => {
+    fakeAuth(["simap:user"]);
+    svc.deleteDevice.mockResolvedValue({ ok: false, status: 409, code: "device_placed" });
+    svc.createDevice.mockResolvedValue({ ok: false, status: 409, code: "mac_taken" });
+    svc.updateDevice.mockResolvedValue({ ok: false, status: 422, code: "not_allowed" });
+    const d = await DELETE(req("DELETE"), idRoute);
+    const c = await POST(req("POST", undefined, create), noParams);
+    const u = await PATCH(req("PATCH", undefined, { name: "x" }), idRoute);
+    expect([d.status, await d.json()]).toEqual([409, { error: { code: "device_placed" } }]);
+    expect([c.status, await c.json()]).toEqual([409, { error: { code: "mac_taken" } }]);
+    expect([u.status, await u.json()]).toEqual([422, { error: { code: "not_allowed" } }]);
   });
 });

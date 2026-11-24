@@ -37,6 +37,9 @@ export const apiCopy = {
     seat_has_no_occupant: "Only a seat with an occupant can have a primary device.",
     owner_not_occupant: "A primary device must belong to the person at the seat.",
     seat_has_primary: "This seat already has a primary device.",
+    device_placed: "This device is at a seat. Move it to inventory before deleting it.",
+    inventory_number_taken: "Another device already has this inventory number.",
+    mac_taken: "Another device already has this MAC address.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

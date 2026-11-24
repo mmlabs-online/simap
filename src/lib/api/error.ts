@@ -31,6 +31,9 @@ export const API_ERROR_CODES = [
   "seat_has_no_occupant",
   "owner_not_occupant",
   "seat_has_primary",
+  "device_placed",
+  "inventory_number_taken",
+  "mac_taken",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
