@@ -1,0 +1,125 @@
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import type { DeviceDto } from "@/lib/devices/types";
+import { apiErrorMessage } from "../copy/api";
+import { devicesCopy } from "../copy/devices";
+import { shellCopy } from "../copy/shell";
+import { DevicesView, type DevicesViewProps } from "./DevicesView";
+
+const noop = () => {};
+const base: DeviceDto = {
+  id: "d1",
+  name: "Máy trạm",
+  type: "PC",
+  inventoryNumber: "INV-1",
+  mac: "AA:BB:CC:DD:EE:FF",
+  owner: { id: "u1", displayName: "Nguyễn Thị Hà" },
+  placement: {
+    seatId: "s1",
+    seatCode: "C302-01",
+    roomId: "r1",
+    roomCode: "C302",
+    role: "primary",
+  },
+  mine: false,
+  canEdit: false,
+  canPlace: false,
+};
+const secondary: DeviceDto = {
+  ...base,
+  id: "d2",
+  name: "Man hinh",
+  placement: { ...base.placement!, seatCode: "C302-02", role: "secondary" },
+};
+const stored: DeviceDto = {
+  ...base,
+  id: "d3",
+  name: "Laptop",
+  mac: null,
+  placement: null,
+  mine: true,
+};
+
+const render = (p: Partial<DevicesViewProps> = {}) =>
+  renderToStaticMarkup(
+    <DevicesView
+      status="ready"
+      devices={[base, secondary, stored]}
+      truncated={false}
+      errorCode={null}
+      filter="all"
+      onFilter={noop}
+      onRetry={noop}
+      {...p}
+    />,
+  );
+
+describe("DevicesView rows", () => {
+  it("shows placement, role tag and room link, or 'In inventory' without a link", () => {
+    const html = render({ devices: [base, secondary] });
+    expect(html).toContain("At seat C302-01");
+    expect(html).toContain("At seat C302-02");
+    expect(html).toContain(devicesCopy.roles.primary);
+    expect(html).toContain(devicesCopy.roles.secondary);
+    expect(html).toContain('href="/rooms/C302"');
+    const inv = render({ devices: [stored] });
+    expect(inv).toContain(devicesCopy.inInventory);
+    expect(inv).not.toContain("href=");
+    expect(inv).not.toContain(devicesCopy.roles.primary);
+  });
+
+  it("shows the MAC or a dash, the owner as is, and 'You' only when mine", () => {
+    const html = render({ devices: [base] });
+    expect(html).toContain("AA:BB:CC:DD:EE:FF");
+    expect(html).toContain("Nguyễn Thị Hà");
+    expect(html).not.toContain(`>${devicesCopy.you}<`);
+    const mine = render({ devices: [stored] });
+    expect(mine).toContain(`>${devicesCopy.you}<`);
+    expect(mine).toContain(devicesCopy.noMac);
+  });
+
+  it("has a caption, th scope=col per column and no action controls", () => {
+    const html = render();
+    expect(html).toContain(`<caption class="sr-only">${devicesCopy.caption}</caption>`);
+    expect(html.match(/<th scope="col"/g)).toHaveLength(6);
+    expect(html.match(/<button/g)).toHaveLength(3); // only the filter chips
+    expect(html).not.toMatch(/Edit|Delete|Move to/);
+  });
+});
+
+describe("DevicesView filter and states", () => {
+  it("renders three radios in a radiogroup with only the current one checked", () => {
+    const html = render({ filter: "placed" });
+    expect(html).toContain(`role="radiogroup" aria-label="${devicesCopy.filterLabel}"`);
+    expect(html.match(/role="radio"/g)).toHaveLength(3);
+    expect(html.match(/aria-checked="true"/g)).toHaveLength(1);
+    expect(html).toMatch(/aria-checked="true"[^>]*>Placed</);
+  });
+
+  it("loading is aria-busy with no table; error shows the message and Try again", () => {
+    const loading = render({ status: "loading", devices: [] });
+    expect(loading).toContain('aria-busy="true"');
+    expect(loading).not.toContain("<table");
+    const err = render({ status: "error", devices: [], errorCode: "unavailable" });
+    expect(err).toContain('role="alert"');
+    expect(err).toContain(apiErrorMessage("unavailable"));
+    expect(err).toContain(devicesCopy.retry);
+  });
+
+  it("empty text follows the filter; Show all only when filtered", () => {
+    const all = render({ devices: [], filter: "all" });
+    expect(all).toContain(shellCopy.pages.devices.empty);
+    expect(all).not.toContain(devicesCopy.showAll);
+    const placed = render({ devices: [], filter: "placed" });
+    expect(placed).toContain(devicesCopy.empty.placed);
+    expect(placed).toContain(devicesCopy.showAll);
+    const inv = render({ devices: [], filter: "inventory" });
+    expect(inv).toContain(devicesCopy.empty.inventory);
+    expect(inv).toContain(devicesCopy.showAll);
+  });
+
+  it("renders the truncated notice only when truncated", () => {
+    expect(render({ truncated: true })).toContain(devicesCopy.truncated(1000));
+    expect(render({ truncated: false })).not.toContain("Showing the first");
+  });
+});
