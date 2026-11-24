@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | S |
 | Areas | ui, api |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-24 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/70 |
 
 ## Goal
 Managers set or clear a seat's group and project from the seat panel.
@@ -43,3 +43,9 @@ spec SEA-04; D36. Split out of SIM-016 by its plan (`work/tickets/SIM-016/plan.m
 —
 
 ## Handoff
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 4, tokens ~222k total (planner×1 sonnet 64k, implementer×1 default 73k, reviewer×1 default 52k, security-ai-generated-code-auditor×1 default 33k)
+- Done: seat Tags dialog + the SIM-016 deadlock fix, 21 files +635/−12; the new DB ordering tests failed before the fix (confirmed twice) and pass after; review PASS, security no 🔴/🟡; PR #70 opened. With it, SIM-016 (.1–.3) is complete.
+- In progress / next: Ming merges PR #70. Next runnable: SIM-017 (Dashboard and search).
+- Gotchas: none new.

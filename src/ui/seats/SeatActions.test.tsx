@@ -42,6 +42,7 @@ const render = (
       onRemove={() => {}}
       onSetCannotSeat={() => {}}
       onClearCannotSeat={() => {}}
+      onTags={() => {}}
     />,
   );
 
@@ -55,6 +56,14 @@ describe("SeatActions", () => {
       }
     }
     expect(render(null, seat(false))).toBe("");
+  });
+  it("Tags button: manager and admin only; disabled when busy", () => {
+    for (const tier of ["user", "manager", "admin"] as const) {
+      expect(render(tier, seat(false)).includes(seatsCopy.actions.tags)).toBe(tier !== "user");
+    }
+    expect(render("manager", seat(false), null, null, true)).toMatch(
+      /<button[^>]*disabled[^>]*>Tags</,
+    );
   });
   it("assign role matrix; Replace when occupied", () => {
     for (const tier of ["user", "manager", "admin"] as const) {
@@ -103,6 +112,7 @@ describe("SeatActions remove and cannot-seat buttons", () => {
         onRemove={() => {}}
         onSetCannotSeat={() => {}}
         onClearCannotSeat={() => {}}
+        onTags={() => {}}
       />,
     );
   const a = seatsCopy.actions;

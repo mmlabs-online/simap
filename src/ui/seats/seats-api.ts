@@ -138,6 +138,16 @@ export function createSeatsApi(fetcher: ApiFetch) {
         },
         json(isSeat),
       ),
+    setTags: (seatId: string, tags: { groupId?: string | null; projectId?: string | null }) =>
+      call<SeatDto>(
+        `${seatPath(seatId)}/tags`,
+        {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(tags),
+        },
+        json(isSeat),
+      ),
     activeMembers: (q: string, cursor: string | null) => {
       const params = new URLSearchParams({ status: "active", limit: String(PICKER_PAGE) });
       const query = normalizePickerQuery(q);

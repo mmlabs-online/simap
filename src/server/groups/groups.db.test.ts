@@ -194,4 +194,69 @@ describe("groups and projects (db)", () => {
     });
     expect((await seatRow(seat)).project_id).toBe(pid);
   });
+
+  it.each([
+    ["group", "groups"],
+    ["project", "projects"],
+  ] as const)(
+    "tag write with unchanged %s does not wait on a forced delete's lock",
+    async (kind, table) => {
+      const a = newOrg();
+      const room = await addRoom(pool, a.orgId, "R1");
+      const seat = await addSeat(pool, a.orgId, room, "R1", 1);
+      const gid = await mkGroup(a.scope, "Dev");
+      const g2 = await mkGroup(a.scope, "Ops");
+      const pid = await mkProject(a.scope, "ALPHA");
+      const p2 = await mkProject(a.scope, "BETA");
+      await setSeatTags(pool, a.scope, actor(), seat, { groupId: gid, projectId: pid });
+
+      // What deleteGroup / deleteProject hold while they go on to lock the seat.
+      const holder = await pool.connect();
+      let write: Promise<unknown> | undefined;
+      try {
+        await holder.query("begin");
+        await holder.query(`select id from ${table} where id = $1 for update`, [
+          kind === "group" ? gid : pid,
+        ]);
+        write = setSeatTags(
+          pool,
+          a.scope,
+          actor(),
+          seat,
+          kind === "group" ? { groupId: gid, projectId: p2 } : { groupId: g2, projectId: pid },
+        );
+        const timedOut = Symbol("timeout");
+        let timer: NodeJS.Timeout | undefined;
+        const first = await Promise.race([
+          write,
+          new Promise((resolve) => {
+            timer = setTimeout(() => resolve(timedOut), 3000);
+          }),
+        ]);
+        clearTimeout(timer);
+        expect(first).not.toBe(timedOut);
+      } finally {
+        await holder.query("rollback");
+        holder.release();
+        await write;
+      }
+      const row = await seatRow(seat);
+      expect(row.group_id).toBe(kind === "group" ? gid : g2);
+      expect(row.project_id).toBe(kind === "group" ? p2 : pid);
+    },
+    15000,
+  );
+
+  it("changing to a different group still checks it", async () => {
+    const a = newOrg();
+    const room = await addRoom(pool, a.orgId, "R1");
+    const seat = await addSeat(pool, a.orgId, room, "R1", 1);
+    const gid = await mkGroup(a.scope, "Dev");
+    await setSeatTags(pool, a.scope, actor(), seat, { groupId: gid });
+    expect(await setSeatTags(pool, a.scope, actor(), seat, { groupId: randomUUID() })).toEqual({
+      ok: false,
+      status: 422,
+      code: "invalid_group",
+    });
+  });
 });

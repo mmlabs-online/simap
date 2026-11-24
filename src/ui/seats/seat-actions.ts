@@ -15,6 +15,7 @@ export type SeatAction =
   | "removeOccupant"
   | "setCannotSeat"
   | "clearCannotSeat"
+  | "setTags"
   | "request";
 export type ActionResult = { ok: true; duplicate?: true } | { ok: false; code: string };
 
@@ -50,6 +51,7 @@ export type SeatButtons = {
   removeOccupant: boolean;
   setCannotSeat: boolean;
   clearCannotSeat: boolean;
+  tags: boolean;
   deleteSeat: boolean;
   /** Users only: Managers and Admins assign directly (REG-02). */
   request: boolean;
@@ -64,6 +66,7 @@ export function seatButtons(tier: Tier | null | undefined, seat: SeatDto): SeatB
     removeOccupant: canAssign(tier) && seat.occupant !== null && !seat.mine,
     setCannotSeat: canAssign(tier) && !seat.cannotSeat,
     clearCannotSeat: canAssign(tier) && seat.cannotSeat,
+    tags: canAssign(tier),
     deleteSeat: canManageSeats(tier),
     request: tier === "user" && seat.occupant === null && !seat.cannotSeat,
   };
@@ -84,6 +87,7 @@ export type RemoveDialog = {
 };
 export type CannotSeatDialog = { kind: "cannotSeat"; seat: SeatDto };
 export type ClearCannotSeatDialog = { kind: "clearCannotSeat"; seat: SeatDto };
+export type TagsDialog = { kind: "tags"; seat: SeatDto };
 
 export function removeDialog(seat: SeatDto): RemoveDialog | null {
   if (seat.occupant === null) return null;
@@ -286,7 +290,12 @@ export function actionOutcome(action: SeatAction, result: ActionResult): Outcome
         code === "occupant_changed" ? seatsCopy.actions.assignChanged : apiErrorMessage(code),
     };
   }
-  if (action === "removeOccupant" || action === "setCannotSeat" || action === "clearCannotSeat") {
+  if (
+    action === "removeOccupant" ||
+    action === "setCannotSeat" ||
+    action === "clearCannotSeat" ||
+    action === "setTags"
+  ) {
     if (code === "not_found") {
       return { reload: true, closePanel: true, message: seatsCopy.actions.deleteGone };
     }

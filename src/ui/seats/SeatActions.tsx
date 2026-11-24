@@ -18,6 +18,7 @@ export function SeatActions({
   onRemove,
   onSetCannotSeat,
   onClearCannotSeat,
+  onTags,
 }: {
   tier: Tier | null | undefined;
   seat: SeatDto | null;
@@ -32,6 +33,7 @@ export function SeatActions({
   onRemove: (seat: SeatDto) => void;
   onSetCannotSeat: (seat: SeatDto) => void;
   onClearCannotSeat: (seat: SeatDto) => void;
+  onTags: (seat: SeatDto) => void;
 }) {
   const buttons = seat ? seatButtons(tier, seat) : null;
   return (
@@ -54,6 +56,7 @@ export function SeatActions({
           buttons.removeOccupant ||
           buttons.setCannotSeat ||
           buttons.clearCannotSeat ||
+          buttons.tags ||
           buttons.deleteSeat) && (
           <div className="flex flex-wrap gap-2">
             {buttons.request && (
@@ -88,6 +91,11 @@ export function SeatActions({
             {buttons.clearCannotSeat && (
               <Button variant="tonal" disabled={busy} onClick={() => onClearCannotSeat(seat)}>
                 {seatsCopy.actions.unblockSeat}
+              </Button>
+            )}
+            {buttons.tags && (
+              <Button variant="tonal" disabled={busy} onClick={() => onTags(seat)}>
+                {seatsCopy.actions.tags}
               </Button>
             )}
             {buttons.deleteSeat && (
