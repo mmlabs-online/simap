@@ -55,7 +55,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-015.10 | Layout editor drag, marquee and keyboard shortcuts | MERGED | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
 | SIM-015.8 | Layout editor desk add and delete | MERGED | P1 | S | ui | SIM-015.7, SIM-015.9 | plan-approval | 0 | 2026-11-23 |
 | SIM-033 | Ship the real room art and an in-app Credits page | BACKLOG | P1 | S | ui, architecture | SIM-015.3 | none | 0 | 2026-11-22 |
-| SIM-011.2 | Members page UI: list, edit and deactivate dialogs | PLANNING | P1 | M | ui | SIM-011 | none | 0 | 2026-11-24 |
+| SIM-011.2 | Members page UI: list, edit and deactivate dialogs | BLOCKED | P1 | M | ui | SIM-011 | plan-approval | 0 | 2026-11-24 |
 | SIM-013 | Devices: placement rules, read and placement API | MERGED | P1 | M | api | SIM-012 | plan-approval | 0 | 2026-11-23 |
 | SIM-013.1 | Device create, edit and delete API | MERGED | P1 | S | api | SIM-013 | plan-approval | 0 | 2026-11-24 |
 | SIM-013.2 | Devices page (read-only list and filter) | MERGED | P1 | M | ui, ux | SIM-013.1 | plan-approval | 0 | 2026-11-24 |
@@ -74,8 +74,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-019.2 | Audit-log page UI for org admins | MERGED | P2 | S | ui | SIM-019, SIM-006.2, SIM-022 | none | 0 | 2026-11-20 |
 | SIM-017 | Dashboard and search | MERGED | P2 | M | api, ui | SIM-013, SIM-014 | none | 0 | 2026-11-24 |
 | SIM-017.2 | Search API, diacritics-insensitive | MERGED | P2 | M | api | SIM-017 | none | 0 | 2026-11-24 |
-| SIM-017.3 | Search page UI | IN_PROGRESS | P2 | M | ui | SIM-017.2 | none | 0 | 2026-11-24 |
-| SIM-018 | CSV export | BACKLOG | P2 | S | api, ui | SIM-017 | none | 0 | 2026-11-20 |
+| SIM-017.3 | Search page UI | MERGED | P2 | M | ui | SIM-017.2 | none | 0 | 2026-11-24 |
+| SIM-018 | CSV export | PLANNING | P2 | S | api, ui | SIM-017 | none | 0 | 2026-11-24 |
 | SIM-027 | Security headers, CSP and apiFetch hardening before go-live | MERGED | P1 | M | security, architecture | SIM-006.2 | plan-approval | 0 | 2026-11-20 |
 | SIM-021 | Go-live checklist and first production deploy | BACKLOG | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | none | 0 | 2026-11-20 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |

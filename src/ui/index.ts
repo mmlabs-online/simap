@@ -28,4 +28,5 @@ export { GroupsPage } from "./groups/GroupsPage";
 export { ApprovalsPage } from "./requests/ApprovalsPage";
 export { MyRequestsPage } from "./requests/MyRequestsPage";
 export { DevicesPage } from "./devices/DevicesPage";
+export { SearchPage } from "./search/SearchPage";
 export { InvitePeople } from "./invitations/InvitePeople";
