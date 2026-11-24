@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P2 |
 | Size | M |
 | Areas | db, api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | M-46 (go-live only) |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T15:20:28Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -62,5 +62,12 @@ draw any kind of device, not only the five built-in ones.
 ## Notes / answers from Ming
 - 2026-11-24: images on Google Drive like tudocuatui; format proposed by the agent (24 px square PNG); a square
   placeholder for types the admin has not defined (D61).
+Waiting for Ming: plan approval (High tier)
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 3, tokens ~128k total (database-optimizer×1 default 32k, api-platform-engineer×1 default 31k, planner×1 default ~65k)
+- Done: consult (db, api), plan.md READY with defaults A1-A11 and a split proposal (image upload/serve → new SIM-036.5).
+- In progress / next: Ming approves the plan and the split (M-49); then create SIM-036.5 on main and /run SIM-036.2.
+- Gotchas: the migration already adds the image columns so SIM-036.5 needs no migration; deploy ticket for the Drive secrets still unanswered.
