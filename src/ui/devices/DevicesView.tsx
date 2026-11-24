@@ -6,6 +6,7 @@ import { Button } from "../Button";
 import { Card } from "../Card";
 import { FilterChips } from "../Chip";
 import { DeviceTable } from "./DeviceTable";
+import type { DeviceRowHandlers } from "./device-actions";
 import { emptyText, filterOptions, listSummary } from "./devices-state";
 
 export type DevicesViewProps = {
@@ -16,9 +17,10 @@ export type DevicesViewProps = {
   filter: PlacementFilter;
   onFilter: (filter: PlacementFilter) => void;
   onRetry: () => void;
+  actions?: DeviceRowHandlers;
 };
 
-/** The Devices page body. Pure: data and handlers come from props. Read-only in this slice. */
+/** The Devices page body. Pure: data and handlers come from props. */
 export function DevicesView({
   status,
   devices,
@@ -27,6 +29,7 @@ export function DevicesView({
   filter,
   onFilter,
   onRetry,
+  actions,
 }: DevicesViewProps) {
   return (
     <div className="p-4 lg:p-6 flex flex-col gap-4">
@@ -82,7 +85,9 @@ export function DevicesView({
         </p>
       )}
 
-      {status === "ready" && devices.length > 0 && <DeviceTable devices={devices} />}
+      {status === "ready" && devices.length > 0 && (
+        <DeviceTable devices={devices} actions={actions} />
+      )}
     </div>
   );
 }

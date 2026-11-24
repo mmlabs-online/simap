@@ -4,6 +4,8 @@ import { roomDetailHref } from "@/lib/nav";
 import { Card } from "../Card";
 import { Chip } from "../Chip";
 import { devicesCopy } from "../copy/devices";
+import { hasAnyAction, type DeviceRowHandlers } from "./device-actions";
+import { DeviceRowActions } from "./DeviceRowActions";
 import { placementText } from "./devices-state";
 
 const CELL = "px-3 py-2 align-top text-sm text-on-surface";
@@ -43,7 +45,14 @@ function Mac({ mac }: { mac: string | null }) {
 const COLUMNS = ["name", "type", "inventoryNumber", "mac", "owner", "placement"] as const;
 
 /** Devices as a table at `md` and up and as a stacked list below, from one set of labels. Pure. */
-export function DeviceTable({ devices }: { devices: DeviceDto[] }) {
+export function DeviceTable({
+  devices,
+  actions = {},
+}: {
+  devices: DeviceDto[];
+  actions?: DeviceRowHandlers;
+}) {
+  const showActions = hasAnyAction(devices, actions);
   return (
     <>
       <div className="hidden md:block">
@@ -57,6 +66,11 @@ export function DeviceTable({ devices }: { devices: DeviceDto[] }) {
                     {devicesCopy.columns[c]}
                   </th>
                 ))}
+                {showActions && (
+                  <th scope="col" className={HEAD}>
+                    <span className="sr-only">{devicesCopy.columns.actions}</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -74,6 +88,11 @@ export function DeviceTable({ devices }: { devices: DeviceDto[] }) {
                   <td className={CELL}>
                     <PlacementLabel device={d} />
                   </td>
+                  {showActions && (
+                    <td className={CELL}>
+                      <DeviceRowActions device={d} handlers={actions} />
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -91,6 +110,7 @@ export function DeviceTable({ devices }: { devices: DeviceDto[] }) {
               <OwnerLabel device={d} />
               <PlacementLabel device={d} />
               <Mac mac={d.mac} />
+              <DeviceRowActions device={d} handlers={actions} />
             </Card>
           </li>
         ))}

@@ -87,6 +87,28 @@ describe("DevicesView rows", () => {
   });
 });
 
+describe("DevicesView row actions", () => {
+  const actions = { onPlace: noop };
+  const placeable: DeviceDto = { ...base, id: "d4", canPlace: true };
+  const inventoryItem: DeviceDto = { ...stored, id: "d5", canPlace: true };
+
+  it("actions column only when a row has an action", () => {
+    expect(render({ actions }).match(/<th scope="col"/g)).toHaveLength(6);
+    expect(render({ actions, devices: [placeable] }).match(/<th scope="col"/g)).toHaveLength(7);
+    expect(render({ devices: [placeable] }).match(/<th scope="col"/g)).toHaveLength(6);
+  });
+
+  it("Place / Move / Return buttons per canPlace row, none on a canPlace:false row", () => {
+    const html = render({ actions, devices: [placeable, inventoryItem, secondary] });
+    // table and card list each render the buttons
+    expect(html.match(/aria-label="Move device INV-1"/g)).toHaveLength(2);
+    expect(html.match(/aria-label="Return device INV-1 to inventory"/g)).toHaveLength(2);
+    expect(html.match(/aria-label="Place device INV-1"/g)).toHaveLength(2);
+    expect(html.match(/>Move</g)).toHaveLength(2);
+    expect(render({ actions, devices: [secondary] })).not.toContain("Move device");
+  });
+});
+
 describe("DevicesView filter and states", () => {
   it("renders three radios in a radiogroup with only the current one checked", () => {
     const html = render({ filter: "placed" });

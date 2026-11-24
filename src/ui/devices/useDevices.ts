@@ -25,9 +25,17 @@ export function useDevices(api: DevicesApi, filter: PlacementFilter) {
     if (mounted.current) dispatch({ type: "loaded", id, result });
   }, [api, filter]);
 
+  /** Refetches without clearing the rows, so the list does not flash a skeleton after a change. */
+  const refresh = useCallback(async () => {
+    const id = ++counter.current;
+    dispatch({ type: "refresh", id });
+    const result = await api.list(filter);
+    if (mounted.current) dispatch({ type: "loaded", id, result });
+  }, [api, filter]);
+
   useEffect(() => {
     void reload();
   }, [reload]);
 
-  return { ...state, reload };
+  return { ...state, reload, refresh };
 }

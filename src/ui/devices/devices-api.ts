@@ -1,5 +1,6 @@
 import { ApiAccessError, type ApiFetch } from "@/lib/api/fetch";
 import type { DeviceDto, PlacementFilter } from "@/lib/devices/types";
+import type { PlacementBody } from "./place-device";
 
 export type DevicesResult<T> = { ok: true; value: T } | { ok: false; code: string };
 
@@ -38,7 +39,26 @@ export function createDevicesApi(fetcher: ApiFetch) {
     }
   }
 
+  const isDevice = (b: unknown) =>
+    typeof b === "object" && b !== null && typeof (b as { id?: unknown }).id === "string";
+  const oneDevice = async (res: Response): Promise<DevicesResult<DeviceDto>> => {
+    const body: unknown = await res.json();
+    return isDevice(body) ? { ok: true, value: body as DeviceDto } : fail("internal");
+  };
+  const devicePath = (id: string) => `/api/devices/${encodeURIComponent(id)}`;
+
   return {
+    get: (id: string) => call<DeviceDto>(devicePath(id), { method: "GET" }, oneDevice),
+    place: (id: string, body: PlacementBody) =>
+      call<DeviceDto>(
+        `${devicePath(id)}/placement`,
+        {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        oneDevice,
+      ),
     list: (filter: PlacementFilter) =>
       call<{ items: DeviceDto[]; truncated: boolean }>(
         `/api/devices?placement=${filter}`,
