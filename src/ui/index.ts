@@ -24,5 +24,6 @@ export { SeatsPage } from "./seats/SeatsPage";
 export { LayoutEditorPage } from "./roomlayout/LayoutEditorPage";
 export { AuditPage } from "./audit/AuditPage";
 export { ApprovalsPage } from "./requests/ApprovalsPage";
+export { MyRequestsPage } from "./requests/MyRequestsPage";
 export { DevicesPage } from "./devices/DevicesPage";
 export { InvitePeople } from "./invitations/InvitePeople";

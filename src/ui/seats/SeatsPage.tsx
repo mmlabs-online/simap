@@ -6,6 +6,7 @@ import { roomEditorHref } from "@/lib/nav";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { Card } from "../Card";
 import { seatsCopy } from "../copy/seats";
+import { createRequestsApi } from "../requests/requests-api";
 import { createRoomsApi } from "../rooms/rooms-api";
 import { RoomMapSection } from "../roomlayout";
 import { useSession } from "../session";
@@ -34,6 +35,7 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
   const tier = useSession()?.tier;
   const roomsApi = useMemo(() => createRoomsApi(apiFetch), [apiFetch]);
   const seatsApi = useMemo(() => createSeatsApi(apiFetch), [apiFetch]);
+  const requestsApi = useMemo(() => createRequestsApi(apiFetch), [apiFetch]);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -92,7 +94,14 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
     },
     [list.seats, router],
   );
-  const actions = useSeatActions({ seatsApi, roomId, openCode, refresh: refreshAll, onDeleted });
+  const actions = useSeatActions({
+    seatsApi,
+    requestsApi,
+    roomId,
+    openCode,
+    refresh: refreshAll,
+    onDeleted,
+  });
 
   // After a delete, wait for the reload, then focus the next row, the previous row, Add, or main.
   useEffect(() => {
@@ -199,7 +208,9 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
             tier={tier}
             seat={view.kind === "ready" ? view.seat : null}
             notice={panelNotice}
+            info={actions.info && actions.info.seatCode === openCode ? actions.info.text : null}
             busy={actions.busy}
+            onRequest={(s) => void actions.requestSeat(s)}
             onAssign={actions.requestAssign}
             onDelete={actions.requestDelete}
             onRelease={actions.requestRelease}

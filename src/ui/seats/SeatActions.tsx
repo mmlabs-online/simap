@@ -9,7 +9,9 @@ export function SeatActions({
   tier,
   seat,
   notice,
+  info,
   busy,
+  onRequest,
   onAssign,
   onDelete,
   onRelease,
@@ -20,7 +22,10 @@ export function SeatActions({
   tier: Tier | null | undefined;
   seat: SeatDto | null;
   notice: string | null;
+  /** A non-error line (a request was sent). */
+  info: string | null;
   busy: boolean;
+  onRequest: (seat: SeatDto) => void;
   onAssign: (seat: SeatDto) => void;
   onDelete: (seat: SeatDto) => void;
   onRelease: (seat: SeatDto) => void;
@@ -36,15 +41,26 @@ export function SeatActions({
           {notice}
         </p>
       )}
+      {info && (
+        <p role="status" className="text-sm font-semibold text-on-surface">
+          {info}
+        </p>
+      )}
       {seat &&
         buttons &&
-        (buttons.assign ||
+        (buttons.request ||
+          buttons.assign ||
           buttons.release ||
           buttons.removeOccupant ||
           buttons.setCannotSeat ||
           buttons.clearCannotSeat ||
           buttons.deleteSeat) && (
           <div className="flex flex-wrap gap-2">
+            {buttons.request && (
+              <Button variant="tonal" disabled={busy} onClick={() => onRequest(seat)}>
+                {seatsCopy.actions.request}
+              </Button>
+            )}
             {buttons.assign && (
               <Button
                 variant="tonal"

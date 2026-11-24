@@ -1,9 +1,11 @@
+import type { RequestCreateResult } from "@/lib/requests/types";
 import type { SeatDto } from "@/lib/seats/types";
 import type { Tier } from "@/lib/tier";
 import { atLeastTier } from "@/lib/tier";
 import { validateCannotSeat, validateSeatAdd } from "@/lib/validate/seat";
 import { apiErrorMessage } from "../copy/api";
 import { seatsCopy } from "../copy/seats";
+import type { RequestsResult } from "../requests/requests-api";
 
 export type SeatAction =
   | "add"
@@ -12,8 +14,9 @@ export type SeatAction =
   | "assign"
   | "removeOccupant"
   | "setCannotSeat"
-  | "clearCannotSeat";
-export type ActionResult = { ok: true } | { ok: false; code: string };
+  | "clearCannotSeat"
+  | "request";
+export type ActionResult = { ok: true; duplicate?: true } | { ok: false; code: string };
 
 const AUTH_CODES = ["unauthenticated", "forbidden", "member_deactivated", "org_required"];
 
@@ -48,6 +51,8 @@ export type SeatButtons = {
   setCannotSeat: boolean;
   clearCannotSeat: boolean;
   deleteSeat: boolean;
+  /** Users only: Managers and Admins assign directly (REG-02). */
+  request: boolean;
 };
 
 /** Which panel buttons show. Assign and Replace are one button; a cannot-seat seat disables it. */
@@ -60,7 +65,14 @@ export function seatButtons(tier: Tier | null | undefined, seat: SeatDto): SeatB
     setCannotSeat: canAssign(tier) && !seat.cannotSeat,
     clearCannotSeat: canAssign(tier) && seat.cannotSeat,
     deleteSeat: canManageSeats(tier),
+    request: tier === "user" && seat.occupant === null && !seat.cannotSeat,
   };
+}
+
+/** A created request and a duplicate of a pending one both succeed; the HTTP status is read in the api layer only. */
+export function requestResult(r: RequestsResult<RequestCreateResult>): ActionResult {
+  if (!r.ok) return { ok: false, code: r.code };
+  return r.value.created ? { ok: true } : { ok: true, duplicate: true };
 }
 
 /** Remove asks first. The occupant id and name are the ones shown when the dialog opened. */
@@ -202,6 +214,8 @@ export type Outcome = {
   message: string | null;
   /** Assign only: the member was refused, so the picker stays open. */
   keepDialog?: true;
+  /** Request only: a non-error line for the panel. */
+  info?: string;
 };
 
 /**
@@ -210,11 +224,30 @@ export type Outcome = {
  */
 export function actionOutcome(action: SeatAction, result: ActionResult): Outcome {
   if (result.ok) {
+    if (action === "request") {
+      // The seat is unchanged, so there is nothing to reload.
+      return {
+        reload: false,
+        closePanel: false,
+        message: null,
+        info: result.duplicate ? seatsCopy.actions.requestDuplicate : seatsCopy.actions.requestSent,
+      };
+    }
     return { reload: true, closePanel: action === "delete", message: null };
   }
   const { code } = result;
   if (AUTH_CODES.includes(code) || code === "invalid_request") {
     return { reload: false, closePanel: false, message: apiErrorMessage(code) };
+  }
+  if (action === "request") {
+    if (code === "not_found") {
+      return { reload: true, closePanel: true, message: seatsCopy.actions.deleteGone };
+    }
+    return {
+      reload: code !== "no_linked_member" && code !== "member_not_assignable",
+      closePanel: false,
+      message: apiErrorMessage(code),
+    };
   }
   if (action === "add") {
     const unknown = code === "unavailable" || code === "internal";
