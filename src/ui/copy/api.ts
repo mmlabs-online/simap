@@ -40,6 +40,11 @@ export const apiCopy = {
     device_placed: "This device is at a seat. Move it to inventory before deleting it.",
     inventory_number_taken: "Another device already has this inventory number.",
     mac_taken: "Another device already has this MAC address.",
+    group_name_taken: "Another group already has this name.",
+    project_code_taken: "Another project already has this code.",
+    in_use: "This is still used by seats or members. Confirm to remove it from them.",
+    invalid_group: "That group no longer exists. Reload and try again.",
+    invalid_project: "That project no longer exists. Reload and try again.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 
