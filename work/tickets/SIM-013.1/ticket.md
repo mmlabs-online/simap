@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | S |
 | Areas | api |
 | Gate | plan-approval |
 | Depends on | SIM-013 |
-| Needs Ming | — |
+| Needs Ming | M-33 |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | claude@2026-11-24T04:27:09Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -45,6 +45,12 @@ spec DEV-01, DEV-02; D19, D31, D37. Split out of SIM-013 by its approved plan (`
 - DB (CI): create/edit/delete, uniqueness, D31.
 
 ## Notes / answers from Ming
-—
+Waiting for Ming: plan approval (P1 policy)
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED (plan approval)
+- Agent calls: 2, tokens ~120k total (api-platform-engineer×1 inherit 38k, planner×1 inherit ~80k; in/out split not reported)
+- Done: consult saved; plan.md READY, one slice (create/edit/delete API, MAC normaliser, 3 new codes; no migration, no High path).
+- In progress / next: Ming approves (M-33), then implement.
+- Gotchas: plan departs from the consult on audit meta (codes and ids only, per `src/server/audit/write.ts:6`). Constraint names confirmed in the init migration (`devices_org_inventory_number_key`, `devices_org_mac_key`).
