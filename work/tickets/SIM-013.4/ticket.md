@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T07:18:16Z |
 | PR | — |
 
 ## Goal
@@ -44,7 +44,7 @@ spec DEV-01, DEV-02; D19, D36, D37. Split out of SIM-013.2 by its approved plan 
 - Manual: create and edit a device (as User and as Admin for another member).
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (P1 gate, M-37)
+- 2026-11-24: Plan approved (all defaults, incl. A1; Ming: "duyệt plan SIM-013.4").
 
 ## Handoff
 
