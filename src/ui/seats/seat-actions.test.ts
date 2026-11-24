@@ -17,6 +17,7 @@ import {
   pickStep,
   reaskDialog,
   refusedDialog,
+  requestResult,
   routeNotice,
   seatButtons,
   shouldReplaceAfterDelete,
@@ -521,5 +522,85 @@ describe("actionOutcome new actions", () => {
         expect(out.message).toBe(apiErrorMessage(code));
       }
     }
+  });
+});
+
+describe("request", () => {
+  it("seatButtons.request: user only, empty, not cannot-seat", () => {
+    const cases: [string, ReturnType<typeof seatOf>, boolean][] = [
+      ["empty", seatOf(), true],
+      ["occupied", occupied(), false],
+      [
+        "own seat",
+        seatOf({ status: "occupied", mine: true, occupant: { id: "me", displayName: "Me" } }),
+        false,
+      ],
+      ["empty and cannot-seat", seatOf({ cannotSeat: true, cannotSeatReason: "x" }), false],
+    ];
+    for (const tier of ["user", "manager", "admin", null, undefined] as const) {
+      for (const [name, seat, userCan] of cases) {
+        expect(seatButtons(tier, seat).request, `${tier} ${name}`).toBe(tier === "user" && userCan);
+      }
+    }
+    expect(seatButtons("user", seatOf()).assign).toBeNull();
+    expect(seatButtons("admin", seatOf()).deleteSeat).toBe(true);
+  });
+  it("requestResult maps created/duplicate/failure", () => {
+    const request = {} as never;
+    expect(requestResult({ ok: true, value: { created: true, request } })).toEqual({ ok: true });
+    expect(requestResult({ ok: true, value: { created: false, request } })).toEqual({
+      ok: true,
+      duplicate: true,
+    });
+    expect(requestResult(fail("seat_taken"))).toEqual({ ok: false, code: "seat_taken" });
+  });
+  it("actionOutcome request: sent and duplicate are info notices without reload", () => {
+    expect(actionOutcome("request", { ok: true })).toEqual({
+      reload: false,
+      closePanel: false,
+      message: null,
+      info: seatsCopy.actions.requestSent,
+    });
+    expect(actionOutcome("request", { ok: true, duplicate: true })).toEqual({
+      reload: false,
+      closePanel: false,
+      message: null,
+      info: seatsCopy.actions.requestDuplicate,
+    });
+  });
+  it("actionOutcome request failures", () => {
+    for (const code of [
+      "seat_taken",
+      "seat_cannot_seat",
+      "unavailable",
+      "internal",
+      "not_allowed",
+    ]) {
+      expect(actionOutcome("request", fail(code))).toEqual({
+        reload: true,
+        closePanel: false,
+        message: apiErrorMessage(code),
+      });
+    }
+    expect(actionOutcome("request", fail("not_found"))).toEqual({
+      reload: true,
+      closePanel: true,
+      message: seatsCopy.actions.deleteGone,
+    });
+    for (const code of ["no_linked_member", "member_not_assignable", ...AUTH, "invalid_request"]) {
+      expect(actionOutcome("request", fail(code))).toEqual({
+        reload: false,
+        closePanel: false,
+        message: apiErrorMessage(code),
+      });
+    }
+  });
+  it("other actions still reload on success and delete still closes the panel", () => {
+    expect(actionOutcome("assign", { ok: true })).toMatchObject({
+      reload: true,
+      closePanel: false,
+    });
+    expect(actionOutcome("delete", { ok: true })).toMatchObject({ reload: true, closePanel: true });
+    expect(actionOutcome("release", { ok: true }).info).toBeUndefined();
   });
 });

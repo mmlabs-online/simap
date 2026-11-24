@@ -21,13 +21,21 @@ const seat = (mine: boolean): SeatDto => ({
   deviceCount: 0,
   devices: [],
 });
-const render = (tier: Tier | null, s: SeatDto | null, notice: string | null = null) =>
+const render = (
+  tier: Tier | null,
+  s: SeatDto | null,
+  notice: string | null = null,
+  info: string | null = null,
+  busy = false,
+) =>
   renderToStaticMarkup(
     <SeatActions
       tier={tier}
       seat={s}
       notice={notice}
-      busy={false}
+      info={info}
+      busy={busy}
+      onRequest={() => {}}
       onAssign={() => {}}
       onDelete={() => {}}
       onRelease={() => {}}
@@ -86,7 +94,9 @@ describe("SeatActions remove and cannot-seat buttons", () => {
         tier={tier}
         seat={s}
         notice={null}
+        info={null}
         busy={busy}
+        onRequest={() => {}}
         onAssign={() => {}}
         onDelete={() => {}}
         onRelease={() => {}}
@@ -121,5 +131,38 @@ describe("SeatActions remove and cannot-seat buttons", () => {
     const html = renderWith("admin", occupied(), true);
     expect(html).toMatch(new RegExp(`<button[^>]*disabled[^>]*>${a.removeOccupant}<`));
     expect(html).toMatch(new RegExp(`<button[^>]*disabled[^>]*>${a.blockSeat}<`));
+  });
+});
+
+describe("SeatActions request button", () => {
+  const a = seatsCopy.actions;
+  it("user sees Request this seat on an empty seat; not on occupied or cannot-seat; manager and admin never", () => {
+    expect(render("user", seat(false))).toContain(`>${a.request}<`);
+    const occupied = { ...seat(false), occupant: { id: "o", displayName: "O" } };
+    expect(render("user", occupied)).not.toContain(a.request);
+    const blocked = { ...seat(false), cannotSeat: true, cannotSeatReason: "x" };
+    expect(render("user", blocked)).not.toContain(a.request);
+    for (const tier of ["manager", "admin"] as const) {
+      expect(render(tier, seat(false))).not.toContain(a.request);
+    }
+    expect(render(null, seat(false))).toBe("");
+  });
+  it("a user with only the request button still gets the button row", () => {
+    const html = render("user", seat(false));
+    expect(html).toContain('class="flex flex-wrap gap-2"');
+    expect(html).not.toContain(a.release);
+  });
+  it("info notice renders as role=status, not alert; error notice stays role=alert", () => {
+    const info = render("user", seat(false), null, "Request sent.");
+    expect(info).toMatch(/<p role="status"[^>]*>Request sent\.</);
+    expect(info).not.toContain('role="alert"');
+    const err = render("user", seat(false), "Nope");
+    expect(err).toMatch(/<p role="alert"[^>]*>Nope</);
+    expect(err).not.toContain('role="status"');
+  });
+  it("busy disables Request this seat", () => {
+    expect(render("user", seat(false), null, null, true)).toMatch(
+      new RegExp(`<button[^>]*\\sdisabled=""[^>]*>${a.request}<`),
+    );
   });
 });

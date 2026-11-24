@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import type { NavId } from "@/lib/nav";
 import type { DevBadge } from "@/lib/session";
 import type { Tier } from "@/lib/tier";
 import { AppShellView } from "./AppShellView";
@@ -77,10 +78,18 @@ describe("AppShellView", () => {
     expect(html).not.toContain("child-marker");
   });
 
-  it("admin on /rooms/A1: nav landmark, 6 links, one aria-current", () => {
+  it("admin on /rooms/A1: nav landmark, 7 links, one aria-current", () => {
     const html = render("admin", "/rooms/A1");
     expect(html).toContain(`<nav aria-label="${shellCopy.navLabel}"`);
-    expect(hrefs(html)).toEqual(["/", "/rooms", "/devices", "/members", "/approvals", "/audit"]);
+    expect(hrefs(html)).toEqual([
+      "/",
+      "/rooms",
+      "/devices",
+      "/members",
+      "/requests",
+      "/approvals",
+      "/audit",
+    ]);
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(
       /<a [^>]*aria-current="page"[^>]*href="\/rooms"/.test(html) ||
@@ -124,5 +133,45 @@ describe("AppShellView", () => {
   it("user has no approvals link; manager has it", () => {
     expect(hrefs(render("user"))).not.toContain("/approvals");
     expect(hrefs(render("manager"))).toContain("/approvals");
+  });
+
+  describe("nav badge", () => {
+    const withBadges = (tier: Tier, badges?: Partial<Record<NavId, number>>) =>
+      renderToStaticMarkup(
+        <AppShellView
+          session={{ tier, email: "a@example.invalid" }}
+          pathname="/"
+          actions={{}}
+          badges={badges}
+        >
+          <p>x</p>
+        </AppShellView>,
+      );
+    const link = (html: string, href: string) =>
+      new RegExp(`<a [^>]*href="${href}"[^>]*>.*?</a>`).exec(html)?.[0] ?? "";
+
+    it("count on the myRequests link with aria-hidden numeral and sr-only text", () => {
+      const three = link(withBadges("user", { myRequests: 3 }), "/requests");
+      expect(three).toMatch(/<span aria-hidden="true" class="absolute[^>]*>3</);
+      expect(three).toContain(`<span class="sr-only">${shellCopy.badge.newDecisions(3)}</span>`);
+      expect(link(withBadges("user", { myRequests: 1 }), "/requests")).toContain("1 new decision<");
+    });
+    it("caps at 9+ visibly and keeps the exact count for screen readers", () => {
+      const many = link(withBadges("user", { myRequests: 12 }), "/requests");
+      expect(many).toMatch(/<span aria-hidden="true" class="absolute[^>]*>9\+</);
+      expect(many).toContain("12 new decisions");
+    });
+    it("0 or no prop: no badge markup", () => {
+      for (const b of [undefined, { myRequests: 0 }]) {
+        const html = withBadges("user", b);
+        expect(link(html, "/requests")).not.toContain('<span aria-hidden="true" class="absolute');
+        expect(html).not.toContain("new decision");
+      }
+    });
+    it("a badge for a nav id the tier cannot see is not rendered", () => {
+      const html = withBadges("user", { approvals: 2 });
+      expect(html).not.toContain("/approvals");
+      expect(html).not.toContain("2 new decisions");
+    });
   });
 });

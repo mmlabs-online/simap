@@ -34,6 +34,9 @@ export const seatsCopy = {
     moreDevices: (n: number) => `${n} more devices are not shown.`,
   },
   actions: {
+    request: "Request this seat",
+    requestSent: "Request sent. A manager will review it.",
+    requestDuplicate: "You already requested this seat.",
     add: "Add seats",
     addTitle: "Add seats",
     addCount: "How many seats (1 to 50)",

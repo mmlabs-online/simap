@@ -11,6 +11,7 @@ export const shellCopy = {
     rooms: "Rooms",
     devices: "Devices",
     members: "Members",
+    myRequests: "My requests",
     approvals: "Approvals",
     audit: "Audit log",
     roomEditor: "Edit room layout",
@@ -32,6 +33,10 @@ export const shellCopy = {
     body: "Sign in with your mmlabs account to continue.",
     signIn: "Sign in",
   },
+  badge: {
+    newDecisions: (n: number) => (n === 1 ? "1 new decision" : `${n} new decisions`),
+    overflow: "9+",
+  },
   pages: {
     dashboard: { title: "Dashboard", empty: "No data yet." },
     rooms: { title: "Rooms", empty: "No rooms yet." },
@@ -39,6 +44,7 @@ export const shellCopy = {
     roomEditor: { title: "Edit room layout", empty: "No data yet." },
     members: { title: "Members", empty: "No members yet." },
     devices: { title: "Devices", empty: "No devices yet." },
+    myRequests: { title: "My requests", empty: "You have no seat requests yet." },
     approvals: { title: "Approvals", empty: "No pending requests." },
     audit: { title: "Audit log", empty: "No audit entries yet." },
   },

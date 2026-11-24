@@ -11,6 +11,7 @@ import {
   reaskDialog,
   removeDialog,
   refusedDialog,
+  requestResult,
   type ActionResult,
   type AssignDialog,
   type CannotSeatDialog,
@@ -20,6 +21,7 @@ import {
   type SeatAction,
 } from "./seat-actions";
 import type { PickerMember } from "./member-picker";
+import type { RequestsApi } from "../requests/requests-api";
 import type { SeatsApi } from "./seats-api";
 
 export type SeatDialog =
@@ -31,6 +33,7 @@ export type SeatDialog =
   | ClearCannotSeatDialog
   | AssignDialog;
 export type SeatNotice = { seatCode: string | null; text: string };
+export type SeatInfo = { seatCode: string; text: string };
 
 /**
  * One flow for the seat writes: dialog, busy and notice state. A write always finishes and reports
@@ -39,12 +42,14 @@ export type SeatNotice = { seatCode: string | null; text: string };
  */
 export function useSeatActions({
   seatsApi,
+  requestsApi,
   roomId,
   openCode,
   refresh,
   onDeleted,
 }: {
   seatsApi: SeatsApi;
+  requestsApi: Pick<RequestsApi, "create">;
   roomId: string | null;
   openCode: string | null;
   refresh: () => Promise<void>;
@@ -53,12 +58,14 @@ export function useSeatActions({
   const [dialog, setDialog] = useState<SeatDialog | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<SeatNotice | null>(null);
+  const [info, setInfo] = useState<SeatInfo | null>(null);
   const [focusSignal, setFocusSignal] = useState(0);
   const busyRef = useRef(false);
 
   // A seat opened: any notice bound to a seat is stale (this runs only when openCode changes).
   useEffect(() => {
     setNotice((n) => (n && n.seatCode !== null && openCode !== null ? null : n));
+    setInfo(null);
   }, [openCode]);
 
   const run = useCallback(
@@ -72,10 +79,12 @@ export function useSeatActions({
       busyRef.current = true;
       setBusy(true);
       setNotice(null);
+      setInfo(null);
       const outcome = actionOutcome(action, await call());
       // Close only the dialog that started this write, not a newer one.
       setDialog((d) => (d === started ? null : d));
       setNotice(outcome.message ? { seatCode, text: outcome.message } : null);
+      setInfo(outcome.info && seatCode !== null ? { seatCode, text: outcome.info } : null);
       if (outcome.closePanel && seatCode !== null) onDeleted(seatCode);
       if (outcome.reload) await refresh();
       busyRef.current = false;
@@ -170,6 +179,7 @@ export function useSeatActions({
     dialog: shown,
     busy,
     notice,
+    info,
     focusSignal,
     openAdd: () => {
       setNotice(null);
@@ -180,6 +190,9 @@ export function useSeatActions({
       if (block) setNotice({ seatCode: seat.code, text: block });
       else setDialog({ kind: "delete", seat });
     },
+    /** Sends no dialog (`started` is null), so an open dialog is left alone. */
+    requestSeat: (seat: SeatDto) =>
+      run("request", seat.code, null, async () => requestResult(await requestsApi.create(seat.id))),
     requestRelease: (seat: SeatDto) => setDialog({ kind: "release", seat }),
     requestRemove: (seat: SeatDto) => {
       const next = removeDialog(seat);

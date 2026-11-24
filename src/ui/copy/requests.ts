@@ -26,5 +26,14 @@ export const requestsCopy = {
   loadMore: "Load more",
   loadingMore: "Loading...",
   retry: "Try again",
+  mine: {
+    empty: "You have no seat requests yet. Open a room and choose an empty seat to request it.",
+    cancel: "Cancel request",
+    cancelling: "Cancelling...",
+    cancelled: "Request cancelled.",
+    alreadyDecided: (status: string) => `This request was already ${status.toLowerCase()}.`,
+    listLabel: "My seat requests",
+    newChip: "New",
+  },
   noAccess: "Only managers and admins can review seat requests.",
 } as const;
