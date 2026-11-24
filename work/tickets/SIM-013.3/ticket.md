@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -41,6 +41,7 @@ spec DEV-03, DEV-04, DEV-05, REG-03; D19, D22. Split out of SIM-013 by its appro
 
 ## Notes / answers from Ming
 - 2026-11-24: Plan approved (all defaults; Ming: "duyệt plan SIM-013.2, chạy luôn" — sent right after the SIM-013.3 plan report; SIM-013.2 was already merged, so read as SIM-013.3).
+- 2026-11-24: Ming confirmed the approval ("duyệt") after the PR #62 report.
 
 ## Handoff
 
