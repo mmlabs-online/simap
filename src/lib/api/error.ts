@@ -40,6 +40,8 @@ export const API_ERROR_CODES = [
   "in_use",
   "invalid_group",
   "invalid_project",
+  "name_taken",
+  "type_limit",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

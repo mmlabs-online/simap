@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | db, api, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-24 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/78 |
 
 ## Goal
 Each org has a list of device types that an Admin manages (name, desk slot, optional square image), so the map can
@@ -62,5 +62,18 @@ draw any kind of device, not only the five built-in ones.
 ## Notes / answers from Ming
 - 2026-11-24: images on Google Drive like tudocuatui; format proposed by the agent (24 px square PNG); a square
   placeholder for types the admin has not defined (D61).
+- 2026-11-24: Plan approved (Ming: "duyệt"), defaults A1-A11 and the split as written in plan.md; SIM-036.5 created on main.
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 3, tokens ~128k total (database-optimizer×1 default 32k, api-platform-engineer×1 default 31k, planner×1 default ~65k)
+- Done: consult (db, api), plan.md READY with defaults A1-A11 and a split proposal (image upload/serve → new SIM-036.5).
+- In progress / next: Ming approves the plan and the split (M-49); then create SIM-036.5 on main and /run SIM-036.2.
+- Gotchas: the migration already adds the image columns so SIM-036.5 needs no migration; deploy ticket for the Drive secrets still unanswered.
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 3 this run (implementer×1 default 123k, reviewer×1 default 75k, security-ai-generated-code-auditor×1 default 40k); 6 in total for the ticket.
+- Done: slice 1 implemented per plan (A1-A11); DB checks run by the orchestrator on a local compose Postgres (test:db, schema:check, migrate:smoke all green); review PASS on attempt 1; security review no blockers; PR #78 opened.
+- In progress / next: Ming merges PR #78; next runnable is SIM-036.5 (image routes, plan-approval).
+- Gotchas: local Postgres via `docker compose -f compose.dev.yml up -d` with `DATABASE_URL=postgres://simap@127.0.0.1:5432/simap` set inline; rebased on main before push.

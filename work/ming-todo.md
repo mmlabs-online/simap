@@ -103,3 +103,13 @@ Never write a secret value here: name the secret and where Ming puts it.
   (Ming's) for every org; A8 smaller port than tudocuatui (no move/list/stream), files tagged by app and org; A9 the
   manual check is a Vitest live test skipped unless `DRIVE_LIVE=1`. Add a dated "Plan approved" line in the ticket's
   *Notes / answers from Ming*.
+- [x] M-49 (2026-11-24, all defaults, split approved, Ming: "duyệt") Approve plan for SIM-036.2: `work/tickets/SIM-036.2/plan.md` (High: `db/migrations/20261124160000_device_types.sql`;
+  ~1,100-1,300 lines, ~60% tests). **Split proposed:** SIM-036.2 = catalog table, seed, list/create/rename/slot/delete
+  routes, layout `deviceType` and spec; new SIM-036.5 = image upload, remove and serve (ticket ACs 3-4, the SIM-036.1
+  security follow-ups). Defaults: A seed for orgs created later via a DB trigger on new member rows plus a marker
+  table `device_type_catalogs` (deleted seed types stay deleted); name max 60; one SQL function `device_type_key()`
+  (trim, collapse spaces, lowercase with an explicit Vietnamese capital map, accents kept) used by the unique index and
+  the layout join, with a TS copy proven equal by a DB test; bad images 422 (in SIM-036.5); 100 types per org (409
+  `type_limit`); layout seat devices gain `deviceType: {id, slot, hasImage, imageVersion} | null`; duplicate name 409
+  `name_taken`; rename/delete never touch devices (they fall back to the placeholder). Add a dated "Plan approved"
+  line in the ticket's *Notes / answers from Ming* and say whether to create SIM-036.5.

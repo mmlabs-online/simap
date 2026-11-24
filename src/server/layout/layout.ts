@@ -1,4 +1,5 @@
 import "server-only";
+import type { DeviceKind } from "@/lib/sprites/device-slots";
 import type { LayoutResponse, SeatDevice, SeatView } from "@/lib/sprites/layout";
 import {
   resolveLayout,
@@ -92,19 +93,44 @@ export async function readLayoutRows(
 
   const seatDevices: Record<string, SeatDevice[]> = {};
   if (seatRows.length > 0) {
-    const { rows: deviceRows } = await orgQuery<{ seat_id: string; type: string }>(
+    // D61: a device's free-text type matches the org's catalog by device_type_key; the unique index allows one match
+    const { rows: deviceRows } = await orgQuery<{
+      seat_id: string;
+      type: string;
+      type_id: string | null;
+      slot: DeviceKind | null;
+      has_image: boolean | null;
+      image_version: number | null;
+    }>(
       c,
       scope,
-      `select seat_id, left(type, 61) as type from (
-         select seat_id, type, row_number() over (
-                  partition by seat_id order by (role = 'primary') desc, created_at, id) as n
-           from devices
-          where org_id = $1 and seat_id = any($2::uuid[])
-       ) d where n <= ${LAYOUT_LIMITS.devicesPerSeat}
-       order by seat_id, n`,
+      `select d.seat_id, left(d.type, 61) as type, t.id as type_id, t.slot,
+              (t.image_drive_file_id is not null) as has_image, t.image_version
+         from (
+           select seat_id, type, row_number() over (
+                    partition by seat_id order by (role = 'primary') desc, created_at, id) as n
+             from devices
+            where org_id = $1 and seat_id = any($2::uuid[])
+         ) d
+         left join device_types t
+           on t.org_id = $1 and device_type_key(t.name) = device_type_key(d.type)
+        where d.n <= ${LAYOUT_LIMITS.devicesPerSeat}
+        order by d.seat_id, d.n`,
       [seatRows.slice(0, LAYOUT_LIMITS.seats).map((s) => s.id)],
     );
-    for (const d of deviceRows) (seatDevices[d.seat_id] ??= []).push({ type: d.type });
+    for (const d of deviceRows) {
+      (seatDevices[d.seat_id] ??= []).push({
+        type: d.type,
+        deviceType: d.type_id
+          ? {
+              id: d.type_id,
+              slot: d.slot!,
+              hasImage: d.has_image!,
+              imageVersion: d.image_version!,
+            }
+          : null,
+      });
+    }
   }
 
   const truncated = seatRows.length > LAYOUT_LIMITS.seats;
