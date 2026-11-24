@@ -101,6 +101,33 @@ describe("DashboardView", () => {
     expect(html).toContain(copy.holders.moreSeats(11));
     expect(html).toContain(copy.holders.moreMembers(2));
   });
+  it("export card shown only when canExport", () => {
+    expect(render()).not.toContain(copy.export.heading);
+    const html = render({ canExport: true });
+    expect(html).toContain(copy.export.heading);
+    for (const l of [copy.export.seats, copy.export.devices, copy.export.members]) {
+      expect(html).toContain(`>${l}</button>`);
+    }
+    expect(render({ canExport: true, status: "loading", data: null })).not.toContain(
+      copy.export.heading,
+    );
+  });
+  it("export buttons are enabled when idle and disabled while exporting", () => {
+    expect(render({ canExport: true }).match(/disabled=""/g)).toBeNull();
+    const html = render({ canExport: true, exporting: "devices" });
+    expect(html.match(/disabled=""/g)).toHaveLength(3);
+    expect(html).toContain(copy.export.busy);
+  });
+  it("shows export error and truncation notice", () => {
+    const html = render({
+      canExport: true,
+      exportError: "forbidden",
+      exportNotice: copy.export.truncated(10000),
+    });
+    expect(html).toContain(apiCopy.errors.forbidden.replace("'", "&#x27;"));
+    expect(html).toContain("Export limited to the first 10,000 rows.");
+    expect(html).toContain('role="status"');
+  });
   it("no warning when holders null or total 0", () => {
     expect(render()).not.toContain(copy.holders.hint);
     expect(withData({ deactivatedHolders: { total: 0, items: [] } })).not.toContain(

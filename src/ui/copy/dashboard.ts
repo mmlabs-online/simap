@@ -13,6 +13,15 @@ export const dashboardCopy = {
   roomsHeading: "Rooms",
   noRooms: "No rooms yet.",
   roomsTruncated: (shown: number, total: number) => `Showing ${shown} of ${total} rooms.`,
+  export: {
+    heading: "Export",
+    hint: "Download a CSV that opens in Excel.",
+    seats: "Seats",
+    devices: "Devices",
+    members: "Members",
+    busy: "Preparing…",
+    truncated: (n: number) => `Export limited to the first ${n.toLocaleString("en-US")} rows.`,
+  },
   holders: {
     title: (n: number) =>
       `${n} deactivated ${n === 1 ? "member still holds" : "members still hold"} seats`,
