@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T08:05:46Z |
 | PR | — |
 
 ## Goal
@@ -42,7 +42,7 @@ spec DEV-01, DEV-02; D31, D36. Split out of SIM-013.2 by its approved plan (`wor
 - Manual: delete an inventory device; delete a placed device.
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (P1 gate, M-38)
+- 2026-11-24: Plan approved (all defaults; Ming: "duyệt plan SIM-013.5").
 
 ## Handoff
 
