@@ -71,6 +71,7 @@ None.
   `Db` would be tighter.
 
 ### Follow-ups (out of scope)
+- Route test for the tier gate (`src/app/api/dashboard/route.ts:14`): user → `includeHolders: false`, manager/admin → `true` (security-review 🟡; not in the plan, the false path is covered by the DB test).
 - Create SIM-017.2 (search API, diacritics-insensitive) and SIM-017.3 (search page UI) on the board, per the plan's
   `## Split proposal`.
 - Optional separate "cannot seat" count on the dashboard (plan A1).
