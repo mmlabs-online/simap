@@ -25,6 +25,7 @@ spec DSH-02, §8 (NFC, search correctly). Split out of SIM-017 by its plan (`wor
 - Diacritics: SQL `translate(lower(col), FOLD_FROM, FOLD_TO)` with a shared TS fold map in `src/lib/search/fold.ts` (no migration, no extension).
 - Fields: seats (code, occupant name), devices (name, inventory no., MAC with separators ignored, owner name), members (name, employee code; no email).
 - Switch `listMembers` `?q=` to the same fold.
+- Carried over from SIM-017 (security 🟡1; Ming kept the default "follow-up", 2026-11-24): add `src/app/api/dashboard/route.test.ts` covering the tier gate at `route.ts:14` (user → `includeHolders: false` and `deactivatedHolders: null`; manager/admin → `true`) and `Cache-Control: no-store` on 200.
 
 ## Out of scope
 - Search page UI (SIM-017.3). A trigram index (follow-up only if slow).
@@ -33,6 +34,7 @@ spec DSH-02, §8 (NFC, search correctly). Split out of SIM-017 by its plan (`wor
 - [ ] "nguyen" finds "Nguyễn" (and đ/Đ matches d).
 - [ ] Search results are limited and paginated.
 - [ ] Unit tests cover the diacritics normalisation, incl. a check that the TS fold and the SQL map agree.
+- [ ] A route test pins the dashboard tier gate (User gets no deactivated-holders data).
 
 ## Test plan
 - Unit: fold table, query validator, cursors. DB: diacritics, org isolation, paging.
