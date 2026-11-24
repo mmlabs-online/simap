@@ -268,3 +268,75 @@ describe("seat state sprites with the real atlas", () => {
     expect(keys).toContain("state.mine.tint");
   });
 });
+
+describe("seat devices on desks (D61)", () => {
+  const desk = (rotation = 0) => ({ ...place("s1", "desk.single", 2, 2, rotation), code: "A1" });
+  const draw = (types: string[], rotation = 0) =>
+    buildDrawList(room({ seats: [desk(rotation)] }), {}, manifest, {
+      s1: types.map((type) => ({ type })),
+    });
+  const without = () => buildDrawList(room({ seats: [desk()] }), {}, manifest);
+
+  it("a seat without devices draws exactly as before", () => {
+    expect(draw([])).toEqual(without());
+    expect(buildDrawList(room({ seats: [desk()] }), {}, manifest, {})).toEqual(without());
+  });
+
+  it("two PC devices draw two device.pc frames", () => {
+    expect(frames(draw(["PC", "PC"]).ops).filter((k) => k === "device.pc")).toHaveLength(2);
+  });
+
+  it("each type maps to its sprite (directional laptop/monitor follow the desk)", () => {
+    const rot: [number, string][] = [
+      [0, "s"],
+      [90, "e"],
+      [180, "n"],
+      [270, "w"],
+    ];
+    for (const [rotation, dir] of rot) {
+      const keys = frames(draw(["Laptop", "Monitor", "PC", "IP phone", "Printer"], rotation).ops);
+      for (const k of [
+        `device.laptop.${dir}`,
+        `device.monitor.${dir}`,
+        "device.pc",
+        "device.phone",
+        "device.other",
+      ]) {
+        expect(keys, `${rotation} ${k}`).toContain(k);
+      }
+    }
+  });
+
+  it("a PC op comes before its desk op; phone, other and monitor ops come after it", () => {
+    const keys = frames(draw(["PC", "Monitor", "IP phone", "Printer"]).ops);
+    const at = (k: string) => keys.indexOf(k);
+    expect(at("device.pc")).toBeLessThan(at("desk.single.s"));
+    for (const k of ["device.monitor.s", "device.phone", "device.other"]) {
+      expect(at(k), k).toBeGreaterThan(at("desk.single.s"));
+    }
+  });
+
+  it("slots follow rotation 0/90/180/270 (tiles inside the desk footprint)", () => {
+    for (const rotation of [0, 90, 180, 270]) {
+      const list = draw(["Monitor", "Monitor", "Laptop", "IP phone", "Printer"], rotation);
+      expect(list.unknown).toEqual([]);
+      const deskFrame = list.ops.find((o) => o.type === "frame" && o.key.startsWith("desk.single"));
+      const devices = list.ops.filter((o) => o.type === "frame" && o.key.startsWith("device."));
+      expect(devices).toHaveLength(5);
+      for (const f of devices) {
+        // a device's top-left stays within one tile of the desk's pixel box
+        expect(f.x).toBeGreaterThan((deskFrame?.x ?? 0) - 40);
+        expect(f.y).toBeGreaterThan((deskFrame?.y ?? 0) - 40);
+      }
+    }
+  });
+
+  it("device ops add no seat box and no selectable id; devices of a seat not in the layout are ignored", () => {
+    const withDev = draw(["PC", "Monitor"]);
+    expect(withDev.seats).toEqual(without().seats);
+    const ghost = buildDrawList(room({ seats: [desk()] }), {}, manifest, {
+      nobody: [{ type: "PC" }],
+    });
+    expect(ghost).toEqual(without());
+  });
+});

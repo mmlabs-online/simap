@@ -4,6 +4,7 @@ import {
   LAYOUT_LIMITS,
   checkLayoutRules,
   floorCellsWithinCap,
+  fixturesOnDesks,
   footprintOf,
   validateLayoutSave,
   type LayoutRulesInput,
@@ -242,9 +243,60 @@ describe("validateLayoutSave", () => {
       ).toMatchObject({ code: "layout_overlap" });
     });
 
-    it("accepts prop on desk and label.sign on a free tile", () => {
-      expect(rules({ seats: [seat(1, 2, 2)], fixtures: [fx("prop.mug", 2, 2)] }).ok).toBe(true);
+    it("accepts label.sign twice on a free tile", () => {
       expect(rules({ fixtures: [fx("label.sign", 4, 4), fx("label.sign", 4, 4)] }).ok).toBe(true);
+    });
+  });
+
+  describe("fixture on a desk", () => {
+    const desk = (rotation = 0) => seat(1, 2, 2, rotation);
+
+    it("prop.mug on either tile of an s desk gives layout_fixture_on_desk", () => {
+      for (const x of [2, 3]) {
+        expect(rules({ seats: [desk()], fixtures: [fx("prop.mug", x, 2)] })).toEqual({
+          ok: false,
+          code: "layout_fixture_on_desk",
+        });
+      }
+    });
+
+    it("prop on the second tile of an e (1x2) desk gives layout_fixture_on_desk", () => {
+      expect(rules({ seats: [desk(90)], fixtures: [fx("prop.mug", 2, 3)] })).toMatchObject({
+        code: "layout_fixture_on_desk",
+      });
+    });
+
+    it("a prop next to a desk, and on its chair tile, is allowed", () => {
+      expect(rules({ seats: [desk()], fixtures: [fx("prop.mug", 4, 2)] }).ok).toBe(true);
+      expect(rules({ seats: [desk()], fixtures: [fx("prop.mug", 2, 3)] }).ok).toBe(true);
+      expect(rules({ seats: [desk(90)], fixtures: [fx("prop.mug", 3, 3)] }).ok).toBe(true);
+    });
+
+    it("a blocking plant on a desk is still layout_overlap (rule order)", () => {
+      expect(rules({ seats: [desk()], fixtures: [fx("plant.large", 2, 2)] })).toMatchObject({
+        code: "layout_overlap",
+      });
+    });
+
+    it("validateLayoutSave with a prop on a desk returns layout_fixture_on_desk", () => {
+      expect(code(save({ fixtures: [fx("prop.mug", 2, 2)] }))).toBe("layout_fixture_on_desk");
+    });
+
+    it("fixturesOnDesks returns exactly the offending fixture indices", () => {
+      const input = {
+        w: 12,
+        h: 8,
+        floors: [],
+        seats: [desk()],
+        fixtures: [
+          fx("prop.mug", 0, 0),
+          fx("prop.mug", 3, 2),
+          fx("label.sign", 4, 4),
+          fx("prop.mug", 2, 2),
+        ],
+      };
+      expect(fixturesOnDesks(input)).toEqual([1, 3]);
+      expect(fixturesOnDesks({ ...input, fixtures: [] })).toEqual([]);
     });
   });
 

@@ -45,6 +45,7 @@ export function RoomMapSection({ state, onRetry, onSelect, editHref }: Props) {
       <RoomMap
         layout={view.layout}
         seatViews={view.seatViews}
+        seatDevices={view.seatDevices}
         zoom={zoom}
         onZoom={setZoom}
         onSelect={onSelect}

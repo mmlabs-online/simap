@@ -535,3 +535,78 @@ describe("saveRoomLayout (db)", () => {
     expect(await q()).toBe(before);
   });
 });
+
+describe("getRoomLayout seatDevices (db)", () => {
+  const setDevice = (id: string, type: string, createdAt: string) =>
+    run("update devices set type = $2, created_at = $3::timestamptz where id = $1", [
+      id,
+      type,
+      createdAt,
+    ]);
+
+  it("seatDevices: types per seat, primary first then created_at, id", async () => {
+    const o = await room();
+    const m = await addMember(pool, o.orgId);
+    const s = await addSeat(pool, o.orgId, o.roomId, "C302", 1, { occupantId: m });
+    const empty = await addSeat(pool, o.orgId, o.roomId, "C302", 2);
+    const late = await addDevice(pool, o.orgId, m, s, "secondary");
+    const early = await addDevice(pool, o.orgId, m, s, "secondary");
+    const primary = await addDevice(pool, o.orgId, m, s, "primary");
+    await setDevice(late, "Monitor", "2026-01-02T00:00:00Z");
+    await setDevice(early, "Laptop", "2026-01-01T00:00:00Z");
+    await setDevice(primary, "PC", "2026-01-03T00:00:00Z");
+    const res = await value(o);
+    expect(res.seatDevices[s]).toEqual([{ type: "PC" }, { type: "Laptop" }, { type: "Monitor" }]);
+    expect(res.seatDevices[empty]).toBeUndefined();
+    expect(JSON.stringify(res.seatDevices)).not.toMatch(/inventory|mac|owner|name/i);
+  });
+
+  it("seatDevices: another org's devices, inventory devices and other rooms' devices are never returned", async () => {
+    const a = await room();
+    const ma = await addMember(pool, a.orgId);
+    const sa = await addSeat(pool, a.orgId, a.roomId, "C302", 1, { occupantId: ma });
+    const mine = await addDevice(pool, a.orgId, ma, sa, "secondary");
+    await setDevice(mine, "Monitor", "2026-01-01T00:00:00Z");
+    const inventory = await addDevice(pool, a.orgId, ma, null, "secondary");
+    await setDevice(inventory, "Printer", "2026-01-01T00:00:00Z");
+    const other = await addRoom(pool, a.orgId, "C303", { seatCounter: 0 });
+    const so = await addSeat(pool, a.orgId, other, "C303", 1);
+    await setDevice(
+      await addDevice(pool, a.orgId, ma, so, "secondary"),
+      "Headset",
+      "2026-01-01T00:00:00Z",
+    );
+
+    const b = await room("C302");
+    const mb = await addMember(pool, b.orgId);
+    const sb = await addSeat(pool, b.orgId, b.roomId, "C302", 1, { occupantId: mb });
+    await setDevice(
+      await addDevice(pool, b.orgId, mb, sb, "secondary"),
+      "Tablet",
+      "2026-01-01T00:00:00Z",
+    );
+
+    const res = await value(a);
+    expect(res.seatDevices).toEqual({ [sa]: [{ type: "Monitor" }] });
+    expect(await get({ scope: b.scope, roomId: a.roomId })).toMatchObject({
+      ok: false,
+      status: 404,
+    });
+    expect((await value(b)).seatDevices).toEqual({ [sb]: [{ type: "Tablet" }] });
+  });
+
+  it("seatDevices: at most 8 per seat, truncated stays false", async () => {
+    const o = await room();
+    const m = await addMember(pool, o.orgId);
+    const s = await addSeat(pool, o.orgId, o.roomId, "C302", 1, { occupantId: m });
+    for (let n = 0; n < 10; n++) {
+      const d = await addDevice(pool, o.orgId, m, s, "secondary");
+      await setDevice(d, `T${n}`, `2026-01-01T00:00:${String(n).padStart(2, "0")}Z`);
+    }
+    const res = await value(o);
+    expect(res.seatDevices[s].map((d) => d.type)).toEqual(
+      Array.from({ length: 8 }, (_, n) => `T${n}`),
+    );
+    expect(res.truncated).toBe(false);
+  });
+});

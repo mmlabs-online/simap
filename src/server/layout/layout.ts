@@ -1,5 +1,5 @@
 import "server-only";
-import type { LayoutResponse, SeatView } from "@/lib/sprites/layout";
+import type { LayoutResponse, SeatDevice, SeatView } from "@/lib/sprites/layout";
 import {
   resolveLayout,
   type StoredFixture,
@@ -90,6 +90,23 @@ export async function readLayoutRows(
     [roomId],
   );
 
+  const seatDevices: Record<string, SeatDevice[]> = {};
+  if (seatRows.length > 0) {
+    const { rows: deviceRows } = await orgQuery<{ seat_id: string; type: string }>(
+      c,
+      scope,
+      `select seat_id, left(type, 61) as type from (
+         select seat_id, type, row_number() over (
+                  partition by seat_id order by (role = 'primary') desc, created_at, id) as n
+           from devices
+          where org_id = $1 and seat_id = any($2::uuid[])
+       ) d where n <= ${LAYOUT_LIMITS.devicesPerSeat}
+       order by seat_id, n`,
+      [seatRows.slice(0, LAYOUT_LIMITS.seats).map((s) => s.id)],
+    );
+    for (const d of deviceRows) (seatDevices[d.seat_id] ??= []).push({ type: d.type });
+  }
+
   const truncated = seatRows.length > LAYOUT_LIMITS.seats;
   const seats = seatRows.slice(0, LAYOUT_LIMITS.seats);
   const stored: StoredSeat[] = seats.map((s) => ({
@@ -121,6 +138,7 @@ export async function readLayoutRows(
     saved: resolved.saved,
     layout: resolved.layout,
     seatViews,
+    seatDevices,
     unplaced: resolved.unplaced,
     truncated,
   };

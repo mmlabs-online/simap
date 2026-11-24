@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, api, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-24 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/76 |
 
 ## Goal
 A desk shows what is really on it: one device sprite for each device placed at that seat, by type. Admins can no longer
@@ -102,5 +102,18 @@ decorate desks with fixtures in the layout editor, so the desk top is reserved f
 - 2026-11-24: "Mỗi loại device sẽ có vị trí ưu tiên trên bàn khác nhau làm sao để khi chồng lên nhau vẫn không lỗi.
   Ví dụ Monitor primary thì lệch bên phải, monitor 2 sẽ lệch bên trái. PC sẽ nằm bên dưới bàn, Tai nghe thì đặt trên
   mặt bàn,..." → per-type slots added to scope. Admin-defined device types with an image → follow-up SIM-036.
+- 2026-11-24: Plan approved (Ming: "duyệt"), defaults A1-A6 as written in plan.md.
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 3, tokens ~167k total (frontend-developer×1 inherited 34k, api-platform-engineer×1 inherited 33k, planner×1 default 101k)
+- Done: consult (frontend, api), plan.md READY with defaults A1-A6 (new 422 `layout_fixture_on_desk`; legacy desk props dropped from the editor draft with a notice; 2 slots per type, stack up to 4; PC painted before its desk; 8 devices per seat cap without `truncated`; no live refresh).
+- In progress / next: Ming approves the plan (M-47, P1 gate), then /run SIM-035 implements.
+- Gotchas: Node/pnpm need fnm activation and `cmd /c pnpm` (see memory); `readLayoutRows` is shared by GET and PUT re-read.
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 3 this run (implementer×1 default 124k, reviewer×1 default 83k, security-ai-generated-code-auditor×1 default 47k); 6 in total for the ticket.
+- Done: implemented per plan (A1-A6), review PASS on attempt 1, security review PASS (no findings); PR #76 opened.
+- In progress / next: Ming reviews and merges PR #76 after CI (`pnpm test:db`) is green; visual check of device slots at /dev/roommap.
+- Gotchas: rebased on main before push (force-with-lease on the ticket branch); slot pixel offsets are starting values.

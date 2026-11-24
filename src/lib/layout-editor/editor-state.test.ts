@@ -31,6 +31,7 @@ const view = (over: Partial<MapView> = {}, layout: Partial<MapView["layout"]> = 
     ...layout,
   },
   seatViews: {},
+  seatDevices: {},
   unplaced: [],
   truncated: false,
   saved: true,
@@ -519,5 +520,49 @@ describe("editor state", () => {
     const done = run(s, { type: "saveStart" }, { type: "saveDone", view: next });
     expect(present(done).items.find((i) => i.seatId === NEW)?.code).toBe("Phòng-A-06");
     expect(editorFlags(done).dirty).toBe(false);
+  });
+  const onDesk = () =>
+    view({}, { fixtures: [{ id: "", sprite: "prop.mug", x: 2, y: 2, rotation: 0 }] });
+
+  it("a loaded prop on a desk is removed: cleaned notice, dirty, saveable, undo cannot restore it", () => {
+    const s = initEditor(onDesk());
+    expect(present(s).items.some((i) => i.sprite === "prop.mug")).toBe(false);
+    expect(s.notice).toEqual({ kind: "cleaned", count: 1 });
+    const flags = editorFlags(s);
+    expect(flags).toMatchObject({ dirty: true, canSave: true, canUndo: false });
+    const moved = run(s, sel(`s:${S1}`), { type: "move", dx: 1, dy: 0 }, { type: "undo" });
+    expect(present(moved).items.some((i) => i.sprite === "prop.mug")).toBe(false);
+  });
+
+  it("read-only view keeps fixtures and shows no cleaned notice", () => {
+    const s = initEditor({ ...onDesk(), truncated: true });
+    expect(present(s).items.some((i) => i.sprite === "prop.mug")).toBe(true);
+    expect(s.notice).toBeNull();
+  });
+
+  it("place on a desk sets the refused notice, draft unchanged", () => {
+    const mug: Tool = { kind: "fixture", sprite: "prop.mug" };
+    const s = run(base(), { type: "arm", tool: mug }, { type: "place", x: 2, y: 2 });
+    expect(s.notice).toEqual({ kind: "refused", code: "layout_fixture_on_desk" });
+    expect(s.history.past).toHaveLength(0);
+    expect(present(s).items).toHaveLength(4);
+  });
+
+  it("seatDevices are kept from the view and never reach savePayload", () => {
+    const seatDevices = { [S1]: [{ type: "PC" }] };
+    const s = run(initEditor(view({ seatDevices })), sel(`s:${S1}`), {
+      type: "move",
+      dx: 1,
+      dy: 0,
+    });
+    expect(s.seatDevices).toBe(seatDevices);
+    const p = savePayload(s);
+    expect(p.ok).toBe(true);
+    if (p.ok) {
+      expect(Object.keys(p.value).sort()).toEqual(
+        ["baseVersion", "fixtures", "floors", "h", "seats", "w"].sort(),
+      );
+      expect(JSON.stringify(p.value)).not.toContain("PC");
+    }
   });
 });

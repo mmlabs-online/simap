@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { avatarFor } from "@/lib/sprites/avatar";
 import { buildDrawList, resolveFrameKey } from "@/lib/sprites/placement";
 import type { SpriteManifest } from "@/lib/sprites/types";
-import { checkLayoutRules } from "@/lib/validate/layout";
-import { DEMO_FIXTURE_MARKER, DEMO_LAYOUT, DEMO_VIEWS } from "./fixture";
+import { checkLayoutRules, fixturesOnDesks } from "@/lib/validate/layout";
+import { DEMO_DEVICES, DEMO_FIXTURE_MARKER, DEMO_LAYOUT, DEMO_VIEWS } from "./fixture";
 
 const manifest = JSON.parse(
   readFileSync(new URL("../../../../public/sprites/office.json", import.meta.url), "utf8"),
@@ -44,12 +44,20 @@ describe("demo fixture", () => {
     expect(DEMO_LAYOUT.seats.some((s) => s.sprite.startsWith("desk.pair"))).toBe(false);
   });
 
-  it("has a tall plant, a Vietnamese name and a prop on the top tile of a 1x2 desk", () => {
+  it("has a tall plant, a Vietnamese name and a prop that is not on a desk", () => {
     expect(DEMO_LAYOUT.fixtures.some((f) => f.sprite === "plant.large")).toBe(true);
     expect(Object.values(DEMO_VIEWS).some((v) => v.name === "Nguyễn Thị Ánh")).toBe(true);
-    const mug = DEMO_LAYOUT.fixtures.find((f) => f.sprite === "prop.mug");
-    const desk = DEMO_LAYOUT.seats.find((s) => s.x === mug?.x && s.y === mug?.y);
-    expect(desk?.rotation).toBe(90);
+    expect(DEMO_LAYOUT.fixtures.some((f) => f.sprite === "prop.mug")).toBe(true);
+    expect(fixturesOnDesks(DEMO_LAYOUT)).toEqual([]);
+  });
+
+  it("demo devices belong to demo seats, draw without unknown keys and have no extra keys", () => {
+    const ids = new Set(DEMO_LAYOUT.seats.map((s) => s.id));
+    for (const [id, list] of Object.entries(DEMO_DEVICES)) {
+      expect(ids.has(id), id).toBe(true);
+      for (const d of list) expect(Object.keys(d)).toEqual(["type"]);
+    }
+    expect(buildDrawList(DEMO_LAYOUT, DEMO_VIEWS, manifest, DEMO_DEVICES).unknown).toEqual([]);
   });
 
   it("the marker is a stable, non-route string", () => {

@@ -340,7 +340,7 @@ use the clean UI kit (D52). Art rules: `docs/art/style-guide.md`.
   saves. Positions survive reloads and sessions.
 - [ ] Items: seat desks (a desk sprite may cover several tiles), fixtures, and walls/floor. Rotation in 4 directions
   only; size is fixed by the sprite; no free resize.
-- [ ] Items cannot overlap where the manifest says they block (e.g. two desks on one tile).
+- [ ] Items cannot overlap where the manifest says they block (e.g. two desks on one tile), and no fixture is placed on a desk tile (D61, D62).
 
 **LAY-02 Desk = seat**
 - [ ] Each desk on the grid is one seat record. Placing a desk creates a seat and its code (ROO-02). Removing a desk
@@ -357,8 +357,8 @@ use the clean UI kit (D52). Art rules: `docs/art/style-guide.md`.
 **LAY-06 Seats and people drawn on the map** (D41, D44)
 - [ ] Each seat shows its state with a sprite overlay, not colour alone: empty, occupied (a pixel avatar sits there),
   mine (highlight), cannot-seat (blocked sign), pending request (marker).
-- [ ] Devices at a seat are drawn by type (PC, laptop, monitor, IP phone, other; D37): the primary on the desk,
-  secondary next to it.
+- [ ] Every device placed at a seat is drawn on its desk, one sprite per device, at its type's slot (PC, laptop,
+  monitor, IP phone, other; D37, D61, D62).
 - [ ] Occupants are generated 32 px layered avatars (body/hair/shirt colours derived from `sub`, stable per person);
   no real photos (D44, D51). Name tags appear only on hover or keyboard focus, at every zoom (D50).
 
