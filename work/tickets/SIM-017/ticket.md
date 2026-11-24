@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | api, ui |
@@ -21,17 +21,16 @@ Managers see the org's capacity and use at a glance, and everyone finds seats, d
 spec DSH-01, DSH-02; D34 (warning for deactivated members holding seats).
 
 ## Scope
-- Dashboard numbers from live aggregates: rooms, seats, occupied, rate, devices placed vs inventory; per-room breakdown; warning for deactivated members still holding seats.
-- Server search across seats, devices, members; case- and diacritics-insensitive; bounded results.
+Re-scoped by the plan's split (slice 1 = dashboard, DSH-01 + D34):
+- Dashboard numbers from live aggregates: rooms, seats, occupied, rate, devices placed vs inventory; per-room breakdown; warning for deactivated members still holding seats (Manager+).
 
 ## Out of scope
 - History/trends.
+- Search: API in SIM-017.2, page UI in SIM-017.3.
 
 ## Acceptance criteria
 - [ ] Numbers match the database after any change (no cached counters).
-- [ ] "nguyen" finds "Nguyễn".
-- [ ] Search results are limited and paginated.
-- [ ] Unit tests cover the diacritics normalisation.
+- (moved to SIM-017.2: "nguyen" finds "Nguyễn"; search results are limited and paginated; unit tests cover the diacritics normalisation.)
 
 ## Technical notes
 - Files: `src/server/dashboard/*`, `src/server/search/*`, `src/app/(app)/page.tsx`, `src/ui/dashboard/*`; reference seatMGT `src/lib/data/search.ts`, `DashboardRooms.tsx`.
