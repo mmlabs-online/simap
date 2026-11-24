@@ -3,6 +3,7 @@ import { atLeastTier, type Tier } from "./tier";
 
 export type NavId =
   | "dashboard"
+  | "search"
   | "rooms"
   | "devices"
   | "members"
@@ -23,6 +24,7 @@ export type NavItem = {
 
 const NAV_ITEMS: readonly NavItem[] = [
   { id: "dashboard", href: "/", icon: "space_dashboard", minTier: "user", placement: "rail" },
+  { id: "search", href: "/search", icon: "search", minTier: "user", placement: "rail" },
   { id: "rooms", href: "/rooms", icon: "grid_view", minTier: "user", placement: "rail" },
   { id: "devices", href: "/devices", icon: "lan", minTier: "user", placement: "rail" },
   { id: "members", href: "/members", icon: "group", minTier: "user", placement: "rail" },

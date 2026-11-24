@@ -8,6 +8,7 @@ export const shellCopy = {
   skipLink: "Skip to main content",
   nav: {
     dashboard: "Dashboard",
+    search: "Search",
     rooms: "Rooms",
     devices: "Devices",
     members: "Members",
