@@ -80,6 +80,11 @@ export function createDevicesApi(fetcher: ApiFetch) {
         },
         oneDevice,
       ),
+    remove: (id: string) =>
+      call<void>(devicePath(id), { method: "DELETE" }, async () => ({
+        ok: true,
+        value: undefined,
+      })),
     list: (filter: PlacementFilter) =>
       call<{ items: DeviceDto[]; truncated: boolean }>(
         `/api/devices?placement=${filter}`,

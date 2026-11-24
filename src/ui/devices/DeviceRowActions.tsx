@@ -15,7 +15,13 @@ export function DeviceRowActions({
   return (
     <div className="flex flex-wrap gap-1.5">
       {actions.map((a) => (
-        <Button key={a.key} variant="tonal" size="sm" aria-label={a.ariaLabel} onClick={a.run}>
+        <Button
+          key={a.key}
+          variant={a.danger ? "danger" : "tonal"}
+          size="sm"
+          aria-label={a.ariaLabel}
+          onClick={a.run}
+        >
           {a.label}
         </Button>
       ))}

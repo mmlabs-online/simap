@@ -19,6 +19,7 @@ export type DevicesViewProps = {
   onRetry: () => void;
   actions?: DeviceRowHandlers;
   onNew?: () => void;
+  headingRef?: React.Ref<HTMLHeadingElement>;
 };
 
 /** The Devices page body. Pure: data and handlers come from props. */
@@ -32,11 +33,18 @@ export function DevicesView({
   onRetry,
   actions,
   onNew,
+  headingRef,
 }: DevicesViewProps) {
   return (
     <div className="p-4 lg:p-6 flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.devices.title}</h1>
+        <h1
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-h2 font-extrabold text-on-surface outline-none"
+        >
+          {shellCopy.pages.devices.title}
+        </h1>
         {onNew && (
           <Button icon="add" onClick={onNew}>
             {devicesCopy.newDevice}

@@ -95,6 +95,23 @@ describe("devices-api get and place", () => {
   });
 });
 
+describe("devices-api remove", () => {
+  it("remove sends DELETE /api/devices/<id>; 204 → ok; 409, 404 and network failures map", async () => {
+    const ok = fake(() => new Response(null, { status: 204 }));
+    expect(await ok.api.remove("a/b")).toEqual({ ok: true, value: undefined });
+    expect(ok.calls[0][0]).toBe("/api/devices/a%2Fb");
+    expect(ok.calls[0][1]?.method).toBe("DELETE");
+    const placed = fake(() => jsonRes({ error: { code: "device_placed" } }, 409));
+    expect(await placed.api.remove("d1")).toEqual({ ok: false, code: "device_placed" });
+    const gone = fake(() => jsonRes({ error: { code: "not_found" } }, 404));
+    expect(await gone.api.remove("d1")).toEqual({ ok: false, code: "not_found" });
+    expect(await throwing(new TypeError("network")).remove("d1")).toEqual({
+      ok: false,
+      code: "unavailable",
+    });
+  });
+});
+
 describe("devices-api create and update", () => {
   const dev = { id: "d1", name: "x" };
   it("create sends POST /api/devices with JSON", async () => {
