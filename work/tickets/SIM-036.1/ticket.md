@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P2 |
 | Size | M |
 | Areas | architecture, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T15:04:55Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -55,5 +55,12 @@ photos, so device types can carry an image (SIM-036.2).
 
 ## Notes / answers from Ming
 - 2026-11-24: "Lưu trên GG drive như bên tudocuatui" (D61).
+Waiting for Ming: plan approval (High tier)
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 2, tokens ~95k total (software-architect×1 default 39k, planner×1 default 57k)
+- Done: consult (architecture), plan.md READY with defaults A1-A12.
+- In progress / next: Ming approves the plan (M-48, High path `.env.example` and `src/server/drive/config.ts`), then /run SIM-036.1 implements.
+- Gotchas: planner could not grep `.env.example` names (permission); implementer must grep `^(GOOGLE_|DRIVE_)` before adding. Production env reaches the container only via `simap.env` (deploy writes only DATABASE_URL): passing the Drive values needs a separate deploy ticket before SIM-036.2 goes live.
