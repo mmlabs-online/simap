@@ -84,4 +84,33 @@ describe("devicesReducer", () => {
     });
     expect(devicesReducer(loading, { type: "loaded", id: 1, result: okResult })).toBe(loading);
   });
+
+  it("refresh keeps rows and status until the answer", () => {
+    const ready = devicesReducer(devicesReducer(INITIAL_DEVICES, { type: "load", id: 1 }), {
+      type: "loaded",
+      id: 1,
+      result: okResult,
+    });
+    expect(devicesReducer(ready, { type: "refresh", id: 2 })).toEqual({ ...ready, latest: 2 });
+  });
+
+  it("a refresh answer replaces the rows; a stale answer is ignored", () => {
+    const ready = devicesReducer(devicesReducer(INITIAL_DEVICES, { type: "load", id: 1 }), {
+      type: "loaded",
+      id: 1,
+      result: okResult,
+    });
+    const refreshing = devicesReducer(ready, { type: "refresh", id: 2 });
+    const other = { id: "d2" } as DeviceDto;
+    expect(
+      devicesReducer(refreshing, {
+        type: "loaded",
+        id: 2,
+        result: { ok: true, value: { items: [other], truncated: false } },
+      }),
+    ).toMatchObject({ status: "ready", items: [other], truncated: false });
+    expect(devicesReducer(refreshing, { type: "loaded", id: 1, result: okResult })).toBe(
+      refreshing,
+    );
+  });
 });

@@ -62,3 +62,35 @@ describe("devices-api list", () => {
     });
   });
 });
+
+describe("devices-api get and place", () => {
+  it("get sends GET /api/devices/<id>; a body without id is internal; 404 passes through", async () => {
+    const ok = fake(() => jsonRes({ id: "d 1" }));
+    expect(await ok.api.get("d 1")).toEqual({ ok: true, value: { id: "d 1" } });
+    expect(ok.calls[0][0]).toBe("/api/devices/d%201");
+    expect(ok.calls[0][1]?.method).toBe("GET");
+    expect(await fake(() => jsonRes({ name: "x" })).api.get("d1")).toEqual({
+      ok: false,
+      code: "internal",
+    });
+    const gone = fake(() => jsonRes({ error: { code: "not_found" } }, 404));
+    expect(await gone.api.get("d1")).toEqual({ ok: false, code: "not_found" });
+  });
+
+  it("place sends PUT with a JSON body; ok, internal and 409 codes", async () => {
+    const body = { seatId: "s1", role: "secondary" as const, expectedSeatId: null };
+    const ok = fake(() => jsonRes({ id: "d1" }));
+    expect(await ok.api.place("d1", body)).toEqual({ ok: true, value: { id: "d1" } });
+    const [path, init] = ok.calls[0];
+    expect(path).toBe("/api/devices/d1/placement");
+    expect(init?.method).toBe("PUT");
+    expect(new Headers(init?.headers).get("content-type")).toBe("application/json");
+    expect(JSON.parse(init?.body as string)).toEqual(body);
+    expect(await fake(() => jsonRes({})).api.place("d1", body)).toEqual({
+      ok: false,
+      code: "internal",
+    });
+    const conflict = fake(() => jsonRes({ error: { code: "seat_has_primary" } }, 409));
+    expect(await conflict.api.place("d1", body)).toEqual({ ok: false, code: "seat_has_primary" });
+  });
+});

@@ -40,15 +40,17 @@ export const INITIAL_DEVICES: DevicesState = {
 
 export type DevicesEvent =
   | { type: "load"; id: number }
+  | { type: "refresh"; id: number }
   | {
       type: "loaded";
       id: number;
       result: DevicesResult<{ items: DeviceDto[]; truncated: boolean }>;
     };
 
-/** A load clears the rows; an answer for an older request (an earlier filter) is ignored. */
+/** A load clears the rows, a refresh keeps them until the answer; an answer for an older request (an earlier filter) is ignored. */
 export function devicesReducer(state: DevicesState, event: DevicesEvent): DevicesState {
   if (event.type === "load") return { ...INITIAL_DEVICES, latest: event.id };
+  if (event.type === "refresh") return { ...state, latest: event.id };
   if (event.id !== state.latest) return state;
   return event.result.ok
     ? {
