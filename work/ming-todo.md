@@ -85,3 +85,7 @@ Never write a secret value here: name the secret and where Ming puts it.
   grant it to the org owner role `simap:admin` (org-admin-api's own to-do M-5). Blocks SIM-020 (remove from org). (D34)
 - [x] M-44 (2026-11-24, keep: Users may see colleagues' emails; Ming: "có") (from SIM-017.2 security review, older behaviour) `GET /api/members` is User tier and returns, and matches `?q=` on, other members' **email** (`src/server/members/manage.ts:90, 152`). Decide: keep (Users see colleagues' emails), or hide email from Users (a new ticket). Global search (`/api/search`) never returns or matches email.
 - [x] M-45 (2026-11-24, Ming: "plan-approval") Approve plan for SIM-011.2: `work/tickets/SIM-011.2/plan.md` (policy `high-paths+P1`; assumptions A1 status filter in scope, A2 capped seat/device lists with "+N more", A3 server refuses self-deactivation, A4 Invite button in the page header, A5 Managers can edit/deactivate any member, A6 no "keep seats" option; A11 one slice of ~700 lines with a fallback split). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [ ] M-46 Google Drive for simap device-type images (D61, like tudocuatui D27/D28): create a Drive folder `simap/`,
+  an OAuth client and a refresh token (scope `drive.file`), and add the four values as deployment-repo secrets and in
+  your local env outside the repo. SIM-036.1 names the variables in `.env.example`. Blocks SIM-036.2 going live
+  (code and tests do not need it).
