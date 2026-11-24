@@ -8,6 +8,7 @@ export type NavId =
   | "members"
   | "myRequests"
   | "approvals"
+  | "groups"
   | "audit"
   | "roomEditor";
 
@@ -33,6 +34,7 @@ const NAV_ITEMS: readonly NavItem[] = [
     minTier: "manager",
     placement: "rail",
   },
+  { id: "groups", href: "/groups", icon: "sell", minTier: "manager", placement: "rail" },
   { id: "audit", href: "/audit", icon: "history", minTier: "admin", placement: "rail" },
   {
     id: "roomEditor",

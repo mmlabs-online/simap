@@ -15,10 +15,16 @@ describe("navItemsFor", () => {
       "members",
       "myRequests",
       "approvals",
+      "groups",
     ]);
   });
+  it("groups is manager+", () => {
+    expect(ids("manager")).toContain("groups");
+    expect(ids("user")).not.toContain("groups");
+    expect(ids("admin")).toContain("groups");
+  });
   it("admin sees all items incl. roomEditor", () => {
-    expect(ids("admin")).toHaveLength(8);
+    expect(ids("admin")).toHaveLength(9);
     expect(ids("admin")).toContain("roomEditor");
   });
   it("audit is admin only", () => {
@@ -35,6 +41,7 @@ describe("navItemsFor", () => {
       "members",
       "myRequests",
       "approvals",
+      "groups",
       "audit",
     ]);
     expect(items.find((i) => i.id === "roomEditor")?.placement).toBe("room");

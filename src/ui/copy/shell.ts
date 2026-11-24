@@ -13,6 +13,7 @@ export const shellCopy = {
     members: "Members",
     myRequests: "My requests",
     approvals: "Approvals",
+    groups: "Groups",
     audit: "Audit log",
     roomEditor: "Edit room layout",
   } satisfies Record<NavId, string>,
@@ -46,6 +47,7 @@ export const shellCopy = {
     devices: { title: "Devices", empty: "No devices yet." },
     myRequests: { title: "My requests", empty: "You have no seat requests yet." },
     approvals: { title: "Approvals", empty: "No pending requests." },
+    groups: { title: "Groups and projects", empty: "No groups or projects yet." },
     audit: { title: "Audit log", empty: "No audit entries yet." },
   },
 } as const;

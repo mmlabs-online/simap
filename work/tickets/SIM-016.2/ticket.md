@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | ui |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-24 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/69 |
 
 ## Goal
 Managers create, edit and delete groups and projects from a page.
@@ -42,3 +42,9 @@ spec GRP-01, GRP-02; D34, D36. Split out of SIM-016 by its plan (`work/tickets/S
 —
 
 ## Handoff
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 4, tokens ~264k total (frontend-developer×1 default 43k, planner×1 default 75k, implementer×1 default 89k, reviewer×1 default 56k)
+- Done: one slice with generic api/list/dialogs, 30 files +1691/−5, review PASS with no issues, all checks green, PR #69 opened.
+- In progress / next: Ming merges PR #69 and checks the narrow-screen bottom bar (9 items for Admins). Then SIM-016.3 (seat tag dialog + deadlock fix), which can reuse `groups-api.ts`.
+- Gotchas: none new.
