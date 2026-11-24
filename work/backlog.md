@@ -68,7 +68,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-014.4 | Approvals: Approve and Reject dialogs | MERGED | P1 | M | ui, ux | SIM-014.2 | plan-approval | 0 | 2026-11-24 |
 | SIM-014.3 | Request a seat, My requests and nav badge | MERGED | P1 | M | ui, ux | SIM-014.1 | plan-approval | 0 | 2026-11-24 |
 | SIM-016 | Groups, projects and seat tags | MERGED | P2 | S | api, ui | SIM-012 | none | 0 | 2026-11-24 |
-| SIM-016.2 | Groups and Projects management page | IN_PROGRESS | P2 | M | ui | SIM-016 | none | 0 | 2026-11-24 |
+| SIM-016.2 | Groups and Projects management page | DONE | P2 | M | ui | SIM-016 | none | 0 | 2026-11-24 |
 | SIM-016.3 | Tag and untag a seat from the seat detail | BACKLOG | P2 | S | ui, api | SIM-016 | none | 0 | 2026-11-24 |
 | SIM-019 | Audit-log screen for org admins | MERGED | P2 | S | api, ui | SIM-010 | none | 0 | 2026-11-20 |
 | SIM-019.2 | Audit-log page UI for org admins | MERGED | P2 | S | ui | SIM-019, SIM-006.2, SIM-022 | none | 0 | 2026-11-20 |
