@@ -3,6 +3,7 @@ import { encodeMemberCursor } from "@/lib/members/cursor";
 import { decideDeactivation } from "@/lib/members/deactivation";
 import { changedFields } from "@/lib/members/profile";
 import { escapeLike } from "@/lib/members/search";
+import { foldSql, foldText } from "@/lib/search/fold";
 import {
   MEMBER_LIMITS,
   type DeactivationImpact,
@@ -146,10 +147,9 @@ export async function listMembers(
   };
   if (f.status !== "all") conds.push(`m.status = ${bind(f.status)}`);
   if (f.q !== undefined) {
-    const p = bind(`%${escapeLike(f.q)}%`);
-    conds.push(
-      `(m.display_name ilike ${p} escape '\\' or m.email ilike ${p} escape '\\' or m.employee_code ilike ${p} escape '\\')`,
-    );
+    const p = bind(`%${escapeLike(foldText(f.q))}%`);
+    const like = (col: string) => `${foldSql(col)} like ${p} escape '\\'`;
+    conds.push(`(${like("m.display_name")} or ${like("m.email")} or ${like("m.employee_code")})`);
   }
   if (f.cursor) {
     conds.push(

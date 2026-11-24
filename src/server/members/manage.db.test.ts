@@ -293,7 +293,9 @@ describe("members manage (db)", () => {
 
     expect(await find({})).toHaveLength(5);
     expect((await find({ q: "Nguyễn" })).sort()).toEqual([ids[0], ids[1], ids[2]].sort());
-    expect(await find({ q: "nguyen" })).toEqual([]);
+    expect((await find({ q: "nguyen" })).sort()).toEqual([ids[0], ids[1], ids[2]].sort());
+    expect((await find({ q: "NGUYEN" })).sort()).toEqual([ids[0], ids[1], ids[2]].sort());
+    expect(await find({ q: "le binh" })).toEqual([ids[4]]);
     expect(await find({ q: "binh.le@" })).toEqual([ids[4]]);
     expect(await find({ q: "emp-77" })).toEqual([ids[4]]);
     expect(await find({ q: "50%_" })).toEqual([ids[3]]);
