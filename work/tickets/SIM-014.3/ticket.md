@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | PLANNING |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T10:06:16Z |
 | PR | — |
 
 ## Goal
@@ -42,7 +42,7 @@ spec REG-01, REG-02; D21, D23, D24, D26. Split out of SIM-014 by its approved pl
 - Manual: request a seat, see it approved, badge appears and clears.
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (P1 gate, M-40), including the proposed split into SIM-014.3 + SIM-014.5.
+- 2026-11-24: Plan approved without the split (Ming: "k tách", answering "say 'không tách' to keep one ticket"). All defaults; the SIM-014.5 contents of the Split proposal are folded into this ticket. No SIM-014.5 is filed.
 
 ## Handoff
 
