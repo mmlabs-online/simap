@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
-| Claimed by | claude@2026-11-24T13:30:01Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/74 |
 
 ## Goal
 Managers manage members from the Members page; Users see the same list read-only. Slice 2 of SIM-011 (split approved by Ming with the SIM-011 plan, 2026-11-22).
@@ -61,4 +61,10 @@ Waiting for Ming: plan approval (policy `high-paths+P1`; this ticket is P1)
 - Done: rerun after the 2026-11-23 escalation; consult (ui) and plan READY. No High path, but the gate policy is now `high-paths+P1` and this ticket is P1, so Gate was raised to `plan-approval`.
 - In progress / next: Ming approves `plan.md` (M-45: assumptions A1–A6 and A10–A11). Then `/run SIM-011.2` resumes at IMPLEMENT.
 - Gotchas: SIM-017.3 (IN_PROGRESS elsewhere) likely touches `src/ui/index.ts`: expect a one-line conflict. Plan is ~650–750 lines with a fallback split. Session branch `claude/confident-cerf-67q5le`.
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 2 this run, ~149k tokens (implementer×1 opus 84.5k, reviewer×1 opus 64.3k; per-call in/out split not reported). Whole rerun: 4 calls, ~283k.
+- Done: plan approved by Ming (M-45); attempt 1 implemented; review PASS with all checks green; no review-trigger agent matched (Area ui, no server/auth paths). PR https://github.com/mmlabs-online/simap/pull/74.
+- In progress / next: Ming reviews and merges PR #74, then runs the two manual checks (real sign-in deactivate/reactivate; Invite button in a non-dev-token Manager session).
+- Gotchas: M-44 was already used on main, so this ticket's approval item is M-45. Session branch `claude/confident-cerf-67q5le`.
 
