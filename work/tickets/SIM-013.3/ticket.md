@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T06:36:57Z |
 | PR | — |
 
 ## Goal
@@ -40,7 +40,7 @@ spec DEV-03, DEV-04, DEV-05, REG-03; D19, D22. Split out of SIM-013 by its appro
 - Manual (Ming): lend and move devices between seats.
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (P1 gate, M-36)
+- 2026-11-24: Plan approved (all defaults; Ming: "duyệt plan SIM-013.2, chạy luôn" — sent right after the SIM-013.3 plan report; SIM-013.2 was already merged, so read as SIM-013.3).
 
 ## Handoff
 
