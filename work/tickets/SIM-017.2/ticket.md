@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T12:16:51Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/72 |
 
 ## Goal
 Everyone finds seats, devices and members quickly, whatever diacritics they type.
@@ -43,3 +43,9 @@ spec DSH-02, §8 (NFC, search correctly). Split out of SIM-017 by its plan (`wor
 —
 
 ## Handoff
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 4, tokens ~255k total (planner×1 default 80k, implementer×1 default 77k, reviewer×1 default 61k, security-ai-generated-code-auditor×1 default 37k); consult reused from SIM-017 (same design).
+- Done: search API with the translate() fold (no migration), listMembers on the same fold, and the carried-over dashboard tier-gate route test (mutation-checked by the reviewer); 21 files +1462/−8; review PASS, security no 🔴/🟡; PR #72 opened.
+- In progress / next: Ming merges PR #72 and answers the members-email question (security follow-up). Next: SIM-017.3 (search page).
+- Gotchas: none new.
