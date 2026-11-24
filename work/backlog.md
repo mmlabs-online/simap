@@ -60,7 +60,10 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-013.1 | Device create, edit and delete API | BACKLOG | P1 | S | api | SIM-013 | plan-approval | 0 | 2026-11-23 |
 | SIM-013.2 | Devices page UI | BACKLOG | P1 | M | ui, ux | SIM-013.1 | plan-approval | 0 | 2026-11-23 |
 | SIM-013.3 | Device place, move and return dialog | BACKLOG | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-23 |
-| SIM-014 | Seat requests and approvals | BLOCKED | P1 | M | api, ui, ux | SIM-012 | plan-approval | 0 | 2026-11-24 |
+| SIM-014 | Seat requests: state machine and write API | IN_PROGRESS | P1 | M | api | SIM-012 | plan-approval | 0 | 2026-11-24 |
+| SIM-014.1 | Requests read API and decided badge | BACKLOG | P1 | S | api | SIM-014 | plan-approval | 0 | 2026-11-24 |
+| SIM-014.2 | Approvals page UI | BACKLOG | P1 | M | ui, ux | SIM-014.1 | plan-approval | 0 | 2026-11-24 |
+| SIM-014.3 | Request a seat, My requests and nav badge | BACKLOG | P1 | M | ui, ux | SIM-014.1 | plan-approval | 0 | 2026-11-24 |
 | SIM-016 | Groups, projects and seat tags | BACKLOG | P2 | S | api, ui | SIM-012 | none | 0 | 2026-11-20 |
 | SIM-019 | Audit-log screen for org admins | MERGED | P2 | S | api, ui | SIM-010 | none | 0 | 2026-11-20 |
 | SIM-019.2 | Audit-log page UI for org admins | MERGED | P2 | S | ui | SIM-019, SIM-006.2, SIM-022 | none | 0 | 2026-11-20 |
