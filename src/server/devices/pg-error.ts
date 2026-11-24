@@ -1,8 +1,18 @@
 import "server-only";
 
-/** DEV-03 DB backstops: a second primary on a seat, or a primary whose owner is not the occupant. Anything else is not a domain refusal. */
-export function deviceConflict(err: unknown): "seat_has_primary" | "owner_not_occupant" | null {
+export type DeviceConflictCode =
+  | "seat_has_primary"
+  | "owner_not_occupant"
+  | "inventory_number_taken"
+  | "mac_taken";
+
+/** DB backstops: a second primary on a seat, a primary whose owner is not the occupant, a duplicate inventory number or MAC. Anything else is not a domain refusal. */
+export function deviceConflict(err: unknown): DeviceConflictCode | null {
   const e = err as { code?: unknown; constraint?: unknown } | null;
+  if (e?.code === "23505" && e.constraint === "devices_org_inventory_number_key") {
+    return "inventory_number_taken";
+  }
+  if (e?.code === "23505" && e.constraint === "devices_org_mac_key") return "mac_taken";
   if (e?.code === "23505" && e.constraint === "devices_one_primary_per_seat") {
     return "seat_has_primary";
   }

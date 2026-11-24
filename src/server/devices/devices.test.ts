@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { OrgScope } from "@/server/http/org-scope";
-import { getDevice, listDevices, placeDevice } from "./devices";
+import {
+  createDevice,
+  deleteDevice,
+  getDevice,
+  listDevices,
+  placeDevice,
+  updateDevice,
+} from "./devices";
 
 const scope = { orgId: "11111111-1111-4111-8111-111111111111" } as OrgScope;
 const ACTOR = "22222222-2222-4222-8222-222222222222";
@@ -183,5 +190,197 @@ describe("org scoping (R6)", () => {
       expect(sql).toMatch(/org_id\s*=\s*\$1/);
       expect(values[0]).toBe(scope.orgId);
     }
+  });
+});
+
+/** Actor is ME; the device row (locked read) is in inventory, owned by `owner`, with the given seat. */
+const writes =
+  (
+    o: { me?: string | null; owner?: string; seat?: string | null; ownerStatus?: string } = {},
+  ): Script =>
+  (sql) => {
+    if (sql.startsWith("select id from members")) return o.me === null ? [] : [{ id: o.me ?? ME }];
+    if (sql.startsWith("select id, status from members"))
+      return [{ id: OTHER, status: o.ownerStatus ?? "active" }];
+    if (sql.startsWith("insert into devices")) return [{ id: DEV }];
+    if (sql.startsWith("select id, name, type, inventory_number"))
+      return [
+        {
+          id: DEV,
+          name: "Laptop",
+          type: "laptop",
+          inventory_number: "INV-1",
+          mac: null,
+          owner_id: o.owner ?? ME,
+        },
+      ];
+    if (sql.startsWith("select inventory_number, owner_id, seat_id"))
+      return [{ inventory_number: "INV-1", owner_id: o.owner ?? ME, seat_id: o.seat ?? null }];
+    if (sql.startsWith("select d.id")) return [dtoRow];
+    return [];
+  };
+
+const newDevice = {
+  name: "Laptop",
+  type: "laptop",
+  inventoryNumber: "INV-1",
+  mac: null,
+  ownerId: null,
+};
+const writeSql = (sqls: string[]) => sqls.filter((q) => /^(update|delete|insert) /.test(q));
+
+describe("createDevice", () => {
+  it("own device: insert has no seat_id/role, owner row read for share, audit written", async () => {
+    const t = fakeDb(writes());
+    const r = await createDevice(t.db, scope, ACTOR, "user", newDevice);
+    expect(r.ok).toBe(true);
+    const s = t.sqls();
+    const ins = s.find((q) => q.startsWith("insert into devices"))!;
+    expect(ins).not.toMatch(/seat_id|role/);
+    expect(s.some((q) => q.startsWith("insert into audit_log"))).toBe(true);
+    expect(s.find((q) => q.startsWith("select id, status from members"))).toMatch(/for share$/);
+  });
+
+  it("non-Admin with another ownerId -> 422 not_allowed, owner not looked up, no insert or audit", async () => {
+    const t = fakeDb(writes());
+    const r = await createDevice(t.db, scope, ACTOR, "manager", { ...newDevice, ownerId: OTHER });
+    expect(r).toEqual({ ok: false, status: 422, code: "not_allowed" });
+    expect(writeSql(t.sqls())).toEqual([]);
+    expect(t.sqls().some((q) => q.startsWith("select id, status"))).toBe(false);
+    expect(t.sqls()).toContain("rollback");
+  });
+
+  it("Admin for another member ok; inactive owner -> member_not_assignable; no member row -> no_linked_member", async () => {
+    const other = { ...newDevice, ownerId: OTHER };
+    const ok = fakeDb(writes());
+    expect((await createDevice(ok.db, scope, ACTOR, "admin", other)).ok).toBe(true);
+    const off = fakeDb(writes({ ownerStatus: "deactivated" }));
+    expect(await createDevice(off.db, scope, ACTOR, "admin", other)).toEqual({
+      ok: false,
+      status: 422,
+      code: "member_not_assignable",
+    });
+    expect(writeSql(off.sqls())).toEqual([]);
+    const none = fakeDb(writes({ me: null }));
+    expect(await createDevice(none.db, scope, ACTOR, "user", newDevice)).toEqual({
+      ok: false,
+      status: 422,
+      code: "no_linked_member",
+    });
+  });
+});
+
+describe("updateDevice", () => {
+  it("SET names only whitelisted columns, values are parameters; no-op patch writes nothing", async () => {
+    const t = fakeDb(writes());
+    const evil = "New'; drop table devices;--";
+    const r = await updateDevice(t.db, scope, ACTOR, "user", DEV, {
+      name: evil,
+      inventoryNumber: "INV-2",
+      mac: "aa:bb:cc:dd:ee:ff",
+    });
+    expect(r.ok).toBe(true);
+    const upd = t.calls.find(([q]) => q.startsWith("update devices"))!;
+    expect(upd[0]).toBe(
+      "update devices set name = $3, inventory_number = $4, mac = $5, updated_at = now() where org_id = $1 and id = $2",
+    );
+    expect(upd[1]).toEqual([scope.orgId, DEV, evil, "INV-2", "aa:bb:cc:dd:ee:ff"]);
+    const audit = t.calls.find(([q]) => q.startsWith("insert into audit_log"))!;
+    expect(audit[1][5]).toBe(
+      JSON.stringify({ fields: ["name", "inventoryNumber", "mac"], from: "INV-1", to: "INV-2" }),
+    );
+
+    const noop = fakeDb(writes());
+    const r2 = await updateDevice(noop.db, scope, ACTOR, "user", DEV, {
+      name: "Laptop",
+      mac: null,
+    });
+    expect(r2.ok).toBe(true);
+    expect(writeSql(noop.sqls())).toEqual([]);
+  });
+
+  it("another member's device as User -> 422 not_allowed, nothing written; Admin ok; missing -> 404", async () => {
+    const t = fakeDb(writes({ owner: OTHER }));
+    expect(await updateDevice(t.db, scope, ACTOR, "user", DEV, { name: "x" })).toEqual({
+      ok: false,
+      status: 422,
+      code: "not_allowed",
+    });
+    expect(writeSql(t.sqls())).toEqual([]);
+    const admin = fakeDb(writes({ owner: OTHER }));
+    expect((await updateDevice(admin.db, scope, ACTOR, "admin", DEV, { name: "x" })).ok).toBe(true);
+    const gone = fakeDb((sql, v) => (sql.startsWith("select id, name") ? [] : writes()(sql, v)));
+    expect(await updateDevice(gone.db, scope, ACTOR, "admin", DEV, { name: "x" })).toEqual({
+      ok: false,
+      status: 404,
+      code: "not_found",
+    });
+  });
+});
+
+describe("deleteDevice", () => {
+  it("not_allowed is decided before device_placed; refusals write nothing", async () => {
+    const stranger = fakeDb(writes({ owner: OTHER, seat: SEAT_A }));
+    expect(await deleteDevice(stranger.db, scope, ACTOR, "user", DEV)).toEqual({
+      ok: false,
+      status: 422,
+      code: "not_allowed",
+    });
+    const placed = fakeDb(writes({ seat: SEAT_A }));
+    expect(await deleteDevice(placed.db, scope, ACTOR, "user", DEV)).toEqual({
+      ok: false,
+      status: 409,
+      code: "device_placed",
+    });
+    for (const t of [stranger, placed]) {
+      expect(writeSql(t.sqls())).toEqual([]);
+      expect(t.sqls()).toContain("rollback");
+    }
+  });
+
+  it("owner deletes an inventory device: locked read, delete, audit", async () => {
+    const t = fakeDb(writes());
+    expect(await deleteDevice(t.db, scope, ACTOR, "user", DEV)).toEqual({ ok: true, value: null });
+    const s = t.sqls();
+    const order = [
+      s.findIndex((q) => q.startsWith("select inventory_number, owner_id, seat_id")),
+      s.findIndex((q) => q.startsWith("delete from devices")),
+      s.findIndex((q) => q.startsWith("insert into audit_log")),
+    ];
+    expect(order.every((i) => i >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(s[order[0]!]).toMatch(/for update$/);
+  });
+});
+
+describe("create / update / delete org scoping (R6)", () => {
+  it("every query passes org_id as $1", async () => {
+    const t = fakeDb(writes());
+    await createDevice(t.db, scope, ACTOR, "user", newDevice);
+    await updateDevice(t.db, scope, ACTOR, "user", DEV, { name: "x" });
+    await deleteDevice(t.db, scope, ACTOR, "user", DEV);
+    const data = t.calls.filter(([s]) => !/^(begin|commit|rollback)$/.test(s));
+    expect(data.length).toBeGreaterThan(8);
+    for (const [sql, values] of data) {
+      expect(sql).toMatch(/org_id\s*=\s*\$1/);
+      expect(values[0]).toBe(scope.orgId);
+    }
+  });
+});
+
+describe("placeDevice: device gone", () => {
+  it("deleted between the unlocked and the locked read -> 404 not_found", async () => {
+    const t = fakeDb((sql, v) =>
+      sql.startsWith("select id, seat_id, role, owner_id from devices") ? [] : base()(sql, v),
+    );
+    const r = await placeDevice(
+      t.db,
+      scope,
+      ACTOR,
+      "user",
+      DEV,
+      put({ seatId: SEAT_A, role: "secondary", expectedSeatId: null }),
+    );
+    expect(r).toEqual({ ok: false, status: 404, code: "not_found" });
   });
 });

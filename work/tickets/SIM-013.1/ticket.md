@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | S |
 | Areas | api |
 | Gate | plan-approval |
 | Depends on | SIM-013 |
-| Needs Ming | — |
+| Needs Ming | M-33 |
 | Attempts | 0 |
 | Created | 2026-11-23 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/59 |
 
 ## Goal
 Slice 2 of 4 of SIM-013 (Devices): members create, edit and delete devices through the API, with MAC normalisation and the D31 delete rule.
@@ -45,6 +45,18 @@ spec DEV-01, DEV-02; D19, D31, D37. Split out of SIM-013 by its approved plan (`
 - DB (CI): create/edit/delete, uniqueness, D31.
 
 ## Notes / answers from Ming
-—
+- 2026-11-24: Plan approved (all defaults, assumptions 1-8; Ming: "duyệt plan SIM-013.1, chạy luôn").
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED (plan approval)
+- Agent calls: 2, tokens ~120k total (api-platform-engineer×1 inherit 38k, planner×1 inherit ~80k; in/out split not reported)
+- Done: consult saved; plan.md READY, one slice (create/edit/delete API, MAC normaliser, 3 new codes; no migration, no High path).
+- In progress / next: Ming approves (M-33), then implement.
+- Gotchas: plan departs from the consult on audit meta (codes and ids only, per `src/server/audit/write.ts:6`). Constraint names confirmed in the init migration (`devices_org_inventory_number_key`, `devices_org_mac_key`).
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 3 this run (implementer×1 inherit 93k, reviewer×1 inherit ~60k, security-ai-generated-code-auditor×1 inherit 47k; in/out split not reported); 5 in total for the ticket (~320k).
+- Done: create/edit/delete API, MAC normaliser, 3 codes; review PASS on attempt 1 with CI `pnpm test:db` green (devices.db.test.ts 19/19); security no 🔴/🟡. PR #59 (opened as draft early so CI could run test:db during review, now ready).
+- In progress / next: Ming merges PR #59. Then SIM-013.2 (Devices page UI).
+- Gotchas: CI runs only on pull requests, so a draft PR is the way to get `pnpm test:db` before review ends. SIM-013.2 needs a device-specific message for `member_not_assignable`.

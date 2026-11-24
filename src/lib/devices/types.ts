@@ -1,4 +1,19 @@
-export const DEVICE_LIMITS = { list: 1000 } as const;
+export const DEVICE_LIMITS = { list: 1000, name: 120, type: 60, inventoryNumber: 60 } as const;
+
+export type DeviceCreateValue = {
+  name: string;
+  type: string;
+  inventoryNumber: string;
+  mac: string | null;
+  ownerId: string | null;
+};
+
+export type DevicePatchValue = Partial<{
+  name: string;
+  type: string;
+  inventoryNumber: string;
+  mac: string | null;
+}>;
 
 export type DeviceRole = "primary" | "secondary";
 

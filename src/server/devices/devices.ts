@@ -1,6 +1,7 @@
 import "server-only";
 import type { Tier } from "@/lib/auth/tier";
 import {
+  canCreateFor,
   canEdit,
   canPlace,
   decidePlacement,
@@ -9,8 +10,10 @@ import {
 } from "@/lib/devices/rules";
 import {
   DEVICE_LIMITS,
+  type DeviceCreateValue,
   type DeviceDto,
   type DeviceListResponse,
+  type DevicePatchValue,
   type DeviceRole,
   type PlacementFilter,
 } from "@/lib/devices/types";
@@ -18,7 +21,7 @@ import type { PlacementPutValue } from "@/lib/validate/device";
 import { writeAudit } from "@/server/audit/write";
 import { withTx, type TxClient, type TxPool } from "@/server/db/tx";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
-import { deviceConflict } from "./pg-error";
+import { deviceConflict, type DeviceConflictCode } from "./pg-error";
 
 type Query = { query(text: string, values: unknown[]): Promise<{ rows: any[] }> };
 export type Db = TxPool & Query;
@@ -26,7 +29,13 @@ export type Db = TxPool & Query;
 export type Refusal = {
   ok: false;
   status: 404 | 409 | 422;
-  code: "not_found" | PlacementRefusalCode;
+  code:
+    | "not_found"
+    | PlacementRefusalCode
+    | DeviceConflictCode
+    | "device_placed"
+    | "member_not_assignable"
+    | "no_linked_member";
 };
 export type Result<T> = { ok: true; value: T } | Refusal;
 
@@ -182,6 +191,8 @@ export function placeDevice(
       "select id from members where org_id = $1 and sub = $2",
       [actorSub],
     );
+    // owner_id is read without a lock: safe only because it is immutable (DEV-01; PATCH rejects ownerId).
+    // Any future owner transfer must re-read it under the device lock below.
     const { rows: dev } = await orgQuery<{ seat_id: string | null; owner_id: string }>(
       c,
       scope,
@@ -226,7 +237,8 @@ export function placeDevice(
       [deviceId],
     );
     // the old seat it now sits on (if any) is not locked: answer as a stale view
-    if (!cur[0] || cur[0].seat_id !== dev[0].seat_id) throw refuse(409, "placement_changed");
+    if (!cur[0]) throw new Abort(notFound); // deleted since the first read
+    if (cur[0].seat_id !== dev[0].seat_id) throw refuse(409, "placement_changed");
 
     let target: PlacementInput["target"] = null;
     if (v.seatId !== null) {
@@ -276,6 +288,158 @@ export function placeDevice(
       },
     });
     return reload(c, scope, actorSub, tier, deviceId);
+  });
+}
+
+async function actorMemberId(c: Query, scope: OrgScope, actorSub: string): Promise<string | null> {
+  const { rows } = await orgQuery<{ id: string }>(
+    c,
+    scope,
+    "select id from members where org_id = $1 and sub = $2",
+    [actorSub],
+  );
+  return rows[0]?.id ?? null;
+}
+
+/** DEV-01: a new device starts in inventory. Self for any member, another member for an Admin (D19). */
+export function createDevice(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  tier: Tier,
+  v: DeviceCreateValue,
+): Promise<Result<DeviceDto>> {
+  return inTx(db, async (c) => {
+    const me = await actorMemberId(c, scope, actorSub);
+    const ownerId = v.ownerId ?? me;
+    if (!ownerId) throw refuse(422, "no_linked_member");
+    // before the owner lookup, so a non-Admin cannot probe which member ids exist
+    if (!canCreateFor(tier, ownerId === me)) throw refuse(422, "not_allowed");
+    const { rows: owner } = await orgQuery<{ id: string; status: string }>(
+      c,
+      scope,
+      "select id, status from members where org_id = $1 and id = $2 for share",
+      [ownerId],
+    );
+    if (!owner[0]) throw new Abort(notFound);
+    if (owner[0].status !== "active") throw refuse(422, "member_not_assignable");
+    const { rows: ins } = await orgQuery<{ id: string }>(
+      c,
+      scope,
+      `insert into devices (org_id, name, type, inventory_number, mac, owner_id)
+       select o.org_id, $2::text, $3::text, $4::text, $5::text, $6::uuid
+       from (select $1::uuid as org_id) o where o.org_id = $1::uuid
+       returning id`,
+      [v.name, v.type, v.inventoryNumber, v.mac, ownerId],
+    );
+    const id = ins[0]!.id;
+    await writeAudit(c, scope, {
+      actorSub,
+      action: "device.create",
+      entity: "device",
+      entityId: id,
+      meta: { inventoryNumber: v.inventoryNumber, ownerId },
+    });
+    return reload(c, scope, actorSub, tier, id);
+  });
+}
+
+const COLUMNS = [
+  ["name", "name"],
+  ["type", "type"],
+  ["inventoryNumber", "inventory_number"],
+  ["mac", "mac"],
+] as const;
+
+/** DEV-01: owner or Admin edits name, type, inventory number and MAC. Only the device row is locked. */
+export function updateDevice(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  tier: Tier,
+  id: string,
+  patch: DevicePatchValue,
+): Promise<Result<DeviceDto>> {
+  return inTx(db, async (c) => {
+    const me = await actorMemberId(c, scope, actorSub);
+    const { rows } = await orgQuery<{
+      name: string;
+      type: string;
+      inventory_number: string;
+      mac: string | null;
+      owner_id: string;
+    }>(
+      c,
+      scope,
+      `select id, name, type, inventory_number, mac, owner_id from devices
+       where org_id = $1 and id = $2 for update`,
+      [id],
+    );
+    const cur = rows[0];
+    if (!cur) throw new Abort(notFound);
+    if (!canEdit(tier, me === cur.owner_id)) throw refuse(422, "not_allowed");
+    const changed = COLUMNS.filter(
+      ([key, col]) => key in patch && patch[key] !== cur[col as keyof typeof cur],
+    );
+    if (changed.length === 0) return reload(c, scope, actorSub, tier, id);
+    // column names come only from COLUMNS; values are parameters
+    const sets = changed.map(([, col], i) => `${col} = $${i + 3}`).join(", ");
+    await orgQuery(
+      c,
+      scope,
+      `update devices set ${sets}, updated_at = now() where org_id = $1 and id = $2`,
+      [id, ...changed.map(([key]) => patch[key])],
+    );
+    const inv = changed.some(([key]) => key === "inventoryNumber");
+    await writeAudit(c, scope, {
+      actorSub,
+      action: "device.update",
+      entity: "device",
+      entityId: id,
+      meta: {
+        fields: changed.map(([key]) => key),
+        ...(inv ? { from: cur.inventory_number, to: patch.inventoryNumber } : {}),
+      },
+    });
+    return reload(c, scope, actorSub, tier, id);
+  });
+}
+
+/** DEV-01 and D31: owner or Admin deletes a device that is in inventory; a placed one is refused. */
+export function deleteDevice(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  tier: Tier,
+  id: string,
+): Promise<Result<null>> {
+  return inTx(db, async (c) => {
+    const me = await actorMemberId(c, scope, actorSub);
+    // the device lock serialises this against placeDevice, which locks the device row too
+    const { rows } = await orgQuery<{
+      inventory_number: string;
+      owner_id: string;
+      seat_id: string | null;
+    }>(
+      c,
+      scope,
+      `select inventory_number, owner_id, seat_id from devices
+       where org_id = $1 and id = $2 for update`,
+      [id],
+    );
+    const cur = rows[0];
+    if (!cur) throw new Abort(notFound);
+    if (!canEdit(tier, me === cur.owner_id)) throw refuse(422, "not_allowed");
+    if (cur.seat_id !== null) throw refuse(409, "device_placed");
+    await orgQuery(c, scope, "delete from devices where org_id = $1 and id = $2", [id]);
+    await writeAudit(c, scope, {
+      actorSub,
+      action: "device.delete",
+      entity: "device",
+      entityId: id,
+      meta: { inventoryNumber: cur.inventory_number, ownerId: cur.owner_id },
+    });
+    return null;
   });
 }
 
