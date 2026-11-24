@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | api |
@@ -11,7 +11,7 @@
 | Needs Ming | M-34 |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T05:22:48Z |
 | PR | — |
 
 ## Goal
@@ -42,7 +42,7 @@ spec REG-01, REG-02; D21, D23, D24, D26. Split out of SIM-014 by its approved pl
 - DB (CI): list, cursor, mine, seen.
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (P1 policy)
+- 2026-11-24: Plan approved (all defaults, assumptions 1-9; Ming: "duyệt plan SIM-014.1, chạy luôn").
 
 ## Handoff
 
