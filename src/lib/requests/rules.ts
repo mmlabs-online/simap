@@ -40,3 +40,13 @@ export function decideCancel(a: {
   if (!a.isOwner) return "refuse";
   return nextStatus(a.status, "cancel") === null ? "noop" : "cancel";
 }
+
+/** D24 badge: a decision is unseen when it is approved or rejected after `seenAt` (null = never seen). Both are µs ISO strings. */
+export const isUnseen = (
+  status: RequestStatus,
+  decidedAt: string | null,
+  seenAt: string | null,
+): boolean =>
+  (status === "approved" || status === "rejected") &&
+  decidedAt !== null &&
+  (seenAt === null || decidedAt > seenAt);
