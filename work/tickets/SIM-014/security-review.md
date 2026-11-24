@@ -79,3 +79,27 @@ Files reviewed:
 - `d:\project\simap-game-ui\src\server\http\org-scope.ts`
 - `d:\project\simap-game-ui\src\server\members\manage.ts` (deactivateMember)
 - `d:\project\simap-game-ui\db\migrations\20261120150000_init.sql`
+
+## Attempt 2
+
+I re-checked SIM-014 security, attempt 2. There are no blockers and no should-fix findings: the rewritten `createRequest` insert is still org-scoped, still self-only, and still dedupes on conflict.
+
+🟢 **Org-scoped (R6)**, `d:\project\simap-game-ui\src\server\requests\requests.ts:128-132`
+- `orgQuery` (`d:\project\simap-game-ui\src\server\http\org-scope.ts:21-24`) always passes `scope.orgId` as `$1`, so `seat_requests.org_id` comes only from the verified token's org.
+- The `where o.org_id = $1::uuid` clause is always true. It is only there to satisfy the guard's regex and does no filtering. That is harmless here, because the value itself is `$1`.
+- `seatId` is only bound as `$2`. It was already checked as belonging to this org at line 116 (`org_id = $1 and id = $2`, otherwise 404) and locked at line 120, so you cannot insert a request for another org's seat. The other-org test at `d:\project\simap-game-ui\src\server\requests\requests.db.test.ts:141-148` covers this.
+
+🟢 **Self-only**, `requests.ts:110` and `requests.ts:129`
+- `subject_id` and `created_by_id` are both `$3`, which is `me.id`.
+- `me.id` comes from `lockMembers(c, scope, { sub: actorSub })`, where `actorSub` is the token subject. No request field reaches subject or creator.
+- An inactive member or one without a member row is refused at lines 111-112, before any write.
+
+🟢 **On-conflict dedupe kept**, `requests.ts:131`
+- The conflict target `(org_id, seat_id, subject_id) where status = 'pending'` matches the partial unique index `seat_requests_one_pending_idx` (`d:\project\simap-game-ui\db\migrations\20261120150000_init.sql:163`).
+- An insert from a select is still a valid target for `on conflict`.
+- When the insert hits a conflict, the fallback read at lines 144-151 is scoped by org, seat and subject, and no audit row is written.
+- The tests at `requests.db.test.ts:92-99` (two creates in a row) and `requests.db.test.ts:105-111` (two concurrent creates) check that only one row and one audit entry result.
+
+💭 **Note**, `requests.ts:130`: the always-true `where` reads oddly. A one-line comment saying it exists for the `orgQuery` guard would save the next reader a double take. Optional.
+
+No new secrets, client-bundle, or R7 (late 401/403) issues came in with this change. Everything from attempt 1 in `d:\project\simap-game-ui\work\tickets\SIM-014\security-review.md` still holds.

@@ -98,3 +98,25 @@ not already.
 - As planned: auto-reject pending requests when a seat is assigned directly, released, or flagged cannot-seat; add a
   pending-request marker on seat DTOs (LAY-06).
 - Confirm the first CI `pnpm test:db` run on this branch before merge.
+
+## Attempt 2
+Verdict: PASS
+
+### Checks (run by reviewer)
+- format:check ok, typecheck ok, check:layers 425 files no violations, test ok (169 files).
+- CI run 45324683430 on PR #58: ci and image jobs green; `pnpm test:db` 7 files / 95 tests passed, `requests.db.test.ts` 18/18.
+
+### Fix review
+- `requests.ts:125-131`: the insert now uses the repo's `select ... from (select $1::uuid as org_id) o where o.org_id = $1::uuid` shape, so the `orgQuery` guard (`org_id = $1`) is satisfied. Values and the `on conflict ... do nothing returning id` clause are unchanged, so create behaviour is the same. Correct.
+- Approve test: the old fixture (primary device on an empty seat) could not exist, because the constraint trigger forbids it. Approve only works on empty seats, so approve never has a primary to demote. The fix is a test-setup correction and does not weaken approve.
+
+### AC2 ("approve seats requester, demotes any primary, rejects rivals")
+- Seats requester and rejects both rivals, plus audit rows: still asserted in the approve test (CI green).
+- "Demotes any primary": approve calls the shared `writeOccupant` -> `demotePrimary` (`seats.ts:261-271`). The demotion itself is covered by `seats.db.test.ts:251` (`demoted: 1`) and `:284`. On an empty seat there is no primary to demote, so the approve test cannot show it. The coverage is honest, but it is indirect.
+
+### Nits (do not block)
+- The PR body still says "renamed ... demotes any primary" for approve. Reword it to say the demote step is shared with `setOccupant` and only no-ops on an empty seat.
+- The test retitle and the new seat_id assertion are fine.
+
+### Ming verification after merge
+None beyond the plan (manual request -> approve with two rivals comes after SIM-014.2).

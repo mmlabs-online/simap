@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | api |
@@ -11,7 +11,7 @@
 | Needs Ming | M-32 |
 | Attempts | 1 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-24T04:09:55Z |
+| Claimed by | — |
 | PR | https://github.com/mmlabs-online/simap/pull/58 |
 
 ## Goal
@@ -67,3 +67,9 @@ spec REG-01, REG-02; D21, D23, D26. Re-scoped 2026-11-24 by the approved plan (`
   - 4 create tests: `Error: orgQuery: SQL must filter org_id = $1` thrown at `src/server/requests/requests.ts:125` (the create insert does not pass the orgQuery guard).
   - 1 approve test (`two rivals: occupant set, primary demoted, …`, test line 159): `23514 devices_primary_owner_is_occupant` ("primary device must be owned by the seat occupant") — the test setup or the approve path places a primary that is not owned by the occupant.
 - Next: implementer fixes only these failures; reviewer re-checks.
+
+### 2026-11-24 — claude — DONE (attempt 2)
+- Agent calls: 3 this run (implementer×1 inherit 40k, reviewer×1 sonnet ~30k, security-ai-generated-code-auditor×1 inherit 20k; in/out split not reported); 9 in total for the ticket (~470k).
+- Done: fixed the two CI `pnpm test:db` failures (create insert now passes the orgQuery guard; approve test no longer puts a primary on an empty seat). CI on PR #58 green (test:db 95/95, requests.db.test.ts 18/18). Review PASS attempt 2, security no 🔴/🟡. PR body updated.
+- In progress / next: Ming merges PR #58. Then SIM-014.1.
+- Gotchas: run `pnpm test:db` results from CI before calling a db-heavy ticket PASS (R5) — local runs have no DATABASE_URL. AC2 "demotes any primary" is covered via the shared `writeOccupant` and `seats.db.test.ts` (an approved seat is always empty).
