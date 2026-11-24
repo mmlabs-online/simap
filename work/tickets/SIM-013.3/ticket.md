@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | claude@2026-11-24T06:36:57Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/62 |
 
 ## Goal
 Slice 4 of 4 of SIM-013 (Devices): from the Devices page, people place, lend, move and return devices.
@@ -49,3 +49,9 @@ spec DEV-03, DEV-04, DEV-05, REG-03; D19, D22. Split out of SIM-013 by its appro
 - Done: consult (consult-frontend-developer.md), plan.md Status READY, no split (~420 src + ~300 test lines), no High path.
 - In progress / next: Ming approves the plan (M-36), then IMPLEMENT.
 - Gotchas: introduces the shared row-actions column (`device-actions.ts`, `DeviceRowActions.tsx`, `DeviceRowHandlers`) and `devices-api` `place`/`get`; SIM-013.4/013.5 should extend those and rebase on this ticket. Local shell needs Node via fnm (`fnm use 22`).
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 2, tokens ~149k total (implementer×1 default 88k, reviewer×1 default 60k)
+- Done: attempt 1 implemented (24 files, +1475/−19), review PASS with no issues, all checks green, PR #62 opened.
+- In progress / next: Ming confirms the plan approval (the message said "SIM-013.2") and merges PR #62. Then SIM-013.4 / SIM-013.5, which extend `DeviceRowHandlers`.
+- Gotchas: the branch was rebased after the first push (force-with-lease). Review nits are listed as follow-ups in the PR.
