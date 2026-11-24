@@ -15,6 +15,7 @@ import {
   resizeRoom,
   rotateItems,
   rulesInput,
+  withoutDeskFixtures,
 } from "./draft";
 import type { Draft, OpResult } from "./types";
 
@@ -101,9 +102,11 @@ describe("placeItem", () => {
     expect(base.items).toHaveLength(1);
   });
 
-  it("placeItem allows a non-blocking fixture over a blocking one", () => {
+  it("placeItem allows a non-blocking fixture over a blocking fixture, but not over a desk", () => {
     const base = empty({ fixtures: [fx("plant.large", 5, 5)] });
     expect(ok(placeItem(base, "prop.mug", 5, 5)).items).toHaveLength(2);
+    const desk = empty({ seats: [seat("a", 2, 2)] });
+    expect(refused(placeItem(desk, "prop.mug", 3, 2))).toBe("layout_fixture_on_desk");
   });
 
   it("placeItem refuses an unknown or floor sprite (layout_unknown_sprite)", () => {
@@ -244,5 +247,56 @@ describe("draftToRoomLayout", () => {
       ["n:1", ""],
     ]);
     expect(buildDrawList(layout, {}, manifest).unknown).toEqual([]);
+  });
+});
+
+describe("fixtures and desks (D61)", () => {
+  const mug = (x: number, y: number) => fx("prop.mug", x, y);
+  const withMug = () => empty({ seats: [seat("a", 2, 2)], fixtures: [mug(6, 5)] });
+
+  it("moving a fixture onto a desk is refused", () => {
+    expect(refused(moveItems(withMug(), ["f:0"], -4, -3))).toBe("layout_fixture_on_desk");
+    expect(refused(moveItems(withMug(), ["f:0"], -3, -3))).toBe("layout_fixture_on_desk");
+    expect(refused(moveItems(withMug(), ["f:0"], -1, 0))).toBe("ok");
+  });
+
+  it("group move onto a desk is refused", () => {
+    const d = empty({ seats: [seat("a", 2, 2)], fixtures: [mug(6, 5), mug(8, 5)] });
+    expect(refused(moveItems(d, ["f:0", "f:1"], -4, -3))).toBe("layout_fixture_on_desk");
+  });
+
+  it("moving a desk onto a prop is refused", () => {
+    expect(refused(moveItems(withMug(), ["s:a"], 4, 3))).toBe("layout_fixture_on_desk");
+  });
+
+  it("moving a prop and its desk together is allowed", () => {
+    const d = empty({ seats: [seat("a", 2, 2)], fixtures: [mug(6, 5)] });
+    expect(refused(moveItems(d, ["s:a", "f:0"], 1, 1))).toBe("ok");
+  });
+
+  it("rotating a desk onto a prop is refused", () => {
+    // desk at (2,2) facing s covers (2,2),(3,2); at 90 it covers (2,2),(2,3)
+    const d = empty({ seats: [seat("a", 2, 2)], fixtures: [mug(2, 3)] });
+    expect(refused(rotateItems(d, ["s:a"]))).toBe("layout_fixture_on_desk");
+  });
+
+  it("placing a tray seat onto a prop is refused", () => {
+    const d = empty({ fixtures: [mug(5, 5)] }, [{ id: "u", code: "R-u" }]);
+    expect(refused(placeFromTray(d, "u", 5, 5))).toBe("layout_fixture_on_desk");
+    expect(refused(placeFromTray(d, "u", 4, 5))).toBe("layout_fixture_on_desk");
+    expect(refused(placeFromTray(d, "u", 0, 0))).toBe("ok");
+  });
+
+  it("withoutDeskFixtures drops only fixtures on desks and counts them", () => {
+    const d = empty({
+      seats: [seat("a", 2, 2)],
+      fixtures: [mug(2, 2), mug(6, 6), mug(3, 2), fx("plant.large", 9, 5)],
+    });
+    const r = withoutDeskFixtures(d);
+    expect(r.dropped).toBe(2);
+    expect(r.draft.items.map((i) => i.key)).toEqual(["s:a", "f:1", "f:3"]);
+    expect(checkLayoutRules(rulesInput(r.draft)).ok).toBe(true);
+    const clean = empty({ seats: [seat("a", 2, 2)], fixtures: [mug(6, 6)] });
+    expect(withoutDeskFixtures(clean)).toEqual({ draft: clean, dropped: 0 });
   });
 });

@@ -168,3 +168,27 @@ function layoutOf(n: number) {
     })),
   };
 }
+
+describe("place tool on desks (D61)", () => {
+  const mug: Tool = { kind: "fixture", sprite: "prop.mug" };
+  const withDesk = () =>
+    draftFromLayout(
+      {
+        w: 12,
+        h: 8,
+        floors: [],
+        seats: [{ id: SEAT_A, code: "R-1", sprite: "desk.single", x: 2, y: 2, rotation: 0 }],
+        fixtures: [],
+      },
+      [],
+    );
+
+  it("a fixture on any desk tile is refused (ghost not ok)", () => {
+    const d = withDesk();
+    for (const x of [2, 3]) {
+      expect(tryPlace(d, mug, x, 2)).toEqual({ ok: false, code: "layout_fixture_on_desk" });
+      expect(placementPreview(d, mug, { x, y: 2 })?.ok).toBe(false);
+    }
+    expect(placementPreview(d, mug, { x: 4, y: 2 })?.ok).toBe(true);
+  });
+});

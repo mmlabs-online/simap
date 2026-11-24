@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { DashboardDto } from "@/lib/dashboard/types";
+import type { ExportKind } from "@/lib/export/csv";
 import { roomDetailHref } from "@/lib/nav";
 import { occupancyPercent } from "@/lib/rooms/occupancy";
 import { apiErrorMessage } from "../copy/api";
@@ -9,6 +10,7 @@ import { Button } from "../Button";
 import { Card } from "../Card";
 import { Icon } from "../Icon";
 import { RoomCard } from "../rooms/RoomCard";
+import { ExportCard } from "./ExportCard";
 import { StatTile } from "./StatTile";
 
 export type DashboardViewProps = {
@@ -16,6 +18,11 @@ export type DashboardViewProps = {
   data: DashboardDto | null;
   errorCode: string | null;
   onRetry: () => void;
+  canExport?: boolean;
+  exporting?: ExportKind | null;
+  exportError?: string | null;
+  exportNotice?: string | null;
+  onExport?: (kind: ExportKind) => void;
 };
 
 const TILES = "grid gap-4 grid-cols-2 lg:grid-cols-3";
@@ -62,7 +69,17 @@ function HoldersWarning({ holders }: { holders: NonNullable<DashboardDto["deacti
 }
 
 /** The Dashboard page body. Pure: data and handlers come from props. */
-export function DashboardView({ status, data, errorCode, onRetry }: DashboardViewProps) {
+export function DashboardView({
+  status,
+  data,
+  errorCode,
+  onRetry,
+  canExport = false,
+  exporting = null,
+  exportError = null,
+  exportNotice = null,
+  onExport = () => {},
+}: DashboardViewProps) {
   return (
     <div className="p-4 lg:p-6 flex flex-col gap-4">
       <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.dashboard.title}</h1>
@@ -131,6 +148,14 @@ export function DashboardView({ status, data, errorCode, onRetry }: DashboardVie
             <p className="text-[13px] font-medium text-on-surface-variant">
               {copy.roomsTruncated(data.rooms.length, data.totals.rooms)}
             </p>
+          )}
+          {canExport && (
+            <ExportCard
+              exporting={exporting}
+              error={exportError ? apiErrorMessage(exportError) : null}
+              notice={exportNotice}
+              onExport={onExport}
+            />
           )}
         </>
       )}

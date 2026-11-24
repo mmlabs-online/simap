@@ -27,6 +27,7 @@ export const apiCopy = {
     layout_overlap: "Two items in this layout are on the same tile.",
     layout_bad_rotation: "An item in this layout has a rotation it can't use.",
     layout_unknown_sprite: "This layout uses an item that doesn't exist.",
+    layout_fixture_on_desk: "An item sits on a desk. Desk tops are kept for the seat's devices.",
     layout_stale: "This room changed while you were editing. Reload to see the latest layout.",
     layout_seats_changed: "The room's seats changed while you were editing. Reload and try again.",
     layout_too_many_seats: "This room has too many seats to save a layout.",
@@ -45,6 +46,8 @@ export const apiCopy = {
     in_use: "This is still used by seats or members. Confirm to remove it from them.",
     invalid_group: "That group no longer exists. Reload and try again.",
     invalid_project: "That project no longer exists. Reload and try again.",
+    name_taken: "Another device type already has this name.",
+    type_limit: "This organization has reached the limit of 100 device types.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

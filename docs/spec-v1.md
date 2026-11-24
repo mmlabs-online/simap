@@ -127,6 +127,7 @@ needs to show.
 | Member | org, Identity `sub` (unique in the org, required), email (from the token), display name, employee code (unique, optional), group (optional) | Profile of one org account (D12). |
 | Device | org, name, type, inventory number (unique), MAC (unique, optional), owner (member, required), seat (optional; empty = in inventory), role at the seat (primary / secondary) | |
 | SeatRequest | org, seat, subject member (who will sit there), created by, status (pending / approved / rejected / cancelled), note, decided by, decided at | |
+| DeviceType | org, name (unique, case- and space-insensitive), desk slot, optional image | Org catalog (D61); devices match it by name, no reference. |
 | Group | org, name (unique), colour | Label only. |
 | Project | org, code (unique), name | Label only. |
 | AuditLog | org, actor (Identity `sub`), action, entity, entity id, meta, time | One row per change (SYS-03). |
@@ -257,7 +258,12 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 ### DEV — Device
 
 **DEV-01 Manage devices**
-- [ ] A device type is picked from a suggested list (PC, Laptop, Monitor, IP phone, Other) or typed freely (D37).
+- [ ] A device type is picked from the org's device type catalog or typed freely (D37, D61). Each org starts with PC,
+  Laptop, Monitor, IP phone and Other.
+- [ ] An Admin manages the catalog: add, rename, change the desk slot, delete (name unique in the org, case- and
+  space-insensitive, at most 60 characters, at most 100 types; an optional 24 × 24 px PNG image, SIM-036.5). A device's
+  type matches a catalog type by name; renaming or deleting a type never changes devices, which then draw as the
+  placeholder until their type matches again.
 - [ ] A device has type, inventory number (unique), MAC (unique if set; format checked), name and owner (exactly one
   member).
 - [ ] A User or Manager creates devices only for their own member and edits or deletes only their own devices. An
@@ -340,7 +346,7 @@ use the clean UI kit (D52). Art rules: `docs/art/style-guide.md`.
   saves. Positions survive reloads and sessions.
 - [ ] Items: seat desks (a desk sprite may cover several tiles), fixtures, and walls/floor. Rotation in 4 directions
   only; size is fixed by the sprite; no free resize.
-- [ ] Items cannot overlap where the manifest says they block (e.g. two desks on one tile).
+- [ ] Items cannot overlap where the manifest says they block (e.g. two desks on one tile), and no fixture is placed on a desk tile (D61, D62).
 
 **LAY-02 Desk = seat**
 - [ ] Each desk on the grid is one seat record. Placing a desk creates a seat and its code (ROO-02). Removing a desk
@@ -357,8 +363,9 @@ use the clean UI kit (D52). Art rules: `docs/art/style-guide.md`.
 **LAY-06 Seats and people drawn on the map** (D41, D44)
 - [ ] Each seat shows its state with a sprite overlay, not colour alone: empty, occupied (a pixel avatar sits there),
   mine (highlight), cannot-seat (blocked sign), pending request (marker).
-- [ ] Devices at a seat are drawn by type (PC, laptop, monitor, IP phone, other; D37): the primary on the desk,
-  secondary next to it.
+- [ ] Every device placed at a seat is drawn on its desk, one sprite per device, at its catalog type's slot and
+  image (built-in sprite when the type has no image); a device whose type is not in the catalog draws as the square
+  placeholder (D37, D61, D62).
 - [ ] Occupants are generated 32 px layered avatars (body/hair/shirt colours derived from `sub`, stable per person);
   no real photos (D44, D51). Name tags appear only on hover or keyboard focus, at every zoom (D50).
 
@@ -579,6 +586,7 @@ All v1 open questions are answered as of 2026-11-20. New questions get the next 
 
 | Date | Change |
 |---|---|
+| 2026-11-24 | SIM-036.2 (D61): per-org device type catalog (name, desk slot, optional image) replaces the fixed suggested list; devices match a type by name; unknown types draw as a placeholder. |
 | 2026-11-20 | First draft from Ming's `/idea` brief: seatMGT rebuild on Next.js + mmlabs Identity + shared Postgres, deployed like tudocuatui. |
 | 2026-11-20 | v0.8 (D45–D51): asset rules; style 2 + UI A; seats managed without the map, logic/API first; 32 px tiles; per-room map in v1, floor map v2; name tags on hover/focus; 32 px layered avatars. |
 | 2026-11-20 | v0.7 (D41–D44): pixel-art tile-grid room view and editor (supersedes D20), avatars; OQ-40 assets open. |

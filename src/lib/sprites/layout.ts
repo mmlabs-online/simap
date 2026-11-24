@@ -1,3 +1,5 @@
+import type { DeviceKind } from "./device-slots";
+
 /** Zoom levels of the room map: whole numbers only (spec LAY "Visual style"). */
 export const ZOOM_LEVELS = [1, 2, 3, 4] as const;
 export type Zoom = (typeof ZOOM_LEVELS)[number];
@@ -31,6 +33,17 @@ export type SeatState = "empty" | "occupied" | "mine" | "pending" | "cannot";
 
 export type SeatView = { state: SeatState; avatarSeed: string | null; name: string | null };
 
+/** The catalog type a seat device resolves to (D61): its slot and image version, never the type name. */
+export type SeatDeviceType = {
+  id: string;
+  slot: DeviceKind;
+  hasImage: boolean;
+  imageVersion: number;
+};
+
+/** A device placed at a seat; only its type is public on the map. `deviceType` is null when the type is not in the org catalog. */
+export type SeatDevice = { type: string; deviceType?: SeatDeviceType | null };
+
 /** GET /api/rooms/{id}/layout (SIM-015.1 contract): one room's layout with derived seat status. */
 export type LayoutResponse = {
   room: { id: string; code: string; name: string };
@@ -38,6 +51,8 @@ export type LayoutResponse = {
   saved: boolean;
   layout: RoomLayout;
   seatViews: Record<string, SeatView>;
+  /** Per seat with devices. Array order is draw order (primary first, then created_at, id): do not re-sort. At most LAYOUT_LIMITS.devicesPerSeat. */
+  seatDevices: Record<string, SeatDevice[]>;
   unplaced: { id: string; code: string }[];
   truncated: boolean;
 };

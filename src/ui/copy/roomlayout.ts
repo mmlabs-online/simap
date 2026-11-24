@@ -88,10 +88,13 @@ export const roomlayoutCopy = {
       layout_overlap: "That tile is taken.",
       layout_bad_rotation: "Nothing selected can turn.",
       layout_unknown_sprite: "That item doesn't exist.",
+      layout_fixture_on_desk: "Items can't go on a desk. The desk top shows the seat's devices.",
       seat_limit: "This room already has the most seats it can hold.",
       fixture_limit: "This room already has the most fixtures it can hold.",
       resize_cut: "Some items would be outside the smaller room. Move or delete them first.",
     },
+    cleaned: (n: number) =>
+      `${n} ${n === 1 ? "item" : "items"} on desks ${n === 1 ? "was" : "were"} removed. Save to keep this change.`,
     done: {
       moved: "Moved.",
       rotated: "Turned.",

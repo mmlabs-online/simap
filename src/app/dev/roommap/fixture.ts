@@ -1,4 +1,4 @@
-import type { Placement, RoomLayout, SeatView } from "@/lib/sprites/layout";
+import type { Placement, RoomLayout, SeatDevice, SeatView } from "@/lib/sprites/layout";
 
 /** Rendered by the demo as `data-demo-fixture`; `pnpm check:dev-bundle` fails if it reaches a production bundle. */
 export const DEMO_FIXTURE_MARKER = "simap-roommap-fixture-9c41";
@@ -12,7 +12,7 @@ const seat = (id: string, code: string, x: number, y: number, rotation: Placemen
   rotation,
 });
 
-/** One 12 x 8 room: desk.single seats in four rotations, a tall plant and a mug on a desk top tile. */
+/** One 12 x 8 room: desk.single seats in four rotations, a tall plant and a mug beside the desks (no fixture goes on a desk, D61). */
 export const DEMO_LAYOUT: RoomLayout = {
   w: 12,
   h: 8,
@@ -31,8 +31,21 @@ export const DEMO_LAYOUT: RoomLayout = {
   fixtures: [
     { id: "plant-1", sprite: "plant.large", x: 0, y: 0, rotation: 0 },
     { id: "plant-2", sprite: "plant.large", x: 11, y: 7, rotation: 0 },
-    { id: "mug-1", sprite: "prop.mug", x: 6, y: 4, rotation: 0 },
+    { id: "mug-1", sprite: "prop.mug", x: 3, y: 6, rotation: 0 },
   ],
+};
+
+/** Devices per seat: two monitors, a PC, a phone and a printer on one desk; one of each on others. */
+export const DEMO_DEVICES: Record<string, SeatDevice[]> = {
+  "seat-a1": [
+    { type: "Monitor" },
+    { type: "Monitor" },
+    { type: "PC" },
+    { type: "IP phone" },
+    { type: "Printer" },
+  ],
+  "seat-b2": [{ type: "Laptop" }],
+  "seat-b3": [{ type: "pc" }, { type: "pc" }],
 };
 
 /** One seat per state, with three different people (a Vietnamese name among them). */

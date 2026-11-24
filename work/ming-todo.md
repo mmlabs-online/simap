@@ -85,3 +85,31 @@ Never write a secret value here: name the secret and where Ming puts it.
   grant it to the org owner role `simap:admin` (org-admin-api's own to-do M-5). Blocks SIM-020 (remove from org). (D34)
 - [x] M-44 (2026-11-24, keep: Users may see colleagues' emails; Ming: "có") (from SIM-017.2 security review, older behaviour) `GET /api/members` is User tier and returns, and matches `?q=` on, other members' **email** (`src/server/members/manage.ts:90, 152`). Decide: keep (Users see colleagues' emails), or hide email from Users (a new ticket). Global search (`/api/search`) never returns or matches email.
 - [x] M-45 (2026-11-24, Ming: "plan-approval") Approve plan for SIM-011.2: `work/tickets/SIM-011.2/plan.md` (policy `high-paths+P1`; assumptions A1 status filter in scope, A2 capped seat/device lists with "+N more", A3 server refuses self-deactivation, A4 Invite button in the page header, A5 Managers can edit/deactivate any member, A6 no "keep seats" option; A11 one slice of ~700 lines with a fallback split). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [ ] M-46 Google Drive for simap device-type images (D61, like tudocuatui D27/D28): create a Drive folder `simap/`,
+  an OAuth client and a refresh token (scope `drive.file`), and add the four values as deployment-repo secrets and in
+  your local env outside the repo. SIM-036.1 names the variables in `.env.example`. Blocks SIM-036.2 going live
+  (code and tests do not need it).
+- [x] M-47 (2026-11-24, all defaults, Ming: "duyệt") Approve plan for SIM-035: `work/tickets/SIM-035/plan.md` (P1 gate; no High path, ~330 source + ~400 test
+  lines). Defaults: A1 new 422 code `layout_fixture_on_desk`; A2 props already saved on desks are dropped from the
+  editor draft on load with a notice (the read-only map keeps them until an Admin saves); A3 2 slots per device type,
+  extras stack on the last slot (+3 px), at most 4 per type drawn, no "+n"; A4 the PC is painted before its desk,
+  offset toward the person; A5 the API returns at most 8 devices per seat (no `truncated`); A6 device changes show at
+  the next layout load. Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [x] M-48 (2026-11-24, all defaults, Ming: "duyệt") Approve plan for SIM-036.1: `work/tickets/SIM-036.1/plan.md` (High: `.env.example`, `src/server/drive/config.ts`;
+  ~520 source + ~650 test lines, one slice). Defaults: A1 a bad Drive config fails on first use (like Identity and the
+  DB pool), no boot check; A2 logs keep an allowlisted `reason` (e.g. `invalid_grant`), amending AC4; A3 the org id is
+  re-checked as a canonical UUID before any Drive query; A4/A5 64 KB cap on upload and download (exact PNG checks in
+  SIM-036.2); A6 deploy secret names `SIMAP_GOOGLE_*` / `SIMAP_DRIVE_FOLDER_ID` decided in M-46; A7 one Drive account
+  (Ming's) for every org; A8 smaller port than tudocuatui (no move/list/stream), files tagged by app and org; A9 the
+  manual check is a Vitest live test skipped unless `DRIVE_LIVE=1`. Add a dated "Plan approved" line in the ticket's
+  *Notes / answers from Ming*.
+- [x] M-49 (2026-11-24, all defaults, split approved, Ming: "duyệt") Approve plan for SIM-036.2: `work/tickets/SIM-036.2/plan.md` (High: `db/migrations/20261124160000_device_types.sql`;
+  ~1,100-1,300 lines, ~60% tests). **Split proposed:** SIM-036.2 = catalog table, seed, list/create/rename/slot/delete
+  routes, layout `deviceType` and spec; new SIM-036.5 = image upload, remove and serve (ticket ACs 3-4, the SIM-036.1
+  security follow-ups). Defaults: A seed for orgs created later via a DB trigger on new member rows plus a marker
+  table `device_type_catalogs` (deleted seed types stay deleted); name max 60; one SQL function `device_type_key()`
+  (trim, collapse spaces, lowercase with an explicit Vietnamese capital map, accents kept) used by the unique index and
+  the layout join, with a TS copy proven equal by a DB test; bad images 422 (in SIM-036.5); 100 types per org (409
+  `type_limit`); layout seat devices gain `deviceType: {id, slot, hasImage, imageVersion} | null`; duplicate name 409
+  `name_taken`; rename/delete never touch devices (they fall back to the placeholder). Add a dated "Plan approved"
+  line in the ticket's *Notes / answers from Ming* and say whether to create SIM-036.5.

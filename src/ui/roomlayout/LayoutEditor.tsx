@@ -145,6 +145,7 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, onReload }: Pro
       <div className="grid grid-cols-[minmax(0,1fr)_18rem] items-start gap-4">
         <EditorCanvas
           draft={draft}
+          seatDevices={state.seatDevices}
           selection={state.selection}
           zoom={zoom}
           tool={tool}

@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { ZOOM_LEVELS, type RoomLayout, type SeatView, type Zoom } from "@/lib/sprites/layout";
+import {
+  ZOOM_LEVELS,
+  type RoomLayout,
+  type SeatDevice,
+  type SeatView,
+  type Zoom,
+} from "@/lib/sprites/layout";
 import { buildDrawList } from "@/lib/sprites/placement";
 import { allowedZooms, clampZoom } from "@/lib/sprites/zoom";
 import { roomlayoutCopy } from "../copy/roomlayout";
@@ -31,6 +37,7 @@ export function RoomMapStatus({ status }: { status: "loading" | "error" | "tooLa
 type Props = {
   layout: RoomLayout;
   seatViews: Record<string, SeatView>;
+  seatDevices?: Record<string, SeatDevice[]>;
   zoom: number;
   /** Shows the zoom buttons when given. */
   onZoom?: (zoom: Zoom) => void;
@@ -38,13 +45,13 @@ type Props = {
 };
 
 /** Canvas art plus an HTML seat overlay. Loads `/sprites/office.png|json`; a bad atlas shows an error view. */
-export function RoomMap({ layout, seatViews, zoom, onZoom, onSelect }: Props) {
+export function RoomMap({ layout, seatViews, seatDevices, zoom, onZoom, onSelect }: Props) {
   const { atlas, failed, setFailed } = useAtlas();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const list = useMemo(
-    () => (atlas ? buildDrawList(layout, seatViews, atlas.manifest) : null),
-    [atlas, layout, seatViews],
+    () => (atlas ? buildDrawList(layout, seatViews, atlas.manifest, seatDevices) : null),
+    [atlas, layout, seatViews, seatDevices],
   );
 
   const allowed = useMemo(() => (list ? allowedZooms(list.bounds) : []), [list]);
