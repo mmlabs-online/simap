@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | db, api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | M-46 (go-live only) |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T15:30:46Z |
 | PR | — |
 
 ## Goal
@@ -62,7 +62,7 @@ draw any kind of device, not only the five built-in ones.
 ## Notes / answers from Ming
 - 2026-11-24: images on Google Drive like tudocuatui; format proposed by the agent (24 px square PNG); a square
   placeholder for types the admin has not defined (D61).
-Waiting for Ming: plan approval (High tier)
+- 2026-11-24: Plan approved (Ming: "duyệt"), defaults A1-A11 and the split as written in plan.md; SIM-036.5 created on main.
 
 ## Handoff
 
