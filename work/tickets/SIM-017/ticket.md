@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-24T11:50:05Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/71 |
 
 ## Goal
 Managers see the org's capacity and use at a glance, and everyone finds seats, devices and members quickly.
@@ -44,3 +44,9 @@ Re-scoped by the plan's split (slice 1 = dashboard, DSH-01 + D34):
 —
 
 ## Handoff
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 6, tokens ~331k total (api-platform-engineer×1 default 45k, frontend-developer×1 default 35k, planner×1 default 95k, implementer×1 default 74k, reviewer×1 default 54k, security-ai-generated-code-auditor×1 default 30k)
+- Done: slice 1 (dashboard) implemented, 21 files +1396/−17, review PASS, security no 🔴 and one 🟡 (no route test for the tier gate at route.ts:14); PR #71 opened. SIM-017.2 (search API) and SIM-017.3 (search page) filed.
+- In progress / next: Ming decides rework vs follow-up for the tier-gate route test (default follow-up), then merges PR #71. Next: SIM-017.2.
+- Gotchas: devices without a seat must be `secondary` in DB fixtures (schema rule).
