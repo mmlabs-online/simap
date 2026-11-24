@@ -33,6 +33,10 @@ export const apiCopy = {
     seat_taken: "Someone already sits in this seat.",
     no_linked_member:
       "Your member profile in this organization isn't set up yet. Open simap's home page to finish it.",
+    placement_changed: "This device was moved by someone else. Refresh and try again.",
+    seat_has_no_occupant: "Only a seat with an occupant can have a primary device.",
+    owner_not_occupant: "A primary device must belong to the person at the seat.",
+    seat_has_primary: "This seat already has a primary device.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

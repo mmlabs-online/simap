@@ -27,6 +27,10 @@ export const API_ERROR_CODES = [
   "layout_too_many_seats",
   "seat_taken",
   "no_linked_member",
+  "placement_changed",
+  "seat_has_no_occupant",
+  "owner_not_occupant",
+  "seat_has_primary",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
