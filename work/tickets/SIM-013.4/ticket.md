@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T07:06:36Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -44,6 +44,12 @@ spec DEV-01, DEV-02; D19, D36, D37. Split out of SIM-013.2 by its approved plan 
 - Manual: create and edit a device (as User and as Admin for another member).
 
 ## Notes / answers from Ming
-—
+Waiting for Ming: plan approval (P1 gate, M-37)
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 2, tokens ~132k total (frontend-developer×1 default 51k, planner×1 default 81k)
+- Done: consult (consult-frontend-developer.md), plan.md Status READY, no split (~380 src lines + tests), no High path.
+- In progress / next: Ming approves the plan (M-37), then IMPLEMENT.
+- Gotchas: `rowActions` loses its early return on a missing `onPlace`; Edit is appended after the place actions, and SIM-013.5 appends Delete after Edit. Local shell needs Node via fnm (`fnm use 22`); no Python.
