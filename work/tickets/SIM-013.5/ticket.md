@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T07:58:35Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -42,6 +42,12 @@ spec DEV-01, DEV-02; D31, D36. Split out of SIM-013.2 by its approved plan (`wor
 - Manual: delete an inventory device; delete a placed device.
 
 ## Notes / answers from Ming
-—
+Waiting for Ming: plan approval (P1 gate, M-38)
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 2, tokens ~109k total (frontend-developer×1 default 40k, planner×1 default 69k)
+- Done: consult (consult-frontend-developer.md), plan.md Status READY, no split (~260 src + ~220 test lines), no High path.
+- In progress / next: Ming approves the plan (M-38), then IMPLEMENT. The branch is stacked on ticket/SIM-013.4; rebase onto main (`git rebase --onto origin/main origin/ticket/SIM-013.4`) once PR #63 is merged.
+- Gotchas: local shell needs Node via fnm (`fnm use 22`); no Python.
