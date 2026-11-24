@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T10:40:52Z |
 | PR | — |
 
 ## Goal
@@ -42,7 +42,7 @@ spec REG-01, REG-02; D18, D24, D26. Split out of SIM-014.2 by its approved plan 
 - Manual: request → approve with two rival requests.
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (P1 gate, M-41)
+- 2026-11-24: Plan approved (all defaults A1-A6; Ming: "duyệt plan SIM-014.4").
 
 ## Handoff
 
