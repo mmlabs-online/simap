@@ -7,7 +7,7 @@
 | Size | S |
 | Areas | ui |
 | Gate | none |
-| Depends on | SIM-036.2 |
+| Depends on | SIM-036.2, SIM-036.5 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |

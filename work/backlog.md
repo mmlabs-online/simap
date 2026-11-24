@@ -64,9 +64,10 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-013.5 | Device delete dialog with Move to inventory | MERGED | P1 | S | ui | SIM-013.2 | plan-approval | 0 | 2026-11-24 |
 | SIM-035 | Draw a seat's devices on its desk and keep other items off desks | MERGED | P1 | M | ui, api, security | SIM-015.8, SIM-013 | plan-approval | 0 | 2026-11-24 |
 | SIM-036.1 | Google Drive image storage client (tudocuatui pattern) | MERGED | P2 | M | architecture, security | — | plan-approval | 0 | 2026-11-24 |
-| SIM-036.2 | Device type catalog: schema and API | BLOCKED | P2 | M | db, api, security | SIM-035, SIM-036.1 | plan-approval | 0 | 2026-11-24 |
-| SIM-036.3 | Device types admin page | BACKLOG | P2 | M | ui, ux | SIM-036.2 | none | 0 | 2026-11-24 |
-| SIM-036.4 | Draw catalog device images and slots on the map | BACKLOG | P2 | S | ui | SIM-036.2 | none | 0 | 2026-11-24 |
+| SIM-036.2 | Device type catalog: schema and API | IN_PROGRESS | P2 | M | db, api, security | SIM-035, SIM-036.1 | plan-approval | 0 | 2026-11-24 |
+| SIM-036.5 | Device type image upload, remove and serve | BACKLOG | P2 | M | api, security | SIM-036.2, SIM-036.1 | plan-approval | 0 | 2026-11-24 |
+| SIM-036.3 | Device types admin page | BACKLOG | P2 | M | ui, ux | SIM-036.2, SIM-036.5 | none | 0 | 2026-11-24 |
+| SIM-036.4 | Draw catalog device images and slots on the map | BACKLOG | P2 | S | ui | SIM-036.2, SIM-036.5 | none | 0 | 2026-11-24 |
 | SIM-014 | Seat requests: state machine and write API | MERGED | P1 | M | api | SIM-012 | plan-approval | 1 | 2026-11-24 |
 | SIM-014.1 | Requests read API and decided badge | MERGED | P1 | S | api | SIM-014 | plan-approval | 0 | 2026-11-24 |
 | SIM-014.2 | Approvals page UI | MERGED | P1 | M | ui, ux | SIM-014.1 | plan-approval | 0 | 2026-11-24 |
