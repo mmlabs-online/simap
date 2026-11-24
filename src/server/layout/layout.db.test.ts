@@ -536,6 +536,15 @@ describe("saveRoomLayout (db)", () => {
   });
 });
 
+/** The seeded catalog type of an org as the layout DTO shows it. */
+const catalogType = async (orgId: string, name: string) => {
+  const t = await one("select id, slot from device_types where org_id = $1 and name = $2", [
+    orgId,
+    name,
+  ]);
+  return { id: t.id, slot: t.slot, hasImage: false, imageVersion: 0 };
+};
+
 describe("getRoomLayout seatDevices (db)", () => {
   const setDevice = (id: string, type: string, createdAt: string) =>
     run("update devices set type = $2, created_at = $3::timestamptz where id = $1", [
@@ -556,7 +565,12 @@ describe("getRoomLayout seatDevices (db)", () => {
     await setDevice(early, "Laptop", "2026-01-01T00:00:00Z");
     await setDevice(primary, "PC", "2026-01-03T00:00:00Z");
     const res = await value(o);
-    expect(res.seatDevices[s]).toEqual([{ type: "PC" }, { type: "Laptop" }, { type: "Monitor" }]);
+    const dt = (name: string) => catalogType(o.orgId, name);
+    expect(res.seatDevices[s]).toEqual([
+      { type: "PC", deviceType: await dt("PC") },
+      { type: "Laptop", deviceType: await dt("Laptop") },
+      { type: "Monitor", deviceType: await dt("Monitor") },
+    ]);
     expect(res.seatDevices[empty]).toBeUndefined();
     expect(JSON.stringify(res.seatDevices)).not.toMatch(/inventory|mac|owner|name/i);
   });
@@ -587,12 +601,14 @@ describe("getRoomLayout seatDevices (db)", () => {
     );
 
     const res = await value(a);
-    expect(res.seatDevices).toEqual({ [sa]: [{ type: "Monitor" }] });
+    expect(res.seatDevices).toEqual({
+      [sa]: [{ type: "Monitor", deviceType: await catalogType(a.orgId, "Monitor") }],
+    });
     expect(await get({ scope: b.scope, roomId: a.roomId })).toMatchObject({
       ok: false,
       status: 404,
     });
-    expect((await value(b)).seatDevices).toEqual({ [sb]: [{ type: "Tablet" }] });
+    expect((await value(b)).seatDevices).toEqual({ [sb]: [{ type: "Tablet", deviceType: null }] });
   });
 
   it("seatDevices: at most 8 per seat, truncated stays false", async () => {
@@ -608,5 +624,45 @@ describe("getRoomLayout seatDevices (db)", () => {
       Array.from({ length: 8 }, (_, n) => `T${n}`),
     );
     expect(res.truncated).toBe(false);
+  });
+
+  /** One seat with one secondary device per given type, oldest first. */
+  async function seatWith(types: string[]) {
+    const o = await room();
+    const m = await addMember(pool, o.orgId);
+    const s = await addSeat(pool, o.orgId, o.roomId, "C302", 1, { occupantId: m });
+    for (const [n, type] of types.entries()) {
+      const d = await addDevice(pool, o.orgId, m, s, "secondary");
+      await setDevice(d, type, `2026-01-01T00:00:${String(n).padStart(2, "0")}Z`);
+    }
+    return { o, s };
+  }
+
+  it("seatDevices: unknown type resolves to null; ' pc ' and 'PC' both resolve to PC", async () => {
+    const { o, s } = await seatWith(["Printer", "Tablet", " pc ", "PC"]);
+    const pc = await catalogType(o.orgId, "PC");
+    expect((await value(o)).seatDevices[s]).toEqual([
+      { type: "Printer", deviceType: null },
+      { type: "Tablet", deviceType: null },
+      { type: " pc ", deviceType: pc },
+      { type: "PC", deviceType: pc },
+    ]);
+  });
+
+  it("seatDevices: another org's catalog type with the same name is never used", async () => {
+    const { o, s } = await seatWith(["Scanner"]);
+    const other = await room();
+    await addMember(pool, other.orgId);
+    await run("insert into device_types (org_id, name, slot) values ($1, 'Scanner', 'pc')", [
+      other.orgId,
+    ]);
+    expect((await value(o)).seatDevices[s]).toEqual([{ type: "Scanner", deviceType: null }]);
+  });
+
+  it("seatDevices: after deleting the Monitor type, Monitor devices resolve to null", async () => {
+    const { o, s } = await seatWith(["Monitor"]);
+    expect((await value(o)).seatDevices[s]![0]!.deviceType).not.toBeNull();
+    await run("delete from device_types where org_id = $1 and name = 'Monitor'", [o.orgId]);
+    expect((await value(o)).seatDevices[s]).toEqual([{ type: "Monitor", deviceType: null }]);
   });
 });

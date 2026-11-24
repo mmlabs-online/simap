@@ -41,5 +41,10 @@ The app never migrates.
   `tile_rotation`, `sprite_key` (all four null or all four set). `layout_fixtures.kind` is nullable: a tile-placed
   fixture stores `kind = null` and is identified by `sprite_key`; legacy rows keep `kind` and have no tile placement.
   The old free-form columns stay until a later contract migration. Bounds and overlap are checked in `src/lib`.
+- Device types (SIM-036.2, `20261124160000_device_types.sql`): `device_types` is the per-org catalog (name, desk slot,
+  optional Drive image id and `image_version`). The name is unique per org through `device_type_key()` (ASCII
+  whitespace collapsed, Vietnamese capitals lowered by a map, `lower()`; diacritics kept), which is also how
+  `devices.type` matches a type (no FK, D61). `device_type_catalogs` marks an org whose catalog was seeded (PC, Laptop,
+  Monitor, IP phone, Other): an insert trigger on `members` seeds an org once, so a deleted seed type stays deleted.
 - Dev seed: `pnpm seed:dev` loads fake data (fixed UUIDs, `@simap.example` emails, invented names) into a local
   database only; it refuses non-local hosts and `NODE_ENV=production`. Never put real data in the seed.

@@ -46,6 +46,8 @@ export const apiCopy = {
     in_use: "This is still used by seats or members. Confirm to remove it from them.",
     invalid_group: "That group no longer exists. Reload and try again.",
     invalid_project: "That project no longer exists. Reload and try again.",
+    name_taken: "Another device type already has this name.",
+    type_limit: "This organization has reached the limit of 100 device types.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

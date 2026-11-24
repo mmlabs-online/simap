@@ -1,7 +1,9 @@
 // Scripted check of the real db/migrations against a real Postgres (CI and local `pnpm schema:check`).
 // Refuses a non-local DATABASE_URL (exit 2, before connecting). Creates a throwaway database from DATABASE_URL, applies the migrations, runs catalogue and constraint cases, seeds
 // twice, drops the database. Prints step names and pass/FAIL only: never the URL, row values or Postgres detail.
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
+import { copyFile, mkdtemp, readdir, rm } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -29,6 +31,8 @@ const url = (() => {
 const dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../db/migrations");
 
 let failed = false;
+/** @type {string | null} */
+let stageDir = null;
 function check(/** @type {string} */ step, /** @type {boolean} */ ok) {
   console.log(`${ok ? "pass" : "FAIL"}: ${step}`);
   if (!ok) failed = true;
@@ -40,24 +44,49 @@ await admin.query(`create database ${dbName}`);
 
 try {
   // 1 migrations
-  const run = async () => {
+  const run = async (d = dir) => {
     /** @type {string[]} */
     const lines = [];
-    await runMigrations({ connectionString: url, dir, log: (l) => lines.push(l) });
+    await runMigrations({ connectionString: url, dir: d, log: (l) => lines.push(l) });
     return lines;
   };
-  const first = await run();
+  // Stage 1 runs the migrations before the device types one, so orgs can exist when it is applied (backfill case).
+  const DEVICE_TYPES_VERSION = "20261124160000";
+  stageDir = await mkdtemp(path.join(os.tmpdir(), "simap-schema-"));
+  for (const f of (await readdir(dir)).filter(
+    (n) => n.endsWith(".sql") && n < DEVICE_TYPES_VERSION,
+  )) {
+    await copyFile(path.join(dir, f), path.join(stageDir, f));
+  }
+  const first = await run(stageDir);
   check(
     "1 first run applies init",
     first.some((l) => l.includes("init")),
   );
-  const second = await run();
-  check("1 second run is up to date", second.length === 1 && second[0] === "up to date");
 
   const c = new pg.Client({ connectionString: url });
   await c.connect();
   const rows = async (/** @type {string} */ sql, /** @type {unknown[]} */ params = []) =>
     (await c.query(sql, params)).rows;
+
+  // orgs that exist before the device types migration: one with only a member, one with only a room
+  const oldMemberOrg = randomUUID();
+  const oldRoomOrg = randomUUID();
+  await c.query(
+    `insert into members (org_id, sub, email, display_name) values ($1, $2, 'old@simap.example', 'Old')`,
+    [oldMemberOrg, randomUUID()],
+  );
+  await c.query(`insert into rooms (org_id, code, name) values ($1, 'OLD-1', 'Old room')`, [
+    oldRoomOrg,
+  ]);
+
+  const later = await run();
+  check(
+    "1 later run applies device_types",
+    later.some((l) => l.includes("device_types")),
+  );
+  const second = await run();
+  check("1 second run is up to date", second.length === 1 && second[0] === "up to date");
 
   // 2 catalogue (R6)
   const noOrg = await rows(`
@@ -96,6 +125,8 @@ try {
           "layout_fixtures",
           "invitations",
           "audit_log",
+          "device_types",
+          "device_type_catalogs",
         ].map(async (t) => (await rows(`select count(*)::int as n from ${t}`))[0].n),
       )
     ).join(",");
@@ -445,6 +476,92 @@ try {
     refused(await tx(insFixture("'sofa'", "", "")), "23514", "layout_fixtures_kind_check"),
   );
 
+  // 9 device types (SIM-036.2)
+  const typeNames = async (/** @type {string} */ org) =>
+    (await rows("select name from device_types where org_id = $1 order by name", [org]))
+      .map((r) => r.name)
+      .join(",");
+  const FIVE = "IP phone,Laptop,Monitor,Other,PC";
+  const marker = async (/** @type {string} */ org) =>
+    (await rows("select 1 from device_type_catalogs where org_id = $1", [org])).length;
+  check(
+    "9 orgs existing before the migration get 5 types",
+    (await typeNames(oldMemberOrg)) === FIVE &&
+      (await typeNames(oldRoomOrg)) === FIVE &&
+      (await marker(oldMemberOrg)) === 1 &&
+      (await marker(oldRoomOrg)) === 1,
+  );
+  const newOrg = randomUUID();
+  const addMemberTo = (/** @type {string} */ org) =>
+    q(
+      `insert into members (org_id, sub, email, display_name) values ($1, $2, 'n@simap.example', 'N')`,
+      [org, randomUUID()],
+    );
+  await addMemberTo(newOrg)();
+  check(
+    "9 org created after the migration gets 5 types on first member",
+    (await typeNames(newOrg)) === FIVE,
+  );
+  await addMemberTo(newOrg)();
+  check("9 second member adds none", (await typeNames(newOrg)) === FIVE);
+  await c.query(`delete from device_types where org_id = $1 and name = 'Monitor'`, [newOrg]);
+  await addMemberTo(newOrg)();
+  check(
+    "9 deleted seed type stays deleted",
+    (await typeNames(newOrg)) === "IP phone,Laptop,Other,PC",
+  );
+  const insType = (
+    /** @type {string} */ name,
+    /** @type {string} */ slot = "other",
+    org = newOrg,
+  ) => q(`insert into device_types (org_id, name, slot) values ($1, $2, $3)`, [org, name, slot]);
+  check(
+    "9 duplicate name case/space-insensitive refused (23505 device_types_org_name_key)",
+    refused(await tx(insType("  ip   PHONE ")), "23505", "device_types_org_name_key"),
+  );
+  check(
+    "9 same name in two orgs accepted",
+    (await tx(async () => {
+      await insType("Shared", "other", newOrg)();
+      await insType("Shared", "other", oldMemberOrg)();
+    }, false)) === null,
+  );
+  check(
+    "9 bad slot refused (23514 device_types_slot_check)",
+    refused(await tx(insType("Printer", "printer")), "23514", "device_types_slot_check"),
+  );
+  check(
+    "9 blank and 61-char name refused (device_types_name_check)",
+    refused(await tx(insType("   ")), "23514", "device_types_name_check") &&
+      refused(await tx(insType("x".repeat(61))), "23514", "device_types_name_check"),
+  );
+  check(
+    "9 bad Drive id refused (23514 device_types_image_check)",
+    refused(
+      await tx(
+        q(
+          `insert into device_types (org_id, name, slot, image_drive_file_id) values ($1, 'Img', 'other', 'short')`,
+          [newOrg],
+        ),
+      ),
+      "23514",
+      "device_types_image_check",
+    ),
+  );
+  check(
+    "9 negative image_version refused (23514 device_types_image_version_check)",
+    refused(
+      await tx(
+        q(
+          `insert into device_types (org_id, name, slot, image_version) values ($1, 'Ver', 'other', -1)`,
+          [newOrg],
+        ),
+      ),
+      "23514",
+      "device_types_image_version_check",
+    ),
+  );
+
   // extras
   const reqIns = q(
     `insert into seat_requests (org_id, seat_id, subject_id, created_by_id) values ($1, $2, $3, $3)`,
@@ -486,6 +603,7 @@ try {
   );
   await c.end();
 } finally {
+  if (stageDir) await rm(stageDir, { recursive: true, force: true }).catch(() => {});
   await admin.query(`drop database if exists ${dbName} with (force)`).catch(() => {});
   await admin.end().catch(() => {});
 }
