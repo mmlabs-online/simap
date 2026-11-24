@@ -1,3 +1,5 @@
+import { DEVICE_LIMITS } from "@/lib/devices/types";
+
 /** English strings of the Devices page (D36). API error messages come from `apiErrorMessage`. */
 export const devicesCopy = {
   retry: "Try again",
@@ -19,6 +21,38 @@ export const devicesCopy = {
     placeAria: (inv: string) => `Place device ${inv}`,
     moveAria: (inv: string) => `Move device ${inv}`,
     returnAria: (inv: string) => `Return device ${inv} to inventory`,
+    edit: "Edit",
+    editAria: (inv: string) => `Edit device ${inv}`,
+  },
+  newDevice: "New device",
+  typeSuggestions: ["PC", "Laptop", "Monitor", "IP phone", "Other"] as const,
+  form: {
+    createTitle: "New device",
+    editTitle: "Edit device",
+    create: "Create",
+    fields: {
+      name: "Name",
+      type: "Type",
+      inventoryNumber: "Inventory no.",
+      mac: "MAC",
+      owner: "Owner",
+    },
+    macPlaceholder: "AA:BB:CC:DD:EE:FF",
+    ownerMe: "Me",
+    ownerOther: "Another member",
+    ownerSelected: (name: string) => `Owner: ${name}`,
+    ownerReadOnly: "The owner can't be changed.",
+    fieldErrors: {
+      name: `Enter a name of up to ${DEVICE_LIMITS.name} characters.`,
+      type: `Enter a type of up to ${DEVICE_LIMITS.type} characters.`,
+      inventoryNumber: `Enter an inventory number of up to ${DEVICE_LIMITS.inventoryNumber} characters.`,
+      mac: "Enter a MAC address such as AA:BB:CC:DD:EE:FF, or leave it blank.",
+      ownerId: "Choose a member.",
+      body: "Some of the information is not valid. Check it and try again.",
+    },
+    errors: {
+      memberNotAssignable: "This member is inactive, so they can't own a device.",
+    },
   },
   place: {
     titles: { place: "Place device", move: "Move device", return: "Return device" },

@@ -94,3 +94,28 @@ describe("devices-api get and place", () => {
     expect(await conflict.api.place("d1", body)).toEqual({ ok: false, code: "seat_has_primary" });
   });
 });
+
+describe("devices-api create and update", () => {
+  const dev = { id: "d1", name: "x" };
+  it("create sends POST /api/devices with JSON", async () => {
+    const { api, calls } = fake(() => jsonRes(dev, 201));
+    const body = { name: "x", type: "PC", inventoryNumber: "I", mac: null };
+    expect(await api.create(body)).toEqual({ ok: true, value: dev });
+    expect(calls[0][0]).toBe("/api/devices");
+    expect(calls[0][1]?.method).toBe("POST");
+    expect(calls[0][1]?.body).toBe(JSON.stringify(body));
+    const bad = fake(() => jsonRes({}, 201));
+    expect(await bad.api.create(body)).toEqual({ ok: false, code: "internal" });
+    const taken = fake(() => jsonRes({ error: { code: "mac_taken" } }, 409));
+    expect(await taken.api.create(body)).toEqual({ ok: false, code: "mac_taken" });
+  });
+  it("update sends PATCH /api/devices/<id>", async () => {
+    const { api, calls } = fake(() => jsonRes(dev));
+    expect(await api.update("a/b", { type: "PC" })).toEqual({ ok: true, value: dev });
+    expect(calls[0][0]).toBe("/api/devices/a%2Fb");
+    expect(calls[0][1]?.method).toBe("PATCH");
+    expect(calls[0][1]?.body).toBe('{"type":"PC"}');
+    const gone = fake(() => jsonRes({ error: { code: "not_found" } }, 404));
+    expect(await gone.api.update("d1", { type: "PC" })).toEqual({ ok: false, code: "not_found" });
+  });
+});

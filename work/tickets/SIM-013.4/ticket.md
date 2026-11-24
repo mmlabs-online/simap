@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-24 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/63 |
 
 ## Goal
 Members create and edit devices from the Devices page.
@@ -44,6 +44,18 @@ spec DEV-01, DEV-02; D19, D36, D37. Split out of SIM-013.2 by its approved plan 
 - Manual: create and edit a device (as User and as Admin for another member).
 
 ## Notes / answers from Ming
-—
+- 2026-11-24: Plan approved (all defaults, incl. A1; Ming: "duyệt plan SIM-013.4").
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 2, tokens ~132k total (frontend-developer×1 default 51k, planner×1 default 81k)
+- Done: consult (consult-frontend-developer.md), plan.md Status READY, no split (~380 src lines + tests), no High path.
+- In progress / next: Ming approves the plan (M-37), then IMPLEMENT.
+- Gotchas: `rowActions` loses its early return on a missing `onPlace`; Edit is appended after the place actions, and SIM-013.5 appends Delete after Edit. Local shell needs Node via fnm (`fnm use 22`); no Python.
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 2, tokens ~145k total (implementer×1 default 87k, reviewer×1 default 58k)
+- Done: attempt 1 implemented (18 files, +1206/−15), review PASS with no issues, all checks green, PR #63 opened.
+- In progress / next: Ming merges PR #63. Then SIM-013.5 (delete dialog) appends `onDelete` after Edit in `rowActions`.
+- Gotchas: running a `.ps1` file needs `-ExecutionPolicy Bypass`; a local dev server on port 3100 was running during the build, with no effect.
