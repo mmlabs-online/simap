@@ -30,3 +30,4 @@ export { MyRequestsPage } from "./requests/MyRequestsPage";
 export { DevicesPage } from "./devices/DevicesPage";
 export { SearchPage } from "./search/SearchPage";
 export { InvitePeople } from "./invitations/InvitePeople";
+export { MembersPage } from "./members/MembersPage";

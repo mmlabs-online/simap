@@ -1,0 +1,75 @@
+/** English strings of the Members page (D36). API error messages come from `apiErrorMessage`. */
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+export const membersCopy = {
+  accountsNote:
+    "Accounts are managed in mmlabs. Members can't be deleted here; deactivate them instead.",
+  search: { label: "Search members", placeholder: "Search by name, email or code" },
+  statusFilterLabel: "Show members",
+  statusFilters: { active: "Active", deactivated: "Deactivated", all: "All" },
+  columns: {
+    name: "Name",
+    email: "Email",
+    code: "Employee code",
+    group: "Group",
+    status: "Status",
+    seats: "Seats",
+    devices: "Devices",
+    actions: "Actions",
+  },
+  statusLabels: { active: "Active", deactivated: "Deactivated" },
+  noGroup: "No group",
+  noCode: "-",
+  moreRefs: (n: number) => `+${n} more`,
+  deviceRef: (name: string, inventoryNumber: string, role: "primary" | "secondary") =>
+    `${name} (${inventoryNumber}, ${role === "primary" ? "primary" : "secondary"})`,
+  edit: "Edit",
+  deactivate: "Deactivate",
+  reactivate: "Reactivate",
+  editLabel: (name: string) => `Edit ${name}`,
+  deactivateLabel: (name: string) => `Deactivate ${name}`,
+  reactivateLabel: (name: string) => `Reactivate ${name}`,
+  retry: "Try again",
+  loadMore: "Load more",
+  loadingMore: "Loading...",
+  emptyFiltered: "No members match your search.",
+  editDialog: {
+    title: "Edit member",
+    fields: { displayName: "Display name", employeeCode: "Employee code", group: "Group" },
+    codeHint: "Letters, digits, dot, dash or underscore. Leave empty for none.",
+  },
+  fieldErrors: {
+    displayName: "Enter a display name of up to 80 characters.",
+    employeeCode: "Use 1-32 letters, digits, dot, dash or underscore, or leave it empty.",
+    group: "Choose a group from the list.",
+    employeeCodeTaken: "This employee code is already used.",
+    invalidRequest: "Some of the information is not valid. Check it and try again.",
+  },
+  deactivateDialog: {
+    title: "Deactivate member",
+    submit: "Deactivate",
+    submitRelease: "Release and deactivate",
+    plainBody: (name: string) => `Deactivate ${name}? You can reactivate them later.`,
+    plainRequests: "Their pending requests will be cancelled.",
+    releaseIntro: (name: string) => `${name} still has:`,
+    releaseBody:
+      "Confirming releases these seats, returns the devices to inventory and cancels pending requests.",
+    seats: (n: number) => plural(n, "occupied seat", "occupied seats"),
+    devices: (n: number) => plural(n, "placed device", "placed devices"),
+    primaries: (n: number) => plural(n, "primary device to demote", "primary devices to demote"),
+    requests: (n: number) => plural(n, "pending request", "pending requests"),
+  },
+  reactivateDialog: {
+    title: "Reactivate member",
+    submit: "Reactivate",
+    body: (name: string) => `Reactivate ${name}? They can sign in and use seats again.`,
+  },
+  invitations: {
+    heading: "Pending invitations",
+    note: "Invited people can't be assigned seats until they join.",
+    columns: { email: "Email", role: "Role", sent: "Sent", expires: "Expires" },
+    noExpiry: "No expiry",
+    empty: "No pending invitations.",
+    retry: "Try again",
+  },
+} as const;

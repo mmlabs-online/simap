@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-011 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/74 |
 
 ## Goal
 Managers manage members from the Members page; Users see the same list read-only. Slice 2 of SIM-011 (split approved by Ming with the SIM-011 plan, 2026-11-22).
@@ -43,6 +43,28 @@ spec MEM-01, MEM-02; D12, D16 (a), D17, D34, D36. `work/tickets/SIM-011/plan.md`
 - Manual: deactivate a member who holds a seat.
 
 ## Notes / answers from Ming
-—
+- 2026-11-24: rerun after the 2026-11-23 escalation (option 1 in `escalation.md`: subagents launch again in this session); Ming ran `/run SIM-011.2`.
+
+Waiting for Ming: plan approval (policy `high-paths+P1`; this ticket is P1)
+- 2026-11-24 Plan approved (Ming: "plan-approval"; covers assumptions A1–A6, A10–A11). M-45 (renumbered from M-44, which main already used).
 
 ## Handoff
+
+### 2026-11-23 — claude — ESCALATED
+- Agent calls: 2, tokens 0/0 (frontend-developer×2 model unknown — launch failed).
+- Done: claim and Prepare only (on branch `ticket/SIM-011.2`).
+- In progress / next: retry once subagents can launch.
+- Gotchas: both frontend-developer launches returned `400 The requested model is not supported`; no consult or product files changed. Escalation copied to `escalation.md`.
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 2, ~134k tokens (frontend-developer×1 opus 77.7k, planner×1 opus 56.4k; per-call in/out split not reported)
+- Done: rerun after the 2026-11-23 escalation; consult (ui) and plan READY. No High path, but the gate policy is now `high-paths+P1` and this ticket is P1, so Gate was raised to `plan-approval`.
+- In progress / next: Ming approves `plan.md` (M-45: assumptions A1–A6 and A10–A11). Then `/run SIM-011.2` resumes at IMPLEMENT.
+- Gotchas: SIM-017.3 (IN_PROGRESS elsewhere) likely touches `src/ui/index.ts`: expect a one-line conflict. Plan is ~650–750 lines with a fallback split. Session branch `claude/confident-cerf-67q5le`.
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 2 this run, ~149k tokens (implementer×1 opus 84.5k, reviewer×1 opus 64.3k; per-call in/out split not reported). Whole rerun: 4 calls, ~283k.
+- Done: plan approved by Ming (M-45); attempt 1 implemented; review PASS with all checks green; no review-trigger agent matched (Area ui, no server/auth paths). PR https://github.com/mmlabs-online/simap/pull/74.
+- In progress / next: Ming reviews and merges PR #74, then runs the two manual checks (real sign-in deactivate/reactivate; Invite button in a non-dev-token Manager session).
+- Gotchas: M-44 was already used on main, so this ticket's approval item is M-45. Session branch `claude/confident-cerf-67q5le`.
+
