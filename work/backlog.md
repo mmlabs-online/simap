@@ -55,7 +55,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-015.10 | Layout editor drag, marquee and keyboard shortcuts | MERGED | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
 | SIM-015.8 | Layout editor desk add and delete | MERGED | P1 | S | ui | SIM-015.7, SIM-015.9 | plan-approval | 0 | 2026-11-23 |
 | SIM-033 | Ship the real room art and an in-app Credits page | BACKLOG | P1 | S | ui, architecture | SIM-015.3 | none | 0 | 2026-11-22 |
-| SIM-011.2 | Members page UI: list, edit and deactivate dialogs | BLOCKED | P1 | M | ui | SIM-011 | plan-approval | 0 | 2026-11-24 |
+| SIM-011.2 | Members page UI: list, edit and deactivate dialogs | IN_PROGRESS | P1 | M | ui | SIM-011 | plan-approval | 0 | 2026-11-24 |
 | SIM-013 | Devices: placement rules, read and placement API | MERGED | P1 | M | api | SIM-012 | plan-approval | 0 | 2026-11-23 |
 | SIM-013.1 | Device create, edit and delete API | MERGED | P1 | S | api | SIM-013 | plan-approval | 0 | 2026-11-24 |
 | SIM-013.2 | Devices page (read-only list and filter) | MERGED | P1 | M | ui, ux | SIM-013.1 | plan-approval | 0 | 2026-11-24 |
