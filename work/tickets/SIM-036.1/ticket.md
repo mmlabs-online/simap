@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | architecture, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T15:10:59Z |
 | PR | — |
 
 ## Goal
@@ -55,7 +55,7 @@ photos, so device types can carry an image (SIM-036.2).
 
 ## Notes / answers from Ming
 - 2026-11-24: "Lưu trên GG drive như bên tudocuatui" (D61).
-Waiting for Ming: plan approval (High tier)
+- 2026-11-24: Plan approved (Ming: "duyệt"), defaults A1-A12 as written in plan.md.
 
 ## Handoff
 

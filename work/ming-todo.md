@@ -95,7 +95,7 @@ Never write a secret value here: name the secret and where Ming puts it.
   extras stack on the last slot (+3 px), at most 4 per type drawn, no "+n"; A4 the PC is painted before its desk,
   offset toward the person; A5 the API returns at most 8 devices per seat (no `truncated`); A6 device changes show at
   the next layout load. Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
-- [ ] M-48 Approve plan for SIM-036.1: `work/tickets/SIM-036.1/plan.md` (High: `.env.example`, `src/server/drive/config.ts`;
+- [x] M-48 (2026-11-24, all defaults, Ming: "duyệt") Approve plan for SIM-036.1: `work/tickets/SIM-036.1/plan.md` (High: `.env.example`, `src/server/drive/config.ts`;
   ~520 source + ~650 test lines, one slice). Defaults: A1 a bad Drive config fails on first use (like Identity and the
   DB pool), no boot check; A2 logs keep an allowlisted `reason` (e.g. `invalid_grant`), amending AC4; A3 the org id is
   re-checked as a canonical UUID before any Drive query; A4/A5 64 KB cap on upload and download (exact PNG checks in
