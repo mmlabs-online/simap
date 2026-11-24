@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T10:40:52Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/67 |
 
 ## Goal
 Managers approve or reject seat requests from the Approvals page.
@@ -51,3 +51,9 @@ spec REG-01, REG-02; D18, D24, D26. Split out of SIM-014.2 by its approved plan 
 - Done: consults (re-check of the SIM-014.2 dialog advice against main), plan.md Status READY, no split (~330 src + ~320 test lines), no High path.
 - In progress / next: Ming approves the plan (M-41), then IMPLEMENT.
 - Gotchas: stage by explicit path; local shell needs Node via fnm and `cmd /c "pnpm ..."`.
+
+### 2026-11-24 — claude — DONE
+- Agent calls: 2, tokens ~127k total (implementer×1 default 75k, reviewer×1 default 52k)
+- Done: attempt 1 implemented (20 files, +1226/−23), review PASS with no issues, all checks green, PR #67 opened. This completes the seat-request UI (SIM-014 .2/.3/.4).
+- In progress / next: Ming merges PR #67 and runs the three-rival approve check.
+- Gotchas: `src/server/identity/verify.test.ts` leeway test is flaky under load (real clock, 1 s margin); follow-up logged.
