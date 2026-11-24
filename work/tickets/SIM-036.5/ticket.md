@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P2 |
 | Size | M |
 | Areas | api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | M-46 (go-live only) |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T16:07:39Z |
 | PR | — |
 
 ## Goal
@@ -62,5 +62,6 @@ Google Drive (D61).
 
 ## Notes / answers from Ming
 - 2026-11-24: split approved with the SIM-036.2 plan (Ming: "duyệt").
+- 2026-11-24: Ming ran `/run SIM-036.5`; M-46 is go-live only ("code and tests do not need it"), so it does not block this run.
 
 ## Handoff
