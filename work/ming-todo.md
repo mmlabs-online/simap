@@ -89,3 +89,9 @@ Never write a secret value here: name the secret and where Ming puts it.
   an OAuth client and a refresh token (scope `drive.file`), and add the four values as deployment-repo secrets and in
   your local env outside the repo. SIM-036.1 names the variables in `.env.example`. Blocks SIM-036.2 going live
   (code and tests do not need it).
+- [ ] M-47 Approve plan for SIM-035: `work/tickets/SIM-035/plan.md` (P1 gate; no High path, ~330 source + ~400 test
+  lines). Defaults: A1 new 422 code `layout_fixture_on_desk`; A2 props already saved on desks are dropped from the
+  editor draft on load with a notice (the read-only map keeps them until an Admin saves); A3 2 slots per device type,
+  extras stack on the last slot (+3 px), at most 4 per type drawn, no "+n"; A4 the PC is painted before its desk,
+  offset toward the person; A5 the API returns at most 8 devices per seat (no `truncated`); A6 device changes show at
+  the next layout load. Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.

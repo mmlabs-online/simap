@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T14:17:46Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -102,5 +102,12 @@ decorate desks with fixtures in the layout editor, so the desk top is reserved f
 - 2026-11-24: "Mỗi loại device sẽ có vị trí ưu tiên trên bàn khác nhau làm sao để khi chồng lên nhau vẫn không lỗi.
   Ví dụ Monitor primary thì lệch bên phải, monitor 2 sẽ lệch bên trái. PC sẽ nằm bên dưới bàn, Tai nghe thì đặt trên
   mặt bàn,..." → per-type slots added to scope. Admin-defined device types with an image → follow-up SIM-036.
+Waiting for Ming: plan approval (High tier)
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 3, tokens ~167k total (frontend-developer×1 inherited 34k, api-platform-engineer×1 inherited 33k, planner×1 default 101k)
+- Done: consult (frontend, api), plan.md READY with defaults A1-A6 (new 422 `layout_fixture_on_desk`; legacy desk props dropped from the editor draft with a notice; 2 slots per type, stack up to 4; PC painted before its desk; 8 devices per seat cap without `truncated`; no live refresh).
+- In progress / next: Ming approves the plan (M-47, P1 gate), then /run SIM-035 implements.
+- Gotchas: Node/pnpm need fnm activation and `cmd /c pnpm` (see memory); `readLayoutRows` is shared by GET and PUT re-read.
