@@ -83,3 +83,4 @@ Never write a secret value here: name the secret and where Ming puts it.
   names the variable in `.env.example`. Blocks SIM-020 (members sync). (D16)
 - [ ] M-43 Declare the permission `simap:org:remove-member` in simap's app manifest in org-admin-api, then have staff
   grant it to the org owner role `simap:admin` (org-admin-api's own to-do M-5). Blocks SIM-020 (remove from org). (D34)
+- [ ] M-42 (from SIM-017.2 security review, older behaviour) `GET /api/members` is User tier and returns, and matches `?q=` on, other members' **email** (`src/server/members/manage.ts:90, 152`). Decide: keep (Users see colleagues' emails), or hide email from Users (a new ticket). Global search (`/api/search`) never returns or matches email.
