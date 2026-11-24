@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | REWORK |
 | Priority | P1 |
 | Size | M |
 | Areas | api |
 | Gate | plan-approval |
 | Depends on | SIM-012 |
 | Needs Ming | M-32 |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T04:09:55Z |
 | PR | https://github.com/mmlabs-online/simap/pull/58 |
 
 ## Goal
@@ -61,3 +61,9 @@ spec REG-01, REG-02; D21, D23, D26. Re-scoped 2026-11-24 by the approved plan (`
 - Done: slice 1 (state machine and write API, `writeOccupant` extraction), review PASS on attempt 1, security no 🔴/🟡, PR #58.
 - In progress / next: Ming merges PR #58 after the first CI run of `pnpm test:db` (`requests.db.test.ts`) is green. Then SIM-014.1.
 - Gotchas: security 🟢1 duplicate-create 500 race (retry once or seat-lock reject/cancel); PR #57 and #58 both append to `src/lib/api/error.ts` and `src/ui/copy/api.ts` — the second to merge needs a rebase.
+
+### 2026-11-24 — claude — REWORK (CI `pnpm test:db` red)
+- Done: PR #58 CI `ci` job failed in `db integration tests`: `requests.db.test.ts` 5 of 18 failed (run 45324267204). Review PASS was conditional on this run (R5), so the ticket goes back to REWORK attempt 2.
+  - 4 create tests: `Error: orgQuery: SQL must filter org_id = $1` thrown at `src/server/requests/requests.ts:125` (the create insert does not pass the orgQuery guard).
+  - 1 approve test (`two rivals: occupant set, primary demoted, …`, test line 159): `23514 devices_primary_owner_is_occupant` ("primary device must be owned by the seat occupant") — the test setup or the approve path places a primary that is not owned by the occupant.
+- Next: implementer fixes only these failures; reviewer re-checks.
