@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | api |
@@ -11,7 +11,7 @@
 | Needs Ming | M-33 |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-24T04:38:07Z |
 | PR | — |
 
 ## Goal
@@ -45,7 +45,7 @@ spec DEV-01, DEV-02; D19, D31, D37. Split out of SIM-013 by its approved plan (`
 - DB (CI): create/edit/delete, uniqueness, D31.
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (P1 policy)
+- 2026-11-24: Plan approved (all defaults, assumptions 1-8; Ming: "duyệt plan SIM-013.1, chạy luôn").
 
 ## Handoff
 
