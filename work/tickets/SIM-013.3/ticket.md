@@ -40,6 +40,12 @@ spec DEV-03, DEV-04, DEV-05, REG-03; D19, D22. Split out of SIM-013 by its appro
 - Manual (Ming): lend and move devices between seats.
 
 ## Notes / answers from Ming
-—
+Waiting for Ming: plan approval (P1 gate, M-36)
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 2, tokens ~137k total (frontend-developer×1 default 42k, planner×1 default 95k)
+- Done: consult (consult-frontend-developer.md), plan.md Status READY, no split (~420 src + ~300 test lines), no High path.
+- In progress / next: Ming approves the plan (M-36), then IMPLEMENT.
+- Gotchas: introduces the shared row-actions column (`device-actions.ts`, `DeviceRowActions.tsx`, `DeviceRowHandlers`) and `devices-api` `place`/`get`; SIM-013.4/013.5 should extend those and rebase on this ticket. Local shell needs Node via fnm (`fnm use 22`).
