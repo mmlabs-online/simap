@@ -20,7 +20,7 @@ import {
 } from "@/lib/layout-editor/pointer-gesture";
 import { footprintBox, type Point } from "@/lib/layout-editor/tiles";
 import type { Draft } from "@/lib/layout-editor/types";
-import { ZOOM_LEVELS, type Zoom } from "@/lib/sprites/layout";
+import { ZOOM_LEVELS, type SeatDevice, type Zoom } from "@/lib/sprites/layout";
 import { buildDrawList, TILE } from "@/lib/sprites/placement";
 import { allowedZooms, clampZoom } from "@/lib/sprites/zoom";
 import { roomlayoutCopy } from "../copy/roomlayout";
@@ -31,6 +31,8 @@ import { useAtlas } from "./useAtlas";
 
 type Props = {
   draft: Draft;
+  /** Drawn on the desks; not selectable and not part of the draft. */
+  seatDevices: Record<string, SeatDevice[]>;
   selection: readonly string[];
   zoom: Zoom;
   /** The armed tool: a press places instead of selecting or dragging. */
@@ -46,7 +48,15 @@ type Props = {
  * the selection. Seats show no occupancy here. The pointer layer is hidden from assistive tech: the Items
  * list and the keyboard are the accessible path.
  */
-export function EditorCanvas({ draft, selection, zoom, tool, frozen, onAction }: Props) {
+export function EditorCanvas({
+  draft,
+  seatDevices,
+  selection,
+  zoom,
+  tool,
+  frozen,
+  onAction,
+}: Props) {
   const { atlas, failed, setFailed } = useAtlas();
   const [hover, setHover] = useState<Point | null>(null);
   const [gesture, setGesture] = useState<Gesture>({ kind: "idle" });
@@ -61,8 +71,8 @@ export function EditorCanvas({ draft, selection, zoom, tool, frozen, onAction }:
   onActionRef.current = onAction;
 
   const list = useMemo(
-    () => (atlas ? buildDrawList(draftToRoomLayout(draft), {}, atlas.manifest) : null),
-    [atlas, draft],
+    () => (atlas ? buildDrawList(draftToRoomLayout(draft), {}, atlas.manifest, seatDevices) : null),
+    [atlas, draft, seatDevices],
   );
   const allowed = useMemo(() => (list ? allowedZooms(list.bounds) : []), [list]);
   const effective = clampZoom(zoom, allowed);

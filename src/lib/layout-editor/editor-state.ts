@@ -1,7 +1,14 @@
-import type { LayoutSaveValue } from "@/lib/sprites/layout";
+import type { LayoutSaveValue, SeatDevice } from "@/lib/sprites/layout";
 import type { MapView } from "@/lib/sprites/map-view";
 import { LAYOUT_LIMITS, validateLayoutSave, type LayoutRuleCode } from "@/lib/validate/layout";
-import { deleteItems, draftFromLayout, moveItems, resizeRoom, rotateItems } from "./draft";
+import {
+  deleteItems,
+  draftFromLayout,
+  moveItems,
+  resizeRoom,
+  rotateItems,
+  withoutDeskFixtures,
+} from "./draft";
 import { canUndo, commit, replacePresent, startHistory, undo, type History } from "./history";
 import { nextTool, reconcileTool, sameTool, tryPlace, type Tool } from "./place-tool";
 import { buildSavePayload, isDirty, planSave, withPlaceholderSeatIds } from "./save-plan";
@@ -17,13 +24,16 @@ export type EditorNotice =
   | {
       kind: "done";
       what: "moved" | "rotated" | "deleted" | "undone" | "saved" | "placed" | "resized";
-    };
+    }
+  | { kind: "cleaned"; count: number };
 
 export type EditorState = {
   history: History;
   baseline: Draft;
   baseVersion: number;
   readOnly: boolean;
+  /** Devices drawn on the desks; never edited or saved. */
+  seatDevices: Record<string, SeatDevice[]>;
   selection: string[];
   /** Selection signature of the running arrow-key run (one undo step), else null. */
   nudge: string | null;
@@ -50,16 +60,21 @@ export type EditorAction =
   | { type: "saveFailed"; code: string; detail?: SaveDetail; progress?: SaveProgress | null };
 
 export function initEditor(view: MapView): EditorState {
-  const draft = draftFromLayout(view.layout, view.unplaced);
+  const loaded = draftFromLayout(view.layout, view.unplaced);
+  // Older layouts may hold a fixture on a desk: drop it from the draft (a read-only view keeps what is stored).
+  const { draft, dropped } = view.truncated
+    ? { draft: loaded, dropped: 0 }
+    : withoutDeskFixtures(loaded);
   return {
     history: startHistory(draft),
-    baseline: draft,
+    baseline: loaded,
     baseVersion: view.version,
     readOnly: view.truncated,
+    seatDevices: view.seatDevices,
     selection: [],
     nudge: null,
     tool: null,
-    notice: null,
+    notice: dropped > 0 ? { kind: "cleaned", count: dropped } : null,
     save: { status: "idle" },
   };
 }

@@ -178,14 +178,14 @@ describe("overlap", () => {
     expect(r.layout.seats[0]).toMatchObject({ x: 0, y: 0 });
   });
 
-  it("a non-blocking fixture may share a seat or chair tile", () => {
+  it("a non-blocking fixture is still resolved on a seat or chair tile (stored data is kept; the rules flag the desk one, D62 A2)", () => {
     const r = resolveLayout(
       room(),
       [seat(1, at(0, 0))],
       [fixture(1, at(0, 0, "label.sign")), fixture(2, at(0, 1, "label.sign"))],
     );
     expect(r.layout.fixtures).toHaveLength(2);
-    expect(checkLayoutRules(r.layout)).toEqual({ ok: true });
+    expect(checkLayoutRules(r.layout)).toEqual({ ok: false, code: "layout_fixture_on_desk" });
   });
 });
 

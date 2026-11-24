@@ -144,6 +144,27 @@ describe("PUT /api/rooms/{id}/layout", () => {
     expect(svc.saveRoomLayout).not.toHaveBeenCalled();
   });
 
+  it("a fixture on a desk gives 422 layout_fixture_on_desk; service not called", async () => {
+    fakeAuth("simap:admin");
+    const onDesk = {
+      ...SAVE,
+      seats: [
+        {
+          id: "00000000-0000-4000-8000-000000000001",
+          sprite: "desk.single",
+          x: 1,
+          y: 1,
+          rotation: 0,
+        },
+      ],
+      fixtures: [{ sprite: "prop.mug", x: 1, y: 1, rotation: 0 }],
+    };
+    const res = await PUT(put(onDesk), route(ID));
+    expect(res.status).toBe(422);
+    expect(await res.json()).toMatchObject({ error: { code: "layout_fixture_on_desk" } });
+    expect(svc.saveRoomLayout).not.toHaveBeenCalled();
+  });
+
   it("maps each refusal: 404, 409 stale, 409 seats changed, 422 too many seats", async () => {
     fakeAuth("simap:admin");
     const cases = [

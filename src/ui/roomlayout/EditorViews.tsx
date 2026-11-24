@@ -148,7 +148,9 @@ export function EditorStatusLine({ notice }: { notice: EditorNotice | null }) {
       ? ""
       : notice.kind === "refused"
         ? copy.refused[notice.code]
-        : copy.done[notice.what];
+        : notice.kind === "cleaned"
+          ? copy.cleaned(notice.count)
+          : copy.done[notice.what];
   return (
     <p role="status" className="min-h-5 text-sm text-on-surface-variant">
       {text}

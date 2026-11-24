@@ -31,6 +31,9 @@ export type SeatState = "empty" | "occupied" | "mine" | "pending" | "cannot";
 
 export type SeatView = { state: SeatState; avatarSeed: string | null; name: string | null };
 
+/** A device placed at a seat; only its type is public on the map (SIM-036 adds more). */
+export type SeatDevice = { type: string };
+
 /** GET /api/rooms/{id}/layout (SIM-015.1 contract): one room's layout with derived seat status. */
 export type LayoutResponse = {
   room: { id: string; code: string; name: string };
@@ -38,6 +41,8 @@ export type LayoutResponse = {
   saved: boolean;
   layout: RoomLayout;
   seatViews: Record<string, SeatView>;
+  /** Per seat with devices. Array order is draw order (primary first, then created_at, id): do not re-sort. At most LAYOUT_LIMITS.devicesPerSeat. */
+  seatDevices: Record<string, SeatDevice[]>;
   unplaced: { id: string; code: string }[];
   truncated: boolean;
 };

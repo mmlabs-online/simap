@@ -22,6 +22,7 @@ export const API_ERROR_CODES = [
   "layout_overlap",
   "layout_bad_rotation",
   "layout_unknown_sprite",
+  "layout_fixture_on_desk",
   "layout_stale",
   "layout_seats_changed",
   "layout_too_many_seats",

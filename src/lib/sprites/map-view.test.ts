@@ -140,3 +140,37 @@ describe("toMapView", () => {
     for (const b of bad) expect(toMapView(b)).toBeNull();
   });
 });
+
+describe("toMapView seatDevices", () => {
+  const body = (seatDevices: unknown) => ({
+    room: { id: "r", code: "R", name: "R" },
+    version: 1,
+    saved: true,
+    layout: {
+      w: 4,
+      h: 3,
+      floors: [],
+      seats: [{ id: "s1", code: "A1", sprite: "desk.single", x: 1, y: 1, rotation: 0 }],
+      fixtures: [],
+    },
+    seatViews: {},
+    seatDevices,
+    unplaced: [],
+    truncated: false,
+  });
+
+  it("seatDevices: parsed per placed seat; a missing or bad value gives {}", () => {
+    const ok = toMapView(
+      body({
+        s1: [{ type: "PC" }, { type: 5 }, null, { type: "Laptop", name: "x" }],
+        other: [{ type: "PC" }],
+      }),
+    );
+    expect(ok?.seatDevices).toEqual({ s1: [{ type: "PC" }, { type: "Laptop" }] });
+    for (const bad of [undefined, null, "x", 3, [], { s1: "x" }, { s1: [] }]) {
+      expect(toMapView(body(bad))?.seatDevices, String(bad)).toEqual({});
+    }
+    const many = Array.from({ length: 12 }, () => ({ type: "PC" }));
+    expect(toMapView(body({ s1: many }))?.seatDevices.s1).toHaveLength(8);
+  });
+});

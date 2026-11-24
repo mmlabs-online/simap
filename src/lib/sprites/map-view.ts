@@ -1,10 +1,13 @@
-import type { Placement, RoomLayout, SeatState, SeatView } from "./layout";
+import { LAYOUT_LIMITS } from "@/lib/validate/layout";
+import type { Placement, RoomLayout, SeatDevice, SeatState, SeatView } from "./layout";
 
 /** The room map's view data, mapped from `GET /api/rooms/{id}/layout`. */
 export type MapView = {
   layout: RoomLayout;
   /** One entry per placed seat id. */
   seatViews: Record<string, SeatView>;
+  /** Devices per placed seat, in draw order. */
+  seatDevices: Record<string, SeatDevice[]>;
   /** Seats without a placement, in server order. */
   unplaced: { id: string; code: string }[];
   truncated: boolean;
@@ -38,6 +41,13 @@ const validFloor = (f: unknown) =>
   isObject(f) && isStr(f.sprite) && isInt(f.x) && isInt(f.y) && isInt(f.w) && isInt(f.h);
 
 const emptyView = (): SeatView => ({ state: "empty", avatarSeed: null, name: null });
+
+function toSeatDevices(raw: unknown): SeatDevice[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .flatMap((d): SeatDevice[] => (isObject(d) && isStr(d.type) ? [{ type: d.type }] : []))
+    .slice(0, LAYOUT_LIMITS.devicesPerSeat);
+}
 
 function toSeatView(raw: unknown): SeatView {
   if (!isObject(raw) || !STATES.includes(raw.state as SeatState)) return emptyView();
@@ -73,9 +83,16 @@ export function toMapView(body: unknown): MapView | null {
   const views = isObject(body.seatViews) ? body.seatViews : {};
   const seatViews: Record<string, SeatView> = {};
   for (const seat of layout.seats) seatViews[seat.id] = toSeatView(views[seat.id]);
+  const devices = isObject(body.seatDevices) ? body.seatDevices : {};
+  const seatDevices: Record<string, SeatDevice[]> = {};
+  for (const seat of layout.seats) {
+    const list = toSeatDevices(devices[seat.id]);
+    if (list.length > 0) seatDevices[seat.id] = list;
+  }
   return {
     layout,
     seatViews,
+    seatDevices,
     unplaced: (body.unplaced as { id: string; code: string }[]).map((u) => ({
       id: u.id,
       code: u.code,

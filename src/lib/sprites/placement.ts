@@ -1,5 +1,6 @@
+import { placeDevices } from "./device-slots";
 import { avatarFor, avatarFrames, avatarView } from "./avatar";
-import type { RoomLayout, Rotation, SeatView } from "./layout";
+import type { RoomLayout, Rotation, SeatDevice, SeatView } from "./layout";
 import { overlayFor } from "./overlay";
 import { REGISTRY } from "./registry";
 import type { Direction, Layer, SpriteManifest } from "./types";
@@ -69,6 +70,12 @@ type Item = {
   d: number;
   sub: boolean;
   blocks: boolean;
+  /** Extra pixel offset (device slots). */
+  offset: [number, number];
+  /** A device painted before its desk (a PC under it). */
+  under: boolean;
+  /** Row of the desk a device sits on; null for ordinary items. */
+  hostRow: number | null;
 };
 
 type SeatItem = {
@@ -92,6 +99,7 @@ export function buildDrawList(
   layout: RoomLayout,
   seatViews: Readonly<Record<string, SeatView>>,
   manifest: SpriteManifest,
+  seatDevices: Readonly<Record<string, readonly SeatDevice[]>> = {},
 ): DrawList {
   const unknown: string[] = [];
   const ops: DrawOp[] = [];
@@ -134,7 +142,13 @@ export function buildDrawList(
     }
     return { key, frame };
   };
-  const addItem = (id: string, key: string, x: number, y: number) => {
+  const addItem = (
+    id: string,
+    key: string,
+    x: number,
+    y: number,
+    extra: Partial<Pick<Item, "offset" | "under" | "hostRow" | "sub">> = {},
+  ) => {
     const frame = manifest.frames[key];
     const reg = REGISTRY[key];
     items.push({
@@ -147,6 +161,10 @@ export function buildDrawList(
       d: frame.tiles[1],
       sub: reg.tiles === null,
       blocks: frame.blocks,
+      offset: [0, 0],
+      under: false,
+      hostRow: null,
+      ...extra,
     });
   };
 
@@ -183,6 +201,19 @@ export function buildDrawList(
       chairX: chair.x,
       chairY: chair.y,
     });
+    const types = (seatDevices[seat.id] ?? []).map((d) => d.type);
+    placeDevices(seat, footprint, dir, types).forEach((d, n) => {
+      if (!manifest.frames[d.key]) {
+        unknown.push(d.key);
+        return;
+      }
+      addItem(`${seat.id}:dev:${n}`, d.key, d.x, d.y, {
+        sub: true,
+        offset: d.offset,
+        under: d.under,
+        hostRow: seat.y + footprint[1] - 1,
+      });
+    });
     seatBoxes.push({
       id: seat.id,
       code: seat.code,
@@ -204,12 +235,13 @@ export function buildDrawList(
       .map((h) => h.y + h.d - 1);
     return rows.length > 0 ? Math.max(...rows) : i.y;
   };
+  const tier = (i: Item) => (i.under ? 0 : i.sub ? 2 : 1);
   const ordered = items
-    .map((item) => ({ item, row: sortRow(item) }))
+    .map((item) => ({ item, row: item.hostRow ?? sortRow(item) }))
     .sort(
       (a, b) =>
         a.row - b.row ||
-        Number(a.item.sub) - Number(b.item.sub) ||
+        tier(a.item) - tier(b.item) ||
         a.item.x - b.item.x ||
         byId(a.item.id, b.item.id),
     )
@@ -226,7 +258,7 @@ export function buildDrawList(
         h: 4,
       });
     }
-    emitFrame(item.layer, item.key, item.x, item.y);
+    emitFrame(item.layer, item.key, item.x, item.y, item.offset);
   }
 
   for (const s of seatItems) {

@@ -3,6 +3,7 @@ import {
   LAYOUT_LIMITS,
   SEAT_SPRITES,
   checkLayoutRules,
+  fixturesOnDesks,
   spriteInfo,
   type LayoutRulesInput,
 } from "@/lib/validate/layout";
@@ -75,6 +76,15 @@ export function rulesInput(draft: Draft): LayoutRulesInput {
     seats: draft.items.filter((i) => i.kind === "seat"),
     fixtures: draft.items.filter((i) => i.kind === "fixture"),
   };
+}
+
+/** Drops fixtures that sit on a desk (older layouts, D61). Other items and keys are kept. */
+export function withoutDeskFixtures(draft: Draft): { draft: Draft; dropped: number } {
+  const hits = new Set(fixturesOnDesks(rulesInput(draft)));
+  if (hits.size === 0) return { draft, dropped: 0 };
+  let n = -1;
+  const items = draft.items.filter((i) => i.kind !== "fixture" || !hits.has(++n));
+  return { draft: { ...draft, items }, dropped: hits.size };
 }
 
 /** Run the shared layout rules on a candidate; a refusal leaves the caller's draft untouched. */

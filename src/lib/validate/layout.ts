@@ -9,6 +9,7 @@ export const LAYOUT_LIMITS = {
   grid: 64,
   seats: SEAT_LIMITS.list,
   fixtures: 2000,
+  devicesPerSeat: 8,
   floors: 64,
   floorCells: 2,
   bodyBytes: 262_144,
@@ -17,7 +18,11 @@ export const LAYOUT_LIMITS = {
 
 export type LayoutRuleCode = Extract<
   ApiErrorCode,
-  "layout_out_of_bounds" | "layout_overlap" | "layout_bad_rotation" | "layout_unknown_sprite"
+  | "layout_out_of_bounds"
+  | "layout_overlap"
+  | "layout_bad_rotation"
+  | "layout_unknown_sprite"
+  | "layout_fixture_on_desk"
 >;
 
 /** 400 `invalid_request` carries the offending field; the 422 codes carry none. */
@@ -99,7 +104,26 @@ function spriteOk(kind: Kind, sprite: string): boolean {
 const inGrid = (x: number, y: number, w: number, h: number, gw: number, gh: number) =>
   x >= 0 && y >= 0 && w >= 1 && h >= 1 && x + w <= gw && y + h <= gh;
 
-/** First failure in a fixed order: grid, sprite, rotation, bounds (items, zones, chairs), overlap. */
+/** Indices of fixtures whose footprint touches a desk tile (D61). Items that fail the sprite lookup are skipped. */
+export function fixturesOnDesks(layout: LayoutRulesInput): number[] {
+  const cells = (item: RulesItem): number[] => {
+    const fp = footprintOf(item.sprite, item.rotation as Rotation);
+    if (fp === null) return [];
+    const out: number[] = [];
+    for (let dy = 0; dy < fp[1]; dy++) {
+      for (let dx = 0; dx < fp[0]; dx++) out.push((item.y + dy) * 1000 + item.x + dx);
+    }
+    return out;
+  };
+  const desk = new Set(layout.seats.flatMap(cells));
+  const hits: number[] = [];
+  layout.fixtures.forEach((f, i) => {
+    if (cells(f).some((c) => desk.has(c))) hits.push(i);
+  });
+  return hits;
+}
+
+/** First failure in a fixed order: grid, sprite, rotation, bounds (items, zones, chairs), overlap, fixture on a desk. */
 export function checkLayoutRules(layout: LayoutRulesInput): { ok: true } | LayoutFailure {
   const { grid } = LAYOUT_LIMITS;
   if (!Number.isSafeInteger(layout.w) || layout.w < 1 || layout.w > grid) {
@@ -170,6 +194,7 @@ export function checkLayoutRules(layout: LayoutRulesInput): { ok: true } | Layou
     if (taken.has(cell) || chairCells.has(cell)) return fail("layout_overlap");
     chairCells.add(cell);
   }
+  if (fixturesOnDesks(layout).length > 0) return fail("layout_fixture_on_desk");
   return { ok: true };
 }
 

@@ -70,7 +70,7 @@ const run = (f: ReturnType<typeof fake>, v: LayoutSaveValue) => {
   read.readLayoutRows.mockReset();
   read.readLayoutRows.mockImplementation(async () => {
     f.calls.push({ text: "re-read" });
-    return { version: 3 };
+    return { version: 3, seatDevices: {} };
   });
   return saveRoomLayout(f.pool, scope, "sub-1", ROOM, v);
 };
@@ -79,7 +79,7 @@ describe("saveRoomLayout", () => {
   it("runs begin, room lock, seat lock, seat update, fixture delete, insert, room update, audit, re-read, commit", async () => {
     const f = fake({ seatIds: [sid(1), sid(2)] });
     const r = await run(f, value(2));
-    expect(r).toEqual({ ok: true, value: { version: 3 } });
+    expect(r).toEqual({ ok: true, value: { version: 3, seatDevices: {} } });
     expect(kinds(f.calls)).toEqual([
       "begin",
       "room lock",
