@@ -161,4 +161,18 @@ describe("DevicesView create and edit entries", () => {
     });
     expect(html.match(/aria-label="Edit device INV-1"/g)).toHaveLength(2);
   });
+  it("Delete buttons on canEdit rows with aria-label 'Delete device <inv>'", () => {
+    const html = render({
+      actions: { onDelete: noop },
+      devices: [
+        { ...base, canEdit: true },
+        { ...secondary, inventoryNumber: "INV-2", canEdit: false },
+      ],
+    });
+    expect(html.match(/aria-label="Delete device INV-1"/g)).toHaveLength(2);
+    expect(html).not.toContain("Delete device INV-2");
+  });
+  it("h1 is focusable (tabindex -1)", () => {
+    expect(render()).toMatch(/<h1[^>]*tabindex="-1"/i);
+  });
 });

@@ -38,6 +38,26 @@ describe("hasAnyAction", () => {
   });
 });
 
+describe("delete action", () => {
+  it("Delete only when canEdit and onDelete; marked danger; after edit", () => {
+    const onDelete = vi.fn();
+    expect(rowActions(d({ canPlace: false, canEdit: true }), {})).toEqual([]);
+    expect(rowActions(d({ canPlace: false, canEdit: false }), { onDelete })).toEqual([]);
+    const row = d({ canEdit: true });
+    expect(
+      rowActions(row, { onPlace: vi.fn(), onEdit: vi.fn(), onDelete }).map((x) => x.key),
+    ).toEqual(["place", "edit", "delete"]);
+    const a = rowActions(row, { onDelete });
+    expect(a[0].danger).toBe(true);
+    expect(a[0].ariaLabel).toBe("Delete device INV-7");
+    a[0].run();
+    expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: "d1" }));
+  });
+  it("hasAnyAction is true for a canEdit-only row with onDelete", () => {
+    expect(hasAnyAction([d({ canPlace: false, canEdit: true })], { onDelete: vi.fn() })).toBe(true);
+  });
+});
+
 describe("edit action", () => {
   it("Edit only when canEdit and onEdit", () => {
     const onEdit = vi.fn();

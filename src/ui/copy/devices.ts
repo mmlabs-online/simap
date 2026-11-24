@@ -23,6 +23,16 @@ export const devicesCopy = {
     returnAria: (inv: string) => `Return device ${inv} to inventory`,
     edit: "Edit",
     editAria: (inv: string) => `Edit device ${inv}`,
+    delete: "Delete",
+    deleteAria: (inv: string) => `Delete device ${inv}`,
+  },
+  delete: {
+    title: "Delete device",
+    submit: { placed: "Move to inventory", confirm: "Delete device" },
+    placedBody: (name: string, inv: string, seatCode: string) =>
+      `${name} (${inv}) is at seat ${seatCode}. Move it to inventory before deleting it.`,
+    confirmBody: (name: string, inv: string) => `Delete ${name} (${inv})? This can't be undone.`,
+    moved: "Moved to inventory.",
   },
   newDevice: "New device",
   typeSuggestions: ["PC", "Laptop", "Monitor", "IP phone", "Other"] as const,
