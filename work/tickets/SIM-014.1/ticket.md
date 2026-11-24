@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | S |
 | Areas | api |
 | Gate | plan-approval |
 | Depends on | SIM-014 |
-| Needs Ming | — |
+| Needs Ming | M-34 |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-24T05:00:59Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -42,6 +42,12 @@ spec REG-01, REG-02; D21, D23, D24, D26. Split out of SIM-014 by its approved pl
 - DB (CI): list, cursor, mine, seen.
 
 ## Notes / answers from Ming
-—
+Waiting for Ming: plan approval (P1 policy)
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED (plan approval)
+- Agent calls: 2, tokens ~115k total (api-platform-engineer×1 inherit 36k, planner×1 inherit ~80k; in/out split not reported)
+- Done: consult saved; plan.md READY, one slice (list, mine, mark-seen; no migration, no new codes, no High path).
+- In progress / next: Ming approves (M-34), then implement.
+- Gotchas: `seenUpTo` must keep µs precision or badges stay stuck; plan refactors `loadRequest` into shared `REQUEST_SELECT`/`REQUEST_FROM`/`toRequestDto` (no behaviour change). No overlap with PR #59 (no error.ts / copy edits).
