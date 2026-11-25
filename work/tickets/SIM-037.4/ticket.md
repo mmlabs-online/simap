@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/95 |
 
 ## Goal
 An owner gives a device back to the org, and it becomes unowned only when an Admin confirms receipt; Admins can also take a device back directly.
