@@ -5,6 +5,7 @@
 export const ICON_NAMES = [
   "add",
   "block",
+  "category",
   "close",
   "dark_mode",
   "edit",

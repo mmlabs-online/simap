@@ -16,6 +16,7 @@ export const shellCopy = {
     approvals: "Approvals",
     groups: "Groups",
     audit: "Audit log",
+    deviceTypes: "Device types",
     roomEditor: "Edit room layout",
   } satisfies Record<NavId, string>,
   tiers: {
@@ -50,5 +51,6 @@ export const shellCopy = {
     approvals: { title: "Approvals", empty: "No pending requests." },
     groups: { title: "Groups and projects", empty: "No groups or projects yet." },
     audit: { title: "Audit log", empty: "No audit entries yet." },
+    deviceTypes: { title: "Device types", empty: "No device types yet." },
   },
 } as const;

@@ -12,7 +12,14 @@ const copy = devicesCopy.form;
 type Props = Partial<Parameters<typeof DeviceFormFields>[0]>;
 const render = (p: Props = {}) =>
   renderToStaticMarkup(
-    <DeviceFormFields mode="create" form={emptyForm()} ownerName={null} onField={noop} {...p} />,
+    <DeviceFormFields
+      mode="create"
+      form={emptyForm()}
+      ownerName={null}
+      suggestions={devicesCopy.typeSuggestions}
+      onField={noop}
+      {...p}
+    />,
   );
 
 describe("DeviceFormFields", () => {
@@ -33,6 +40,14 @@ describe("DeviceFormFields", () => {
     expect(html).toContain(`list="${id}"`);
     expect(html).toContain('maxLength="120"');
     expect(html.match(/maxLength="60"/g)).toHaveLength(2);
+  });
+  it("datalist lists the given suggestions; type input stays free text", () => {
+    const html = render({ suggestions: ["Scanner", "Máy in"] });
+    expect(html.match(/<option /g)).toHaveLength(2);
+    expect(html).toContain('value="Máy in"');
+    const type = html.match(/<input[^>]*list="[^"]*"[^>]*>/)?.[0] ?? "";
+    expect(type).not.toContain("pattern");
+    expect(type).toContain('maxLength="60"');
   });
   it("create has no owner fields", () => {
     const html = render();

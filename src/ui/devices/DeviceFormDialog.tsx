@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { DEVICE_LIMITS, type DeviceDto } from "@/lib/devices/types";
 import { devicesCopy } from "../copy/devices";
 import { kitCopy } from "../copy/kit";
+import { useTypeSuggestions } from "../deviceTypes/useTypeSuggestions";
 import { DialogField, EntityFormDialog } from "../EntityFormDialog";
 import {
   deviceErrorMessage,
@@ -49,6 +50,7 @@ function DeviceFormInner({
   const [form, setForm] = useState<DeviceForm>(device ? formFromDevice(device) : emptyForm());
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const suggestions = useTypeSuggestions();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,6 +90,7 @@ function DeviceFormInner({
         mode={device ? "edit" : "create"}
         form={form}
         ownerName={device ? (device.owner?.displayName ?? devicesCopy.orgInventory) : null}
+        suggestions={suggestions}
         onField={(key, value) => setForm((f) => ({ ...f, [key]: value }))}
       />
     </EntityFormDialog>
@@ -99,11 +102,13 @@ export function DeviceFormFields({
   mode,
   form,
   ownerName,
+  suggestions,
   onField,
 }: {
   mode: "create" | "edit";
   form: DeviceForm;
   ownerName: string | null;
+  suggestions: readonly string[];
   onField: (key: "name" | "type" | "inventoryNumber" | "mac", value: string) => void;
 }) {
   const listId = useId();
@@ -129,7 +134,7 @@ export function DeviceFormFields({
         required
       />
       <datalist id={listId}>
-        {devicesCopy.typeSuggestions.map((t) => (
+        {suggestions.map((t) => (
           <option key={t} value={t} />
         ))}
       </datalist>
