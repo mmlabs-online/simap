@@ -62,7 +62,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-039.3 | Catalog footprints in the layout validator, resolver and save | MERGED | P1 | M | api, architecture | SIM-039.1 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.4 | Custom map item images per direction: upload, remove, serve | MERGED | P1 | M | api, security | SIM-039.1 | plan-approval | 1 | 2026-11-25 |
 | SIM-039.5 | Editor palette and map rendering from the catalog | MERGED | P1 | M | ui | SIM-039.3, SIM-039.4 | plan-approval | 0 | 2026-11-25 |
-| SIM-039.8 | Map rendering from the catalog: per-direction art and custom images | IN_PROGRESS | P1 | M | ui | SIM-039.5 | plan-approval | 0 | 2026-11-25 |
+| SIM-039.8 | Map rendering from the catalog: per-direction art and custom images | DONE | P1 | M | ui | SIM-039.5 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.6 | "Map items" admin page | MERGED | P1 | M | ui, ux | SIM-039.2, SIM-039.4 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.9 | Map items page: art per direction | BACKLOG | P1 | M | ui, ux | SIM-039.6, SIM-039.8 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.7 | Device types: pick a bundled package sprite | BACKLOG | P2 | S | db, api, ui | SIM-039.9 | plan-approval | 0 | 2026-11-25 |
