@@ -141,7 +141,7 @@ async function deviceRows(
     `select d.id, d.name, d.type, d.inventory_number, d.mac, d.serial, d.manufacturer, d.brand, d.holding_note,
        to_char(d.holding_expires_on, 'YYYY-MM-DD') as holding_expires_on, d.owner_id, m.display_name as owner_name,
        coalesce(m.sub = $2::uuid, false) as mine, d.role, d.seat_id, s.code as seat_code, s.room_id, r.code as room_code,
-       (d.owner_id is not null and d.holding_expires_on < $3::date) as overdue,
+       coalesce(d.owner_id is not null and d.holding_expires_on < $3::date, false) as overdue,
        to_char(h.new_expires_on, 'YYYY-MM-DD') as h_new_expires_on,
        h.id as h_id, h.kind as h_kind, to_char(h.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as h_created_at, 
        h.to_member_id as h_to_id, ht.display_name as h_to_name, h.requested_by_id as h_by_id,
@@ -167,7 +167,7 @@ const FILTER_SQL: Record<PlacementFilter, string> = {
   placed: "d.seat_id is not null",
   inventory: "d.seat_id is null",
   unowned: "d.owner_id is null",
-  overdue: "d.owner_id is not null and d.holding_expires_on < $3::date",
+  overdue: "coalesce(d.owner_id is not null and d.holding_expires_on < $3::date, false)",
 };
 
 export async function listDevices(

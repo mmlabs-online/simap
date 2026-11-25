@@ -46,3 +46,28 @@ No local Postgres on this machine: the DB tests (`*.db.test.ts`) were typechecke
 ### Scope self-check
 - Could the diff be smaller? No for source; about half the diff is tests and fixtures forced by the new required DTO fields and signatures.
 - Diff size: about +743 / -130 lines over 30 files before the impl-log (source, non-test, roughly +330).
+
+## Attempt 2 (REWORK: review Attempt 1, Issue 1)
+
+### Files touched
+- `src/server/devices/devices.ts`: the `overdue` select expression and `FILTER_SQL.overdue` are now wrapped in `coalesce(..., false)`. Required because `owner_id is not null and holding_expires_on < $3` is NULL for an owned device with no expiry, so the DTO sent `overdue: null`.
+
+### Tests added
+- None. `handoffs.db.test.ts` line 811 already expects `[true, false, false, false]`. It is CI-only, and no local Postgres is available.
+
+### Checks
+- format:check: all matched files use the correct format
+- typecheck: exit 0
+- check:layers: 728 files, no violations
+- test: 274 files passed, 1 failed, 2799 tests passed. The failure is the known load-sensitive `scripts/dev-process.test.ts` (unrelated, and it also failed in attempt 1).
+- build: exit 0
+- test:db: not run (no local Postgres)
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+None new.
+
+### Scope self-check
+Two-line SQL change only.
