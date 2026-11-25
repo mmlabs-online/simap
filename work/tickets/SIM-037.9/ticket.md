@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T07:33Z |
 | PR | — |
 
 ## Goal
@@ -46,7 +46,7 @@ docs/spec-v1.md §6 DEV-08; D63; D24 (no polling). Recipient-side slice split fr
 
 ## Notes / answers from Ming
 Split from SIM-037.8 with Ming's approval (2026-11-25, "ok"). No release between SIM-037.8 and SIM-037.9 (SIM-037.8 A1).
-Waiting for Ming: plan approval (P1 gate)
+Plan approved 2026-11-25 (Ming: "duyệt").
 
 ## Handoff
 
