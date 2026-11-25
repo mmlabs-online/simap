@@ -9,11 +9,11 @@ Never write a secret value here: name the secret and where Ming puts it.
 
 ## Open
 - [x] M-75 Approve plan for SIM-039.7: `work/tickets/SIM-039.7/plan.md` (High tier: migration `20261125230000_device_type_sprite.sql`, expand-only, adds nullable `device_types.sprite_key`). Assumptions: A1 column `sprite_key`, API field `sprite`; A2 stores a device sprite family (e.g. `device.laptop`), the desk facing picks n/e/s/w; A3 only 1x1 `device`-group families (laptop, monitor, monitor.dual, other, pc, phone), any family for any slot, slot change keeps the pick; A4 400 bad shape / 422 `sprite_not_allowed` before any write; A5 image upload never clears the pick, image wins, placeholder while loading; A6 unknown stored key draws the slot sprite, dialog shows "unavailable"; A7 sprite settable on create (POST) and edit (PATCH); A8 audit as `device_type.update` with `fields` incl. "sprite"; A9 pick shows only in the device types dialog and the room map; A10 new picker field reusing FramePreview/useAtlas, not SpriteBrowser; A11 no overlapping open ticket. Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
-- [ ] M-1 Register app `simap` in org-admin-api: origin `https://simap.mmlabs.online` (and the local dev origin),
+- [x] M-1 (done, Ming 2026-11-25) Register app `simap` in org-admin-api: origin `https://simap.mmlabs.online` (and the local dev origin),
   `org_mode = required`, join policy, org-scope roles (OQ-37) and org owner role; create the first org and appoint its
   admin in the admin portal. Before the auth ticket can be checked end to end. (D5, D8)
-- [ ] M-2 Cloudflare Tunnel published application `simap.mmlabs.online` → the simap container, service `http://simap:3000` (HTTP, not HTTPS). Before go-live. (D8)
-- [ ] M-3 Shared Postgres: create database and role `simap`; put the password where the deployment repo's deploy job
+- [x] M-2 (done, Ming 2026-11-25) Cloudflare Tunnel published application `simap.mmlabs.online` → the simap container, service `http://simap:3000` (HTTP, not HTTPS). Before go-live. (D8)
+- [x] M-3 (done, Ming 2026-11-25) Shared Postgres: create database and role `simap`; put the password where the deployment repo's deploy job
   reads it (as tudocuatui). Before the first deploy. (D3)
 - [x] M-4 (2026-11-20) Approve plan for SIM-001: `work/tickets/SIM-001/plan.md` (High tier; 9 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
 - [x] M-4 (2026-11-24) Run the org-admin-api request for an app-facing org members read and remove-from-org (prompt in

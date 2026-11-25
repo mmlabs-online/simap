@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P1 |
 | Size | S |
 | Areas | architecture, security |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 |
 | Needs Ming | M-1, M-2, M-3 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T18:45Z |
 | PR | — |
 
 ## Goal
@@ -41,6 +41,6 @@ spec "v1 done means"; D6, D8.
 - Manual: the flow run itself.
 
 ## Notes / answers from Ming
-—
+- 2026-11-25: M-1, M-2, M-3 done (Ming). Gate set to plan-approval (P1 policy `high-paths+P1`).
 
 ## Handoff
