@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T08:04:50Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -43,5 +43,12 @@ Overlap, desk-tile and bounds checks use each org's catalog sizes, so a resized 
 
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
+- Waiting for Ming: plan approval (P1 gate, validator core)
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3 (api-platform-engineer×1 50k, software-architect×1 112k, planner×1 130k; default models)
+- Done: plan READY (`plan.md`): FootprintLookup in the pure validator (registry default), catalogFootprints builder, route pre-check split (parseLayoutSave), size rules and hidden rule inside the save after a `for key share` catalog read, new 422 `layout_item_hidden`, additive `items` on the layout response. No High path.
+- In progress / next: Ming approves A1-A9 (M-66) and runs the pre-deploy SQL in the plan before 039.3 ships; then implement and review.
+- Gotchas: departs from the ticket text with `for key share` (A1); size-dependent 422s now come after 404/409 (A6); editor and server can disagree until 039.5 (A8).
