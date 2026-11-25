@@ -9,6 +9,7 @@ import {
   artImageEntries,
   artPanelView,
   expectedImageSize,
+  findArtItem,
   isCustomised,
   spriteChoices,
   thumbDir,
@@ -179,5 +180,14 @@ describe("thumbDir", () => {
     expect(thumbDir(set("w", "e"))).toBe("e");
     expect(thumbDir(set("w"))).toBe("w");
     expect(thumbDir({ ...d, art: { ...d.art, s: art("x", false) } })).toBeNull();
+  });
+});
+
+describe("findArtItem", () => {
+  it("finds the item by key and is undefined once it left the list", () => {
+    const items = [dto("table.meeting"), dto("plant.large")];
+    expect(findArtItem(items, "plant.large")).toBe(items[1]);
+    expect(findArtItem(items, "gone")).toBeUndefined();
+    expect(findArtItem([], "plant.large")).toBeUndefined();
   });
 });

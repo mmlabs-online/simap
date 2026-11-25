@@ -31,7 +31,7 @@ export type ArtBodyProps = {
   chooseRefs?: { current: Partial<Record<Direction, HTMLButtonElement | null>> };
 };
 
-/** The per-direction panels. Pure: state and actions come from props. */
+/** The per-direction panels. Stateless: state and actions come from props. */
 export function MapItemArtBody(p: ArtBodyProps) {
   const { item, busy } = p;
   const single = !item.directional;
@@ -42,7 +42,7 @@ export function MapItemArtBody(p: ArtBodyProps) {
         const view = artPanelView(item, dir);
         const size = expectedImageSize(item, dir);
         const url = p.imageUrl(dir);
-        const label = copy.dirs[dir]!;
+        const label = copy.dirs[dir];
         const error = p.errors[dir];
         return (
           <fieldset
@@ -174,12 +174,14 @@ export function MapItemArtDialog({
   imageUrl,
   onReload,
   onClose,
+  onGone,
 }: {
   item: MapItemDto;
   api: MapItemsApi;
   imageUrl: (item: MapItemDto, dir: Direction) => string | null;
   onReload(): Promise<void>;
   onClose: () => void;
+  onGone: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const pressedOnScrim = useRef(false);
@@ -189,6 +191,14 @@ export function MapItemArtDialog({
   const [errors, setErrors] = useState<Partial<Record<Direction, string>>>({});
   const [browser, setBrowser] = useState<{ dir: Direction; staged: string | null } | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [focusDir, setFocusDir] = useState<Direction | null>(null);
+
+  useEffect(() => {
+    if (!busy && focusDir) {
+      chooseRefs.current[focusDir]?.focus();
+      setFocusDir(null);
+    }
+  }, [busy, focusDir]);
 
   useEffect(() => {
     const el = ref.current;
@@ -201,21 +211,21 @@ export function MapItemArtDialog({
     };
   }, []);
 
-  const name = (dir: Direction) => (item.directional ? copy.dirs[dir]! : copy.single);
+  const name = (dir: Direction) => (item.directional ? copy.dirs[dir] : copy.single);
 
   async function run(dir: Direction, call: ArtCall, done: string) {
     setErrors((e) => ({ ...e, [dir]: undefined }));
     setStatus(null);
     setBusy(true);
     const out = artOutcome(await call(), item, dir);
-    if (out.kind === "gone") return onClose();
+    if (out.kind === "gone") return onGone();
     if (out.kind !== "saved") setErrors((e) => ({ ...e, [dir]: out.message }));
     if (out.kind !== "error") await onReload();
     if (out.kind === "saved") {
       setStatus(done);
       if (browser?.dir === dir) {
         setBrowser(null);
-        chooseRefs.current[dir]?.focus();
+        setFocusDir(dir);
       }
     }
     setBusy(false);

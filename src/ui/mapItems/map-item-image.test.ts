@@ -118,6 +118,12 @@ describe("artErrorMessage", () => {
     expect(m).not.toContain("24");
   });
 
+  it("a non-directional item's image_bad_size message says Art, not South", () => {
+    const m = artErrorMessage("image_bad_size", dto("plant.large"), "s", { width: 5, height: 5 });
+    expect(m).toContain("Art needs");
+    expect(m).not.toContain("South");
+  });
+
   it("other codes fall back to mapItemErrorMessage (sprite_not_allowed, images_unavailable, drive_error, unauthenticated)", () => {
     for (const c of [
       "sprite_not_allowed",

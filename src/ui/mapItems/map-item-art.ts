@@ -76,3 +76,8 @@ export function thumbDir(item: MapItemDto): Direction | null {
   const order: Direction[] = ["s", "n", "e", "w"];
   return order.find((d) => artDirs(item).includes(d) && item.art[d].hasImage) ?? null;
 }
+
+/** The item an open art dialog shows, or undefined once it has left the list. */
+export function findArtItem(items: MapItemDto[], key: string): MapItemDto | undefined {
+  return items.find((i) => i.builtinKey === key);
+}

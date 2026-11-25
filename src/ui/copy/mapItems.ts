@@ -1,3 +1,4 @@
+import type { Direction } from "@/lib/sprites/types";
 import type { MapItemKind } from "@/lib/map-items/types";
 
 /** English strings of the Map items page (D36). API error messages come from `apiErrorMessage`. */
@@ -67,7 +68,7 @@ export const mapItemsCopy = {
     close: "Close",
     single: "Art",
     sameForAll: "Same for every rotation",
-    dirs: { n: "North", e: "East", s: "South", w: "West" } as Record<string, string>,
+    dirs: { n: "North", e: "East", s: "South", w: "West" } as Record<Direction, string>,
     source: {
       image: "Custom image",
       sprite: (key: string) => `Package sprite: ${key}`,

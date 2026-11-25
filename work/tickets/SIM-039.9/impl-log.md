@@ -53,3 +53,16 @@ None.
 ### Scope self-check
 - Could the diff be smaller? Only by cutting the sprite browser (plan's named cut).
 - Diff size: +151 / -13 in modified product files, 602 lines in new product files; tests extra.
+
+## Attempt 2 (REWORK)
+
+Fixes for review attempt 1:
+1. `not_found` now closes and reloads: `MapItemArtDialog` takes `onGone`; the page passes its `done` (close + reload).
+2. `MapItemsPage` resets `dialog` to `none` (effect) when the art item is no longer in the list, so it does not reopen after Retry. New pure helper `findArtItem` in `map-item-art.ts`, tested.
+3. Focus after "Use this sprite": `run` sets `focusDir`; an effect focuses that direction's Choose button once `busy` is false.
+4. `artErrorMessage` uses `copy.single` for a non-directional item (`ArtItem` gains `directional`); test added.
+Nits: "Pure" -> "Stateless" in the `MapItemArtBody` comment; `copy.dirs` typed `Record<Direction, string>` (the `!` at its uses removed).
+
+Files: `MapItemArtDialog.tsx`, `MapItemsPage.tsx`, `map-item-image.ts`, `map-item-art.ts`, `copy/mapItems.ts`, tests `map-item-image.test.ts`, `map-item-art.test.ts`.
+
+Checks: typecheck, check:layers, format:check, build green; `pnpm test`: 302 files passed, 3053 tests passed.

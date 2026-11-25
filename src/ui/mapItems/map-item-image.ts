@@ -8,7 +8,7 @@ import { expectedImageSize } from "./map-item-art";
 import { mapItemErrorMessage } from "./map-items-state";
 import type { MapItemsResult } from "./map-items-api";
 
-type ArtItem = Pick<MapItemDto, "kind" | "w" | "h">;
+type ArtItem = Pick<MapItemDto, "kind" | "w" | "h" | "directional">;
 type Px = { width: number; height: number };
 
 export type MapItemImageCheck =
@@ -54,7 +54,7 @@ export function artErrorMessage(code: string, item: ArtItem, dir: Direction, px?
     case "image_bad_size": {
       const { w, hMin, hMax } = expectedImageSize(item, dir);
       return e.image_bad_size(
-        mapItemsCopy.art.dirs[dir]!,
+        item.directional ? mapItemsCopy.art.dirs[dir] : mapItemsCopy.art.single,
         w,
         hMin,
         hMax,

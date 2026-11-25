@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { MapItemDto } from "@/lib/map-items/types";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { useList } from "../groups/useList";
@@ -10,7 +10,7 @@ import { MapItemFormDialog } from "./MapItemFormDialog";
 import { MapItemsView } from "./MapItemsView";
 import { ResetMapItemDialog } from "./ResetMapItemDialog";
 import { createMapItemsApi } from "./map-items-api";
-import { thumbDir } from "./map-item-art";
+import { findArtItem, thumbDir } from "./map-item-art";
 import { canManageMapItems } from "./map-items-state";
 import { useMapItemImages } from "./useMapItemImages";
 
@@ -47,8 +47,11 @@ function MapItemsLoaded() {
     void items.reload();
   };
 
-  const artItem =
-    dialog.kind === "art" ? items.items.find((i) => i.builtinKey === dialog.key) : undefined;
+  const artItem = dialog.kind === "art" ? findArtItem(items.items, dialog.key) : undefined;
+
+  useEffect(() => {
+    if (dialog.kind === "art" && !artItem) setDialog({ kind: "none" });
+  }, [dialog, artItem]);
 
   return (
     <>
@@ -80,6 +83,7 @@ function MapItemsLoaded() {
           imageUrl={imageUrl}
           onReload={items.reload}
           onClose={close}
+          onGone={done}
         />
       )}
       {dialog.kind === "reset" && (
