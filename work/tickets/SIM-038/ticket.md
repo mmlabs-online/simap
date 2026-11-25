@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T04:14:55Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/86 |
 
 ## Goal
 The simap repo's draft of the deploy workflow matches what runs in `mmlabs-online/deployment` after the Drive-secrets PR, so the draft never drifts from production.
@@ -50,3 +50,9 @@ D61; `docs/requests/deployment-simap-drive.md`; `deploy/deployment-repo/README.m
 - Done: plan READY (`plan.md`): copy the merged deploy-simap.yml byte-for-byte, add a README note on the four `SIMAP_*` secrets, and update `scripts/deploy-envfile.test.ts` (A1) because its static check forbids `${{ secrets.`.
 - In progress / next: Ming approves the plan (M-56), then implement and review.
 - Gotchas: the draft workflow lives in hidden `.github/` (A5); if oxfmt flags the copied YAML, stop instead of reformatting (A2).
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 4 (planner×1 default 52k, implementer×1 default 31k, reviewer×1 default 36k, security-ai-generated-code-auditor×1 35k; ~154k total)
+- Done: byte copy of deploy-simap.yml from deployment main @ 29cb93f, README secrets note, deploy-envfile tests for the Drive secrets. Review PASS on attempt 1, security no 🔴; PR https://github.com/mmlabs-online/simap/pull/86.
+- In progress / next: follow-ups belong in mmlabs-online/deployment (stale envfile comment, migrate gets env_file via x-app, README rotation note), then re-sync this draft.
+- Gotchas: production images stay off until a new release with SIM-036.x is deployed (no deploy-simap run since deployment PR #109).
