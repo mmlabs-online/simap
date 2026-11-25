@@ -74,6 +74,14 @@ export type EditorAction =
   | { type: "saveDone"; view: MapView }
   | { type: "saveFailed"; code: string; detail?: SaveDetail; progress?: SaveProgress | null };
 
+/** The catalog rows the editor draws with: palette rows, then layout rows win per key (as for the footprints). */
+export function editorItems(
+  layoutItems: readonly LayoutItem[],
+  palette: readonly MapItemDto[],
+): LayoutItem[] {
+  return [...new Map([...palette, ...layoutItems].map((i) => [i.builtinKey, i])).values()];
+}
+
 /** Layout rows are listed last so they win over the palette rows for the same key. */
 export function editorFootprints(
   layoutItems: readonly LayoutItem[],

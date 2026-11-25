@@ -45,7 +45,7 @@ D60 (supersedes, for simap, "app code never runs on the home server"); D8 (deplo
 - Manual: open the PR, watch every job run on macbook-runner and pass; after merge to main, ci runs on main; a later release/X.Y.Z push runs release on the Mac (Ming).
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (High tier) — M-73.
+Waiting for Ming: plan approval (High tier) — M-74 (first filed as M-73; renumbered, that number went to SIM-039.8).
 Plan approved (2026-11-26, Ming: "Duyệt, dùng mặc định" — Q1–Q7 take the plan's defaults).
 - 2026-11-25: M-24 done (Ming: the runner is allowed for simap).
 - 2026-11-23: run on the existing macbook-runner (not a separate runner instance), and move all workflows including release (D60).
@@ -55,5 +55,5 @@ Plan approved (2026-11-26, Ming: "Duyệt, dùng mặc định" — Q1–Q7 take
 ### 2026-11-25 — claude — BLOCKED
 - Agent calls: 2, tokens ~132k total (in/out split not reported): software-architect×1 61k (security area has no consultant), planner×1 71k; both on their default models.
 - Done: M-24 confirmed by Ming (org runner MacBookPro shared with simap, labels self-hosted, X64, macOS, macbook-runner). Consult and plan (`Status: READY`, about 300-350 lines, no split). The plan touches High path `.github/workflows/release.yml`.
-- In progress / next: Ming approves the plan (M-73) and answers Q1–Q7, or accepts their defaults; then `/run SIM-034` resumes at IMPLEMENT.
+- In progress / next: Ming approves the plan (M-74) and answers Q1–Q7, or accepts their defaults; then `/run SIM-034` resumes at IMPLEMENT.
 - Gotchas: today's `ci.yml` compose-config step uses `sudo tee /Users/mingming/.config/simap/simap.env` with project `-p simap`. On the Mac it would overwrite production's env file, so never point the current ci.yml at the self-hosted runner before this ticket lands. `check-image.sh` uses GNU `timeout` (missing on macOS) and `--network host` (means the Docker VM on Mac). `release-files.test.ts` asserts release stays on ubuntu-latest and must change.

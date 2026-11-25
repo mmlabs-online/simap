@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useRef, useSyncExternalStore } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { roomDetailHref } from "@/lib/nav";
+import type { ItemArtEntry } from "@/lib/sprites/item-art";
 import type { MapView } from "@/lib/sprites/map-view";
 import { createMapItemsApi } from "../mapItems/map-items-api";
 import { useMapItems } from "../mapItems/useMapItems";
@@ -55,7 +56,8 @@ function AdminEditor({ roomCode, backHref }: { roomCode: string; backHref: strin
   const resolution = resolveRoom(rooms, roomCode);
   const roomId = resolution.kind === "found" ? resolution.room.id : null;
   const map = useRoomLayout(seatsApi, roomId);
-  const catalogImages = useCatalogImages(map.state.view?.seatDevices);
+  const [editorArt, setEditorArt] = useState<readonly ItemArtEntry[]>([]);
+  const catalogImages = useCatalogImages(map.state.view?.seatDevices, editorArt);
   const gate = editorGate({
     tier: "admin",
     isDesktop: true,
@@ -80,6 +82,7 @@ function AdminEditor({ roomCode, backHref }: { roomCode: string; backHref: strin
         palette={palette}
         catalogImages={catalogImages}
         onReload={() => void map.reload()}
+        onArtEntries={setEditorArt}
       />
     );
   }
