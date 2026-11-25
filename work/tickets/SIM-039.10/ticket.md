@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P2 |
 | Size | S |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T17:41Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -31,9 +31,9 @@ not only named as text.
 - Custom image previews (done in SIM-039.9). Map rendering (SIM-039.8).
 
 ## Acceptance criteria
-- [ ] Package and library art show 1× and 2× previews; the browser shows frame thumbnails.
-- [ ] If the atlas fails, the page still works with the text list and shows a note.
-- [ ] Checks green; frame rect logic has unit tests (canvas drawing is checked manually).
+- [x] Package and library art show 1× and 2× previews; the browser shows frame thumbnails.
+- [x] If the atlas fails, the page still works with the text list and shows a note.
+- [x] Checks green; frame rect logic has unit tests (canvas drawing is checked manually).
 
 ## Test plan
 - Unit: frame rect computation. Manual: open the art dialog, browse sprites, see previews; block the atlas and see the note.
@@ -42,3 +42,9 @@ not only named as text.
 - 2026-11-25: split from SIM-039.9 by its planner (ticket too large for one cycle).
 
 ## Handoff
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 3 (planner×1 sonnet 49k, implementer×1 default 55k, reviewer×1 default 49k). Fast lane (no consult); no security audit (UI only).
+- Done: atlas previews: frame-preview helpers (atlasFrame/frameRect/containRect) with tests, thin FramePreview canvas, 1×/2× previews for package and library art per panel, browser thumbs and confirm preview, atlas-failure note, sprite-only row thumbnail; atlas loaded once at page level. Review attempt 1 PASS; checks green (3068 tests, build ok).
+- In progress / next: Ming merges the PR and checks the canvases in a browser (and blocks /sprites/office.json to see the note). Then SIM-039.7.
+- Gotchas: nits left: FramePreview redraws on every render; sprite-only row thumb reuses the "Custom art of {name}" label; a sprite briefly shows while a custom image loads.
