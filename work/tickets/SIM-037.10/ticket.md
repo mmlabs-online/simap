@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T08:57Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -57,3 +57,9 @@ Plan approved 2026-11-25 (Ming: "duyệt"); place-mode label stays "Return" (def
 - Done: consults saved; plan.md READY (UI only, binds to the merged SIM-037.4 API; no High path). Place-mode "Return" label kept (FE view); flip to "Remove from seat" only if Ming says so.
 - In progress / next: Ming approves the plan (M-67). Then /run SIM-037.10 resumes at IMPLEMENT.
 - Gotchas: plan is ~450-550 product lines (over the guide); a fallback split is named in plan.md. Non-Admins must never call box=returns (422).
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 5 total, tokens ~370k (frontend-developer×1 51k, ux-architect×1 33k, planner×1 100k, implementer×1 112k, reviewer×1 74k; in/out split not reported)
+- Done: plan approved (M-67, label kept); attempt 1 implemented, review PASS; rebased on main (SIM-039.3), checks green except a known flaky timing test outside the diff.
+- In progress / next: Ming opens the PR (M-68, prefilled link in chat), runs the manual check, merges.
+- Gotchas: no `gh` here; flaky timing tests on Windows under full-suite load.
