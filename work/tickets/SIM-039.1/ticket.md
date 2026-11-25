@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T07:30:49Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/91 |
 
 ## Goal
 Each org has one catalog row per library item (fixtures, floors, `desk.single`, `chair.office`) that the editor, map and admin page can read.
@@ -59,3 +59,9 @@ Each org has one catalog row per library item (fixtures, floors, `desk.single`, 
 - Done: plan rewritten: alphabetical order (no sort_order), hidden items only for Admins, FKs from `layout_fixtures.sprite_key` and desk `seats.sprite_key` to `map_items` with a one-off cleanup of undrawable placements (A13), catalog seed call in the layout save (A14).
 - In progress / next: Ming approves the re-plan (M-62), then implement and review.
 - Gotchas: sibling impacts written in the plan (039.2 no reorder, 039.3 layout read joins the catalog and returns placed hidden items, 039.6 no reorder UI); spec LAY-07 and D66 (1) need a text update (A15).
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 7 total (database-optimizer×1 40k, api-platform-engineer×1 37k, planner×2 122k+125k, implementer×1 104k, reviewer×1 83k, security-ai-generated-code-auditor×1 59k; default models; ~570k)
+- Done: map_items migration with per-org seed, FKs from saved placements (D67, A13 cleanup), GET /api/map-items (alphabetical, hidden for Admins only), layout save seed call. Review PASS on attempt 1, security no 🔴; PR https://github.com/mmlabs-online/simap/pull/91.
+- In progress / next: SIM-039.2 / 039.3 / 039.4 after merge (sibling impacts in plan.md).
+- Gotchas: CI `test:db` is red on main because of 5 pre-existing failures in handoffs.db.test.ts (handoffs.ts:169 org filter); needs a bug ticket. M-60 ID collision fixed on main (atlas item is now M-63).
