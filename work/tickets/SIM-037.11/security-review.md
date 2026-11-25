@@ -43,3 +43,17 @@
 
 ### Follow-ups (out of scope)
 - None for security. Once slice 2 (SIM-037.12) lands, a short re-check of the Manager+ pending-extensions list and badge would be worthwhile; the server already rejects non-Managers with 422 `not_allowed` at `handoffs.ts:738-740`.
+
+## Attempt 2
+
+**Security re-check, SIM-037.11 attempt 2: PASS (no blockers, no should-fix)**
+
+I read the changed code and checked imports with Grep. I had no shell, so I did not run any checks.
+
+### Findings
+- 🟢 `d:\project\simap-game-ui\src\ui\devices\device-actions.ts:158-163`: `bannerHandlers` is a pure function. It returns only `onExtend`, `onReturn` and `onCancelHandoff` from the full handler set. That reduces what the banner can trigger, so it shrinks the attack surface and adds none. There is no I/O, no secrets, no server import and no new env use. The file's imports (lines 1-4) are `@/lib` types and other `ui` modules only, so R1 still holds. Each action stays gated by the per-device flags in `rowActions`, which come from the server (e.g. `canDelete` at line 143). The server still makes the real authorization decision.
+- 🟢 `d:\project\simap-game-ui\src\ui\devices\DevicesPage.tsx:207`: the only change is `handlers={bannerHandlers(actions)}`. The banner calls the same `actions` handlers through the same API client as before. There is no new fetch path, no change to token handling, and no new data reaches the client. `onNew` is still behind `isAdmin` (line 198); that is a UI convenience only, and the server enforces it.
+- 🟢 `d:\project\simap-game-ui\src\ui\devices\device-actions.test.ts:286-311`: the new test confirms the key set is limited to the 3 handlers. It also checks that an overdue row the user owns only shows `extend` / `giveBack` / `cancelTransfer` / `cancelExtension`, and that admin actions like delete, edit and assign do not leak into the banner. It is a good regression guard.
+
+### Follow-ups
+None. Attempt 1's security review (`d:\project\simap-game-ui\work\tickets\SIM-037.11\security-review.md`) still applies, because attempt 2 does not touch any route handler, server code, SQL or auth path.

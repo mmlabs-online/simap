@@ -42,3 +42,47 @@ None.
 ### Follow-ups (out of scope)
 - SIM-037.12 (slice 2): Manager+ Pending extensions list, `extensions` in the badge, seed of one pending extension.
 - A8 in plan.md: "Overdue wherever it is listed" for the seat panel, search and member lists.
+
+## Attempt 2 — 2026-11-25
+Verdict: PASS
+
+Scope reviewed: slice 1 only (owner side and shared plumbing), as in attempt 1. The fix is commit 36452f7. I also re-checked the whole diff against `origin/main` briefly.
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format." (798 files)
+- `pnpm typecheck`: exit 0, types generated, tsc clean
+- `pnpm check:layers`: exit 0, "check-layers: 744 files, no violations"
+- `pnpm test`: exit 0, "Test Files 282 passed | 1 skipped (283); Tests 2882 passed | 9 skipped (2891)" (attempt 1 had 2881; the +1 is the new `bannerHandlers` test)
+- `pnpm build`: exit 0, "Compiled successfully", all routes built
+- `pnpm test:db`: CI-only, not run. No server or SQL code changed.
+
+### Attempt 1 Issue 1 (blocker): fixed
+- `src/ui/devices/device-actions.ts` l.158-163: `bannerHandlers(h)` returns only `onExtend`, `onReturn`, `onCancelHandoff`.
+- `src/ui/devices/DevicesPage.tsx` l.207: `handlers={bannerHandlers(actions)}`.
+- Every `DeviceRowHandlers` field is optional, and `rowActions` gates each action on its handler (`device-actions.ts` l.59-149). So the banner can show only Cancel (pending handoff or extension), Extend and Give back. That matches the plan's `DevicesPage.tsx` row and the ticket.
+- Evidence: `device-actions.test.ts › bannerHandlers › keeps only onExtend, onReturn and onCancelHandoff from the full handler set` passes. It checks the keys, checks that the row actions are limited to the allowed set, and checks that the full set would give more actions.
+- The helper adds one export that the plan did not name. It is in a file the plan already lists, and the fix instruction asked for exactly this narrowing, so it is not a scope issue.
+
+### Acceptance criteria
+- [x] AC1: unchanged since attempt 1, evidence still green.
+- [x] AC2: nav count as in attempt 1. The banner now shows only Extend and Give back (plus Cancel for a pending request). Evidence is above.
+- [x] AC3 (owner half): unchanged since attempt 1, evidence still green.
+- [ ] AC3 (Manager half): slice 2 (SIM-037.12), not in this plan.
+- [x] AC4: the fix adds no UI strings.
+
+### Ming verification after merge
+- Run `pnpm seed:dev` on a local DB and check that "Tablet E" (INV-5) shows as Overdue, with the banner showing Extend and Give back only.
+
+### Rules (CLAUDE.md)
+- R1, R2, R3, R4, R5, R6, R7: no violations found.
+
+### Blockers from review agents
+None.
+
+### Nits (do not block)
+- `bannerHandlers(actions)` builds a new object on every render. This is harmless today because `OverdueBanner` is not memoized. Wrap it in `useMemo` if the banner is ever memoized.
+- The attempt 1 nits still apply (the `settleExtend` `not_found` wording, the pending chip tone, the null `expiresOn` fallback).
+
+### Follow-ups (out of scope)
+- SIM-037.12 (slice 2): Manager+ Pending extensions list, `extensions` in the badge, seed of one pending extension.
+- A8 in plan.md: show Overdue wherever devices are listed (seat panel, search, member lists).
