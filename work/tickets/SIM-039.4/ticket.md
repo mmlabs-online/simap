@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T11:41:43Z |
 | PR | — |
 
 ## Goal
@@ -42,7 +42,7 @@ Admins upload a PNG per direction for any catalog item (walls and windows includ
 
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
-- Waiting for Ming: plan approval (P1 gate)
+- 2026-11-25: Plan approved (Ming: "duyệt SIM-039.4"), assumptions A1-A12 as written.
 
 ## Handoff
 
