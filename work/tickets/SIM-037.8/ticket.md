@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T07:05:40Z |
 | PR | — |
 
 ## Goal
@@ -46,7 +46,7 @@ docs/spec-v1.md §6 DEV-08; D63. UI slice split from SIM-037.3 (its plan.md, app
 ## Notes / answers from Ming
 Split from SIM-037.3 with Ming's approval (2026-11-25, "ok").
 
-Waiting for Ming: plan approval (P1) and the second split (recipient side → proposed SIM-037.9)
+Plan approved (2026-11-25, Ming: "ok") with assumptions A1-A12 and the split: the recipient side is SIM-037.9.
 
 ## Handoff
 
