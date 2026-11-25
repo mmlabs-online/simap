@@ -26,4 +26,10 @@ describe("DeviceTypeFormFields", () => {
   it("the diagram is decorative", () => {
     expect(render()).toMatch(/<svg[^>]*aria-hidden="true"/);
   });
+  it("every fieldset starts with its legend", () => {
+    const html = render();
+    const count = html.match(/<fieldset/g)?.length ?? 0;
+    expect(count).toBeGreaterThan(0);
+    expect(html.match(/<fieldset[^>]*><legend/g)).toHaveLength(count);
+  });
 });
