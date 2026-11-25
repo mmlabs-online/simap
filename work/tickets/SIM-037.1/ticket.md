@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, security |
@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/81 |
 
 ## Goal
 Devices can exist without an owner in the org inventory, and the schema holds everything the lifecycle needs (new fields, holding note and expiry, handoffs), so later slices only add behaviour.
@@ -63,3 +63,6 @@ Plan approved (2026-11-25, Ming: "ok") with assumptions A1-A12 as written.
 - Done: attempt 1 implemented; review attempt 1 REWORK (no code defect; DB checks never run; missing SearchView test); security no 🔴, 🟡 rollback note; rework attempt 2 added the SearchView test, the README rollback note, early non-Admin 422 in deleteDevice.
 - In progress / next: Ming opens a draft PR (M-52) so CI runs `pnpm test:db` and migrate on Postgres 17; then re-run review attempt 2 with the CI result (that will be the last allowed rework round).
 - Gotchas: no Docker and no `gh` on this machine; CI runs only on PRs to main. `scripts/dev-process.test.ts` is flaky under full-suite load (passes alone) — follow-up debt issue.
+
+### 2026-11-25 — claude — MERGED
+- Ming merged PR #81 ("đã merged") before review attempt 2 ran with the CI result; review.md still holds attempt 1 (REWORK for missing DB-check evidence only). CI result not checked here (no `gh`).
