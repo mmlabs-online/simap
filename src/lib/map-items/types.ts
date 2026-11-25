@@ -1,6 +1,15 @@
 import type { Direction } from "@/lib/sprites/types";
 
-export const MAP_ITEM_LIMITS = { name: 60, group: 40, sizeMin: 1, sizeMax: 4, list: 200 } as const;
+export const MAP_ITEM_DIRS = ["n", "e", "s", "w"] as const;
+
+export const MAP_ITEM_LIMITS = {
+  name: 60,
+  group: 40,
+  sizeMin: 1,
+  sizeMax: 4,
+  list: 200,
+  bodyBytes: 1024,
+} as const;
 
 /** Derived from the library, never stored. "Add items" palette = kind seat|fixture and !hidden. */
 export type MapItemKind = "seat" | "fixture" | "floor" | "chair";
@@ -27,3 +36,15 @@ export type MapItemDto = {
 
 /** Sorted by name (case-insensitive), then builtinKey (D67 1). */
 export type MapItemListResponse = { items: MapItemDto[] };
+
+/** A non-empty partial edit of an item (SIM-039.2). */
+export type MapItemPatchValue = {
+  name?: string;
+  group?: string;
+  hidden?: boolean;
+  w?: number;
+  h?: number;
+};
+
+/** `sprite: null` = back to the library sprite. */
+export type MapItemArtValue = { sprite: string | null };
