@@ -519,10 +519,10 @@ describe("devices (db): create / edit / delete", () => {
     expect(b.ok && c.ok).toBe(true);
     const bId = b.ok ? b.value.id : "";
     expect(
-      await updateDevice(pool, w.scope, subX, "user", bId, { inventoryNumber: "INV-1" }),
+      await updateDevice(pool, w.scope, subX, "admin", bId, { inventoryNumber: "INV-1" }),
     ).toEqual({ ok: false, status: 409, code: "inventory_number_taken" });
     expect(
-      await updateDevice(pool, w.scope, subX, "user", bId, { mac: "aa:bb:cc:dd:ee:ff" }),
+      await updateDevice(pool, w.scope, subX, "admin", bId, { mac: "aa:bb:cc:dd:ee:ff" }),
     ).toEqual({ ok: false, status: 409, code: "mac_taken" });
     const kept = await one("select inventory_number from devices where id = $1", [bId]);
     expect(kept.inventory_number).toBe("INV-2");
