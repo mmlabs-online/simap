@@ -12,7 +12,7 @@ import {
   type LoadPage,
   type PickerState,
 } from "./member-picker";
-import { CLIP } from "./SeatsView";
+import { CLIP } from "../clip";
 import { useMemberPicker } from "./useMemberPicker";
 
 const copy = seatsCopy.actions;

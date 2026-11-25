@@ -144,3 +144,33 @@ describe("devices-api create and update", () => {
     expect(await gone.api.update("d1", { type: "PC" })).toEqual({ ok: false, code: "not_found" });
   });
 });
+
+describe("devices-api assign and holding", () => {
+  it("assign sends POST /api/devices/<id>/assignment with the JSON body", async () => {
+    const { api, calls } = fake(() => jsonRes({ id: "d 1" }));
+    const body = { memberId: "m1", note: "n", expiresOn: "2026-12-31" };
+    expect(await api.assign("d 1", body)).toEqual({ ok: true, value: { id: "d 1" } });
+    expect(calls[0][0]).toBe("/api/devices/d%201/assignment");
+    expect(calls[0][1]?.method).toBe("POST");
+    expect(JSON.parse(String(calls[0][1]?.body))).toEqual(body);
+  });
+  it("updateHolding sends PATCH /api/devices/<id>/holding with the JSON body", async () => {
+    const { api, calls } = fake(() => jsonRes({ id: "d1" }));
+    await api.updateHolding("d1", { note: null });
+    expect(calls[0][0]).toBe("/api/devices/d1/holding");
+    expect(calls[0][1]?.method).toBe("PATCH");
+    expect(JSON.parse(String(calls[0][1]?.body))).toEqual({ note: null });
+  });
+  it("a 409 code passes through; a body without an id is internal", async () => {
+    const owned = fake(() => jsonRes({ error: { code: "device_owned" } }, 409));
+    expect(await owned.api.assign("d1", { memberId: "m", note: null, expiresOn: null })).toEqual({
+      ok: false,
+      code: "device_owned",
+    });
+    const bad = fake(() => jsonRes({}));
+    expect(await bad.api.updateHolding("d1", { note: "x" })).toEqual({
+      ok: false,
+      code: "internal",
+    });
+  });
+});

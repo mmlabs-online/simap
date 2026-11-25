@@ -4,8 +4,10 @@ import { devicesCopy } from "../copy/devices";
 import { shellCopy } from "../copy/shell";
 import {
   INITIAL_DEVICES,
+  detailsText,
   devicesReducer,
   emptyText,
+  expiryText,
   filterOptions,
   listSummary,
   placementText,
@@ -114,5 +116,24 @@ describe("devicesReducer", () => {
     expect(devicesReducer(refreshing, { type: "loaded", id: 1, result: okResult })).toBe(
       refreshing,
     );
+  });
+});
+
+describe("detailsText and expiryText", () => {
+  const dev = (over: Partial<DeviceDto>) =>
+    ({ manufacturer: null, brand: null, serial: null, ...over }) as DeviceDto;
+  it("detailsText joins manufacturer and brand; serial gets a prefix; nothing gives nulls", () => {
+    expect(detailsText(dev({ manufacturer: "Dell", brand: "XPS", serial: "S1" }))).toEqual({
+      maker: "Dell XPS",
+      serial: "SN: S1",
+    });
+    expect(detailsText(dev({ brand: "XPS" }))).toEqual({ maker: "XPS", serial: null });
+    expect(detailsText(dev({ manufacturer: "Dell" }))).toEqual({ maker: "Dell", serial: null });
+    expect(detailsText(dev({ serial: "S1" }))).toEqual({ maker: null, serial: "SN: S1" });
+    expect(detailsText(dev({}))).toEqual({ maker: null, serial: null });
+  });
+  it("expiryText shows the date as given or No expiry", () => {
+    expect(expiryText({ expiresOn: "2026-12-31" })).toBe("Until 2026-12-31");
+    expect(expiryText({ expiresOn: null })).toBe("No expiry");
   });
 });

@@ -1,5 +1,11 @@
 import { ApiAccessError, type ApiFetch } from "@/lib/api/fetch";
-import type { DeviceDto, DevicePatchValue, PlacementFilter } from "@/lib/devices/types";
+import type {
+  AssignValue,
+  DeviceDto,
+  DevicePatchValue,
+  HoldingPatchValue,
+  PlacementFilter,
+} from "@/lib/devices/types";
 import type { DeviceCreateBody } from "./device-form";
 import type { PlacementBody } from "./place-device";
 
@@ -75,6 +81,26 @@ export function createDevicesApi(fetcher: ApiFetch) {
         `${devicePath(id)}/placement`,
         {
           method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        oneDevice,
+      ),
+    assign: (id: string, body: AssignValue) =>
+      call<DeviceDto>(
+        `${devicePath(id)}/assignment`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        oneDevice,
+      ),
+    updateHolding: (id: string, body: HoldingPatchValue) =>
+      call<DeviceDto>(
+        `${devicePath(id)}/holding`,
+        {
+          method: "PATCH",
           headers: { "content-type": "application/json" },
           body: JSON.stringify(body),
         },

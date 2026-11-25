@@ -5,6 +5,7 @@ import { apiErrorMessage } from "../copy/api";
 import { seatsCopy } from "../copy/seats";
 import { Button } from "../Button";
 import { Card } from "../Card";
+import { CLIP } from "../clip";
 import { Icon } from "../Icon";
 import { deviceSummary, statusView, type RoomResolution, type SeatListState } from "./seat-view";
 
@@ -20,8 +21,6 @@ export type SeatsViewProps = {
   map?: ReactNode;
 };
 
-/** Clips untrusted text (the validator allows combining marks) inside its own box. */
-export const CLIP = "overflow-hidden [contain:paint] [overflow-wrap:anywhere]";
 const TH =
   "px-4 py-2.5 text-left text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant";
 const TD = "px-4 py-2.5 text-sm font-medium text-on-surface align-top";

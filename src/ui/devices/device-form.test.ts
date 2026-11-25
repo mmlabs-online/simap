@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DeviceDto } from "@/lib/devices/types";
-import { apiErrorMessage } from "../copy/api";
+import { apiCopy, apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
 import {
   deviceErrorMessage,
@@ -19,6 +19,9 @@ const filled = (over: Partial<DeviceForm> = {}): DeviceForm => ({
   type: "PC",
   inventoryNumber: "INV-1",
   mac: "",
+  serial: "",
+  manufacturer: "",
+  brand: "",
   ...over,
 });
 const device: DeviceDto = {
@@ -47,7 +50,19 @@ const body = (r: ReturnType<typeof toCreateBody>) => {
 
 describe("form setup", () => {
   it("emptyForm and formFromDevice", () => {
-    expect(emptyForm()).toEqual({ name: "", type: "", inventoryNumber: "", mac: "" });
+    expect(emptyForm()).toEqual({
+      name: "",
+      type: "",
+      inventoryNumber: "",
+      mac: "",
+      serial: "",
+      manufacturer: "",
+      brand: "",
+    });
+    expect(formFromDevice(device)).toMatchObject({ serial: "", manufacturer: "", brand: "" });
+    expect(
+      formFromDevice({ ...device, serial: "S1", manufacturer: "Dell", brand: "XPS" }),
+    ).toMatchObject({ serial: "S1", manufacturer: "Dell", brand: "XPS" });
     expect(formFromDevice({ ...device, mac: null }).mac).toBe("");
     expect(formFromDevice(device)).toMatchObject({ mac: device.mac });
   });
@@ -63,6 +78,18 @@ describe("toCreateBody", () => {
       serial: null,
       manufacturer: null,
       brand: null,
+    });
+  });
+  it("sends trimmed serial, manufacturer and brand; blank is null; 101 chars is invalid", () => {
+    const b = body(toCreateBody(filled({ serial: " SN-1 ", manufacturer: "Dell", brand: "  " })));
+    expect(b).toMatchObject({ serial: "SN-1", manufacturer: "Dell", brand: null });
+    expect(toCreateBody(filled({ serial: "a".repeat(101) }))).toEqual({
+      kind: "invalid",
+      message: fe.serial,
+    });
+    expect(toCreateBody(filled({ brand: "a".repeat(101) }))).toEqual({
+      kind: "invalid",
+      message: fe.brand,
     });
   });
   it("normalises the MAC; blank is null; garbage is invalid", () => {
@@ -118,8 +145,30 @@ describe("toPatchBody", () => {
       message: fe.name,
     });
   });
+  it("serial, manufacturer and brand: only changes are sent", () => {
+    expect(toPatchBody({ ...same, serial: "SN-9" }, device)).toEqual({
+      kind: "ok",
+      body: { serial: "SN-9" },
+    });
+    const withSerial = { ...device, serial: "SN-9", manufacturer: "Dell" };
+    expect(toPatchBody({ ...formFromDevice(withSerial), serial: "" }, withSerial)).toEqual({
+      kind: "ok",
+      body: { serial: null },
+    });
+    expect(toPatchBody({ ...formFromDevice(withSerial), serial: " SN-9 " }, withSerial)).toEqual({
+      kind: "unchanged",
+    });
+    const viet = { ...device, brand: "Máy" };
+    expect(toPatchBody({ ...formFromDevice(viet), brand: "Máy" }, viet)).toEqual({
+      kind: "unchanged",
+    });
+    expect(toPatchBody({ ...same, serial: "a".repeat(101) }, device)).toEqual({
+      kind: "invalid",
+      message: fe.serial,
+    });
+  });
   it("patch never has ownerId", () => {
-    const r = toPatchBody({ name: "x", type: "y", inventoryNumber: "z", mac: "" }, device);
+    const r = toPatchBody(filled({ name: "x", type: "y", inventoryNumber: "z" }), device);
     if (r.kind !== "ok") throw new Error("expected ok");
     for (const k of Object.keys(r.body)) {
       expect(["name", "type", "inventoryNumber", "mac"]).toContain(k);
@@ -129,9 +178,16 @@ describe("toPatchBody", () => {
 
 describe("deviceErrorMessage", () => {
   it("passes API codes through", () => {
-    for (const c of ["inventory_number_taken", "mac_taken", "no_linked_member", "not_allowed"]) {
+    for (const c of [
+      "inventory_number_taken",
+      "mac_taken",
+      "serial_taken",
+      "no_linked_member",
+      "not_allowed",
+    ]) {
       expect(deviceErrorMessage(c)).toBe(apiErrorMessage(c));
     }
+    expect(deviceErrorMessage("serial_taken")).toBe(apiCopy.errors.serial_taken);
     expect(deviceErrorMessage("zzz")).toBe(apiErrorMessage("zzz"));
   });
 });

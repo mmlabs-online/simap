@@ -3,10 +3,11 @@ import type { DeviceDto } from "@/lib/devices/types";
 import { roomDetailHref } from "@/lib/nav";
 import { Card } from "../Card";
 import { Chip } from "../Chip";
+import { CLIP } from "../clip";
 import { devicesCopy } from "../copy/devices";
 import { hasAnyAction, type DeviceRowHandlers } from "./device-actions";
 import { DeviceRowActions } from "./DeviceRowActions";
-import { placementText } from "./devices-state";
+import { detailsText, expiryText, placementText } from "./devices-state";
 
 const CELL = "px-3 py-2 align-top text-sm text-on-surface";
 const HEAD = "px-3 py-2 text-left text-[11px] font-extrabold uppercase text-on-surface-variant";
@@ -29,11 +30,38 @@ function PlacementLabel({ device }: { device: DeviceDto }) {
   );
 }
 
-function OwnerLabel({ device }: { device: DeviceDto }) {
+function OwnerLabel({ device, clamp = "line-clamp-1" }: { device: DeviceDto; clamp?: string }) {
+  const h = device.holding;
   return (
-    <span className="inline-flex flex-wrap items-center gap-1.5">
-      <span>{device.owner?.displayName ?? devicesCopy.orgInventory}</span>
-      {device.mine && <Chip label={devicesCopy.you} />}
+    <span className="flex flex-col gap-0.5">
+      <span className="inline-flex flex-wrap items-center gap-1.5">
+        <span>{device.owner?.displayName ?? devicesCopy.orgInventory}</span>
+        {device.mine && <Chip label={devicesCopy.you} />}
+      </span>
+      {h && (
+        <>
+          <span className="text-xs text-on-surface-variant">{expiryText(h)}</span>
+          {h.note && (
+            <span
+              title={h.note}
+              className={`text-xs text-on-surface-variant whitespace-pre-line ${clamp} ${CLIP}`}
+            >
+              {h.note}
+            </span>
+          )}
+        </>
+      )}
+    </span>
+  );
+}
+
+function Details({ device }: { device: DeviceDto }) {
+  const { maker, serial } = detailsText(device);
+  if (maker === null && serial === null) return <span>{devicesCopy.details.none}</span>;
+  return (
+    <span className="flex flex-col gap-0.5">
+      {maker && <span className="break-all">{maker}</span>}
+      {serial && <span className="break-all text-xs text-on-surface-variant">{serial}</span>}
     </span>
   );
 }
@@ -42,7 +70,15 @@ function Mac({ mac }: { mac: string | null }) {
   return mac ? <span className="font-mono">{mac}</span> : <span>{devicesCopy.noMac}</span>;
 }
 
-const COLUMNS = ["name", "type", "inventoryNumber", "mac", "owner", "placement"] as const;
+const COLUMNS = [
+  "name",
+  "type",
+  "inventoryNumber",
+  "mac",
+  "details",
+  "owner",
+  "placement",
+] as const;
 
 /** Devices as a table at `md` and up and as a stacked list below, from one set of labels. Pure. */
 export function DeviceTable({
@@ -83,6 +119,9 @@ export function DeviceTable({
                     <Mac mac={d.mac} />
                   </td>
                   <td className={CELL}>
+                    <Details device={d} />
+                  </td>
+                  <td className={CELL}>
                     <OwnerLabel device={d} />
                   </td>
                   <td className={CELL}>
@@ -107,9 +146,10 @@ export function DeviceTable({
               <span className="text-on-surface-variant">
                 {devicesCopy.typeLine(d.type, d.inventoryNumber)}
               </span>
-              <OwnerLabel device={d} />
+              <OwnerLabel device={d} clamp="line-clamp-2" />
               <PlacementLabel device={d} />
               <Mac mac={d.mac} />
+              <Details device={d} />
               <DeviceRowActions device={d} handlers={actions} />
             </Card>
           </li>
