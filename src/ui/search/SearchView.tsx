@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { deviceDetailHref } from "@/lib/nav";
 import type { DeviceHit, MemberHit, SeatHit } from "@/lib/search/types";
 import { apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
@@ -7,7 +8,6 @@ import { Button } from "../Button";
 import { Card } from "../Card";
 import { FilledInput } from "../FilledInput";
 import {
-  DEVICES_HREF,
   GROUP_ORDER,
   MEMBERS_HREF,
   seatResultHref,
@@ -46,7 +46,7 @@ function SeatRow({ hit }: { hit: SeatHit }) {
 function DeviceRow({ hit }: { hit: DeviceHit }) {
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-      <Link href={DEVICES_HREF} className={LINK}>
+      <Link href={deviceDetailHref(hit.id)} className={LINK}>
         {hit.name}
       </Link>
       <span className={META}>{hit.inventoryNumber}</span>

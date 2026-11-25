@@ -101,9 +101,9 @@ describe("SearchView", () => {
     expect(dots).toContain("C302-01");
   });
 
-  it("device row links to /devices; shows inventory no., MAC when present, owner, placement or in-inventory copy", () => {
+  it("device row links to /devices/<id>; shows inventory no., MAC when present, owner, placement or in-inventory copy", () => {
     const html = render();
-    expect(html).toContain('href="/devices"');
+    expect(html).toContain(`href="/devices/${device.id}"`);
     expect(html).toContain("INV-001");
     expect(html).toContain(copy.mac("AA:BB:CC:DD:EE:FF"));
     expect(html).toContain(copy.placement("C302", "C302-01"));

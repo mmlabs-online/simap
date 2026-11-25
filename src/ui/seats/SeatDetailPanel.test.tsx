@@ -81,6 +81,11 @@ describe("SeatDetailPanel", () => {
     );
     expect(html).toContain(seatsCopy.status.cannotSeat);
   });
+  it("device name links to /devices/<id>", () => {
+    const html = render({ kind: "ready", seat });
+    expect(html).toContain(`href="/devices/d1"`);
+    expect(html).toContain(`href="/devices/d2"`);
+  });
   it("has no edit control for tags", () => {
     const html = render({ kind: "ready", seat });
     expect(html).not.toContain("<input");

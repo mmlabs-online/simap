@@ -302,3 +302,24 @@ describe("devices-api transfer", () => {
     expect(await bad.api.startTransfer("d1", body)).toEqual({ ok: false, code: "internal" });
   });
 });
+
+describe("devices-api history", () => {
+  const page = { items: [], nextCursor: null, holderSince: null };
+
+  it("history: GET /api/devices/<id>/history, cursor url-encoded; bad shape -> internal; 404 -> not_found", async () => {
+    const { api, calls } = fake(() => jsonRes(page));
+    expect(await api.history("d 1")).toEqual({ ok: true, value: page });
+    await api.history("d1", "a+b/c=");
+    expect(calls.map((c) => c[0])).toEqual([
+      "/api/devices/d%201/history",
+      "/api/devices/d1/history?cursor=a%2Bb%2Fc%3D",
+    ]);
+    expect(calls[0]![1]?.method).toBe("GET");
+    const noItems = fake(() => jsonRes({ nextCursor: null, holderSince: null }));
+    expect(await noItems.api.history("d1")).toEqual({ ok: false, code: "internal" });
+    const badCursor = fake(() => jsonRes({ items: [], nextCursor: 5, holderSince: null }));
+    expect(await badCursor.api.history("d1")).toEqual({ ok: false, code: "internal" });
+    const missing = fake(() => jsonRes({ error: { code: "not_found" } }, 404));
+    expect(await missing.api.history("d1")).toEqual({ ok: false, code: "not_found" });
+  });
+});

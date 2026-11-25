@@ -2,6 +2,7 @@ import { ApiAccessError, type ApiFetch } from "@/lib/api/fetch";
 import type {
   AssignValue,
   DeviceDto,
+  DeviceHistoryPage,
   DevicePatchValue,
   HandoffBox,
   HandoffCountDto,
@@ -203,6 +204,22 @@ export function createDevicesApi(fetcher: ApiFetch) {
         ok: true,
         value: undefined,
       })),
+    history: (id: string, cursor?: string) =>
+      call<DeviceHistoryPage>(
+        `${devicePath(id)}/history${cursor === undefined ? "" : `?cursor=${encodeURIComponent(cursor)}`}`,
+        { method: "GET" },
+        async (res) => {
+          const b = (await res.json()) as {
+            items?: unknown;
+            nextCursor?: unknown;
+            holderSince?: unknown;
+          };
+          const strOrNull = (v: unknown) => typeof v === "string" || v === null;
+          return Array.isArray(b?.items) && strOrNull(b.nextCursor) && strOrNull(b.holderSince)
+            ? { ok: true, value: b as DeviceHistoryPage }
+            : fail("internal");
+        },
+      ),
     list: (filter: PlacementFilter) =>
       call<{ items: DeviceDto[]; truncated: boolean }>(
         `/api/devices?placement=${filter}`,

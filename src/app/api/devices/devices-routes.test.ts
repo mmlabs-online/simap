@@ -18,6 +18,8 @@ const hsvc = vi.hoisted(() => ({
 }));
 vi.mock("@/server/devices/devices", () => svc);
 vi.mock("@/server/devices/handoffs", () => hsvc);
+const histSvc = vi.hoisted(() => ({ listDeviceHistory: vi.fn() }));
+vi.mock("@/server/devices/history", () => histSvc);
 vi.mock("@/server/db/pool", () => ({ getPool: () => ({}) }));
 
 import { GET as listGET, POST } from "./route";
@@ -27,6 +29,7 @@ import { POST as ASSIGN } from "./[id]/assignment/route";
 import { PATCH as HOLDING } from "./[id]/holding/route";
 import { POST as TRANSFER } from "./[id]/handoffs/route";
 import { POST as TAKE_BACK } from "./[id]/take-back/route";
+import { GET as HISTORY } from "./[id]/history/route";
 
 const ISSUER = "https://api.mmlabs.online";
 const ID = "33333333-3333-4333-8333-333333333333";
@@ -62,6 +65,7 @@ const okPut = { seatId: SEAT, role: "primary", expectedSeatId: null };
 beforeEach(() => {
   for (const f of Object.values(svc)) f.mockReset();
   for (const f of Object.values(hsvc)) f.mockReset();
+  histSvc.listDeviceHistory.mockReset();
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -381,5 +385,58 @@ describe("POST /api/devices/:id/take-back", () => {
     hsvc.takeBack.mockResolvedValue({ ok: false, status: 409, code: "handoff_pending" });
     const r = await TAKE_BACK(req("POST"), idRoute);
     expect([r.status, await r.json()]).toEqual([409, { error: { code: "handoff_pending" } }]);
+  });
+});
+
+describe("GET /api/devices/:id/history", () => {
+  const CURSOR = Buffer.from(
+    JSON.stringify({ at: "2026-03-05T17:30:00.123456Z", id: ID }),
+    "utf8",
+  ).toString("base64url");
+  const url = (qs = "") => `http://x/api/devices/${ID}/history${qs}`;
+
+  it("bad uuid is 404 not_found, no service call", async () => {
+    fakeAuth(["simap:user"]);
+    const bad = { params: Promise.resolve({ id: "nope" }) };
+    const r = await HISTORY(req("GET", url()), bad);
+    expect([r.status, await r.json()]).toEqual([404, { error: { code: "not_found" } }]);
+    expect(histSvc.listDeviceHistory).not.toHaveBeenCalled();
+  });
+
+  it("401 without a token, before the service", async () => {
+    vi.stubEnv("MM_IDENTITY_ISSUER", ISSUER);
+    const r = await HISTORY(new Request(url(), { method: "GET" }), idRoute);
+    expect(r.status).toBe(401);
+    expect(histSvc.listDeviceHistory).not.toHaveBeenCalled();
+  });
+
+  it("bad limit / bad cursor is 400 invalid_request, no service call", async () => {
+    fakeAuth(["simap:user"]);
+    for (const qs of ["?limit=0", "?limit=101", "?cursor=nope", "?limit=1&limit=2"]) {
+      const r = await HISTORY(req("GET", url(qs)), idRoute);
+      expect([r.status, await r.json()]).toEqual([400, { error: { code: "invalid_request" } }]);
+    }
+    expect(histSvc.listDeviceHistory).not.toHaveBeenCalled();
+  });
+
+  it("passes scope, id and parsed query; returns the page with no-store", async () => {
+    fakeAuth(["simap:user"]);
+    const page = { items: [], nextCursor: null, holderSince: null };
+    histSvc.listDeviceHistory.mockResolvedValue({ ok: true, value: page });
+    const r = await HISTORY(req("GET", url(`?limit=2&cursor=${CURSOR}`)), idRoute);
+    expect(r.status).toBe(200);
+    expect(r.headers.get("Cache-Control")).toBe("no-store");
+    expect(await r.json()).toEqual(page);
+    const [, scopeArg, id, q] = histSvc.listDeviceHistory.mock.calls[0]!;
+    expect(scopeArg).toBeTruthy();
+    expect(id).toBe(ID);
+    expect(q).toEqual({ limit: 2, cursor: { at: "2026-03-05T17:30:00.123456Z", id: ID } });
+  });
+
+  it("service not_found is 404", async () => {
+    fakeAuth(["simap:user"]);
+    histSvc.listDeviceHistory.mockResolvedValue({ ok: false, status: 404, code: "not_found" });
+    const r = await HISTORY(req("GET", url()), idRoute);
+    expect([r.status, await r.json()]).toEqual([404, { error: { code: "not_found" } }]);
   });
 });

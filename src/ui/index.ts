@@ -29,6 +29,7 @@ export { DeviceTypesPage } from "./deviceTypes/DeviceTypesPage";
 export { ApprovalsPage } from "./requests/ApprovalsPage";
 export { MyRequestsPage } from "./requests/MyRequestsPage";
 export { DevicesPage } from "./devices/DevicesPage";
+export { DeviceDetailPage } from "./devices/DeviceDetailPage";
 export { SearchPage } from "./search/SearchPage";
 export { InvitePeople } from "./invitations/InvitePeople";
 export { MembersPage } from "./members/MembersPage";
