@@ -207,15 +207,18 @@ describe("devices-api transfer", () => {
       });
     }
   });
-  it("handoffCount returns {incoming, returns}; missing or non-number returns -> 0; missing incoming -> internal", async () => {
+  it("handoffCount returns the four counts; missing or non-number returns -> 0; missing incoming -> internal", async () => {
     const { api, calls } = fake(() => jsonRes({ incoming: 3, returns: 2 }));
-    expect(await api.handoffCount()).toEqual({ ok: true, value: { incoming: 3, returns: 2 } });
+    expect(await api.handoffCount()).toEqual({
+      ok: true,
+      value: { incoming: 3, returns: 2, extensions: 0, overdue: 0 },
+    });
     expect(calls[0][0]).toBe("/api/handoffs/count");
     expect(calls[0][1]?.method).toBe("GET");
     for (const b of [{ incoming: 3 }, { incoming: 3, returns: "2" }]) {
       expect(await fake(() => jsonRes(b)).api.handoffCount()).toEqual({
         ok: true,
-        value: { incoming: 3, returns: 0 },
+        value: { incoming: 3, returns: 0, extensions: 0, overdue: 0 },
       });
     }
     for (const b of [{ incoming: "3", returns: 1 }, { returns: 1 }]) {

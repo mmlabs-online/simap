@@ -34,6 +34,7 @@ const base: DeviceDto = {
   canTransfer: false,
   canReturn: false,
   canTakeBack: false,
+  overdue: false,
   pendingHandoff: null,
 };
 const secondary: DeviceDto = {
@@ -277,6 +278,7 @@ describe("DevicesView pending transfer", () => {
       kind: "transfer",
       to: { id: "m1", displayName: "Hương" },
       requestedBy: { id: "u1", displayName: "Nguyễn Thị Hà" },
+      newExpiresOn: null,
       createdAt: "2026-11-25T00:00:00Z",
       canCancel: true,
     },

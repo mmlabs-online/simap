@@ -4,6 +4,7 @@ import type {
   HandoffStartValue,
   PlacementFilter,
 } from "@/lib/devices/types";
+import { todayUtc7 } from "@/lib/devices/holding";
 import { validateHandoffStart } from "@/lib/validate/device";
 import { apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
@@ -22,7 +23,7 @@ export type ReturnBodyResult =
 
 /** The server's own validator (NFC, trim, blank to null, 500 limit), so the client and server agree. */
 export function toReturnBody(form: ReturnForm): ReturnBodyResult {
-  const v = validateHandoffStart({ kind: "return", note: form.note });
+  const v = validateHandoffStart({ kind: "return", note: form.note }, todayUtc7(new Date()));
   if (!v.ok) {
     return {
       kind: "invalid",

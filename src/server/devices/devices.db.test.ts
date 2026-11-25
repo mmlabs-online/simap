@@ -26,6 +26,9 @@ import {
   updateHolding,
 } from "./devices";
 
+/** The pinned clock for reads: a UTC+7 calendar day. */
+const TODAY = "2026-11-25";
+
 let pool: pg.Pool;
 
 const one = async (sql: string, values: unknown[]) => (await pool.query(sql, values)).rows[0];
@@ -78,7 +81,7 @@ describe("devices (db): reads", () => {
     await pool.query("update devices set name = 'b' where id = $1", [inv]);
     await pool.query("update devices set name = 'a' where id = $1", [placed]);
     const sub = await subOf(w.x);
-    const all = await listDevices(pool, w.scope, sub, "user", "all");
+    const all = await listDevices(pool, w.scope, sub, "user", "all", TODAY);
     expect(all.ok && all.value.items.map((d) => d.id)).toEqual([placed, inv]);
     expect(all.ok && all.value.items[0]!.placement).toEqual({
       seatId: w.a1,
@@ -89,12 +92,12 @@ describe("devices (db): reads", () => {
     });
     expect(all.ok && all.value.items[1]!.placement).toBeNull();
     expect(all.ok && all.value.truncated).toBe(false);
-    const p = await listDevices(pool, w.scope, sub, "user", "placed");
+    const p = await listDevices(pool, w.scope, sub, "user", "placed", TODAY);
     expect(p.ok && p.value.items.map((d) => d.id)).toEqual([placed]);
-    const i = await listDevices(pool, w.scope, sub, "user", "inventory");
+    const i = await listDevices(pool, w.scope, sub, "user", "inventory", TODAY);
     expect(i.ok && i.value.items.map((d) => d.id)).toEqual([inv]);
     expect(all.ok && all.value.items.every((d) => d.mine && d.canEdit && d.canPlace)).toBe(true);
-    const other = await listDevices(pool, w.scope, await subOf(w.y), "user", "all");
+    const other = await listDevices(pool, w.scope, await subOf(w.y), "user", "all", TODAY);
     expect(other.ok && other.value.items.every((d) => !d.mine && !d.canEdit && !d.canPlace)).toBe(
       true,
     );
@@ -105,18 +108,18 @@ describe("devices (db): reads", () => {
     const owned = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const unowned = await addDevice(pool, w.orgId, null, null, "secondary");
     const sub = await subOf(w.x);
-    const all = await listDevices(pool, w.scope, sub, "user", "all");
+    const all = await listDevices(pool, w.scope, sub, "user", "all", TODAY);
     expect(all.ok && all.value.items.map((d) => d.id).sort()).toEqual([owned, unowned].sort());
-    const only = await listDevices(pool, w.scope, sub, "user", "unowned");
+    const only = await listDevices(pool, w.scope, sub, "user", "unowned", TODAY);
     expect(only.ok && only.value.items.map((d) => d.id)).toEqual([unowned]);
-    const inv = await listDevices(pool, w.scope, sub, "user", "inventory");
+    const inv = await listDevices(pool, w.scope, sub, "user", "inventory", TODAY);
     expect(inv.ok && inv.value.items).toHaveLength(2);
     for (const [tier, admin] of [
       ["user", false],
       ["manager", false],
       ["admin", true],
     ] as const) {
-      const g = await getDevice(pool, w.scope, sub, tier, unowned);
+      const g = await getDevice(pool, w.scope, sub, tier, unowned, TODAY);
       expect(g.ok && g.value).toMatchObject({
         owner: null,
         placement: null,
@@ -135,7 +138,7 @@ describe("devices (db): reads", () => {
        select $1, 'n' || g, 't', 'inv' || g, $2 from generate_series(1, $3::int) g`,
       [w.orgId, w.x, DEVICE_LIMITS.list + 1],
     );
-    const r = await listDevices(pool, w.scope, await subOf(w.x), "user", "all");
+    const r = await listDevices(pool, w.scope, await subOf(w.x), "user", "all", TODAY);
     expect(r.ok && r.value.items.length).toBe(DEVICE_LIMITS.list);
     expect(r.ok && r.value.truncated).toBe(true);
   });
@@ -144,9 +147,9 @@ describe("devices (db): reads", () => {
     const w = await world();
     const other = await world();
     const dev = await addDevice(pool, other.orgId, other.x, null, "secondary");
-    const list = await listDevices(pool, w.scope, randomUUID(), "admin", "all");
+    const list = await listDevices(pool, w.scope, randomUUID(), "admin", "all", TODAY);
     expect(list.ok && list.value.items).toEqual([]);
-    expect(await getDevice(pool, w.scope, randomUUID(), "admin", dev)).toEqual({
+    expect(await getDevice(pool, w.scope, randomUUID(), "admin", dev, TODAY)).toEqual({
       ok: false,
       status: 404,
       code: "not_found",
@@ -485,7 +488,7 @@ describe("devices (db): create / edit / delete", () => {
       await count("select count(*)::int as n from device_handoffs where device_id = $1", [unowned]),
     ).toBe(0);
     const notFound = { ok: false, status: 404, code: "not_found" };
-    expect(await getDevice(pool, w.scope, sub, "admin", unowned)).toEqual(notFound);
+    expect(await getDevice(pool, w.scope, sub, "admin", unowned, TODAY)).toEqual(notFound);
     expect(
       await placeDevice(pool, w.scope, sub, "admin", unowned, put(null, "secondary", null)),
     ).toEqual(notFound);
@@ -648,7 +651,7 @@ describe("devices (db): assign and holding", () => {
       expiresOn: "2026-12-31",
     });
     expect(r.ok && r.value.holding?.expiresOn).toBe("2026-12-31");
-    const g = await getDevice(pool, w.scope, await subOf(w.z), "admin", d);
+    const g = await getDevice(pool, w.scope, await subOf(w.z), "admin", d, TODAY);
     expect(g.ok && g.value.holding?.expiresOn).toBe("2026-12-31");
   });
 
@@ -812,7 +815,7 @@ describe("devices (db): serial, manufacturer and brand", () => {
     expect(p.ok && p.value).toMatchObject({ serial: "SN-2", manufacturer: "Nguyễn", brand: null });
     const cleared = await updateDevice(pool, w.scope, sub, "admin", bId, { serial: null });
     expect(cleared.ok && cleared.value.serial).toBeNull();
-    const list = await listDevices(pool, w.scope, sub, "admin", "all");
+    const list = await listDevices(pool, w.scope, sub, "admin", "all", TODAY);
     expect(list.ok && list.value.items.find((i) => i.inventoryNumber === "S-1")).toMatchObject({
       serial: "SN-1",
       manufacturer: "Dell",
@@ -833,10 +836,10 @@ describe("devices (db): pending transfer", () => {
   it("the DTO shows the pending transfer to everyone; canTransfer, canAssign and canDelete are off while pending", async () => {
     const w = await world();
     const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
-    const before = await getDevice(pool, w.scope, await subOf(w.x), "user", d);
+    const before = await getDevice(pool, w.scope, await subOf(w.x), "user", d, TODAY);
     expect(before.ok && before.value).toMatchObject({ canTransfer: true, pendingHandoff: null });
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
-    const asOwner = await getDevice(pool, w.scope, await subOf(w.x), "user", d);
+    const asOwner = await getDevice(pool, w.scope, await subOf(w.x), "user", d, TODAY);
     expect(asOwner.ok && asOwner.value).toMatchObject({
       canTransfer: false,
       canDelete: false,
@@ -850,11 +853,11 @@ describe("devices (db): pending transfer", () => {
         canCancel: true,
       },
     });
-    const asOther = await getDevice(pool, w.scope, await subOf(w.z), "user", d);
+    const asOther = await getDevice(pool, w.scope, await subOf(w.z), "user", d, TODAY);
     expect(asOther.ok && asOther.value.pendingHandoff).toMatchObject({ id: h, canCancel: false });
-    const asManager = await getDevice(pool, w.scope, await subOf(w.z), "manager", d);
+    const asManager = await getDevice(pool, w.scope, await subOf(w.z), "manager", d, TODAY);
     expect(asManager.ok && asManager.value.pendingHandoff?.canCancel).toBe(true);
-    const listed = await listDevices(pool, w.scope, await subOf(w.z), "user", "all");
+    const listed = await listDevices(pool, w.scope, await subOf(w.z), "user", "all", TODAY);
     expect(listed.ok && listed.value.items.find((i) => i.id === d)?.pendingHandoff?.id).toBe(h);
   });
 
@@ -873,7 +876,7 @@ describe("devices (db): return flags", () => {
     const w = await world();
     const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const as = async (m: string, tier: "user" | "manager" | "admin") => {
-      const r = await getDevice(pool, w.scope, await subOf(m), tier, d);
+      const r = await getDevice(pool, w.scope, await subOf(m), tier, d, TODAY);
       return r.ok && r.value;
     };
     expect(await as(w.x, "user")).toMatchObject({ canReturn: true, canTakeBack: false });
@@ -889,7 +892,7 @@ describe("devices (db): return flags", () => {
     await addHandoff(pool, w.orgId, d, w.x, "pending");
     expect(await as(w.z, "admin")).toMatchObject({ canReturn: false, canTakeBack: false });
     const free = await addDevice(pool, w.orgId, null, null, "secondary");
-    const r = await getDevice(pool, w.scope, await subOf(w.z), "admin", free);
+    const r = await getDevice(pool, w.scope, await subOf(w.z), "admin", free, TODAY);
     expect(r.ok && r.value).toMatchObject({ canReturn: false, canTakeBack: false });
   });
 });

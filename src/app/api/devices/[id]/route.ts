@@ -1,3 +1,4 @@
+import { todayUtc7 } from "@/lib/devices/holding";
 import { isCanonicalUuid } from "@/lib/validate/uuid";
 import { validateDevicePatch } from "@/lib/validate/device";
 import { deleteDevice, getDevice, updateDevice } from "@/server/devices/devices";
@@ -16,7 +17,7 @@ export const GET = withAuth<{ id: string }>(
     if (!isCanonicalUuid(id)) return apiError(404, "not_found");
     const pool = getPool();
     if (!pool) return apiError(503, "unavailable");
-    const r = await getDevice(pool, ctx.scope, ctx.sub, ctx.tier, id);
+    const r = await getDevice(pool, ctx.scope, ctx.sub, ctx.tier, id, todayUtc7(new Date()));
     if (!r.ok) return apiError(r.status, r.code);
     return Response.json(r.value, { headers: NO_STORE });
   },

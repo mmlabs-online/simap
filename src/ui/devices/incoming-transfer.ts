@@ -81,7 +81,7 @@ export function badgeCountAfter(
   if (count.ok) return count.value;
   return incoming === null || returns === null
     ? null
-    : { incoming: incoming.length, returns: returns.length };
+    : { incoming: incoming.length, returns: returns.length, extensions: 0, overdue: 0 };
 }
 
 export const badgeTotal = (c: HandoffCountDto): number => c.incoming + c.returns;

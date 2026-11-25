@@ -28,6 +28,7 @@ import {
   type HoldingPatchValue,
   type PlacementFilter,
 } from "@/lib/devices/types";
+import { todayUtc7 } from "@/lib/devices/holding";
 import type { PlacementPutValue } from "@/lib/validate/device";
 import { writeAudit } from "@/server/audit/write";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
@@ -68,6 +69,8 @@ type DeviceRow = {
   h_id: string | null;
   h_kind: HandoffKind | null;
   h_created_at: string | null;
+  h_new_expires_on: string | null;
+  overdue: boolean;
   h_to_id: string | null;
   h_to_name: string | null;
   h_by_id: string | null;
@@ -106,12 +109,14 @@ const toDto = (r: DeviceRow, tier: Tier): DeviceDto => {
     canTransfer: r.owner_id !== null && !pending && canStartTransfer(tier, r.mine),
     canReturn: r.owner_id !== null && !pending && canStartReturn(tier, r.mine),
     canTakeBack: canTakeBack(tier, r.owner_id, r.h_kind),
+    overdue: r.overdue,
     pendingHandoff: pending
       ? {
           id: r.h_id!,
           kind: r.h_kind!,
           to: r.h_to_id === null ? null : { id: r.h_to_id, displayName: r.h_to_name! },
           requestedBy: { id: r.h_by_id!, displayName: r.h_by_name! },
+          newExpiresOn: r.h_new_expires_on,
           createdAt: r.h_created_at!,
           canCancel: canCancelHandoff(tier, r.h_from_me),
         }
@@ -119,12 +124,13 @@ const toDto = (r: DeviceRow, tier: Tier): DeviceDto => {
   };
 };
 
-/** $2 is the caller's sub (for `mine`); `where` and its values start at $3. Every join repeats org_id (R6). */
+/** $2 is the caller's sub (for `mine`), $3 is today (UTC+7 day); `where` and its values start at $4. Every join repeats org_id (R6). */
 async function deviceRows(
   db: Query,
   scope: OrgScope,
   sub: string,
   tier: Tier,
+  today: string,
   where: string,
   values: unknown[],
   limit: number,
@@ -135,6 +141,8 @@ async function deviceRows(
     `select d.id, d.name, d.type, d.inventory_number, d.mac, d.serial, d.manufacturer, d.brand, d.holding_note,
        to_char(d.holding_expires_on, 'YYYY-MM-DD') as holding_expires_on, d.owner_id, m.display_name as owner_name,
        coalesce(m.sub = $2::uuid, false) as mine, d.role, d.seat_id, s.code as seat_code, s.room_id, r.code as room_code,
+       (d.owner_id is not null and d.holding_expires_on < $3::date) as overdue,
+       to_char(h.new_expires_on, 'YYYY-MM-DD') as h_new_expires_on,
        h.id as h_id, h.kind as h_kind, to_char(h.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as h_created_at, 
        h.to_member_id as h_to_id, ht.display_name as h_to_name, h.requested_by_id as h_by_id,
        hr.display_name as h_by_name, coalesce(hf.sub = $2::uuid, false) as h_from_me
@@ -148,16 +156,18 @@ async function deviceRows(
        left join members hf on hf.org_id = h.org_id and hf.id = h.from_member_id
      where d.org_id = $1 and ${where}
      order by lower(d.name), d.id limit ${limit}`,
-    [sub, ...values],
+    [sub, today, ...values],
   );
   return rows.map((r) => toDto(r, tier));
 }
 
+/** `$3` is today (UTC+7 day), bound by `deviceRows`. */
 const FILTER_SQL: Record<PlacementFilter, string> = {
   all: "true",
   placed: "d.seat_id is not null",
   inventory: "d.seat_id is null",
   unowned: "d.owner_id is null",
+  overdue: "d.owner_id is not null and d.holding_expires_on < $3::date",
 };
 
 export async function listDevices(
@@ -166,12 +176,14 @@ export async function listDevices(
   sub: string,
   tier: Tier,
   placement: PlacementFilter,
+  today: string,
 ): Promise<Result<DeviceListResponse>> {
   const items = await deviceRows(
     db,
     scope,
     sub,
     tier,
+    today,
     FILTER_SQL[placement],
     [],
     DEVICE_LIMITS.list + 1,
@@ -191,8 +203,9 @@ export async function getDevice(
   sub: string,
   tier: Tier,
   id: string,
+  today: string,
 ): Promise<Result<DeviceDto>> {
-  const rows = await deviceRows(db, scope, sub, tier, "d.id = $3", [id], 1);
+  const rows = await deviceRows(db, scope, sub, tier, today, "d.id = $4", [id], 1);
   return rows[0] ? { ok: true, value: rows[0] } : notFound;
 }
 
@@ -594,7 +607,8 @@ export async function reload(
   sub: string,
   tier: Tier,
   id: string,
+  today: string = todayUtc7(new Date()),
 ): Promise<DeviceDto> {
-  const rows = await deviceRows(c, scope, sub, tier, "d.id = $3", [id], 1);
+  const rows = await deviceRows(c, scope, sub, tier, today, "d.id = $4", [id], 1);
   return rows[0]!;
 }

@@ -1,6 +1,7 @@
+import { todayUtc7 } from "@/lib/devices/holding";
 import { isCanonicalUuid } from "@/lib/validate/uuid";
 import { validateHandoffStart } from "@/lib/validate/device";
-import { startReturn, startTransfer } from "@/server/devices/handoffs";
+import { startExtension, startReturn, startTransfer } from "@/server/devices/handoffs";
 import { getPool } from "@/server/db/pool";
 import { apiError } from "@/server/http/respond";
 import { withAuth } from "@/server/http/with-auth";
@@ -16,12 +17,14 @@ export const POST = withAuth<{ id: string }>(
     if (!pool) return apiError(503, "unavailable");
     const body = await readJson(req);
     if (!body.ok) return apiError(400, "invalid_request");
-    const v = validateHandoffStart(body.body);
+    const v = validateHandoffStart(body.body, todayUtc7(new Date()));
     if (!v.ok) return apiError(400, "invalid_request");
     const r =
       v.value.kind === "return"
         ? await startReturn(pool, ctx.scope, ctx.sub, ctx.tier, id, v.value)
-        : await startTransfer(pool, ctx.scope, ctx.sub, ctx.tier, id, v.value);
+        : v.value.kind === "extension"
+          ? await startExtension(pool, ctx.scope, ctx.sub, ctx.tier, id, v.value)
+          : await startTransfer(pool, ctx.scope, ctx.sub, ctx.tier, id, v.value);
     if (!r.ok) return apiError(r.status, r.code);
     return Response.json(r.value, { status: 201, headers: { "Cache-Control": "no-store" } });
   },
