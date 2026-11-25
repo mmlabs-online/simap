@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | S |
 | Areas | db, api, ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T17:57Z |
 | PR | — |
 
 ## Goal
@@ -40,7 +40,7 @@ A device type's art can be an uploaded image, a sprite picked from the bundled p
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
 
-- Waiting for Ming: plan approval (High tier: migration). Ming said "duyệt" while the planner was still running; not recorded as approval because the plan was not written yet.
+- 2026-11-25: Plan approved by Ming (A1-A11 as written). Earlier note: Ming said "duyệt" while the planner was still running; not recorded as approval because the plan was not written yet.
 
 ## Handoff
 
