@@ -30,9 +30,10 @@ export function expiryText(h: { expiresOn: string | null }): string {
     : devicesCopy.holding.until(h.expiresOn);
 }
 
-/** The pending line of a row: a chip and the recipient. Only transfers have text until SIM-037.4 / 037.5. */
+/** The pending line of a row: a chip, and the recipient for a transfer. An extension has no text until SIM-037.5. */
 export function pendingText(d: DeviceDto): { chip: string; to: string | null } | null {
   const p = d.pendingHandoff;
+  if (p?.kind === "return") return { chip: devicesCopy.pending.returnChip, to: null };
   if (p?.kind !== "transfer") return null;
   return {
     chip: devicesCopy.pending.chip,

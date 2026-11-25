@@ -34,6 +34,54 @@ export const devicesCopy = {
     transferAria: (inv: string) => `Transfer device ${inv}`,
     cancelTransfer: "Cancel transfer",
     cancelTransferAria: (inv: string) => `Cancel transfer of device ${inv}`,
+    giveBack: "Give back to org",
+    giveBackAria: (inv: string) => `Give device ${inv} back to the org`,
+    takeBack: "Take back",
+    takeBackAria: (inv: string, owner: string) => `Take device ${inv} back from ${owner}`,
+    cancelReturn: "Cancel return",
+    cancelReturnAria: (inv: string) => `Cancel return of device ${inv}`,
+  },
+  giveBack: {
+    title: "Give device back to org",
+    submit: "Give back",
+    currentOwner: "Current owner",
+    note: "Note for the Admin",
+    noteHint: "Optional. The Admin sees it with the return.",
+    next: "An Admin must confirm. Until then the device stays with you and keeps its seat. You can cancel at any time.",
+    sent: (name: string, inv: string) =>
+      `Return of ${name} (${inv}) sent. It waits for an Admin to confirm.`,
+    cancelled: (name: string, inv: string) => `Return of ${name} (${inv}) cancelled.`,
+    gone: "This return is no longer available. The list has been refreshed.",
+    errors: {
+      invalid: "The server refused this. Check the note.",
+      alreadyUnowned: "This device is already in the org inventory. The list has been refreshed.",
+    },
+  },
+  takeBack: {
+    title: "Take back this device?",
+    submit: "Take back",
+    withOwner: (owner: string) => `Currently with ${owner}`,
+    onSeat: (code: string) => `on seat ${code}`,
+    notPlaced: "not placed",
+    effect: "It becomes unowned and leaves its seat.",
+    cancelsTransfer: "The pending transfer will be cancelled.",
+    done: (name: string, inv: string) => `${name} (${inv}) is back in the org inventory.`,
+    errors: {
+      alreadyUnowned: "This device is already in the org inventory. The list has been refreshed.",
+    },
+  },
+  returns: {
+    heading: (n: number) => (n === 1 ? "1 pending return" : `${n} pending returns`),
+    hint: "Confirming makes the device unowned and removes it from its seat.",
+    confirm: "Confirm return",
+    cancel: "Cancel",
+    confirmAria: (name: string, inv: string, from: string) =>
+      `Confirm return of ${name} (${inv}) from ${from}`,
+    cancelAria: (name: string, inv: string, from: string) =>
+      `Cancel return of ${name} (${inv}) from ${from}`,
+    confirmed: (name: string, inv: string) => `${name} (${inv}) is back in the org inventory.`,
+    filterHint: 'Find it under "All", "Not placed" or "Org inventory".',
+    truncated: (n: number) => `Showing the first ${n} pending returns.`,
   },
   transfer: {
     title: "Transfer device",
@@ -70,7 +118,11 @@ export const devicesCopy = {
     declined: (name: string, inv: string) => `Transfer of ${name} (${inv}) declined.`,
     truncated: (n: number) => `Showing the first ${n} incoming transfers.`,
   },
-  pending: { chip: "Transfer pending", to: (name: string) => `To ${name}` },
+  pending: {
+    chip: "Transfer pending",
+    returnChip: "Return pending",
+    to: (name: string) => `To ${name}`,
+  },
   delete: {
     title: "Delete device",
     submit: "Delete device",

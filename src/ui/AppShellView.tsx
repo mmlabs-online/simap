@@ -23,6 +23,7 @@ export function AppShellView({
   actions,
   roomSwitcher,
   badges,
+  badgeLabels,
   children,
 }: {
   session: Session | null;
@@ -31,6 +32,8 @@ export function AppShellView({
   roomSwitcher?: ReactNode;
   /** A count per nav entry (0 or missing: no badge). Only entries the tier can see render. */
   badges?: Partial<Record<NavId, number>>;
+  /** Screen-reader text per nav entry; it replaces the default text for the entry's count. */
+  badgeLabels?: Partial<Record<NavId, string>>;
   children: ReactNode;
 }) {
   const navItems = session
@@ -98,7 +101,8 @@ export function AppShellView({
                   </span>
                   {text !== null && (
                     <span className="sr-only">
-                      {(shellCopy.badge.byNav[item.id] ?? shellCopy.badge.newDecisions)(count)}
+                      {badgeLabels?.[item.id] ??
+                        (shellCopy.badge.byNav[item.id] ?? shellCopy.badge.newDecisions)(count)}
                     </span>
                   )}
                 </Link>

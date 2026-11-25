@@ -82,7 +82,7 @@ describe("settleTransfer", () => {
 describe("cancelOutcome", () => {
   const device = { name: "Máy trạm", inventoryNumber: "INV-1" };
   it("ok shows the cancelled notice and refreshes", () => {
-    expect(cancelOutcome(ok, device)).toEqual({
+    expect(cancelOutcome(ok, device, "transfer")).toEqual({
       refresh: true,
       notice: { tone: "status", text: copy.cancelled("Máy trạm", "INV-1") },
     });
@@ -90,14 +90,14 @@ describe("cancelOutcome", () => {
   it.each(["handoff_not_pending", "not_found"])(
     "%s shows the gone notice and refreshes",
     (code) => {
-      expect(cancelOutcome(fail(code), device)).toEqual({
+      expect(cancelOutcome(fail(code), device, "transfer")).toEqual({
         refresh: true,
         notice: { tone: "status", text: copy.gone },
       });
     },
   );
   it("not_allowed is an error notice and refreshes", () => {
-    expect(cancelOutcome(fail("not_allowed"), device)).toEqual({
+    expect(cancelOutcome(fail("not_allowed"), device, "transfer")).toEqual({
       refresh: true,
       notice: { tone: "error", text: apiErrorMessage("not_allowed") },
     });
@@ -105,10 +105,22 @@ describe("cancelOutcome", () => {
   it.each(["unauthenticated", "forbidden", "member_deactivated", "org_required", "unavailable"])(
     "%s is an error notice without a refresh",
     (code) => {
-      expect(cancelOutcome(fail(code), device)).toEqual({
+      expect(cancelOutcome(fail(code), device, "transfer")).toEqual({
         refresh: false,
         notice: { tone: "error", text: apiErrorMessage(code) },
       });
     },
   );
+  it("return kind: its own cancelled and gone notices", () => {
+    const r = devicesCopy.giveBack;
+    expect(cancelOutcome(ok, device, "return")).toEqual({
+      refresh: true,
+      notice: { tone: "status", text: r.cancelled("Máy trạm", "INV-1") },
+    });
+    expect(cancelOutcome(fail("handoff_not_pending"), device, "return")).toEqual({
+      refresh: true,
+      notice: { tone: "status", text: r.gone },
+    });
+    expect(cancelOutcome(fail("not_allowed"), device, "return").notice.tone).toBe("error");
+  });
 });

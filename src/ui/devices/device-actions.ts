@@ -11,7 +11,9 @@ export type DeviceRowHandlers = {
   onEdit?: (device: DeviceDto) => void;
   onDelete?: (device: DeviceDto) => void;
   onTransfer?: (device: DeviceDto) => void;
-  onCancelTransfer?: (device: DeviceDto) => void;
+  onCancelHandoff?: (device: DeviceDto) => void;
+  onReturn?: (device: DeviceDto) => void;
+  onTakeBack?: (device: DeviceDto) => void;
 };
 
 export type RowAction = {
@@ -39,13 +41,31 @@ export function rowActions(
   busyId?: string | null,
 ): RowAction[] {
   const out: RowAction[] = [];
-  const { onAssign, onEditHolding, onPlace, onEdit, onDelete, onTransfer, onCancelTransfer } = h;
-  if (onCancelTransfer && d.pendingHandoff?.kind === "transfer" && d.pendingHandoff.canCancel) {
+  const {
+    onAssign,
+    onEditHolding,
+    onPlace,
+    onEdit,
+    onDelete,
+    onTransfer,
+    onCancelHandoff,
+    onReturn,
+    onTakeBack,
+  } = h;
+  const pending = d.pendingHandoff;
+  if (
+    onCancelHandoff &&
+    pending?.canCancel &&
+    (pending.kind === "transfer" || pending.kind === "return")
+  ) {
+    const isReturn = pending.kind === "return";
     out.push({
-      key: "cancelTransfer",
-      label: devicesCopy.actions.cancelTransfer,
-      ariaLabel: devicesCopy.actions.cancelTransferAria(d.inventoryNumber),
-      run: () => onCancelTransfer(d),
+      key: isReturn ? "cancelReturn" : "cancelTransfer",
+      label: isReturn ? devicesCopy.actions.cancelReturn : devicesCopy.actions.cancelTransfer,
+      ariaLabel: (isReturn
+        ? devicesCopy.actions.cancelReturnAria
+        : devicesCopy.actions.cancelTransferAria)(d.inventoryNumber),
+      run: () => onCancelHandoff(d),
     });
   }
   if (onAssign && d.canAssign) {
@@ -82,12 +102,29 @@ export function rowActions(
       run: () => onTransfer(d),
     });
   }
+  if (onReturn && d.canReturn) {
+    out.push({
+      key: "giveBack",
+      label: devicesCopy.actions.giveBack,
+      ariaLabel: devicesCopy.actions.giveBackAria(d.inventoryNumber),
+      run: () => onReturn(d),
+    });
+  }
   if (onEdit && d.canEdit) {
     out.push({
       key: "edit",
       label: devicesCopy.actions.edit,
       ariaLabel: devicesCopy.actions.editAria(d.inventoryNumber),
       run: () => onEdit(d),
+    });
+  }
+  if (onTakeBack && d.canTakeBack) {
+    out.push({
+      key: "takeBack",
+      label: devicesCopy.actions.takeBack,
+      ariaLabel: devicesCopy.actions.takeBackAria(d.inventoryNumber, d.owner?.displayName ?? ""),
+      danger: true,
+      run: () => onTakeBack(d),
     });
   }
   if (onDelete && d.canDelete) {
