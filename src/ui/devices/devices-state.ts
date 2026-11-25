@@ -4,7 +4,7 @@ import { devicesCopy } from "../copy/devices";
 import { shellCopy } from "../copy/shell";
 import type { DevicesResult } from "./devices-api";
 
-export const FILTERS: readonly PlacementFilter[] = ["all", "placed", "inventory"];
+export const FILTERS: readonly PlacementFilter[] = ["all", "placed", "inventory", "unowned"];
 
 export function filterOptions(): ChipOption<PlacementFilter>[] {
   return FILTERS.map((value) => ({ value, label: devicesCopy.filters[value] }));

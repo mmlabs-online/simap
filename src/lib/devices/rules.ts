@@ -8,11 +8,36 @@ export const canPlace = (tier: Tier, isOwner: boolean): boolean =>
 /** D19: editing or deleting a device is owner or Admin only. */
 export const canEdit = (tier: Tier, isOwner: boolean): boolean => isOwner || tier === "admin";
 
-/** DEV-01: a device is created for oneself; only an Admin creates for another member. */
-export const canCreateFor = (tier: Tier, isSelf: boolean): boolean => isSelf || tier === "admin";
+/** DEV-01, OQ-41: only an Admin creates a device; it starts in the org inventory (no owner). */
+export const canCreate = (tier: Tier): boolean => tier === "admin";
+
+export type DeleteRefusalCode =
+  | "not_allowed"
+  | "device_owned"
+  | "device_placed"
+  | "handoff_pending";
+
+export type DeleteDecision =
+  | { kind: "ok" }
+  | { kind: "refuse"; status: 409 | 422; code: DeleteRefusalCode };
+
+/** DEV-01, D31: only an Admin deletes, and only an unowned, unplaced device with no pending handoff. */
+export function decideDelete(a: {
+  tier: Tier;
+  ownerId: string | null;
+  seatId: string | null;
+  pendingHandoff: boolean;
+}): DeleteDecision {
+  if (a.tier !== "admin") return { kind: "refuse", status: 422, code: "not_allowed" };
+  if (a.ownerId !== null) return { kind: "refuse", status: 409, code: "device_owned" };
+  if (a.seatId !== null) return { kind: "refuse", status: 409, code: "device_placed" };
+  if (a.pendingHandoff) return { kind: "refuse", status: 409, code: "handoff_pending" };
+  return { kind: "ok" };
+}
 
 export type PlacementRefusalCode =
   | "not_allowed"
+  | "device_unowned"
   | "placement_changed"
   | "seat_has_no_occupant"
   | "owner_not_occupant"
@@ -26,7 +51,8 @@ export type PlacementInput = {
   tier: Tier;
   isOwner: boolean;
   deviceId: string;
-  ownerId: string;
+  /** Null = org inventory (D63). Callers compute isOwner as `ownerId !== null && me === ownerId`. */
+  ownerId: string | null;
   current: { seatId: string | null; role: DeviceRole };
   expectedSeatId: string | null;
   /** Null returns the device to inventory. */
@@ -45,6 +71,7 @@ export function decidePlacement(a: PlacementInput): PlacementDecision {
   if (!canPlace(a.tier, a.isOwner)) return refuse(422, "not_allowed");
   if (a.current.seatId !== a.expectedSeatId) return refuse(409, "placement_changed");
   if (a.target === null) return { kind: a.current.seatId === null ? "noop" : "return" };
+  if (a.ownerId === null) return refuse(422, "device_unowned"); // invariant 5
   if (a.current.seatId === a.target.seatId && a.current.role === a.role) return { kind: "noop" };
   if (a.role === "primary") {
     if (a.target.occupantId === null) return refuse(409, "seat_has_no_occupant");

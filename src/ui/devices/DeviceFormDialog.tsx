@@ -4,11 +4,8 @@ import { useId, useState } from "react";
 import { DEVICE_LIMITS, type DeviceDto } from "@/lib/devices/types";
 import { devicesCopy } from "../copy/devices";
 import { kitCopy } from "../copy/kit";
-import { DialogField, EntityFormDialog } from "../EntityFormDialog";
-import { canLoadMore, type LoadPage, type PickerMember } from "../seats/member-picker";
-import { MemberPickerFields } from "../seats/MemberPickerDialog";
-import { useMemberPicker } from "../seats/useMemberPicker";
 import { useTypeSuggestions } from "../deviceTypes/useTypeSuggestions";
+import { DialogField, EntityFormDialog } from "../EntityFormDialog";
 import {
   deviceErrorMessage,
   emptyForm,
@@ -16,7 +13,6 @@ import {
   toCreateBody,
   toPatchBody,
   type DeviceForm,
-  type DeviceOwner,
 } from "./device-form";
 import type { DevicesApi } from "./devices-api";
 
@@ -32,9 +28,7 @@ export function DeviceFormDialog({
 }: {
   open: boolean;
   device: DeviceDto | null;
-  isAdmin: boolean;
   api: DevicesApi;
-  loadPage: LoadPage;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -44,16 +38,12 @@ export function DeviceFormDialog({
 
 function DeviceFormInner({
   device,
-  isAdmin,
   api,
-  loadPage,
   onClose,
   onDone,
 }: {
   device: DeviceDto | null;
-  isAdmin: boolean;
   api: DevicesApi;
-  loadPage: LoadPage;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -73,14 +63,14 @@ function DeviceFormInner({
       setSubmitting(true);
       result = await api.update(device.id, patch.body);
     } else {
-      const create = toCreateBody(form, { isAdmin });
+      const create = toCreateBody(form);
       if (create.kind === "invalid") return setError(create.message);
       setSubmitting(true);
       result = await api.create(create.body);
     }
     setSubmitting(false);
     if (result.ok) return onDone();
-    // On edit the device is gone; on create the chosen owner is gone, so the dialog stays open.
+    // On edit the device is gone.
     if (device && result.code === "not_found") return onDone();
     setError(deviceErrorMessage(result.code));
   }
@@ -98,13 +88,10 @@ function DeviceFormInner({
     >
       <DeviceFormFields
         mode={device ? "edit" : "create"}
-        isAdmin={isAdmin}
         form={form}
-        ownerName={device?.owner.displayName ?? null}
+        ownerName={device ? (device.owner?.displayName ?? devicesCopy.orgInventory) : null}
         suggestions={suggestions}
-        loadPage={loadPage}
         onField={(key, value) => setForm((f) => ({ ...f, [key]: value }))}
-        onOwner={(owner) => setForm((f) => ({ ...f, owner }))}
       />
     </EntityFormDialog>
   );
@@ -113,25 +100,18 @@ function DeviceFormInner({
 /** The form fields. Props only, so the markup can be tested without effects. */
 export function DeviceFormFields({
   mode,
-  isAdmin,
   form,
   ownerName,
   suggestions,
-  loadPage,
   onField,
-  onOwner,
 }: {
   mode: "create" | "edit";
-  isAdmin: boolean;
   form: DeviceForm;
   ownerName: string | null;
   suggestions: readonly string[];
-  loadPage: LoadPage;
   onField: (key: "name" | "type" | "inventoryNumber" | "mac", value: string) => void;
-  onOwner: (owner: DeviceOwner) => void;
 }) {
   const listId = useId();
-  const picked = form.owner.kind === "member" ? form.owner.member : null;
   return (
     <>
       <DialogField
@@ -184,70 +164,6 @@ export function DeviceFormFields({
           <span className="text-sm text-on-surface-variant">{copy.ownerReadOnly}</span>
         </div>
       )}
-      {mode === "create" && isAdmin && (
-        <fieldset className="flex flex-col gap-2">
-          <legend className={CAPTION}>{copy.fields.owner}</legend>
-          <label className="flex items-center gap-2 text-sm font-medium text-on-surface">
-            <input
-              type="radio"
-              name="owner-kind"
-              checked={form.owner.kind === "me"}
-              onChange={() => onOwner({ kind: "me" })}
-            />
-            {copy.ownerMe}
-          </label>
-          <label className="flex items-center gap-2 text-sm font-medium text-on-surface">
-            <input
-              type="radio"
-              name="owner-kind"
-              checked={form.owner.kind === "member"}
-              onChange={() => onOwner({ kind: "member", member: null })}
-            />
-            {copy.ownerOther}
-          </label>
-          {form.owner.kind === "member" && (
-            <>
-              {picked && (
-                <p className="text-sm font-semibold text-on-surface">
-                  {copy.ownerSelected(picked.displayName)}
-                </p>
-              )}
-              <OwnerPicker
-                loadPage={loadPage}
-                onPick={(member) => onOwner({ kind: "member", member })}
-              />
-            </>
-          )}
-        </fieldset>
-      )}
     </>
-  );
-}
-
-/** Mounted only for "Another member", so the member list loads lazily. */
-function OwnerPicker({
-  loadPage,
-  onPick,
-}: {
-  loadPage: LoadPage;
-  onPick: (member: PickerMember) => void;
-}) {
-  const picker = useMemberPicker(loadPage, 0);
-  const { state } = picker;
-  return (
-    <MemberPickerFields
-      state={state}
-      query={picker.query}
-      occupantId={null}
-      canMore={canLoadMore(state)}
-      onQuery={picker.setQuery}
-      onSelect={(id) => {
-        picker.select(id);
-        const member = state.items.find((m) => m.id === id);
-        if (member) onPick(member);
-      }}
-      onMore={() => void picker.loadMore()}
-      onRetry={picker.retry}
-    />
   );
 }

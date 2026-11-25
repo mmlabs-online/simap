@@ -4,7 +4,7 @@ import { DEVICE_LIMITS } from "@/lib/devices/types";
 export const devicesCopy = {
   retry: "Try again",
   filterLabel: "Show devices",
-  filters: { all: "All", placed: "Placed", inventory: "Inventory" },
+  filters: { all: "All", placed: "Placed", inventory: "Inventory", unowned: "Org inventory" },
   columns: {
     name: "Name",
     type: "Type",
@@ -48,20 +48,13 @@ export const devicesCopy = {
       owner: "Owner",
     },
     macPlaceholder: "AA:BB:CC:DD:EE:FF",
-    ownerMe: "Me",
-    ownerOther: "Another member",
-    ownerSelected: (name: string) => `Owner: ${name}`,
     ownerReadOnly: "The owner can't be changed.",
     fieldErrors: {
       name: `Enter a name of up to ${DEVICE_LIMITS.name} characters.`,
       type: `Enter a type of up to ${DEVICE_LIMITS.type} characters.`,
       inventoryNumber: `Enter an inventory number of up to ${DEVICE_LIMITS.inventoryNumber} characters.`,
       mac: "Enter a MAC address such as AA:BB:CC:DD:EE:FF, or leave it blank.",
-      ownerId: "Choose a member.",
       body: "Some of the information is not valid. Check it and try again.",
-    },
-    errors: {
-      memberNotAssignable: "This member is inactive, so they can't own a device.",
     },
   },
   place: {
@@ -93,10 +86,12 @@ export const devicesCopy = {
   you: "You",
   atSeat: (seatCode: string) => `At seat ${seatCode}`,
   inInventory: "In inventory",
+  orgInventory: "Org inventory",
   roles: { primary: "Primary", secondary: "Secondary" },
   empty: {
     placed: "No devices are placed at a seat.",
     inventory: "No devices in inventory.",
+    unowned: "No devices in the org inventory.",
   },
   showAll: "Show all devices",
   summary: (n: number, label: string) => `${n} ${n === 1 ? "device" : "devices"} · ${label}`,

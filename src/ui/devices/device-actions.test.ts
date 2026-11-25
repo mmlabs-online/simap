@@ -39,11 +39,11 @@ describe("hasAnyAction", () => {
 });
 
 describe("delete action", () => {
-  it("Delete only when canEdit and onDelete; marked danger; after edit", () => {
+  it("Delete only when canDelete and onDelete; marked danger; after edit", () => {
     const onDelete = vi.fn();
-    expect(rowActions(d({ canPlace: false, canEdit: true }), {})).toEqual([]);
-    expect(rowActions(d({ canPlace: false, canEdit: false }), { onDelete })).toEqual([]);
-    const row = d({ canEdit: true });
+    expect(rowActions(d({ canPlace: false, canDelete: true }), {})).toEqual([]);
+    expect(rowActions(d({ canPlace: false, canEdit: true }), { onDelete })).toEqual([]);
+    const row = d({ canEdit: true, canDelete: true });
     expect(
       rowActions(row, { onPlace: vi.fn(), onEdit: vi.fn(), onDelete }).map((x) => x.key),
     ).toEqual(["place", "edit", "delete"]);
@@ -53,8 +53,10 @@ describe("delete action", () => {
     a[0].run();
     expect(onDelete).toHaveBeenCalledWith(expect.objectContaining({ id: "d1" }));
   });
-  it("hasAnyAction is true for a canEdit-only row with onDelete", () => {
-    expect(hasAnyAction([d({ canPlace: false, canEdit: true })], { onDelete: vi.fn() })).toBe(true);
+  it("hasAnyAction is true for a canDelete-only row with onDelete", () => {
+    expect(hasAnyAction([d({ canPlace: false, canDelete: true })], { onDelete: vi.fn() })).toBe(
+      true,
+    );
   });
 });
 

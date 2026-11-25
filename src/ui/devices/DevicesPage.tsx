@@ -51,7 +51,7 @@ export function DevicesPage() {
         onFilter={setFilter}
         onRetry={() => void reload()}
         actions={actions}
-        onNew={() => setForm({ device: null })}
+        onNew={isAdmin ? () => setForm({ device: null }) : undefined}
         headingRef={headingRef}
       />
       <PlaceDeviceDialog
@@ -71,9 +71,7 @@ export function DevicesPage() {
       <DeviceFormDialog
         open={form !== null}
         device={form?.device ?? null}
-        isAdmin={isAdmin}
         api={api}
-        loadPage={seatsApi.activeMembers}
         onClose={() => setForm(null)}
         onDone={() => {
           const created = form?.device === null;

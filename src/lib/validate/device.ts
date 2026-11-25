@@ -15,7 +15,7 @@ export type PlacementPutValue = {
   expectedSeatId: string | null;
 };
 
-const FILTERS: readonly string[] = ["all", "placed", "inventory"];
+const FILTERS: readonly string[] = ["all", "placed", "inventory", "unowned"];
 
 /** `?placement=`: absent or blank = all; repeated or unknown = invalid. Other keys are ignored. */
 export function parseDeviceQuery(params: URLSearchParams): DeviceQueryResult {
@@ -93,8 +93,9 @@ const TEXT_MAX = {
 
 export function validateDeviceCreate(body: unknown): Validated<DeviceCreateValue> {
   if (!isPlainObject(body)) return { ok: false, field: "body" };
+  // `ownerId` is an unknown key: a new device has no owner (DEV-01)
   const extra = Object.keys(body).find(
-    (k) => !["name", "type", "inventoryNumber", "mac", "ownerId"].includes(k),
+    (k) => !["name", "type", "inventoryNumber", "mac"].includes(k),
   );
   if (extra !== undefined) return { ok: false, field: extra };
   const name = text(body.name, TEXT_MAX.name);
@@ -105,9 +106,7 @@ export function validateDeviceCreate(body: unknown): Validated<DeviceCreateValue
   if (inventoryNumber === null) return { ok: false, field: "inventoryNumber" };
   const mac = body.mac === undefined ? null : normalizeMac(body.mac);
   if (mac === undefined) return { ok: false, field: "mac" };
-  const ownerId = body.ownerId ?? null;
-  if (ownerId !== null && !isCanonicalUuid(ownerId)) return { ok: false, field: "ownerId" };
-  return { ok: true, value: { name, type, inventoryNumber, mac, ownerId } };
+  return { ok: true, value: { name, type, inventoryNumber, mac } };
 }
 
 /** A non-empty partial of name, type, inventoryNumber and mac. `ownerId` is an unknown key: the owner never changes. */
