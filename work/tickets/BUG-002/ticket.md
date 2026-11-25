@@ -15,8 +15,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T14:32:15Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/104 |
 
 ## Report
 Ming: "/bug cho lỗi orgQuery" (2026-11-25), after the SIM-037.6 run reported that `startTransfer`, `startReturn` and `startExtension` throw `orgQuery: SQL must filter org_id = $1` and that CI `test:db` is red on `main`.
@@ -60,3 +60,9 @@ Ming: "/bug cho lỗi orgQuery" (2026-11-25), after the SIM-037.6 run reported t
 ## Notes / answers from Ming
 
 ## Handoff
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 4, tokens ~135k total (in/out split not reported): planner×1 sonnet 32k (fast lane, no consult), implementer×1 37k, reviewer×1 40k, security-ai-generated-code-auditor×1 26k.
+- Done: the three `device_handoffs` start inserts now use the select-from-subselect form. The regression test `handoffs.test.ts` fails on origin/main (verified by the reviewer) and passes here. `test:db` went from 19 to 3 failures; the 3 left are pre-existing and unrelated. Attempt 1 PASS, security PASS. Fix PR #104 (opened from the `/bug` "fix now" option, batch branch `bug/BUG-002`).
+- In progress / next: Ming merges #104. File bugs for the 3 remaining `test:db` failures (devices.db decided_check test data, manage.db deactivate meta, map-items.db collation). Ming decides on an `orgInsert` helper / guard change (High path).
+- Gotchas: the impl-log counts the devices.db failure among the orgQuery hits; it never hit the guard (the reviewer noted this as a nit). The reviewer's temp worktree folder could not be deleted (Windows long paths) and stays in the scratchpad, outside the repo.
