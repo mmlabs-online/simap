@@ -48,6 +48,12 @@ export const apiCopy = {
     invalid_project: "That project no longer exists. Reload and try again.",
     name_taken: "Another device type already has this name.",
     type_limit: "This organization has reached the limit of 100 device types.",
+    image_not_png: "This file is not a valid PNG image.",
+    image_bad_size: "The image must be exactly 24 x 24 pixels.",
+    image_too_large: "The image is too large. The limit is 20 KB.",
+    image_changed: "This image was changed by someone else. Reload and try again.",
+    images_unavailable: "Images are not available right now. Try again in a moment.",
+    drive_error: "The image could not be loaded or saved. Try again later.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

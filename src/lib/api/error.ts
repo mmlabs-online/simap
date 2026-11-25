@@ -42,6 +42,12 @@ export const API_ERROR_CODES = [
   "invalid_project",
   "name_taken",
   "type_limit",
+  "image_not_png",
+  "image_bad_size",
+  "image_too_large",
+  "image_changed",
+  "images_unavailable",
+  "drive_error",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

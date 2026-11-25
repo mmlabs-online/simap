@@ -70,7 +70,7 @@ describe("device-types (db)", () => {
     const monitor = (await list(o)).find((t) => t.name === "Monitor")!;
     expect(await deleteDeviceType(pool, o.scope, SUB, monitor.id)).toEqual({
       ok: true,
-      value: null,
+      value: { imageFileId: null },
     });
     await addMember(pool, o.orgId);
     expect((await list(o)).map((t) => t.name)).not.toContain("Monitor");
@@ -146,7 +146,10 @@ describe("device-types (db)", () => {
        values ($1, 'd', 'PC', 'INV-1', $2)`,
       [o.orgId, owner],
     );
-    expect(await deleteDeviceType(pool, o.scope, SUB, pc.id)).toEqual({ ok: true, value: null });
+    expect(await deleteDeviceType(pool, o.scope, SUB, pc.id)).toEqual({
+      ok: true,
+      value: { imageFileId: null },
+    });
     expect(await auditCount(o.orgId, "device_type.delete")).toBe(1);
     expect(
       await count("select count(*)::int as n from devices where org_id = $1 and type = 'PC'", [

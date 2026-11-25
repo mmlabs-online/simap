@@ -7,6 +7,8 @@ const svc = vi.hoisted(() => ({
   deleteDeviceType: vi.fn(),
 }));
 vi.mock("@/server/device-types/device-types", () => svc);
+const img = vi.hoisted(() => ({ discardImageFile: vi.fn() }));
+vi.mock("@/server/device-types/image", () => img);
 const pool = vi.hoisted(() => ({ getPool: vi.fn(() => ({})) }));
 vi.mock("@/server/db/pool", () => pool);
 
@@ -94,7 +96,7 @@ describe("device-types routes", () => {
     fakeAuth(["simap:admin"]);
     svc.createDeviceType.mockResolvedValue({ ok: true, value: dto });
     svc.updateDeviceType.mockResolvedValue({ ok: true, value: dto });
-    svc.deleteDeviceType.mockResolvedValue({ ok: true, value: null });
+    svc.deleteDeviceType.mockResolvedValue({ ok: true, value: { imageFileId: null } });
     const post = await POST(req("POST", { name: " PC ", slot: "pc" }), noParams);
     const patch = await PATCH(req("PATCH", { slot: "laptop" }), idRoute);
     const del = await DELETE(req("DELETE"), idRoute);
@@ -137,6 +139,18 @@ describe("device-types routes", () => {
     expect([p.status, await p.json()]).toEqual([409, { error: { code: "name_taken" } }]);
     const u = await PATCH(req("PATCH", { name: "X" }), idRoute);
     expect([u.status, await u.json()]).toEqual([404, { error: { code: "not_found" } }]);
+  });
+
+  it("DELETE type: the image file is discarded after commit, and not on a 404", async () => {
+    fakeAuth(["simap:admin"]);
+    svc.deleteDeviceType.mockResolvedValue({ ok: true, value: { imageFileId: "fileid_123456" } });
+    const r = await DELETE(req("DELETE"), idRoute);
+    expect(r.status).toBe(204);
+    expect(img.discardImageFile.mock.calls[0]!.slice(1)).toEqual(["fileid_123456", ID]);
+    img.discardImageFile.mockClear();
+    svc.deleteDeviceType.mockResolvedValue({ ok: false, status: 404, code: "not_found" });
+    expect((await DELETE(req("DELETE"), idRoute)).status).toBe(404);
+    expect(img.discardImageFile).not.toHaveBeenCalled();
   });
 
   it("503 when there is no pool", async () => {
