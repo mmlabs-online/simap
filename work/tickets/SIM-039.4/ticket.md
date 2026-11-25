@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T11:32:38Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -42,5 +42,12 @@ Admins upload a PNG per direction for any catalog item (walls and windows includ
 
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
+- Waiting for Ming: plan approval (P1 gate)
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 2 (api-platform-engineer×1 50k, planner×1; default models)
+- Done: plan READY (`plan.md`): sibling route `/api/map-items/[key]/art/[dir]/image` (PUT/DELETE Admin, GET member), parsePng + mapItemImageFits (32 px per tile, up to 32 px taller, floors 32×32, 64 KB), per-direction compare-and-set on file id, version, w, h; shared Drive helpers in `src/server/drive/image-flow.ts` with device-type behaviour unchanged. No High path, no migration.
+- In progress / next: Ming approves A1-A12 (M-70), then implement and review.
+- Gotchas: wrong-size 422 needs one read-only select first (departs from AC 1 text); handoffs.db.test.ts failures on main still need a bug ticket.
