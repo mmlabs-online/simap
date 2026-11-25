@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T08:43Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -48,5 +48,12 @@ docs/spec-v1.md §6 DEV-09; D63; OQ-44. UI slice split from SIM-037.4 (its plan.
 
 ## Notes / answers from Ming
 Split from SIM-037.4 with Ming's approval (2026-11-25, "duyệt").
+Waiting for Ming: plan approval (P1 gate)
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3, tokens ~185k total (frontend-developer×1 consult 51k, ux-architect×1 consult 33k, planner×1 opus 100k; in/out split not reported)
+- Done: consults saved; plan.md READY (UI only, binds to the merged SIM-037.4 API; no High path). Place-mode "Return" label kept (FE view); flip to "Remove from seat" only if Ming says so.
+- In progress / next: Ming approves the plan (M-67). Then /run SIM-037.10 resumes at IMPLEMENT.
+- Gotchas: plan is ~450-550 product lines (over the guide); a fallback split is named in plan.md. Non-Admins must never call box=returns (422).
