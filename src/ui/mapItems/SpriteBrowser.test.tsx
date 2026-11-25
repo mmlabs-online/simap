@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { mapItemsCopy } from "../copy/mapItems";
 import { SpriteBrowser } from "./SpriteBrowser";
 import { spriteChoices } from "./map-item-art";
+import type { Atlas } from "../roomlayout/loadAtlas";
 import { dto } from "./test-items";
 
 const noop = () => {};
@@ -51,5 +52,28 @@ describe("SpriteBrowser", () => {
     const exact = render({ staged: "desk.single.n" });
     expect(exact).not.toContain(copy.smaller);
     expect(render()).not.toContain(copy.use);
+  });
+
+  const frame = { x: 0, y: 0, w: 32, h: 32, anchor: [0, 0], tiles: [1, 1], blocks: false };
+  const atlas = (keys: string[]) =>
+    ({
+      manifest: { frames: Object.fromEntries(keys.map((k) => [k, frame])) },
+      image: {},
+    }) as unknown as Atlas;
+  const keys = spriteChoices(dto("desk.single"), "n").flatMap((g) => g.keys);
+
+  it("thumbnails: one canvas per row and one on the staged block; none without an atlas", () => {
+    const html = render({ atlas: atlas(keys) });
+    expect(html.match(/<canvas/g)).toHaveLength(keys.length);
+    expect(render({ atlas: atlas(keys), staged: keys[0]! }).match(/<canvas/g)).toHaveLength(
+      keys.length + 1,
+    );
+    expect(render({ staged: keys[0]! })).not.toContain("<canvas");
+  });
+
+  it("frame missing in atlas: no canvas, the row text stays", () => {
+    const html = render({ atlas: atlas([]) });
+    expect(html).not.toContain("<canvas");
+    expect(html).toContain(keys[0]!);
   });
 });

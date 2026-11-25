@@ -6,7 +6,9 @@ import { shellCopy } from "../copy/shell";
 import { Button } from "../Button";
 import { Card } from "../Card";
 import type { ListState } from "../groups/ListSection";
-import { isCustomised } from "./map-item-art";
+import type { Atlas } from "../roomlayout/loadAtlas";
+import { FramePreview } from "./FramePreview";
+import { isCustomised, thumbSprite } from "./map-item-art";
 import { catalogGroups } from "./map-items-state";
 
 export type MapItemsViewProps = {
@@ -16,6 +18,8 @@ export type MapItemsViewProps = {
   onArt: (item: MapItemDto) => void;
   /** The blob URL of the row thumbnail (a custom image), or null. */
   thumbUrl?: (item: MapItemDto) => string | null;
+  /** The sprite atlas, for the thumbnail of items that only have a package sprite. */
+  atlas?: Atlas | null;
   onRetry: () => void;
 };
 
@@ -29,6 +33,7 @@ export function MapItemsView({
   onEdit,
   onArt,
   thumbUrl,
+  atlas,
   onRetry,
 }: MapItemsViewProps) {
   const title = (
@@ -96,6 +101,14 @@ export function MapItemsView({
                           alt={mapItemsCopy.art.thumbAlt(item.name)}
                           className="size-8 shrink-0 object-contain"
                           style={{ imageRendering: "pixelated" }}
+                        />
+                      )}
+                      {!thumbUrl?.(item) && atlas && thumbSprite(item) && (
+                        <FramePreview
+                          atlas={atlas}
+                          frameKey={thumbSprite(item)!}
+                          box={32}
+                          label={mapItemsCopy.art.thumbAlt(item.name)}
                         />
                       )}
                       <span className="truncate text-sm font-bold text-on-surface">

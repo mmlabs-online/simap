@@ -11,8 +11,10 @@ import {
   expectedImageSize,
   findArtItem,
   isCustomised,
+  panelFrameKey,
   spriteChoices,
   thumbDir,
+  thumbSprite,
 } from "./map-item-art";
 import { dto } from "./test-items";
 
@@ -189,5 +191,38 @@ describe("findArtItem", () => {
     expect(findArtItem(items, "plant.large")).toBe(items[1]);
     expect(findArtItem(items, "gone")).toBeUndefined();
     expect(findArtItem([], "plant.large")).toBeUndefined();
+  });
+});
+
+describe("panelFrameKey", () => {
+  const withArt = (key: string, dir: Direction, sprite: string | null, hasImage: boolean) => {
+    const d = dto(key);
+    return { ...d, art: { ...d.art, [dir]: art(sprite, hasImage) } };
+  };
+  it("is null with an image, the chosen sprite, else the library frame per direction", () => {
+    expect(panelFrameKey(withArt("desk.single", "n", "desk.single.n", true), "n")).toBeNull();
+    expect(panelFrameKey(withArt("desk.single", "n", "desk.single.e", false), "n")).toBe(
+      "desk.single.e",
+    );
+    for (const d of DIRS) expect(panelFrameKey(dto("desk.single"), d)).toBe(`desk.single.${d}`);
+    expect(panelFrameKey(dto("plant.large"), "s")).toBe("plant.large");
+  });
+  it("is null when the key is not in the registry", () => {
+    expect(panelFrameKey(dto("desk.single", { builtinKey: "nope" }), "s")).toBeNull();
+  });
+});
+
+describe("thumbSprite", () => {
+  it("picks s, n, e, w in order; ignores directions the item lacks; null without a sprite", () => {
+    const d = dto("desk.single");
+    const set = (o: Partial<Record<Direction, string>>) => ({
+      ...d,
+      art: Object.fromEntries(DIRS.map((x) => [x, art(o[x] ?? null, false)])) as typeof d.art,
+    });
+    expect(thumbSprite(set({ w: "w1", e: "e1", n: "n1", s: "s1" }))).toBe("s1");
+    expect(thumbSprite(set({ w: "w1", e: "e1" }))).toBe("e1");
+    expect(thumbSprite(d)).toBeNull();
+    const p = dto("plant.large");
+    expect(thumbSprite({ ...p, art: { ...p.art, n: art("x", false) } })).toBeNull();
   });
 });

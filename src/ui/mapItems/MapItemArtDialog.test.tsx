@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { mapItemsCopy } from "../copy/mapItems";
 import { MapItemArtBody, type ArtBodyProps } from "./MapItemArtDialog";
+import type { Atlas } from "../roomlayout/loadAtlas";
 import { dto } from "./test-items";
 
 const noop = () => {};
@@ -102,5 +103,46 @@ describe("MapItemArtBody", () => {
 
   it("no copy-to-other-directions control is rendered", () => {
     expect(render().toLowerCase()).not.toMatch(/copy|apply to|all directions|rotate/);
+  });
+
+  const frame = { x: 0, y: 0, w: 32, h: 32, anchor: [0, 0], tiles: [1, 1], blocks: false };
+  const atlas = (keys: string[]) =>
+    ({
+      manifest: { frames: Object.fromEntries(keys.map((k) => [k, frame])) },
+      image: {},
+    }) as unknown as Atlas;
+
+  it("atlas previews: library and sprite panels get 1x and 2x canvases; an image panel keeps the img", () => {
+    const lib = render({ item: dto("plant.large"), atlas: atlas(["plant.large"]) });
+    expect(count(lib, "<canvas")).toBe(2);
+    expect(lib).toContain(">1×<");
+    expect(lib).toContain(">2×<");
+    const sprite = render({
+      item: withArt("plant.large", "s", "plant.large", false),
+      atlas: atlas(["plant.large"]),
+    });
+    expect(count(sprite, "<canvas")).toBe(2);
+    const img = render({
+      item: withArt("plant.large", "s", null, true),
+      imageUrl: () => "blob:x",
+      atlas: atlas(["plant.large"]),
+    });
+    expect(count(img, "<canvas")).toBe(0);
+    expect(count(img, "<img")).toBe(2);
+    expect(render({ item: dto("plant.large"), atlas: atlas([]) })).toContain(copy.previewNA);
+  });
+
+  it("atlas failed: shows the note, panels and Choose package sprite still render", () => {
+    const html = render({ atlasFailed: true });
+    expect(html).toContain(copy.atlasFailed);
+    expect(count(html, "<fieldset")).toBe(4);
+    expect(html).toContain(copy.choose);
+    expect(html).not.toContain("<canvas");
+  });
+
+  it("atlas loading: no note, no canvas", () => {
+    const html = render({ atlas: null });
+    expect(html).not.toContain(copy.atlasFailed);
+    expect(html).not.toContain("<canvas");
   });
 });

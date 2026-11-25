@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { MapItemDto } from "@/lib/map-items/types";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { useList } from "../groups/useList";
+import { useAtlas } from "../roomlayout/useAtlas";
 import { useSession } from "../session";
 import { MapItemArtDialog } from "./MapItemArtDialog";
 import { MapItemFormDialog } from "./MapItemFormDialog";
@@ -39,6 +40,7 @@ function MapItemsLoaded() {
   const api = useMemo(() => createMapItemsApi(apiFetch), [apiFetch]);
   const items = useList(api.list);
   const imageUrl = useMapItemImages(api, items.items);
+  const { atlas, failed } = useAtlas();
   const [dialog, setDialog] = useState<Dialog>({ kind: "none" });
 
   const close = () => setDialog({ kind: "none" });
@@ -64,6 +66,7 @@ function MapItemsLoaded() {
           const dir = thumbDir(item);
           return dir ? imageUrl(item, dir) : null;
         }}
+        atlas={atlas}
         onRetry={() => void items.reload()}
       />
       {dialog.kind === "edit" && (
@@ -81,6 +84,8 @@ function MapItemsLoaded() {
           item={artItem}
           api={api}
           imageUrl={imageUrl}
+          atlas={atlas}
+          atlasFailed={failed}
           onReload={items.reload}
           onClose={close}
           onGone={done}
