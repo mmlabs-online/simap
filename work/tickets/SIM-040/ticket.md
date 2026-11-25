@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, api, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T10:28:10Z |
 | PR | — |
 
 ## Goal
@@ -73,7 +73,7 @@ app"); the planner records it as a new decision. Related: `.github/workflows/rel
 - 2026-11-25 (Ming): add to this ticket: "ảnh 24x24 pixel quá nhỏ để lên layout bị vỡ, giới hạn 100x100pixel đi".
   Answers: square, at most 100 × 100 px (D68); at most 100 KB; device types only; merge into SIM-040.
 
-- Waiting for Ming: plan approval (High tier)
+- 2026-11-25: Plan approved (Ming: "duyệt SIM-040"), assumptions A1-A7 as written (A1: map device image box stays 24 px).
 
 ## Handoff
 
