@@ -298,6 +298,13 @@ export const devicesCopy = {
     none: "—",
     notFoundTitle: "Device not found",
     notFoundBody: "This device does not exist, or it was deleted.",
+    done: {
+      assigned: (name: string, inv: string) => `${name} (${inv}) assigned.`,
+      holdingSaved: (name: string, inv: string) => `Holding of ${name} (${inv}) saved.`,
+      placement: (name: string, inv: string) => `Placement of ${name} (${inv}) updated.`,
+    },
+    refreshFailed:
+      "The change was saved, but the page could not be refreshed. Reload the page to see the latest state.",
   },
   history: {
     title: "History",

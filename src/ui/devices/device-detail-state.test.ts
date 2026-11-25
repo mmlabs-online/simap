@@ -75,3 +75,61 @@ describe("historyReducer", () => {
     expect(late).toBe(reset);
   });
 });
+
+describe("refresh events", () => {
+  const readyDetail = () =>
+    detailReducer(detailReducer(INITIAL_DETAIL, { type: "load", id: 1 }), {
+      type: "loaded",
+      id: 1,
+      result: ok(device),
+    });
+  const newer = { id: "d1", name: "Renamed" } as DeviceDto;
+
+  it("detail refresh keeps status/device and only bumps latest", () => {
+    const s = detailReducer(readyDetail(), { type: "refresh", id: 2 });
+    expect(s).toMatchObject({ status: "ready", device, latest: 2 });
+  });
+
+  it("detail refreshed ok replaces the device in place", () => {
+    const s = detailReducer(readyDetail(), { type: "refresh", id: 2 });
+    expect(detailReducer(s, { type: "refreshed", id: 2, result: ok(newer) })).toMatchObject({
+      status: "ready",
+      device: newer,
+    });
+  });
+
+  it("detail refreshed for an older id is dropped", () => {
+    const s = detailReducer(readyDetail(), { type: "refresh", id: 3 });
+    expect(detailReducer(s, { type: "refreshed", id: 2, result: ok(newer) })).toBe(s);
+  });
+
+  it("detail refreshed not_found -> notFound, device null", () => {
+    const s = detailReducer(readyDetail(), { type: "refresh", id: 2 });
+    expect(detailReducer(s, { type: "refreshed", id: 2, result: fail("not_found") })).toMatchObject(
+      { status: "notFound", device: null },
+    );
+  });
+
+  it("detail refreshed other error keeps status ready and the old device", () => {
+    const s = detailReducer(readyDetail(), { type: "refresh", id: 2 });
+    expect(detailReducer(s, { type: "refreshed", id: 2, result: fail("unavailable") })).toBe(s);
+  });
+
+  it("history refresh keeps items and clears loadingMore; refreshed ok replaces with page 1; failure keeps items; older loadMore dropped", () => {
+    let s = historyReducer(INITIAL_HISTORY, { type: "load", id: 1 });
+    s = historyReducer(s, { type: "loaded", id: 1, result: ok(pageOf(["a", "b"], "c1")) });
+    s = historyReducer(s, { type: "loadMore", id: 2 });
+    const r = historyReducer(s, { type: "refresh", id: 3 });
+    expect(r).toMatchObject({ loadingMore: false, moreError: false, latest: 3, status: "ready" });
+    expect(r.items.map((i) => i.id)).toEqual(["a", "b"]);
+    expect(historyReducer(r, { type: "moreLoaded", id: 2, result: ok(pageOf(["z"])) })).toBe(r);
+    const done = historyReducer(r, {
+      type: "refreshed",
+      id: 3,
+      result: ok({ items: [entry("n")], nextCursor: "c9", holderSince: "2026-01-01" }),
+    });
+    expect(done.items.map((i) => i.id)).toEqual(["n"]);
+    expect(done).toMatchObject({ nextCursor: "c9", holderSince: "2026-01-01", status: "ready" });
+    expect(historyReducer(r, { type: "refreshed", id: 3, result: fail("unavailable") })).toBe(r);
+  });
+});
