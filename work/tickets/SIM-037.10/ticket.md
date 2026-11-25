@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/96 |
 
 ## Goal
 An owner (or Manager+) gives a device back to the org from the Devices page, Admins see pending returns and confirm them, Admins take a device back directly, and Admins see the pending-returns count in the nav.
