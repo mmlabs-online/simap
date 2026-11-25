@@ -66,4 +66,21 @@ describe("toPatchBody", () => {
       message: msg.name,
     });
   });
+  it("toPatchBody sends sprite only when changed; clear sends null", () => {
+    expect(toPatchBody({ name: "Máy in", slot: "other", sprite: "device.pc" }, type)).toEqual({
+      kind: "ok",
+      body: { sprite: "device.pc" },
+    });
+    const picked = { ...type, sprite: "device.pc" };
+    expect(toPatchBody({ name: "Máy in", slot: "other", sprite: null }, picked)).toEqual({
+      kind: "ok",
+      body: { sprite: null },
+    });
+    expect(toPatchBody({ name: "Máy in", slot: "other", sprite: "device.pc" }, picked)).toEqual({
+      kind: "unchanged",
+    });
+    const renamed = toPatchBody({ name: "Scanner", slot: "other", sprite: "device.pc" }, picked);
+    expect(renamed).toEqual({ kind: "ok", body: { name: "Scanner" } });
+    expect(renamed.kind === "ok" && "sprite" in renamed.body).toBe(false);
+  });
 });

@@ -32,3 +32,15 @@ None.
 
 ### Follow-ups
 - Pre-existing `test:db` failures in `devices.db.test.ts` and `members/manage.db.test.ts` on `origin/main`.
+
+## Attempt 2 (REWORK)
+
+### Files touched
+- `src/ui/deviceTypes/device-type-form.test.ts`: added `toPatchBody sends sprite only when changed; clear sends null` (set, clear to null, unchanged non-null, name change without a `sprite` key). Required by review Issue 1. No product code changed.
+- `work/tickets/SIM-039.7/impl-log.md`: this section and the correction below.
+
+### Out-of-plan files (correction to attempt 1)
+- `src/ui/deviceTypes/image-url-cache.test.ts`: fixture-only `sprite: null` (required field of `DeviceTypeDto`). Attempt 1 wrongly said "None".
+
+### Checks
+`pnpm typecheck` ok; `pnpm format` then `pnpm format:check` clean; `pnpm test`: 306 files passed, 1 skipped; 3089 passed, 7 skipped.
