@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | XS |
 | Areas | security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T04:14:55Z |
 | PR | — |
 
 ## Goal
@@ -41,7 +41,7 @@ D61; `docs/requests/deployment-simap-drive.md`; `deploy/deployment-repo/README.m
 ## Notes / answers from Ming
 - 2026-11-25 (orchestrator): `Needs Ming: M-51` was a wrong reference (M-51 is the SIM-037.1 plan approval). The real blocker, the merged deployment-repo file, is now readable: `mmlabs-online/deployment` was added to the session read-only (main @ 29cb93f, PR #109 merged). Ming asked to run this ticket (2026-11-25).
 
-- Waiting for Ming: plan approval (High tier)
+- 2026-11-25: Plan approved (Ming: "duyệt SIM-038"), assumptions A1-A5 as written.
 
 ## Handoff
 
