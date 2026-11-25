@@ -78,5 +78,5 @@ below.
 4. Check on `simap.mmlabs.online` as an Admin, after SIM-036.3 ships (or with the API directly): upload a 24 × 24 PNG
    for a device type, load it, replace it, remove it, and confirm the old files leave the Drive folder.
 
-The simap repo keeps a draft of this workflow in `deploy/deployment-repo/`; ticket SIM-037 syncs that draft with the
+The simap repo keeps a draft of this workflow in `deploy/deployment-repo/`; ticket SIM-038 syncs that draft with the
 merged deployment-repo file afterwards.
