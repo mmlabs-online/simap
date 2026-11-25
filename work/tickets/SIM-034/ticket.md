@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | security, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | M-24 |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T17:02:52Z |
 | PR | — |
 
 ## Goal
@@ -46,6 +46,7 @@ D60 (supersedes, for simap, "app code never runs on the home server"); D8 (deplo
 
 ## Notes / answers from Ming
 Waiting for Ming: plan approval (High tier) — M-73.
+Plan approved (2026-11-26, Ming: "Duyệt, dùng mặc định" — Q1–Q7 take the plan's defaults).
 - 2026-11-25: M-24 done (Ming: the runner is allowed for simap).
 - 2026-11-23: run on the existing macbook-runner (not a separate runner instance), and move all workflows including release (D60).
 
