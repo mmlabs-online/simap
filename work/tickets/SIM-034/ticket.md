@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REWORK |
+| State | REVIEW |
 | Priority | P1 |
 | Size | S |
 | Areas | security, architecture |
@@ -45,7 +45,7 @@ D60 (supersedes, for simap, "app code never runs on the home server"); D8 (deplo
 - Manual: open the PR, watch every job run on macbook-runner and pass; after merge to main, ci runs on main; a later release/X.Y.Z push runs release on the Mac (Ming).
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (High tier) — M-74 (first filed as M-73; renumbered, that number went to SIM-039.8).
+Waiting for Ming: plan approval (High tier) — M-75 (first filed as M-73, then M-74; renumbered twice because other sessions took those numbers on main). Fork settings: M-76.
 Plan approved (2026-11-26, Ming: "Duyệt, dùng mặc định" — Q1–Q7 take the plan's defaults).
 Extra rework allowed (2026-11-26, Ming: "Cho thêm 1 rework trên PR #108"): the first real CI run on MacBookPro (run 45664740286) failed `pnpm test` in `scripts/dev-process.test.ts` (2 tests, owner() "unknown" instead of "owned"); later steps were skipped.
 - 2026-11-25: M-24 done (Ming: the runner is allowed for simap).
@@ -61,6 +61,6 @@ Extra rework allowed (2026-11-26, Ming: "Cho thêm 1 rework trên PR #108"): the
 
 ### 2026-11-26 — claude — DONE
 - Agent calls: 6 this run, tokens ~331k (in/out split not reported): implementer×2 67k+50k, reviewer×2 86k+51k, security-ai-generated-code-auditor×2 61k+25k; all on default models. Plus 2 calls from the planning run, ~132k.
-- Done: Ming approved the plan with the defaults for Q1–Q7 (M-74). Attempt 1 REWORK: the reviewer found a buildx builder leak, and security found 3 🔴 (keychain auto-detect, git credential helper storing tokens, unguarded docker logout). Attempt 2 PASS from both. Merged main instead of rebasing, because of a ming-todo conflict (another session took M-73), so this ticket's items are now M-74 and M-75. PR #108.
+- Done: Ming approved the plan with the defaults for Q1–Q7 (M-75). Attempt 1 REWORK: the reviewer found a buildx builder leak, and security found 3 🔴 (keychain auto-detect, git credential helper storing tokens, unguarded docker logout). Attempt 2 PASS from both. Merged main instead of rebasing, because of a ming-todo conflict (another session took M-73), so this ticket's items are now M-74 and M-75. PR #108.
 - In progress / next: the PR's own run on MacBookPro is the real test of AC2 and AC5. Ming checks the host after the run (see the PR body), confirms M-75 and merges.
 - Gotchas: `test:db` in CI still has 3 failures that already exist on main, unrelated to this ticket. Never run the pre-PR ci.yml on the Mac: it uses `sudo tee` on the production env file.
