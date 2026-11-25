@@ -4,6 +4,7 @@ vi.mock("server-only", () => ({}));
 const read = vi.hoisted(() => ({ readLayoutRows: vi.fn() }));
 vi.mock("./layout", () => ({ readLayoutRows: read.readLayoutRows }));
 
+import { LIBRARY_ITEMS } from "@/lib/map-items/library";
 import type { LayoutSaveValue } from "@/lib/sprites/layout";
 import type { OrgScope } from "@/server/http/org-scope";
 import { saveRoomLayout } from "./save";
@@ -20,28 +21,61 @@ const value = (nSeats: number, nFixtures = 1, baseVersion = 2): LayoutSaveValue 
   seats: Array.from({ length: nSeats }, (_, i) => ({
     id: sid(i + 1),
     sprite: "desk.single",
-    x: i,
+    x: i * 4,
     y: 0,
-    rotation: 90 as const,
+    rotation: 0 as const,
   })),
-  fixtures: Array.from({ length: nFixtures }, () => ({
+  fixtures: Array.from({ length: nFixtures }, (_, i) => ({
     sprite: "plant.large",
-    x: 1,
-    y: 1,
+    x: 2 * i,
+    y: 6,
     rotation: 0 as const,
   })),
 });
 
 type Call = { text: string; values?: unknown[] };
 
-/** A fake client: `version` is the stored layout_version, `seatIds` the room's locked seat rows. */
-function fake(opts: { version?: number | null; seatIds: string[] }) {
+type CatalogOverride = { w?: number; h?: number; hidden?: boolean; missing?: boolean };
+
+/**
+ * A fake client: `version` is the stored layout_version, `seatIds` the room's locked seat rows.
+ * `catalog` overrides library rows by key; `stored` is the per-key fixture count in the room;
+ * `room` is the stored grid and floors.
+ */
+function fake(opts: {
+  version?: number | null;
+  seatIds: string[];
+  catalog?: Record<string, CatalogOverride>;
+  stored?: Record<string, number>;
+  room?: { grid_w: number | null; grid_h: number | null; floor_zones: unknown };
+}) {
   const calls: Call[] = [];
   const client = {
     async query(text: string, values?: unknown[]) {
       calls.push({ text, values });
       if (/from rooms where/.test(text) && /for update/.test(text)) {
         return { rows: opts.version === null ? [] : [{ layout_version: opts.version ?? 2 }] };
+      }
+      if (/from map_items/.test(text)) {
+        const keys = (values?.[1] ?? []) as string[];
+        const rows = keys.flatMap((k) => {
+          const lib = LIBRARY_ITEMS.find((i) => i.builtinKey === k);
+          const o = opts.catalog?.[k] ?? {};
+          if (!lib || o.missing) return [];
+          return [{ builtin_key: k, w: o.w ?? lib.w, h: o.h ?? lib.h, hidden: o.hidden ?? false }];
+        });
+        return { rows };
+      }
+      if (/select sprite_key, count/.test(text)) {
+        const keys = (values?.[2] ?? []) as string[];
+        return {
+          rows: keys.flatMap((k) =>
+            opts.stored?.[k] ? [{ sprite_key: k, n: opts.stored[k] }] : [],
+          ),
+        };
+      }
+      if (/select grid_w/.test(text)) {
+        return { rows: [opts.room ?? { grid_w: null, grid_h: null, floor_zones: null }] };
       }
       if (/from seats where/.test(text)) return { rows: opts.seatIds.map((id) => ({ id })) };
       if (/update rooms set/.test(text)) return { rows: [{ layout_version: 3 }] };
@@ -59,6 +93,9 @@ const kinds = (calls: Call[]) =>
     if (/^select layout_version/.test(t)) return "room lock";
     if (/^select id from seats/.test(t)) return "seat lock";
     if (/^select map_items_seed/.test(t)) return "catalog seed";
+    if (/^select builtin_key, w, h, hidden from map_items/.test(t)) return "catalog sizes";
+    if (/^select sprite_key, count/.test(t)) return "hidden counts";
+    if (/^select grid_w/.test(t)) return "hidden floors";
     if (/^update seats/.test(t)) return "seat update";
     if (/^delete from layout_fixtures/.test(t)) return "fixture delete";
     if (/^insert into layout_fixtures/.test(t)) return "fixture insert";
@@ -77,7 +114,7 @@ const run = (f: ReturnType<typeof fake>, v: LayoutSaveValue) => {
 };
 
 describe("saveRoomLayout", () => {
-  it("runs begin, room lock, seat lock, catalog seed, seat update, fixture delete, insert, room update, audit, re-read, commit", async () => {
+  it("runs begin, room lock, seat lock, catalog seed, catalog sizes, seat update, fixture delete, insert, room update, audit, re-read, commit", async () => {
     const f = fake({ seatIds: [sid(1), sid(2)] });
     const r = await run(f, value(2));
     expect(r).toEqual({ ok: true, value: { version: 3, seatDevices: {} } });
@@ -86,6 +123,7 @@ describe("saveRoomLayout", () => {
       "room lock",
       "seat lock",
       "catalog seed",
+      "catalog sizes",
       "seat update",
       "fixture delete",
       "fixture insert",
@@ -153,9 +191,9 @@ describe("saveRoomLayout", () => {
       scope.orgId,
       ROOM,
       [sid(1), sid(2)],
-      [0, 1],
+      [0, 4],
       [0, 0],
-      [90, 90],
+      [0, 0],
       ["desk.single", "desk.single"],
     ]);
   });
@@ -180,6 +218,114 @@ describe("saveRoomLayout", () => {
       floors: 1,
       baseVersion: 2,
       version: 3,
+    });
+  });
+
+  it("catalog sizes statement: org_id = $1, distinct sorted seat+fixture+floor keys, order by builtin_key for key share", async () => {
+    const f = fake({ seatIds: [sid(1)] });
+    await run(f, value(1, 2));
+    const q = f.calls.find((c) => /from map_items/.test(c.text))!;
+    expect(q.text).toContain("org_id = $1");
+    expect(q.text).toContain("order by builtin_key for key share");
+    expect(q.values).toEqual([scope.orgId, ["desk.single", "floor.wood", "plant.large"]]);
+  });
+
+  it("a rule failure at catalog size (plant.large 2x2) gives 422 layout_overlap with no write and no audit", async () => {
+    const f = fake({ seatIds: [], catalog: { "plant.large": { w: 2, h: 2 } } });
+    const plant = value(0, 1).fixtures[0]!;
+    const v = {
+      ...value(0, 0),
+      fixtures: [
+        { ...plant, x: 0, y: 5 },
+        { ...plant, x: 1, y: 6 },
+      ],
+    };
+    expect(await run(f, v)).toEqual({ ok: false, status: 422, code: "layout_overlap" });
+    expect(kinds(f.calls)).toEqual([
+      "begin",
+      "room lock",
+      "seat lock",
+      "catalog seed",
+      "catalog sizes",
+      "rollback",
+    ]);
+  });
+
+  it("a key missing from the catalog gives 422 layout_unknown_sprite with no write", async () => {
+    const f = fake({ seatIds: [], catalog: { "plant.large": { missing: true } } });
+    expect(await run(f, value(0))).toEqual({
+      ok: false,
+      status: 422,
+      code: "layout_unknown_sprite",
+    });
+    expect(kinds(f.calls).at(-1)).toBe("rollback");
+    expect(kinds(f.calls)).not.toContain("fixture delete");
+  });
+
+  it("hidden fixture: stored count 1, submitted 1 proceeds; submitted 2 gives 422 layout_item_hidden after hidden counts, no write, no audit", async () => {
+    const catalog = { "plant.large": { hidden: true } };
+    const ok = fake({ seatIds: [], catalog, stored: { "plant.large": 1 } });
+    expect((await run(ok, value(0, 1))).ok).toBe(true);
+    expect(kinds(ok.calls)).toContain("hidden counts");
+
+    const no = fake({ seatIds: [], catalog, stored: { "plant.large": 1 } });
+    expect(await run(no, value(0, 2))).toEqual({
+      ok: false,
+      status: 422,
+      code: "layout_item_hidden",
+    });
+    expect(kinds(no.calls)).toEqual([
+      "begin",
+      "room lock",
+      "seat lock",
+      "catalog seed",
+      "catalog sizes",
+      "hidden counts",
+      "rollback",
+    ]);
+  });
+
+  it("no hidden key: no hidden counts or hidden floors statement", async () => {
+    const f = fake({ seatIds: [sid(1)] });
+    await run(f, value(1, 2));
+    expect(kinds(f.calls)).not.toContain("hidden counts");
+    expect(kinds(f.calls)).not.toContain("hidden floors");
+  });
+
+  it("hidden desk.single: seats save, no hidden check", async () => {
+    const f = fake({ seatIds: [sid(1)], catalog: { "desk.single": { hidden: true } } });
+    expect((await run(f, value(1, 0))).ok).toBe(true);
+    expect(kinds(f.calls)).not.toContain("hidden counts");
+    expect(kinds(f.calls)).not.toContain("hidden floors");
+  });
+
+  it("hidden floor: kept when the room already shows it, refused when it is new", async () => {
+    const catalog = { "floor.wood": { hidden: true } };
+    const shown = fake({
+      seatIds: [],
+      catalog,
+      room: {
+        grid_w: 12,
+        grid_h: 8,
+        floor_zones: [{ sprite: "floor.wood", x: 0, y: 0, w: 12, h: 8 }],
+      },
+    });
+    expect((await run(shown, value(0, 0))).ok).toBe(true);
+    expect(kinds(shown.calls)).toContain("hidden floors");
+
+    const added = fake({
+      seatIds: [],
+      catalog,
+      room: {
+        grid_w: 12,
+        grid_h: 8,
+        floor_zones: [{ sprite: "floor.carpet", x: 0, y: 0, w: 12, h: 8 }],
+      },
+    });
+    expect(await run(added, value(0, 0))).toEqual({
+      ok: false,
+      status: 422,
+      code: "layout_item_hidden",
     });
   });
 });

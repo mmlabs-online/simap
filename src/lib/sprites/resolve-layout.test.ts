@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { checkLayoutRules } from "@/lib/validate/layout";
+import { catalogFootprints } from "@/lib/map-items/footprints";
+import { checkLayoutRules, registryFootprints } from "@/lib/validate/layout";
 import { REGISTRY } from "./registry";
 import {
   parseStoredFloors,
@@ -263,5 +264,39 @@ describe("take guard", () => {
 describe("registry keys", () => {
   it("every registry key is shorter than 129 characters", () => {
     expect(Object.keys(REGISTRY).every((k) => k.length < 129)).toBe(true);
+  });
+});
+
+describe("catalog lookup", () => {
+  const big = catalogFootprints([{ builtinKey: "plant.large", w: 2, h: 2 }], registryFootprints);
+
+  it("a stored fixture overlapping at the catalog size is dropped; at library size both stay", () => {
+    const fixtures = [fixture(1, at(0, 4, "plant.large")), fixture(2, at(1, 5, "plant.large"))];
+    expect(resolveLayout(room(), [], fixtures).layout.fixtures).toHaveLength(2);
+    const r = resolveLayout(room(), [], fixtures, big);
+    expect(r.layout.fixtures.map((f) => f.id)).toEqual([id(1001)]);
+  });
+
+  it("a seat whose neighbour fixture grew keeps its place (seats first) and the fixture is dropped", () => {
+    const r = resolveLayout(
+      room(),
+      [seat(1, at(2, 0))],
+      [fixture(1, at(1, 0, "plant.large"))],
+      big,
+    );
+    expect(r.layout.seats[0]).toMatchObject({ x: 2, y: 0 });
+    expect(r.layout.fixtures).toEqual([]);
+  });
+
+  it("output always passes checkLayoutRules with the same lookup", () => {
+    const fixtures = [
+      fixture(1, at(0, 4, "plant.large")),
+      fixture(2, at(1, 5, "plant.large")),
+      fixture(3, at(11, 7, "plant.large")),
+      fixture(4, at(4, 4, "plant.large")),
+    ];
+    const r = resolveLayout(room(), [seat(1, at(5, 0))], fixtures, big);
+    expect(r.layout.fixtures.length).toBeLessThan(fixtures.length);
+    expect(checkLayoutRules(r.layout, big)).toEqual({ ok: true });
   });
 });

@@ -35,4 +35,8 @@ describe("saveErrorKind", () => {
     expect(saveErrorKind("seat_not_empty")).toBe("invalid");
     expect(saveErrorKind("seats_unmatched")).toBe("conflict");
   });
+
+  it("layout_item_hidden is invalid", () => {
+    expect(saveErrorKind("layout_item_hidden")).toBe("invalid");
+  });
 });

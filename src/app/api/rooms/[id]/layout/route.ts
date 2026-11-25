@@ -1,4 +1,4 @@
-import { LAYOUT_LIMITS, validateLayoutSave } from "@/lib/validate/layout";
+import { LAYOUT_LIMITS, parseLayoutSave } from "@/lib/validate/layout";
 import { isCanonicalUuid } from "@/lib/validate/uuid";
 import { getPool } from "@/server/db/pool";
 import { apiError } from "@/server/http/respond";
@@ -32,7 +32,7 @@ export const PUT = withAuth<{ id: string }>(
     if (!pool) return apiError(503, "unavailable");
     const body = await readJson(req, LAYOUT_LIMITS.bodyBytes);
     if (!body.ok) return apiError(400, "invalid_request");
-    const v = validateLayoutSave(body.body);
+    const v = parseLayoutSave(body.body);
     if (!v.ok) return apiError(v.code === "invalid_request" ? 400 : 422, v.code);
     const r = await saveRoomLayout(pool, ctx.scope, ctx.sub, id, v.value);
     if (!r.ok) return apiError(r.status, r.code);

@@ -1,6 +1,7 @@
 import "server-only";
 import type { DeviceKind } from "@/lib/sprites/device-slots";
-import type { LayoutResponse, SeatDevice, SeatView } from "@/lib/sprites/layout";
+import { catalogFootprints } from "@/lib/map-items/footprints";
+import type { LayoutItem, LayoutResponse, SeatDevice, SeatView } from "@/lib/sprites/layout";
 import {
   resolveLayout,
   type StoredFixture,
@@ -8,9 +9,10 @@ import {
   type StoredSeat,
 } from "@/lib/sprites/resolve-layout";
 import { seatViewOf } from "@/lib/sprites/seat-view";
-import { LAYOUT_LIMITS } from "@/lib/validate/layout";
+import { LAYOUT_LIMITS, registryFootprints } from "@/lib/validate/layout";
 import { withTx, type TxClient, type TxPool } from "@/server/db/tx";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
+import { COLS, toDto, type Row as ItemRow } from "@/server/map-items/map-items";
 
 export type LayoutRefusal = { ok: false; status: 404; code: "not_found" };
 export type LayoutResult<T> = { ok: true; value: T } | LayoutRefusal;
@@ -91,6 +93,33 @@ export async function readLayoutRows(
     [roomId],
   );
 
+  // Catalog rows of every key the stored rows can use, hidden ones included; inside the caller's snapshot or lock.
+  const floorKeys = Array.isArray(room.floor_zones)
+    ? room.floor_zones.flatMap((z: unknown) =>
+        typeof z === "object" &&
+        z !== null &&
+        typeof (z as { sprite?: unknown }).sprite === "string"
+          ? [(z as { sprite: string }).sprite]
+          : [],
+      )
+    : [];
+  const keys = [
+    ...new Set([
+      ...seatRows.flatMap((s) => (s.sprite_key === null ? [] : [s.sprite_key])),
+      ...fixtureRows.flatMap((f) => (f.sprite_key === null ? [] : [f.sprite_key])),
+      ...floorKeys,
+      "desk.single",
+      "floor.wood",
+      "chair.office",
+    ]),
+  ];
+  const { rows: itemRows } = await orgQuery<ItemRow>(
+    c,
+    scope,
+    `select ${COLS} from map_items where org_id = $1 and builtin_key = any($2::text[]) order by builtin_key`,
+    [keys],
+  );
+
   const seatDevices: Record<string, SeatDevice[]> = {};
   if (seatRows.length > 0) {
     // D61: a device's free-text type matches the org's catalog by device_type_key; the unique index allows one match
@@ -148,7 +177,23 @@ export async function readLayoutRows(
     { gridW: room.grid_w, gridH: room.grid_h, floorZones: room.floor_zones },
     stored,
     fixtures,
+    catalogFootprints(
+      itemRows.map((r) => ({ builtinKey: r.builtin_key, w: r.w, h: r.h })),
+      registryFootprints,
+    ),
   );
+  const used = new Set<string>([
+    ...resolved.layout.seats.map((s) => s.sprite),
+    ...resolved.layout.fixtures.map((f) => f.sprite),
+    ...resolved.layout.floors.map((z) => z.sprite),
+    ...(resolved.layout.seats.length > 0 ? ["chair.office"] : []),
+  ]);
+  const items = itemRows.flatMap((r): LayoutItem[] => {
+    const dto = used.has(r.builtin_key) ? toDto(r) : null;
+    if (!dto) return [];
+    const { hidden: _hidden, ...item } = dto;
+    return [item];
+  });
   const seatViews: Record<string, SeatView> = {};
   for (const s of seats) {
     seatViews[s.id] = seatViewOf({
@@ -167,6 +212,7 @@ export async function readLayoutRows(
     seatDevices,
     unplaced: resolved.unplaced,
     truncated,
+    items,
   };
 }
 

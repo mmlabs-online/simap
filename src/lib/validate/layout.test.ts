@@ -5,8 +5,12 @@ import {
   checkLayoutRules,
   floorCellsWithinCap,
   fixturesOnDesks,
+  footprintAt,
   footprintOf,
+  parseLayoutSave,
+  registryFootprints,
   validateLayoutSave,
+  type FootprintLookup,
   type LayoutRulesInput,
 } from "./layout";
 
@@ -387,5 +391,110 @@ describe("validateLayoutSave floor and version caps", () => {
   it("an out-of-bounds zone over the cap still returns layout_out_of_bounds", () => {
     const floors = [...Array.from({ length: 10 }, () => zone(12, 8)), zone(13, 8)];
     expect(field(save({ floors, seats: [], fixtures: [] }))).toBe("layout_out_of_bounds");
+  });
+});
+
+describe("footprint lookup", () => {
+  const lookup =
+    (sizes: Record<string, [number, number]>): FootprintLookup =>
+    (k) =>
+      sizes[k] ?? null;
+
+  it("footprintAt swaps a 3x1 lookup at 90 and 270, not at 0 and 180; null when the rotation has no frame or the lookup has no entry", () => {
+    const l = lookup({ "table.meeting": [3, 1], door: [3, 1] });
+    expect(footprintAt("table.meeting", 0, l)).toEqual([3, 1]);
+    expect(footprintAt("door", 90, l)).toEqual([1, 3]);
+    expect(footprintAt("door", 270, l)).toEqual([1, 3]);
+    expect(footprintAt("door", 180, l)).toEqual([3, 1]);
+    expect(footprintAt("nope", 0, l)).toBeNull();
+    expect(footprintAt("plant.large", 0, l)).toBeNull();
+  });
+
+  it("sized rules: plant.large at 2x2 turns two diagonal plants into layout_overlap", () => {
+    const fixtures = [fx("plant.large", 0, 0), fx("plant.large", 1, 1)];
+    expect(rules({ fixtures }).ok).toBe(true);
+    const big = lookup({ "plant.large": [2, 2] });
+    expect(checkLayoutRules({ w: 12, h: 8, floors: [], seats: [], fixtures }, big)).toEqual({
+      ok: false,
+      code: "layout_overlap",
+    });
+  });
+
+  it("sized rules: table.meeting at 4x1 rotated 90 near the bottom edge gives layout_out_of_bounds; at the registry size it passes", () => {
+    const fixtures = [fx("table.meeting", 0, 5, 90)];
+    const l = lookup({ "table.meeting": [4, 1] });
+    expect(checkLayoutRules({ w: 12, h: 8, floors: [], seats: [], fixtures }, l)).toEqual({
+      ok: false,
+      code: "layout_out_of_bounds",
+    });
+    expect(rules({ fixtures: [fx("table.meeting", 0, 5)] }).ok).toBe(true);
+  });
+
+  it("sized rules: prop.mug at 2x1 left of a desk gives layout_fixture_on_desk; fixturesOnDesks with the lookup returns its index", () => {
+    const seats = [seat(1, 4, 4)];
+    const fixtures = [fx("prop.mug", 3, 4)];
+    const l = lookup({ "prop.mug": [2, 1], "desk.single": [2, 1] });
+    expect(rules({ seats, fixtures }).ok).toBe(true);
+    expect(fixturesOnDesks({ w: 12, h: 8, floors: [], seats, fixtures }, l)).toEqual([0]);
+    expect(checkLayoutRules({ w: 12, h: 8, floors: [], seats, fixtures }, l)).toEqual({
+      ok: false,
+      code: "layout_fixture_on_desk",
+    });
+  });
+
+  it("sized rules: a shrunk table.meeting (1x1) in the last column passes with the lookup and fails with the registry", () => {
+    const fixtures = [fx("table.meeting", 11, 0)];
+    const l = lookup({ "table.meeting": [1, 1] });
+    expect(checkLayoutRules({ w: 12, h: 8, floors: [], seats: [], fixtures }, l).ok).toBe(true);
+    expect(rules({ fixtures })).toEqual({ ok: false, code: "layout_out_of_bounds" });
+  });
+
+  it("a lookup returning null for a placed key gives layout_unknown_sprite", () => {
+    const r = checkLayoutRules(
+      { w: 12, h: 8, floors: [], seats: [], fixtures: [fx("plant.large", 0, 0)] },
+      () => null,
+    );
+    expect(r).toEqual({ ok: false, code: "layout_unknown_sprite" });
+  });
+
+  it("registryFootprints gives the registry size at rotation 0, null for an unknown key", () => {
+    expect(registryFootprints("table.meeting")).toEqual([3, 2]);
+    expect(registryFootprints("nope")).toBeNull();
+  });
+});
+
+describe("parseLayoutSave", () => {
+  const parse = (body: unknown) => {
+    const r = parseLayoutSave(body);
+    return r.ok ? "ok" : r.code;
+  };
+
+  it("accepts an overlap, an item out of bounds and a fixture on a desk", () => {
+    expect(parse(save({ fixtures: [fx("table.meeting", 0, 0), fx("table.meeting", 1, 0)] }))).toBe(
+      "ok",
+    );
+    expect(parse(save({ fixtures: [fx("table.meeting", 11, 7)] }))).toBe("ok");
+    expect(parse(save({ fixtures: [fx("prop.mug", 2, 2)] }))).toBe("ok");
+  });
+
+  it("still refuses shape (400), unknown sprite, bad rotation, zone out of bounds, grid 65 (422) and the floor cap (400 floors)", () => {
+    expect(parse(null)).toBe("invalid_request");
+    expect(parse(save({ fixtures: [fx("nope", 0, 0)] }))).toBe("layout_unknown_sprite");
+    expect(parse(save({ fixtures: [fx("plant.large", 0, 0, 45)] }))).toBe("layout_bad_rotation");
+    expect(parse(save({ floors: [{ sprite: "floor.wood", x: 0, y: 0, w: 13, h: 8 }] }))).toBe(
+      "layout_out_of_bounds",
+    );
+    expect(parse(save({ w: 65 }))).toBe("layout_out_of_bounds");
+    const full = { sprite: "floor.wood", x: 0, y: 0, w: 12, h: 8 };
+    expect(parse(save({ floors: Array.from({ length: 3 }, () => full) }))).toBe("invalid_request");
+  });
+
+  it("validateLayoutSave without a lookup returns what it returned before", () => {
+    expect(code(save({ fixtures: [fx("table.meeting", 11, 7)] }))).toBe("layout_out_of_bounds");
+    expect(code(save({ fixtures: [fx("prop.mug", 2, 2)] }))).toBe("layout_fixture_on_desk");
+    expect(code(save({ fixtures: [fx("plant.large", 0, 0), fx("plant.large", 0, 0)] }))).toBe(
+      "layout_overlap",
+    );
+    expect(code(save())).toBe("ok");
   });
 });
