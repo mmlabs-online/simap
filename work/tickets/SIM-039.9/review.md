@@ -68,3 +68,51 @@ None.
 ### Follow-ups (out of scope)
 - `useMapItems.ts` is dead code (A13).
 - SIM-039.10: atlas previews for package and library art.
+
+## Attempt 2 — 2026-11-25
+Verdict: PASS
+
+### Checks (run by reviewer)
+- `pnpm typecheck` — exit 0, "Types generated successfully", tsc no errors.
+- `pnpm check:layers` — exit 0, "check-layers: 796 files, no violations".
+- `pnpm format:check` — exit 0, "All matched files use the correct format." (850 files).
+- `pnpm test` — exit 0, "Test Files 302 passed | 1 skipped (303)", "Tests 3053 passed | 7 skipped (3060)". Matches impl-log (3051 + 2 new tests).
+- `pnpm build` — exit 0, route table printed.
+- `pnpm test:db` — not run locally. No server, SQL or migration file changed, so CI's run covers it.
+
+### Acceptance criteria
+- [x] AC1, part 1: unchanged since attempt 1 and still green (same tests pass).
+- [x] AC1, part 2: the stateful dialog now behaves as the plan says. Issues 1-3 are fixed (see below). The wiring is still checked by reading because there is no DOM test. The local click-through stays in Ming's post-merge checks.
+- [x] AC2: unchanged and still green.
+- [x] AC3: checks are green.
+
+### Attempt 1 issues, re-checked
+- Issue 1 (not_found): fixed. `MapItemArtDialog.tsx:221` now does `if (out.kind === "gone") return onGone();`, and the page passes `onGone={done}` (`MapItemsPage.tsx:86`). `done` (l.45-48) closes the dialog and reloads the list. The early return skips the rest of `run`, and the dialog unmounts, so the `busy` state left as true does not matter.
+- Issue 2 (the dialog reappears after a failed reload): fixed. `MapItemsPage.tsx:52-54` is `useEffect(() => { if (dialog.kind === "art" && !artItem) setDialog({ kind: "none" }); }, [dialog, artItem])`. The render guard stays (l.79).
+  - No loop: the effect writes only when `dialog.kind === "art"`, and it writes `none`. On the next run the condition is false, so it stops after one extra render.
+  - No close during a normal reload: `useList.reload` (`src/ui/groups/useList.ts:21-30`) does not clear `items` while a request is in flight. It replaces them only when the result arrives, and only sets `[]` on an error. So the item stays found during a normal reload, and also after a successful reload that still contains it. The dialog closes only when the item is really gone or the reload failed, which is what A5 says.
+  - `findArtItem` (`map-item-art.ts:80-83`) is a plain `find` by `builtinKey`, tested in `map-item-art.test.ts` › "findArtItem …".
+- Issue 3 (focus is lost after "Use this sprite"): fixed. `run` sets `focusDir` (l.229) instead of calling `focus()`. `setBrowser(null)`, `setFocusDir(dir)` and `setBusy(false)` are batched into one commit. The effect at l.196-201 then runs after the Choose button is no longer `disabled={busy}` (l.99) and the browser is closed, so `focus()` lands.
+  - No focus stealing: the effect does nothing while `focusDir` is null. Only the success path with the browser open for that dir sets it (l.226-230), and the effect clears it right after focusing. Other renders, such as image `bump`s, list reloads, other directions' saves or errors, do not move focus.
+  - Cancel still focuses directly (l.290-292), which is correct because nothing is busy there.
+- Issue 4 (the non-directional size error says "South"): fixed. `ArtItem` now picks `directional` (`map-item-image.ts:11`). `image_bad_size` uses `mapItemsCopy.art.single` when the item is not directional (l.57). Test: `map-item-image.test.ts` › "a non-directional item's image_bad_size message says Art, not South".
+- Nits: both done. The comment now says "Stateless" (l.34). `copy.dirs` is typed `Record<Direction, string>` (`copy/mapItems.ts:71`) and the `!` are gone. `Direction` comes from `@/lib/sprites/types`, which is within R1.
+
+### Scope (R4)
+The fix commit 6f7a2a4 touches only `copy/mapItems.ts`, `MapItemArtDialog.tsx`, `MapItemsPage.tsx`, `map-item-art.ts`, `map-item-image.ts` and their tests, plus `impl-log.md`. All of these are in the plan's file list. `findArtItem` is a small helper inside a planned file and serves the Issue 2 fix. No new feature was added.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1: `check:layers` is clean. D36: no new strings. R5: the checks are green and the new pure logic is tested.
+
+### Blockers from review agents
+None.
+
+### Nits (do not block)
+- None new.
+
+### Follow-ups (out of scope)
+- Carried from attempt 1: `useMapItems.ts` is dead code (A13), and SIM-039.10 adds atlas previews.
+- A DOM test layer (e.g. jsdom plus Testing Library) would let the dialog's effects (focus return, closing a gone item) be tested instead of only read.
