@@ -45,7 +45,7 @@ export function rowActions(d: DeviceDto, h: DeviceRowHandlers): RowAction[] {
       run: () => onEdit(d),
     });
   }
-  if (onDelete && d.canEdit) {
+  if (onDelete && d.canDelete) {
     out.push({
       key: "delete",
       label: devicesCopy.actions.delete,

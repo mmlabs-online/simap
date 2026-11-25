@@ -7,16 +7,12 @@ import type {
 import { normalizeMac, validateDeviceCreate, validateDevicePatch } from "@/lib/validate/device";
 import { apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
-import type { PickerMember } from "../seats/member-picker";
-
-export type DeviceOwner = { kind: "me" } | { kind: "member"; member: PickerMember | null };
 
 export type DeviceForm = {
   name: string;
   type: string;
   inventoryNumber: string;
   mac: string;
-  owner: DeviceOwner;
 };
 
 export const emptyForm = (): DeviceForm => ({
@@ -24,7 +20,6 @@ export const emptyForm = (): DeviceForm => ({
   type: "",
   inventoryNumber: "",
   mac: "",
-  owner: { kind: "me" },
 });
 
 export const formFromDevice = (d: DeviceDto): DeviceForm => ({
@@ -32,7 +27,6 @@ export const formFromDevice = (d: DeviceDto): DeviceForm => ({
   type: d.type,
   inventoryNumber: d.inventoryNumber,
   mac: d.mac ?? "",
-  owner: { kind: "me" },
 });
 
 export function fieldMessage(field: string): string {
@@ -40,31 +34,22 @@ export function fieldMessage(field: string): string {
   return messages[field] ?? devicesCopy.form.fieldErrors.body;
 }
 
-/** `ownerId` is absent (not null) unless an Admin picked another member. */
-export type DeviceCreateBody = Omit<DeviceCreateValue, "ownerId"> & { ownerId?: string };
+/** A new device has no owner (DEV-01): the body never carries one. */
+export type DeviceCreateBody = DeviceCreateValue;
 
 export type CreateResult =
   | { kind: "ok"; body: DeviceCreateBody }
   | { kind: "invalid"; message: string };
 
-export function toCreateBody(form: DeviceForm, opts: { isAdmin: boolean }): CreateResult {
-  const other = opts.isAdmin && form.owner.kind === "member" ? form.owner.member : undefined;
-  if (opts.isAdmin && form.owner.kind === "member" && !other) {
-    return { kind: "invalid", message: fieldMessage("ownerId") };
-  }
+export function toCreateBody(form: DeviceForm): CreateResult {
   const v = validateDeviceCreate({
     name: form.name,
     type: form.type,
     inventoryNumber: form.inventoryNumber,
     mac: form.mac,
-    ...(other ? { ownerId: other.id } : {}),
   });
   if (!v.ok) return { kind: "invalid", message: fieldMessage(v.field) };
-  const { name, type, inventoryNumber, mac, ownerId } = v.value;
-  return {
-    kind: "ok",
-    body: { name, type, inventoryNumber, mac, ...(ownerId !== null ? { ownerId } : {}) },
-  };
+  return { kind: "ok", body: v.value };
 }
 
 export type PatchResult =
@@ -88,11 +73,7 @@ export function toPatchBody(form: DeviceForm, device: DeviceDto): PatchResult {
   return v.ok ? { kind: "ok", body: v.value } : { kind: "invalid", message: fieldMessage(v.field) };
 }
 
-export function deviceErrorMessage(code: string): string {
-  return code === "member_not_assignable"
-    ? devicesCopy.form.errors.memberNotAssignable
-    : apiErrorMessage(code);
-}
+export const deviceErrorMessage = (code: string): string => apiErrorMessage(code);
 
 /** A new device is in inventory, so the Placed filter would hide it. */
 export const filterAfterCreate = (f: PlacementFilter): PlacementFilter =>

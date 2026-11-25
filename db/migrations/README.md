@@ -46,5 +46,12 @@ The app never migrates.
   whitespace collapsed, Vietnamese capitals lowered by a map, `lower()`; diacritics kept), which is also how
   `devices.type` matches a type (no FK, D61). `device_type_catalogs` marks an org whose catalog was seeded (PC, Laptop,
   Monitor, IP phone, Other): an insert trigger on `members` seeds an org once, so a deleted seed type stays deleted.
+- Device lifecycle (SIM-037.1, `20261125120000_device_lifecycle.sql`, D63): `devices.owner_id` is nullable (null = org
+  inventory). New nullable columns `serial` (unique per org when set), `manufacturer`, `brand`, `holding_note`,
+  `holding_expires_on` (a `date`). Invariant 5 is the immediate check `devices_unowned_not_placed_check` (unowned =>
+  no seat), plus `devices_unowned_no_holding_check`. The invariant 3 trigger is deferred, so returning a device to the
+  org inventory must clear owner, seat and holding data in one UPDATE. `device_handoffs` (transfer / return /
+  extension; at most one pending per device) cascades from `devices`; the service refuses a device delete while one is
+  pending.
 - Dev seed: `pnpm seed:dev` loads fake data (fixed UUIDs, `@simap.example` emails, invented names) into a local
   database only; it refuses non-local hosts and `NODE_ENV=production`. Never put real data in the seed.

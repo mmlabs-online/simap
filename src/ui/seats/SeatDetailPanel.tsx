@@ -27,9 +27,11 @@ function Device({ device }: { device: SeatDeviceDto }) {
       <span className="text-on-surface-variant">
         {` · ${device.type} · ${device.inventoryNumber}`}
       </span>
-      <span className="block text-on-surface-variant">
-        {seatsCopy.panel.owner(device.owner.displayName)}
-      </span>
+      {device.owner && (
+        <span className="block text-on-surface-variant">
+          {seatsCopy.panel.owner(device.owner.displayName)}
+        </span>
+      )}
     </li>
   );
 }

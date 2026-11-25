@@ -1,31 +1,19 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
-import { seatsCopy } from "../copy/seats";
 import { EntityFormDialog } from "../EntityFormDialog";
 import { DeviceFormFields } from "./DeviceFormDialog";
-import { emptyForm, type DeviceForm } from "./device-form";
+import { emptyForm } from "./device-form";
 
 const noop = () => {};
-const loadPage = vi.fn();
 const copy = devicesCopy.form;
 
 type Props = Partial<Parameters<typeof DeviceFormFields>[0]>;
 const render = (p: Props = {}) =>
   renderToStaticMarkup(
-    <DeviceFormFields
-      mode="create"
-      isAdmin={false}
-      form={emptyForm()}
-      ownerName={null}
-      loadPage={loadPage}
-      onField={noop}
-      onOwner={noop}
-      {...p}
-    />,
+    <DeviceFormFields mode="create" form={emptyForm()} ownerName={null} onField={noop} {...p} />,
   );
-const withOwner = (owner: DeviceForm["owner"]): DeviceForm => ({ ...emptyForm(), owner });
 
 describe("DeviceFormFields", () => {
   it("fields and datalist", () => {
@@ -46,41 +34,21 @@ describe("DeviceFormFields", () => {
     expect(html).toContain('maxLength="120"');
     expect(html.match(/maxLength="60"/g)).toHaveLength(2);
   });
-  it("non-Admin create has no owner UI", () => {
+  it("create has no owner fields", () => {
     const html = render();
-    expect(html).not.toContain('name="owner-kind"');
-    expect(html).not.toContain(seatsCopy.actions.pickerSearch);
+    expect(html).not.toContain(copy.fields.owner);
+    expect(html).not.toContain('type="radio"');
   });
-  it("Admin create shows Me / Another member", () => {
-    const html = render({ isAdmin: true });
-    expect(html.match(/name="owner-kind"/g)).toHaveLength(2);
-    expect(html).toContain(copy.ownerMe);
-    expect(html).toContain(copy.ownerOther);
-    expect(html.match(/checked=""/g)).toHaveLength(1);
-    expect(html).not.toContain(seatsCopy.actions.pickerSearch);
+  it("edit shows the owner as text, no radios", () => {
+    const html = render({ mode: "edit", ownerName: "Ha" });
+    expect(html).toContain(copy.fields.owner);
+    expect(html).toContain("Ha");
+    expect(html).toContain("The owner can&#x27;t be changed.");
+    expect(html).not.toContain('type="radio"');
   });
-  it("picker only for Another member", () => {
-    const html = render({ isAdmin: true, form: withOwner({ kind: "member", member: null }) });
-    expect(html).toContain(seatsCopy.actions.pickerSearch);
-    expect(html).not.toContain(copy.ownerSelected(""));
-    expect(loadPage).not.toHaveBeenCalled();
-    const picked = render({
-      isAdmin: true,
-      form: withOwner({
-        kind: "member",
-        member: { id: "m1", displayName: "Linh", employeeCode: null },
-      }),
-    });
-    expect(picked).toContain(copy.ownerSelected("Linh"));
-  });
-  it("edit shows the owner as text, no radios, no picker", () => {
-    for (const isAdmin of [false, true]) {
-      const html = render({ mode: "edit", isAdmin, ownerName: "Ha" });
-      expect(html).toContain("Ha");
-      expect(html).toContain("The owner can&#x27;t be changed.");
-      expect(html).not.toContain('type="radio"');
-      expect(html).not.toContain(seatsCopy.actions.pickerSearch);
-    }
+  it("edit of an unowned device shows Org inventory", () => {
+    const html = render({ mode: "edit", ownerName: devicesCopy.orgInventory });
+    expect(html).toContain(devicesCopy.orgInventory);
   });
   it("error prop renders as an alert", () => {
     const html = renderToStaticMarkup(

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Tier } from "@/lib/auth/tier";
-import { canCreateFor, canEdit, canPlace, decidePlacement, type PlacementInput } from "./rules";
+import {
+  canCreate,
+  canEdit,
+  canPlace,
+  decideDelete,
+  decidePlacement,
+  type PlacementInput,
+} from "./rules";
 
 const D = "d0000000-0000-4000-8000-000000000001";
 const OWNER = "a0000000-0000-4000-8000-000000000001";
@@ -35,10 +42,66 @@ describe("permission matrix", () => {
     expect(tiers.map((t) => canEdit(t, false))).toEqual([false, false, true]);
   });
 
-  it("canCreateFor: self yes for all tiers; other member only admin", () => {
+  it("canCreate: only admin", () => {
     const tiers: Tier[] = ["user", "manager", "admin"];
-    expect(tiers.map((t) => canCreateFor(t, true))).toEqual([true, true, true]);
-    expect(tiers.map((t) => canCreateFor(t, false))).toEqual([false, false, true]);
+    expect(tiers.map((t) => canCreate(t))).toEqual([false, false, true]);
+  });
+});
+
+describe("unowned device (org inventory, D63)", () => {
+  const unowned = { ownerId: null, isOwner: false };
+  const here = { current: { seatId: A, role: "secondary" as const }, expectedSeatId: A };
+
+  it("any seat target (primary or secondary, empty or occupied) -> 422 device_unowned", () => {
+    for (const role of ["primary", "secondary"] as const) {
+      for (const occupantId of [null, OWNER]) {
+        const r = decidePlacement(
+          input({
+            ...unowned,
+            tier: "manager",
+            role,
+            target: { seatId: B, occupantId, primaryId: null },
+          }),
+        );
+        expect(r).toEqual(refuse(422, "device_unowned"));
+      }
+    }
+  });
+
+  it("permission is checked first: a user without ownership gets not_allowed", () => {
+    expect(decidePlacement(input({ ...unowned, role: "secondary" }))).toEqual(
+      refuse(422, "not_allowed"),
+    );
+  });
+
+  it("target null on an unplaced unowned device stays a noop", () => {
+    expect(
+      decidePlacement(input({ ...unowned, tier: "manager", target: null, role: "secondary" })),
+    ).toEqual({ kind: "noop" });
+    expect(here.current.seatId).toBe(A);
+  });
+});
+
+describe("decideDelete", () => {
+  const ok = { tier: "admin" as Tier, ownerId: null, seatId: null, pendingHandoff: false };
+
+  it("user and manager -> 422 not_allowed (checked first)", () => {
+    for (const tier of ["user", "manager"] as const) {
+      expect(decideDelete({ ...ok, tier, ownerId: OWNER, pendingHandoff: true })).toEqual(
+        refuse(422, "not_allowed"),
+      );
+    }
+  });
+
+  it("order: device_owned, device_placed, handoff_pending, ok", () => {
+    expect(decideDelete({ ...ok, ownerId: OWNER, seatId: A, pendingHandoff: true })).toEqual(
+      refuse(409, "device_owned"),
+    );
+    expect(decideDelete({ ...ok, seatId: A, pendingHandoff: true })).toEqual(
+      refuse(409, "device_placed"),
+    );
+    expect(decideDelete({ ...ok, pendingHandoff: true })).toEqual(refuse(409, "handoff_pending"));
+    expect(decideDelete(ok)).toEqual({ kind: "ok" });
   });
 });
 

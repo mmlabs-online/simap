@@ -24,6 +24,7 @@ const device: DeviceDto = {
   mine: true,
   canEdit: true,
   canPlace: true,
+  canDelete: false,
 };
 const placedDevice: DeviceDto = {
   ...device,

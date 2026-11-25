@@ -120,6 +120,20 @@ describe("search (db)", () => {
     expect(Object.keys((await find(o, q("emp-9"))).members!.items[0]!)).not.toContain("email");
   });
 
+  it("an unowned device is found by name and inventory number, owner null", async () => {
+    const o = newOrg();
+    await member(o.orgId, "Lê Bình");
+    const dev = await addDevice(pool, o.orgId, null, null, "secondary");
+    await run("update devices set name = 'Bộ sạc', inventory_number = 'INV-9001' where id = $1", [
+      dev,
+    ]);
+    for (const s of ["bo sac", "inv-9001"]) {
+      const r = await find(o, q(s));
+      expect(r.devices!.items.map((i) => i.id)).toEqual([dev]);
+      expect(r.devices!.items[0]!.owner).toBeNull();
+    }
+  });
+
   it("literal % and _ match only themselves", async () => {
     const o = newOrg();
     const a = await member(o.orgId, "Trần 50%_x");

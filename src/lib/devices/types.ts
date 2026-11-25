@@ -5,7 +5,6 @@ export type DeviceCreateValue = {
   type: string;
   inventoryNumber: string;
   mac: string | null;
-  ownerId: string | null;
 };
 
 export type DevicePatchValue = Partial<{
@@ -17,7 +16,7 @@ export type DevicePatchValue = Partial<{
 
 export type DeviceRole = "primary" | "secondary";
 
-export type PlacementFilter = "all" | "placed" | "inventory";
+export type PlacementFilter = "all" | "placed" | "inventory" | "unowned";
 
 export type DevicePlacementDto = {
   seatId: string;
@@ -33,15 +32,18 @@ export type DeviceDto = {
   type: string;
   inventoryNumber: string;
   mac: string | null;
-  owner: { id: string; displayName: string };
+  /** Null when the device is in the org inventory (D63). */
+  owner: { id: string; displayName: string } | null;
   /** Null when the device is in inventory. */
   placement: DevicePlacementDto | null;
   /** True when the caller owns the device (computed on the server from the token's sub). */
   mine: boolean;
-  /** Owner or Admin (D19). */
+  /** Owner or Admin (D19); an unowned device is edited by an Admin only. */
   canEdit: boolean;
-  /** Owner or Manager+ (D19). */
+  /** Owner or Manager+ (D19); false for an unowned device (invariant 5). */
   canPlace: boolean;
+  /** Admin and the device is in the org inventory (DEV-01). A pending handoff is checked by the server only. */
+  canDelete: boolean;
 };
 
 export type DeviceListResponse = { items: DeviceDto[]; truncated: boolean };

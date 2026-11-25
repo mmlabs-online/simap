@@ -32,7 +32,7 @@ function PlacementLabel({ device }: { device: DeviceDto }) {
 function OwnerLabel({ device }: { device: DeviceDto }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
-      <span>{device.owner.displayName}</span>
+      <span>{device.owner?.displayName ?? devicesCopy.orgInventory}</span>
       {device.mine && <Chip label={devicesCopy.you} />}
     </span>
   );
