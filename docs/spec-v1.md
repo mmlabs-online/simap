@@ -717,10 +717,10 @@ Owner: Ming for all of them. Each blocks the tickets named after it. IDs are sta
 - **OQ-51** — answered D66: walls, windows and floors are catalog rows; custom upload allowed for them.
 
 Still open (defaults stand until Ming answers; reversible):
-- **OQ-52 Resizing an item that has custom images.** Default: a size change (only possible while the item is not
+- **OQ-52 Resizing an item that has custom images.** Answered 2026-11-25 (Ming: "mặc định"): the default below. Default: a size change (only possible while the item is not
   placed anywhere) deletes the item's custom images after a warning, since they no longer fit. Alternative: refuse
   the resize until the Admin removes the images. *Blocks: SIM-039.2.*
-- **OQ-53 Package sprite on a resized item.** Default: when the item's size differs from the sprite's frame, the
+- **OQ-53 Package sprite on a resized item.** Answered 2026-11-25 (Ming: "mặc định"): the default below. Default: when the item's size differs from the sprite's frame, the
   sprite draws at its own size, bottom-left aligned in the footprint, and the whole footprint blocks; the Admin page
   suggests uploading fitted art. Alternative: nearest-neighbour stretch by whole tiles. *Blocks: SIM-039.4.*
 
