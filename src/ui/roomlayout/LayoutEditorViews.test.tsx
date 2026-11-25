@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import { draftFromLayout } from "@/lib/layout-editor/draft";
 import { apiErrorMessage } from "../copy/api";
 import { roomlayoutCopy } from "../copy/roomlayout";
-import { editorPalette } from "@/lib/layout-editor/palette";
-import { FIXTURE_GROUPS } from "@/lib/validate/layout";
+import { catalogPalette } from "@/lib/layout-editor/palette";
+import type { MapItemDto } from "@/lib/map-items/types";
 import { EditorInspector } from "./EditorInspector";
 import { Palette, PlacePanel } from "./Palette";
 import { EditorToolbar } from "./EditorToolbar";
@@ -101,13 +101,14 @@ describe("editor views", () => {
     },
     [],
   );
-  const inspector = (selection: string[]) =>
+  const inspector = (selection: string[], names?: ReadonlyMap<string, string>) =>
     renderToStaticMarkup(
       <EditorInspector
         draft={draft}
         selection={selection}
         disabled={false}
         tool={null}
+        names={names}
         resizeRefused={false}
         onArmTray={noop}
         onResize={noop}
@@ -152,31 +153,65 @@ describe("editor views", () => {
       />,
     );
 
-  it("palette renders the Desks group first with New desk; pressed when the desk tool is armed; every group has a heading; all buttons disabled when disabled", () => {
-    const groups = editorPalette();
-    const first = groups[1].entries[0].sprite;
-    const html = renderToStaticMarkup(
-      <Palette groups={groups} armed={first} disabled={false} onArm={noop} />,
+  const art = { sprite: null, hasImage: false, imageVersion: 0 };
+  const row = (builtinKey: string, name: string, group: string, kind: "seat" | "fixture") =>
+    ({
+      builtinKey,
+      name,
+      group,
+      w: 1,
+      h: 1,
+      hidden: false,
+      kind,
+      directional: false,
+      fixedSize: false,
+      art: { n: art, e: art, s: art, w: art },
+    }) as MapItemDto;
+  const groups = catalogPalette([
+    row("plant.large", "Cây xanh", "Decor", "fixture"),
+    row("desk.single", "Bàn", "Desks", "seat"),
+    row("prop.mug", "Mug", "Decor", "fixture"),
+  ]);
+  const pal = (over: Partial<Parameters<typeof Palette>[0]> = {}) =>
+    renderToStaticMarkup(
+      <Palette
+        groups={groups}
+        armed={null}
+        disabled={false}
+        status="ready"
+        onRetry={noop}
+        onArm={noop}
+        {...over}
+      />,
     );
-    expect(html.match(/<h3/g)).toHaveLength(groups.length);
-    expect(html).toContain('aria-pressed="true"');
-    expect(html.indexOf(copy.palette.groups.desk)).toBeLessThan(html.indexOf("<li"));
-    expect(html).toContain("New desk");
-    const desk = renderToStaticMarkup(
-      <Palette groups={groups} armed="desk.single" disabled={false} onArm={noop} />,
-    );
-    expect(desk).toMatch(/aria-pressed="true"[^>]*>New desk/);
-    const off = renderToStaticMarkup(
-      <Palette groups={groups} armed={null} disabled onArm={noop} />,
-    );
-    const buttons = off.match(/<button[^>]*>/g) ?? [];
-    expect(buttons.length).toBeGreaterThan(0);
+
+  it("palette renders catalog groups and names in the given order, Vietnamese name intact; pressed entry; disabled", () => {
+    const html = pal({ armed: "plant.large" });
+    expect(html.match(/<h3/g)).toHaveLength(2);
+    expect(html.indexOf(">Decor<")).toBeLessThan(html.indexOf(">Desks<"));
+    expect(html.indexOf("Cây xanh")).toBeLessThan(html.indexOf(">Mug<"));
+    expect(html).toMatch(/aria-pressed="true"[^>]*>Cây xanh/);
+    const buttons = pal({ disabled: true }).match(/<button[^>]*>/g) ?? [];
+    expect(buttons.length).toBe(3);
     expect(buttons.every((b) => b.includes('disabled=""'))).toBe(true);
   });
 
-  it("every FIXTURE_GROUPS entry and the desk group have a palette heading in the copy", () => {
-    expect(copy.palette.groups.desk).toBe("Desks");
-    for (const g of FIXTURE_GROUPS) expect(copy.palette.groups[g]).toBeTruthy();
+  it("palette shows the loading line and the error line with a retry button", () => {
+    expect(pal({ status: "loading", groups: [] })).toContain(copy.palette.loading);
+    const err = pal({ status: "error", groups: [] });
+    expect(err).toContain(copy.palette.failed);
+    expect(err).toContain(copy.palette.retry);
+    expect(pal()).not.toContain(copy.palette.retry);
+  });
+
+  it("inspector shows the catalog name for a fixture and Desk <code> for a seat", () => {
+    const names = new Map([
+      ["cabinet.filing", "Tủ hồ sơ"],
+      ["desk.single", "Bàn"],
+    ]);
+    const html = inspector(["f:0"], names);
+    expect(html).toContain("Tủ hồ sơ at 0, 3");
+    expect(inspector(["s:s1"], names)).toContain("Desk Phòng-A-01 at 4, 7");
   });
 
   it("place panel shows the armed item name, labelled X and Y inputs, Place and Done placing; renders nothing without a tool", () => {

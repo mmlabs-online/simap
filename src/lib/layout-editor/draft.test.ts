@@ -4,7 +4,7 @@ import { buildDrawList } from "@/lib/sprites/placement";
 import { defaultLayout } from "@/lib/sprites/default-layout";
 import type { RoomLayout } from "@/lib/sprites/layout";
 import type { SpriteManifest } from "@/lib/sprites/types";
-import { checkLayoutRules } from "@/lib/validate/layout";
+import { checkLayoutRules, registryFootprints, type FootprintLookup } from "@/lib/validate/layout";
 import {
   deleteItems,
   draftFromLayout,
@@ -298,5 +298,29 @@ describe("fixtures and desks (D61)", () => {
     expect(checkLayoutRules(rulesInput(r.draft)).ok).toBe(true);
     const clean = empty({ seats: [seat("a", 2, 2)], fixtures: [mug(6, 6)] });
     expect(withoutDeskFixtures(clean)).toEqual({ draft: clean, dropped: 0 });
+  });
+});
+
+describe("catalog lookup", () => {
+  const wide: FootprintLookup = (k) => (k === "prop.mug" ? [3, 1] : registryFootprints(k));
+  const d = empty({ fixtures: [{ id: "", sprite: "prop.mug", x: 8, y: 2, rotation: 0 }] });
+  const code = (r: OpResult) => (r.ok ? "ok" : r.code);
+
+  it("moveItems, rotateItems and resizeRoom pass the lookup: a widened item at the edge is refused", () => {
+    expect(code(moveItems(d, ["f:0"], 1, 0))).toBe("ok");
+    expect(code(moveItems(d, ["f:0"], 2, 0, wide))).toBe("layout_out_of_bounds");
+    expect(code(resizeRoom(d, 10, 8))).toBe("ok");
+    expect(code(resizeRoom(d, 10, 8, wide))).toBe("layout_out_of_bounds");
+    expect(code(placeItem(d, "prop.mug", 10, 5))).toBe("ok");
+    expect(code(placeItem(d, "prop.mug", 10, 5, 0, wide))).toBe("layout_out_of_bounds");
+  });
+
+  it("withoutDeskFixtures uses the lookup", () => {
+    const x = empty({
+      seats: [seat("a", 2, 2)],
+      fixtures: [{ id: "", sprite: "prop.mug", x: 0, y: 2, rotation: 0 }],
+    });
+    expect(withoutDeskFixtures(x).dropped).toBe(0);
+    expect(withoutDeskFixtures(x, wide).dropped).toBe(1);
   });
 });

@@ -106,25 +106,9 @@ export const roomlayoutCopy = {
     },
     palette: {
       heading: "Add items",
-      groups: {
-        desk: "Desks",
-        cabinet: "Cabinets",
-        circulation: "Stairs and lifts",
-        door: "Doors",
-        label: "Labels",
-        lamp: "Lamps",
-        marker: "Markers",
-        partition: "Partitions",
-        plant: "Plants",
-        prop: "Props",
-        rack: "Racks",
-        shelf: "Shelves",
-        sofa: "Sofas",
-        table: "Tables",
-        wall: "Walls",
-        whiteboard: "Whiteboards",
-        window: "Windows",
-      } as Record<string, string>,
+      loading: "Loading the item list…",
+      failed: "Could not load the item list.",
+      retry: "Try again",
       armed: (name: string) =>
         `Placing ${name}. Click a tile on the map, or enter a tile and press Place. Esc stops.`,
       x: "X",
@@ -184,12 +168,15 @@ export const roomlayoutCopy = {
         { keys: "Shift", action: "Add to the selection" },
       ],
     },
-    itemName: (item: { kind: "seat" | "fixture"; sprite: string; code: string | null }) =>
+    itemName: (
+      item: { kind: "seat" | "fixture"; sprite: string; code: string | null },
+      catalogName?: string,
+    ) =>
       item.kind === "seat"
         ? item.code === null
           ? "New desk"
           : `Desk ${item.code}`
-        : item.sprite.replaceAll(".", " "),
+        : (catalogName ?? item.sprite.replaceAll(".", " ")),
     itemAt: (name: string, x: number, y: number) => `${name} at ${x}, ${y}`,
   },
 } as const;

@@ -20,6 +20,7 @@ import {
 } from "@/lib/layout-editor/pointer-gesture";
 import { footprintBox, type Point } from "@/lib/layout-editor/tiles";
 import type { Draft } from "@/lib/layout-editor/types";
+import type { FootprintLookup } from "@/lib/validate/layout";
 import { ZOOM_LEVELS, type SeatDevice, type Zoom } from "@/lib/sprites/layout";
 import { buildDrawList, TILE } from "@/lib/sprites/placement";
 import { allowedZooms, clampZoom } from "@/lib/sprites/zoom";
@@ -44,6 +45,8 @@ type Props = {
   onAction: (effect: GestureEffect) => void;
   /** Catalog device images from `useCatalogImages`. */
   catalogImages?: CatalogImages;
+  /** Catalog sizes for the ghost, outlines and hit areas (default: the registry). */
+  footprints?: FootprintLookup;
 };
 
 /**
@@ -60,6 +63,7 @@ export function EditorCanvas({
   frozen,
   onAction,
   catalogImages,
+  footprints,
 }: Props) {
   const { atlas, failed, setFailed } = useAtlas();
   const [hover, setHover] = useState<Point | null>(null);
@@ -69,8 +73,8 @@ export function EditorCanvas({
   const gestureRef = useRef<Gesture>(gesture);
   const pending = useRef<PointerSample | null>(null);
   const frame = useRef(0);
-  const ctxRef = useRef<GestureCtx>({ draft, selection, tool, frozen });
-  ctxRef.current = { draft, selection, tool, frozen };
+  const ctxRef = useRef<GestureCtx>({ draft, selection, tool, frozen, footprints });
+  ctxRef.current = { draft, selection, tool, frozen, footprints };
   const onActionRef = useRef(onAction);
   onActionRef.current = onAction;
 
@@ -89,14 +93,25 @@ export function EditorCanvas({
   );
   const allowed = useMemo(() => (list ? allowedZooms(list.bounds) : []), [list]);
   const effective = clampZoom(zoom, allowed);
-  const preview = useMemo(() => placementPreview(draft, tool, hover), [draft, tool, hover]);
-  const ghost = useMemo(() => dragPreview(draft, gesture), [draft, gesture]);
+  const preview = useMemo(
+    () => placementPreview(draft, tool, hover, footprints),
+    [draft, tool, hover, footprints],
+  );
+  const ghost = useMemo(
+    () => dragPreview(draft, gesture, footprints),
+    [draft, gesture, footprints],
+  );
   const marquee = useMemo(() => {
     const box = marqueeBox(gesture);
     if (!box) return null;
-    const keys = marqueeKeys(draft, gesture);
-    return { box, items: draft.items.filter((i) => keys.includes(i.key)).map(footprintBox) };
-  }, [draft, gesture]);
+    const keys = marqueeKeys(draft, gesture, footprints);
+    return {
+      box,
+      items: draft.items
+        .filter((i) => keys.includes(i.key))
+        .map((i) => footprintBox(i, footprints)),
+    };
+  }, [draft, gesture, footprints]);
 
   const apply = useCallback((step: GestureStep) => {
     gestureRef.current = step.gesture;
@@ -256,7 +271,7 @@ export function EditorCanvas({
             {draft.items
               .filter((i) => selection.includes(i.key))
               .map((i) => {
-                const b = footprintBox(i);
+                const b = footprintBox(i, footprints);
                 return (
                   <div
                     key={i.key}

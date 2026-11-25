@@ -14,6 +14,7 @@ import {
   type PointerSample,
 } from "./pointer-gesture";
 import type { Tool } from "./place-tool";
+import { registryFootprints, type FootprintLookup } from "@/lib/validate/layout";
 
 const draft = draftFromLayout(
   {
@@ -223,5 +224,44 @@ describe("dragPreview", () => {
     });
     expect(dragPreview(draft, g(6, 2))?.ok).toBe(false);
     expect(dragPreview(draft, g(-1, 2))?.ok).toBe(false);
+  });
+});
+
+describe("catalog lookup", () => {
+  const wide: FootprintLookup = (k) => (k === "plant.large" ? [4, 1] : registryFootprints(k));
+
+  it("gestureDown hit and marquee use ctx.footprints; dragPreview boxes have the catalog size", () => {
+    const sample = (x: number): DownSample => ({
+      id: 1,
+      offset: { x: 0, y: 0 },
+      cell: { x, y: 5 },
+      shift: false,
+      primary: true,
+      button: 0,
+      pointerType: "mouse",
+    });
+    const hit = (c: GestureCtx, x: number) => {
+      const g = gestureDown(idle, sample(x), c).gesture;
+      return g.kind === "press" ? g.hit : "none";
+    };
+    expect(hit(ctx({ footprints: wide }), 12)).toBeNull();
+    expect(hit(ctx({ footprints: wide }), 11)).toBe(P);
+    const m: Gesture = {
+      kind: "marquee",
+      id: 1,
+      cell0: { x: 11, y: 5 },
+      cell: { x: 11, y: 5 },
+      additive: false,
+    };
+    expect(marqueeKeys(draft, m, wide)).toEqual([P]);
+    expect(marqueeKeys(draft, m)).toEqual([]);
+    const drag: Gesture = {
+      kind: "drag",
+      id: 1,
+      cell0: { x: 0, y: 0 },
+      cell: { x: -1, y: 0 },
+      keys: [P],
+    };
+    expect(dragPreview(draft, drag, wide)?.boxes[0]).toMatchObject({ w: 4, h: 1 });
   });
 });

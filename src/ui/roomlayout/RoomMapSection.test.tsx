@@ -15,6 +15,7 @@ const view = (over: Partial<MapView> = {}): MapView => ({
   },
   seatViews: {},
   seatDevices: {},
+  items: [],
   unplaced: [],
   truncated: false,
   saved: true,

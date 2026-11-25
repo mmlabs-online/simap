@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { LayoutSaveValue, RoomLayout } from "@/lib/sprites/layout";
 import type { MapView } from "@/lib/sprites/map-view";
-import { validateLayoutSave } from "@/lib/validate/layout";
+import {
+  registryFootprints,
+  validateLayoutSave,
+  type FootprintLookup,
+} from "@/lib/validate/layout";
 import { deleteItems, draftFromLayout, placeItem } from "./draft";
 import { runSave, type SaveApi, type SaveInput, type SaveOutcome } from "./save-run";
 import type { Draft, OpResult } from "./types";
@@ -315,5 +319,18 @@ describe("runSave", () => {
     expect(out.code).toBe("unplaced");
     expect(out.progress).toBeNull();
     expect(f.calls).toEqual([]);
+  });
+});
+
+describe("runSave footprints", () => {
+  it("the pre-check uses input.footprints: valid by registry, overlapping by catalog, fails before the PUT", async () => {
+    const wide: FootprintLookup = (k) => (k === "desk.single" ? [6, 1] : registryFootprints(k));
+    const f = fakeApi();
+    const d = baselineDraft();
+    expect((await runSave(input(d), f.api)).status).toBe("saved");
+    const g = fakeApi();
+    const out = await runSave({ ...input(d), footprints: wide }, g.api);
+    expect(out.status).toBe("failed");
+    expect(g.calls.some((c) => c.method === "put")).toBe(false);
   });
 });

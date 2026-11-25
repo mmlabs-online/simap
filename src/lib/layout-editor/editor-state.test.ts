@@ -1,15 +1,23 @@
 import { describe, expect, it } from "vitest";
+import type { MapItemDto } from "@/lib/map-items/types";
 import type { MapView } from "@/lib/sprites/map-view";
 import { LAYOUT_LIMITS, validateLayoutSave } from "@/lib/validate/layout";
 import {
   editorFlags,
+  editorFootprints,
   editorReducer,
   initEditor,
   savePayload,
   type EditorAction,
   type EditorState,
 } from "./editor-state";
+import { paletteEntries } from "./palette";
 import type { Tool } from "./place-tool";
+import { REGISTRY } from "@/lib/sprites/registry";
+
+const unit = paletteEntries().find(
+  (e) => e.kind === "fixture" && !e.directional && REGISTRY[e.sprite]?.blocks === true,
+)!.sprite;
 
 const S1 = "11111111-1111-4111-8111-111111111111";
 const S2 = "22222222-2222-4222-8222-222222222222";
@@ -32,6 +40,7 @@ const view = (over: Partial<MapView> = {}, layout: Partial<MapView["layout"]> = 
   },
   seatViews: {},
   seatDevices: {},
+  items: [],
   unplaced: [],
   truncated: false,
   saved: true,
@@ -564,5 +573,53 @@ describe("editor state", () => {
       );
       expect(JSON.stringify(p.value)).not.toContain("PC");
     }
+  });
+});
+
+describe("catalog sizes", () => {
+  const art = { sprite: null, hasImage: false, imageVersion: 0 };
+  const dto = (builtinKey: string, w: number, h: number): MapItemDto => ({
+    builtinKey,
+    name: builtinKey,
+    group: "g",
+    w,
+    h,
+    hidden: false,
+    kind: "fixture",
+    directional: false,
+    fixedSize: false,
+    art: { n: art, e: art, s: art, w: art },
+  });
+  const layoutRow = ({ hidden: _h, ...r }: MapItemDto) => r;
+
+  it("initEditor builds footprints from view.items; a catalog action adds palette sizes and keeps history and selection; layout rows win", () => {
+    const s0 = initEditor(view({ items: [layoutRow(dto("plant.large", 3, 1))] }));
+    expect(s0.footprints("plant.large")).toEqual([3, 1]);
+    const s1 = run(s0, sel(`s:${S1}`), { type: "move", dx: 1, dy: 0 });
+    const s2 = run(s1, {
+      type: "catalog",
+      items: [dto("prop.mug", 2, 1), dto("plant.large", 1, 1)],
+    });
+    expect(s2.footprints("prop.mug")).toEqual([2, 1]);
+    expect(s2.footprints("plant.large")).toEqual([3, 1]);
+    expect(s2.history).toBe(s1.history);
+    expect(s2.selection).toEqual(s1.selection);
+  });
+
+  it("place uses the palette size after catalog; savePayload refuses with the catalog size; saveDone keeps the palette", () => {
+    const items = [dto(unit, 3, 1)];
+    let s = run(base(), { type: "catalog", items });
+    s = run(
+      s,
+      { type: "arm", tool: { kind: "fixture", sprite: unit } },
+      { type: "place", x: 10, y: 0 },
+    );
+    expect(s.notice).toEqual({ kind: "refused", code: "layout_out_of_bounds" });
+    s = run(s, { type: "place", x: 6, y: 5 });
+    expect(s.notice).toEqual({ kind: "done", what: "placed" });
+    expect(savePayload(s).ok).toBe(true);
+    const wider = { ...s, footprints: editorFootprints([], [dto(unit, 4, 1)]) };
+    expect(savePayload(wider).ok).toBe(false);
+    expect(run(s, { type: "saveDone", view: view() }).palette).toBe(items);
   });
 });

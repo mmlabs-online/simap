@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { REGISTRY } from "@/lib/sprites/registry";
 import { FIXTURE_GROUPS } from "@/lib/validate/layout";
-import { editorPalette, paletteEntries } from "./palette";
+import type { MapItemDto } from "@/lib/map-items/types";
+import { catalogPalette, paletteEntries } from "./palette";
 
 describe("paletteEntries", () => {
   const entries = paletteEntries();
@@ -35,14 +36,78 @@ describe("paletteEntries", () => {
   });
 });
 
-describe("editorPalette", () => {
-  it("editorPalette: the desk group comes first with desk.single only, then the fixture groups in paletteEntries order", () => {
-    const groups = editorPalette();
-    expect(groups[0].group).toBe("desk");
-    expect(groups[0].entries.map((e) => e.sprite)).toEqual(["desk.single"]);
-    const flat = groups.flatMap((g) => g.entries);
-    expect(flat).toEqual(paletteEntries());
-    expect(new Set(groups.map((g) => g.group)).size).toBe(groups.length);
-    for (const g of groups) for (const e of g.entries) expect(e.group).toBe(g.group);
+const art = { sprite: null, hasImage: false, imageVersion: 0 };
+const row = (builtinKey: string, name: string, group: string, over: Partial<MapItemDto> = {}) =>
+  ({
+    builtinKey,
+    name,
+    group,
+    w: 1,
+    h: 1,
+    hidden: false,
+    kind: "fixture",
+    directional: false,
+    fixedSize: false,
+    art: { n: art, e: art, s: art, w: art },
+    ...over,
+  }) as MapItemDto;
+
+describe("catalogPalette", () => {
+  it("keeps kind seat and fixture only and drops hidden rows", () => {
+    const groups = catalogPalette([
+      row("desk.single", "Desk", "Desks", { kind: "seat", fixedSize: true }),
+      row("floor.wood", "Wood", "Floors", { kind: "floor" }),
+      row("chair.office", "Chair", "Chairs", { kind: "chair" }),
+      row("prop.mug", "Mug", "Props", { hidden: true }),
+      row("desk.l", "L desk", "Desks", { kind: "seat", hidden: true }),
+      row("plant.large", "Plant", "Props"),
+    ]);
+    expect(groups.flatMap((g) => g.entries.map((e) => e.sprite))).toEqual([
+      "desk.single",
+      "plant.large",
+    ]);
+  });
+
+  it("sorts groups and entries by name, case and accent insensitive, then by exact text and key, whatever the input order", () => {
+    const rows = [
+      row("k3", "ban", "Bàn"),
+      row("k2", "Bàn", "Bàn"),
+      row("k1", "Cây", "Bàn"),
+      row("k0", "Ánh", "Bàn"),
+      row("k4", "x", "ban"),
+    ];
+    const names = (r: MapItemDto[]) =>
+      catalogPalette(r).map((g) => [g.group, g.entries.map((e) => e.sprite)]);
+    expect(names(rows)).toEqual([
+      ["Bàn", ["k0", "k2", "k3", "k1"]],
+      ["ban", ["k4"]],
+    ]);
+    expect(names([...rows].reverse())).toEqual(names(rows));
+  });
+
+  it("groups by the exact group string; an empty list gives []", () => {
+    expect(catalogPalette([])).toEqual([]);
+    const g = catalogPalette([
+      row("a", "A", "Decor"),
+      row("b", "B", "Decor "),
+      row("c", "C", "Decor"),
+    ]);
+    expect(g.map((x) => [x.group, x.entries.length])).toEqual([
+      ["Decor", 2],
+      ["Decor ", 1],
+    ]);
+  });
+
+  it("an entry carries name, kind and directional from the DTO; desk.single is a seat entry", () => {
+    const [g] = catalogPalette([
+      row("desk.single", "Bàn đơn", "Desks", { kind: "seat", directional: true }),
+    ]);
+    expect(g.entries[0]).toEqual({
+      sprite: "desk.single",
+      name: "Bàn đơn",
+      kind: "seat",
+      group: "Desks",
+      directional: true,
+    });
   });
 });

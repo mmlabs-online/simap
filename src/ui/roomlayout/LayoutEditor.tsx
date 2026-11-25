@@ -1,19 +1,20 @@
 "use client";
 
-import { useReducer, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   editorFlags,
   editorReducer,
   initEditor,
   savePayload,
 } from "@/lib/layout-editor/editor-state";
-import { editorPalette } from "@/lib/layout-editor/palette";
+import { catalogPalette } from "@/lib/layout-editor/palette";
 import { runSave } from "@/lib/layout-editor/save-run";
 import { isTextField, keyAction } from "@/lib/layout-editor/shortcuts";
 import { roomDetailHref } from "@/lib/nav";
 import type { Zoom } from "@/lib/sprites/layout";
 import type { MapView } from "@/lib/sprites/map-view";
 import { roomlayoutCopy } from "../copy/roomlayout";
+import type { MapItemsState } from "../mapItems/useMapItems";
 import type { SeatsApi } from "../seats/seats-api";
 import type { CatalogImages } from "./catalog-images";
 import { EditorCanvas } from "./EditorCanvas";
@@ -24,22 +25,41 @@ import { Palette, PlacePanel } from "./Palette";
 import { ShortcutList } from "./ShortcutList";
 import { useLeaveGuard } from "./useLeaveGuard";
 
-const GROUPS = editorPalette();
-
 type Props = {
   view: MapView;
   roomId: string;
   roomCode: string;
   seatsApi: SeatsApi;
   catalogImages?: CatalogImages;
+  /** The org's map item catalog for the palette and the sizes. */
+  palette: Pick<MapItemsState, "status" | "items" | "reload">;
   /** Refetches the layout; the page remounts this editor with the new view. */
   onReload: () => void;
 };
 
 /** The editor for one loaded layout: draft state, the save flow and the leave guard. */
-export function LayoutEditor({ view, roomId, roomCode, seatsApi, catalogImages, onReload }: Props) {
-  const [state, dispatch] = useReducer(editorReducer, view, initEditor);
+export function LayoutEditor({
+  view,
+  roomId,
+  roomCode,
+  seatsApi,
+  catalogImages,
+  palette,
+  onReload,
+}: Props) {
+  const [state, dispatch] = useReducer(editorReducer, view, (v: MapView) =>
+    initEditor(v, palette.items),
+  );
   const [zoom, setZoom] = useState<Zoom>(2);
+  useEffect(() => {
+    dispatch({ type: "catalog", items: palette.items });
+  }, [palette.items]);
+  const groups = useMemo(() => catalogPalette(palette.items), [palette.items]);
+  // Layout rows win over palette rows, so a placed hidden item keeps its name.
+  const names = useMemo(
+    () => new Map([...palette.items, ...view.items].map((i) => [i.builtinKey, i.name])),
+    [palette.items, view.items],
+  );
   const flags = editorFlags(state);
   const saving = state.save.status === "saving";
   const guard = useLeaveGuard(flags.dirty);
@@ -56,6 +76,7 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, catalogImages, 
           tool.kind === "fixture"
             ? { kind: "fixture", sprite: tool.sprite, code: null }
             : { kind: "seat", sprite: "desk.single", code: trayCode ?? null },
+          tool.kind === "fixture" ? names.get(tool.sprite) : undefined,
         );
   const backHref = roomDetailHref(roomCode) ?? "/rooms";
 
@@ -74,6 +95,7 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, catalogImages, 
           baseline: state.baseline,
           baseVersion: state.baseVersion,
           roomId,
+          footprints: state.footprints,
         },
         seatsApi,
       );
@@ -154,6 +176,7 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, catalogImages, 
           frozen={frozen}
           onAction={dispatch}
           catalogImages={catalogImages}
+          footprints={state.footprints}
         />
         <div className="flex flex-col gap-4">
           <PlacePanel
@@ -163,7 +186,9 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, catalogImages, 
             onDone={() => dispatch({ type: "disarm" })}
           />
           <Palette
-            groups={GROUPS}
+            groups={groups}
+            status={palette.status}
+            onRetry={palette.reload}
             armed={
               tool?.kind === "fixture" ? tool.sprite : tool?.kind === "desk" ? "desk.single" : null
             }
@@ -180,6 +205,7 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, catalogImages, 
             selection={state.selection}
             disabled={frozen}
             tool={tool}
+            names={names}
             resizeRefused={resizeRefused}
             onArmTray={(seatId) => dispatch({ type: "arm", tool: { kind: "tray", seatId } })}
             onResize={(w, h) => dispatch({ type: "resize", w, h })}
