@@ -1,6 +1,12 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ZOOM_LEVELS, type Placement, type RoomLayout, type SeatView } from "./layout";
+import {
+  ZOOM_LEVELS,
+  type Placement,
+  type RoomLayout,
+  type SeatDevice,
+  type SeatView,
+} from "./layout";
 import {
   ROTATION_TO_DIR,
   buildDrawList,
@@ -338,5 +344,69 @@ describe("seat devices on desks (D61)", () => {
       nobody: [{ type: "PC" }],
     });
     expect(ghost).toEqual(without());
+  });
+});
+
+describe("catalog device images (SIM-036.4)", () => {
+  const desk = (rotation = 0) => ({ ...place("s1", "desk.single", 2, 2, rotation), code: "A1" });
+  const type = (over = {}) => ({
+    id: "t1",
+    slot: "phone" as const,
+    hasImage: true,
+    imageVersion: 2,
+    ...over,
+  });
+  const draw = (devices: SeatDevice[], ready = true, rotation = 0) =>
+    buildDrawList(room({ seats: [desk(rotation)] }), {}, manifest, { s1: devices }, () => ready);
+  const imgs = (ops: DrawOp[]) => ops.flatMap((o) => (o.type === "image" ? [o] : []));
+
+  it("catalog image op at the slot position, centred on the slot frame", () => {
+    for (const rotation of [0, 90, 180, 270]) {
+      const withImage = draw([{ type: "Headset", deviceType: type() }], true, rotation);
+      const builtin = draw([{ type: "IP phone" }], true, rotation);
+      const [img] = imgs(withImage.ops);
+      const f = builtin.ops.find((o) => o.type === "frame" && o.key === "device.phone");
+      expect(img, String(rotation)).toMatchObject({ typeId: "t1", version: 2, w: 24, h: 24 });
+      expect(img.x).toBe((f?.x ?? 0) + Math.floor(((f?.w ?? 0) - 24) / 2));
+      expect(img.y).toBe((f?.y ?? 0) + Math.floor(((f?.h ?? 0) - 24) / 2));
+      expect(frames(withImage.ops)).not.toContain("device.phone");
+    }
+  });
+
+  it("seeded type without image keeps the built-in sprite", () => {
+    const list = draw([{ type: "PC", deviceType: type({ slot: "pc", hasImage: false }) }]);
+    expect(frames(list.ops)).toContain("device.pc");
+    expect(imgs(list.ops)).toHaveLength(0);
+  });
+
+  it("deviceType null draws the device.other placeholder", () => {
+    const list = draw([{ type: "PC", deviceType: null }]);
+    expect(frames(list.ops)).toContain("device.other");
+    expect(frames(list.ops)).not.toContain("device.pc");
+  });
+
+  it("image not ready draws the placeholder at the type's slot; other ops unchanged", () => {
+    const base = draw([]);
+    const list = draw([{ type: "Headset", deviceType: type() }], false);
+    expect(imgs(list.ops)).toHaveLength(0);
+    expect(frames(list.ops).filter((k) => k === "device.other")).toHaveLength(1);
+    expect(list.ops.filter((o) => o.type === "frame" && o.key !== "device.other")).toEqual(
+      base.ops.filter((o) => o.type === "frame"),
+    );
+  });
+
+  it("an under slot (pc) paints the image before the desk", () => {
+    const list = draw([{ type: "Tower", deviceType: type({ slot: "pc" }) }]);
+    const at = list.ops.findIndex((o) => o.type === "image");
+    const desk = list.ops.findIndex((o) => o.type === "frame" && o.key === "desk.single.s");
+    expect(at).toBeGreaterThanOrEqual(0);
+    expect(at).toBeLessThan(desk);
+  });
+
+  it("images after the second slot stack and the cap is 4 per kind", () => {
+    const list = draw(Array.from({ length: 6 }, () => ({ type: "H", deviceType: type() })));
+    const xs = imgs(list.ops).map((o) => o.x);
+    expect(xs).toHaveLength(4);
+    expect(xs[3] - xs[2]).toBe(3);
   });
 });

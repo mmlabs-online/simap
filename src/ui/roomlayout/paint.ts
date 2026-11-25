@@ -49,6 +49,7 @@ export function paintRoom(
   list: DrawList,
   zoom: number,
   createCanvas: () => HTMLCanvasElement = defaultCanvas,
+  images: (typeId: string, version: number) => CanvasImageSource | null = () => null,
 ): boolean {
   // Resizing resets the context state, so size first and set smoothing after.
   const w = list.bounds.w * zoom;
@@ -66,6 +67,11 @@ export function paintRoom(
     if (op.type === "shadow") {
       ctx.fillStyle = SHADOW_FILL;
       ctx.fillRect(op.x, op.y, op.w, op.h);
+      continue;
+    }
+    if (op.type === "image") {
+      const src = images(op.typeId, op.version);
+      if (src) ctx.drawImage(src, op.x, op.y, op.w, op.h);
       continue;
     }
     const frame = atlas.manifest.frames[op.key];

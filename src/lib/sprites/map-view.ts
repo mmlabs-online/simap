@@ -1,5 +1,14 @@
 import { LAYOUT_LIMITS } from "@/lib/validate/layout";
-import type { Placement, RoomLayout, SeatDevice, SeatState, SeatView } from "./layout";
+import { DEVICE_KINDS } from "@/lib/device-types/types";
+import type { DeviceKind } from "./device-slots";
+import type {
+  Placement,
+  RoomLayout,
+  SeatDevice,
+  SeatDeviceType,
+  SeatState,
+  SeatView,
+} from "./layout";
 
 /** The room map's view data, mapped from `GET /api/rooms/{id}/layout`. */
 export type MapView = {
@@ -42,10 +51,27 @@ const validFloor = (f: unknown) =>
 
 const emptyView = (): SeatView => ({ state: "empty", avatarSeed: null, name: null });
 
+function toDeviceType(raw: unknown): SeatDeviceType | null {
+  if (!isObject(raw) || !isStr(raw.id) || !isStr(raw.slot)) return null;
+  if (!DEVICE_KINDS.includes(raw.slot as DeviceKind)) return null;
+  if (typeof raw.hasImage !== "boolean" || !isInt(raw.imageVersion)) return null;
+  return {
+    id: raw.id,
+    slot: raw.slot as DeviceKind,
+    hasImage: raw.hasImage,
+    imageVersion: raw.imageVersion,
+  };
+}
+
 function toSeatDevices(raw: unknown): SeatDevice[] {
   if (!Array.isArray(raw)) return [];
   return raw
-    .flatMap((d): SeatDevice[] => (isObject(d) && isStr(d.type) ? [{ type: d.type }] : []))
+    .flatMap((d): SeatDevice[] => {
+      if (!isObject(d) || !isStr(d.type)) return [];
+      return "deviceType" in d && d.deviceType !== undefined
+        ? [{ type: d.type, deviceType: toDeviceType(d.deviceType) }]
+        : [{ type: d.type }];
+    })
     .slice(0, LAYOUT_LIMITS.devicesPerSeat);
 }
 

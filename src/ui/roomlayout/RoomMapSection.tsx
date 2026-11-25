@@ -9,6 +9,7 @@ import { Button } from "../Button";
 import { Card } from "../Card";
 import { apiErrorMessage } from "../copy/api";
 import { roomlayoutCopy } from "../copy/roomlayout";
+import type { CatalogImages } from "./catalog-images";
 import { RoomMap, RoomMapStatus } from "./RoomMap";
 
 type Props = {
@@ -17,10 +18,11 @@ type Props = {
   onSelect: (seatCode: string) => void;
   /** The editor link; given to admins only. */
   editHref?: string;
+  catalogImages?: CatalogImages;
 };
 
 /** The map card of the room page. A layout failure never hides the seat table. */
-export function RoomMapSection({ state, onRetry, onSelect, editHref }: Props) {
+export function RoomMapSection({ state, onRetry, onSelect, editHref, catalogImages }: Props) {
   const [zoom, setZoom] = useState<Zoom>(2);
   const { view } = state;
   const failure =
@@ -49,6 +51,7 @@ export function RoomMapSection({ state, onRetry, onSelect, editHref }: Props) {
         zoom={zoom}
         onZoom={setZoom}
         onSelect={onSelect}
+        catalogImages={catalogImages}
       />
     );
   }

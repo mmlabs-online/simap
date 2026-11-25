@@ -1,3 +1,4 @@
+import type { SeatDevice, SeatDeviceType } from "./layout";
 import type { Direction } from "./types";
 
 /** D61/D62: how a seat's devices are drawn on its desk. Code-defined for now; SIM-036 makes the table data. */
@@ -64,8 +65,31 @@ export function deviceKind(type: string): DeviceKind {
   return Object.hasOwn(KINDS, norm) ? KINDS[norm] : "other";
 }
 
+/** What is drawn for a device: the built-in sprite of its kind, the square placeholder, or the catalog image (24 x 24). */
+export type DeviceArt =
+  | { type: "sprite" }
+  | { type: "placeholder" }
+  | { type: "image"; typeId: string; version: number };
+
+/** A device with its slot kind and art resolved. */
+export type ResolvedDevice = { kind: DeviceKind; art: DeviceArt };
+
+/** D61: the slot comes from the catalog type, never from the name. `deviceType` undefined (no catalog info) keeps the name-based kind. */
+export function resolveDeviceArt(
+  device: SeatDevice,
+  imageReady: (t: SeatDeviceType) => boolean,
+): ResolvedDevice {
+  const t = device.deviceType;
+  if (t === undefined) return { kind: deviceKind(device.type), art: { type: "sprite" } };
+  if (t === null) return { kind: "other", art: { type: "placeholder" } };
+  if (!t.hasImage) return { kind: t.slot, art: { type: "sprite" } };
+  if (!imageReady(t)) return { kind: t.slot, art: { type: "placeholder" } };
+  return { kind: t.slot, art: { type: "image", typeId: t.id, version: t.imageVersion } };
+}
+
 export type DevicePlacement = {
   kind: DeviceKind;
+  art: DeviceArt;
   /** Frame key (directional kinds carry the desk's direction). */
   key: string;
   /** Tile the frame is anchored on. */
@@ -89,14 +113,15 @@ export function placeDevices(
   desk: { x: number; y: number },
   footprint: readonly [number, number],
   dir: Direction,
-  types: readonly string[],
+  types: readonly (string | ResolvedDevice)[],
 ): DevicePlacement[] {
   const long = Math.max(footprint[0], footprint[1]);
   const { right, back } = AXES[dir];
   const seen: Record<DeviceKind, number> = { monitor: 0, laptop: 0, pc: 0, phone: 0, other: 0 };
   const out: DevicePlacement[] = [];
   for (const type of types) {
-    const kind = deviceKind(type);
+    const { kind, art }: ResolvedDevice =
+      typeof type === "string" ? { kind: deviceKind(type), art: { type: "sprite" } } : type;
     const n = seen[kind]++;
     if (n >= MAX_PER_KIND) continue;
     const slots = SLOTS[kind];
@@ -107,7 +132,13 @@ export function placeDevices(
     const y = dir === "e" ? desk.y + long - 1 - u : dir === "w" ? desk.y + u : desk.y;
     out.push({
       kind,
-      key: DIRECTIONAL[kind] ? `${DEVICE_SPRITE[kind]}.${dir}` : DEVICE_SPRITE[kind],
+      art,
+      key:
+        art.type === "placeholder"
+          ? DEVICE_SPRITE.other
+          : DIRECTIONAL[kind]
+            ? `${DEVICE_SPRITE[kind]}.${dir}`
+            : DEVICE_SPRITE[kind],
       x,
       y,
       offset: [

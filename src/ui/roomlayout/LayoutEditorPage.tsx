@@ -14,6 +14,7 @@ import { useSession } from "../session";
 import { editorGate } from "./editor-page";
 import { EditorGateView } from "./EditorViews";
 import { LayoutEditor } from "./LayoutEditor";
+import { useCatalogImages } from "./useCatalogImages";
 
 const DESKTOP = "(min-width: 1024px)";
 
@@ -50,6 +51,7 @@ function AdminEditor({ roomCode, backHref }: { roomCode: string; backHref: strin
   const resolution = resolveRoom(rooms, roomCode);
   const roomId = resolution.kind === "found" ? resolution.room.id : null;
   const map = useRoomLayout(seatsApi, roomId);
+  const catalogImages = useCatalogImages(map.state.view?.seatDevices);
   const gate = editorGate({
     tier: "admin",
     isDesktop: true,
@@ -71,6 +73,7 @@ function AdminEditor({ roomCode, backHref }: { roomCode: string; backHref: strin
         roomId={roomId}
         roomCode={roomCode}
         seatsApi={seatsApi}
+        catalogImages={catalogImages}
         onReload={() => void map.reload()}
       />
     );
