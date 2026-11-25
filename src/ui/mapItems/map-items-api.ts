@@ -76,6 +76,32 @@ export function createMapItemsApi(fetcher: ApiFetch) {
           return blob.type.startsWith("image/png") ? { ok: true, value: blob } : fail("internal");
         },
       ),
+    putArt: (key: string, dir: Direction, sprite: string | null) =>
+      call(
+        `${base}/${encodeURIComponent(key)}/art/${dir}`,
+        {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ sprite }),
+        },
+        json,
+      ),
+    putImage: (key: string, dir: Direction, bytes: Uint8Array<ArrayBuffer>) =>
+      call(
+        `${base}/${encodeURIComponent(key)}/art/${dir}/image`,
+        {
+          method: "PUT",
+          headers: { "content-type": "image/png" },
+          body: new Blob([bytes], { type: "image/png" }),
+        },
+        json,
+      ),
+    deleteImage: (key: string, dir: Direction) =>
+      call<null>(
+        `${base}/${encodeURIComponent(key)}/art/${dir}/image`,
+        { method: "DELETE" },
+        async () => ({ ok: true, value: null }),
+      ),
     reset: (key: string) =>
       call(`${base}/${encodeURIComponent(key)}/reset`, { method: "POST" }, json),
   };

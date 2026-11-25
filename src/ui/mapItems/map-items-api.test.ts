@@ -131,3 +131,54 @@ describe("map-items-api getArtImage", () => {
     });
   });
 });
+
+describe("map-items-api art writes", () => {
+  const dto = { builtinKey: "desk.single" };
+
+  it("putArt sends PUT /art/{dir} with JSON {sprite} and returns the DTO; key is URL-encoded", async () => {
+    const a = api(() => jsonRes(dto));
+    expect(await a.api.putArt("desk.single", "n", "desk.n")).toEqual({ ok: true, value: dto });
+    expect(a.calls[0][0]).toBe("/api/map-items/desk.single/art/n");
+    expect(a.calls[0][1]?.method).toBe("PUT");
+    expect(new Headers(a.calls[0][1]?.headers).get("content-type")).toBe("application/json");
+    expect(JSON.parse(a.calls[0][1]?.body as string)).toEqual({ sprite: "desk.n" });
+    await a.api.putArt("a/b", "w", null);
+    expect(a.calls[1][0]).toBe("/api/map-items/a%2Fb/art/w");
+  });
+
+  it("putArt(null) sends {sprite:null}", async () => {
+    const a = api(() => jsonRes(dto));
+    await a.api.putArt("k", "s", null);
+    expect(JSON.parse(a.calls[0][1]?.body as string)).toEqual({ sprite: null });
+  });
+
+  it("putImage sends PUT /art/{dir}/image with content-type image/png and a Blob body; returns the DTO", async () => {
+    const a = api(() => jsonRes(dto));
+    const bytes = new Uint8Array([1, 2, 3]);
+    expect(await a.api.putImage("desk.single", "e", bytes)).toEqual({ ok: true, value: dto });
+    expect(a.calls[0][0]).toBe("/api/map-items/desk.single/art/e/image");
+    expect(a.calls[0][1]?.method).toBe("PUT");
+    expect(new Headers(a.calls[0][1]?.headers).get("content-type")).toBe("image/png");
+    const body = a.calls[0][1]?.body as Blob;
+    expect(body).toBeInstanceOf(Blob);
+    expect(body.size).toBe(3);
+  });
+
+  it("deleteImage: 204 gives {ok:true, value:null}; an error body code is returned (images_unavailable, image_changed)", async () => {
+    const ok = api(() => new Response(null, { status: 204 }));
+    expect(await ok.api.deleteImage("k", "n")).toEqual({ ok: true, value: null });
+    expect(ok.calls[0][0]).toBe("/api/map-items/k/art/n/image");
+    expect(ok.calls[0][1]?.method).toBe("DELETE");
+    for (const code of ["images_unavailable", "image_changed"]) {
+      const r = api(() => jsonRes({ error: { code } }, 503));
+      expect(await r.api.deleteImage("k", "n")).toEqual({ ok: false, code });
+    }
+  });
+
+  it("ApiAccessError on an art write maps like list (signed_out -> unauthenticated)", async () => {
+    const t = createMapItemsApi((async () =>
+      Promise.reject(new ApiAccessError("signed_out"))) as unknown as ApiFetch);
+    expect(await t.putArt("k", "s", null)).toEqual({ ok: false, code: "unauthenticated" });
+    expect(await t.deleteImage("k", "s")).toEqual({ ok: false, code: "unauthenticated" });
+  });
+});
