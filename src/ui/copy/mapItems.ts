@@ -90,6 +90,8 @@ export const mapItemsCopy = {
     saved: (dir: string) => `Saved for ${dir}`,
     removed: (dir: string) => `Removed for ${dir}`,
     thumbAlt: (name: string) => `Custom art of ${name}`,
+    atlasFailed: "Sprite previews could not be loaded. The sprite names are still listed.",
+    frameAlt: (key: string, scale?: string) => (scale ? `${key} at ${scale}` : key),
     browser: {
       label: (dir: string) => `Package sprites for ${dir}`,
       count: (n: number) => `${n} ${n === 1 ? "sprite fits" : "sprites fit"}`,

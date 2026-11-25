@@ -5,8 +5,11 @@ import type { MapItemDto } from "@/lib/map-items/types";
 import type { Direction } from "@/lib/sprites/types";
 import { mapItemsCopy } from "../copy/mapItems";
 import { Button } from "../Button";
+import type { Atlas } from "../roomlayout/loadAtlas";
+import { FramePreview } from "./FramePreview";
+import { atlasFrame } from "./frame-preview";
 import { SpriteBrowser } from "./SpriteBrowser";
-import { artDirs, artPanelView, expectedImageSize } from "./map-item-art";
+import { artDirs, artPanelView, expectedImageSize, panelFrameKey } from "./map-item-art";
 import { artErrorMessage, artOutcome, checkMapItemImage } from "./map-item-image";
 import type { MapItemsApi, MapItemsResult } from "./map-items-api";
 
@@ -21,6 +24,8 @@ export type ArtBodyProps = {
   errors: Partial<Record<Direction, string>>;
   browser: { dir: Direction; staged: string | null } | null;
   status: string | null;
+  atlas?: Atlas | null;
+  atlasFailed?: boolean;
   onChoose: (dir: Direction) => void;
   onStage: (key: string) => void;
   onUseSprite: () => void;
@@ -38,12 +43,18 @@ export function MapItemArtBody(p: ArtBodyProps) {
   const fileRefs = useRef<Partial<Record<Direction, HTMLInputElement | null>>>({});
   return (
     <div className="flex flex-col gap-4">
+      {p.atlasFailed && (
+        <p role="status" className="text-xs font-semibold text-on-surface-variant">
+          {copy.atlasFailed}
+        </p>
+      )}
       {artDirs(item).map((dir) => {
         const view = artPanelView(item, dir);
         const size = expectedImageSize(item, dir);
         const url = p.imageUrl(dir);
         const label = copy.dirs[dir];
         const error = p.errors[dir];
+        const frameKey = panelFrameKey(item, dir);
         return (
           <fieldset
             key={dir}
@@ -80,6 +91,27 @@ export function MapItemArtBody(p: ArtBodyProps) {
                         src={url}
                         alt={`${label} ${scale === 1 ? copy.scale1 : copy.scale2}`}
                         style={{ imageRendering: "pixelated", width: size.w * scale }}
+                      />
+                      <figcaption className="text-xs text-on-surface-variant">
+                        {scale === 1 ? copy.scale1 : copy.scale2}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs font-medium text-on-surface-variant">{copy.previewNA}</p>
+              ))}
+            {p.atlas &&
+              frameKey &&
+              (atlasFrame(p.atlas.manifest.frames, frameKey) ? (
+                <div className="flex items-end gap-4 overflow-x-auto">
+                  {[1, 2].map((scale) => (
+                    <figure key={scale} className="m-0 flex flex-col gap-1">
+                      <FramePreview
+                        atlas={p.atlas!}
+                        frameKey={frameKey}
+                        scale={scale}
+                        label={copy.frameAlt(frameKey, scale === 1 ? copy.scale1 : copy.scale2)}
                       />
                       <figcaption className="text-xs text-on-surface-variant">
                         {scale === 1 ? copy.scale1 : copy.scale2}
@@ -151,6 +183,7 @@ export function MapItemArtBody(p: ArtBodyProps) {
                 dir={dir}
                 current={view.spriteKey}
                 staged={p.browser.staged}
+                atlas={p.atlas}
                 busy={busy}
                 onStage={p.onStage}
                 onUse={p.onUseSprite}
@@ -172,6 +205,8 @@ export function MapItemArtDialog({
   item,
   api,
   imageUrl,
+  atlas,
+  atlasFailed,
   onReload,
   onClose,
   onGone,
@@ -179,6 +214,8 @@ export function MapItemArtDialog({
   item: MapItemDto;
   api: MapItemsApi;
   imageUrl: (item: MapItemDto, dir: Direction) => string | null;
+  atlas?: Atlas | null;
+  atlasFailed?: boolean;
   onReload(): Promise<void>;
   onClose: () => void;
   onGone: () => void;
@@ -274,6 +311,8 @@ export function MapItemArtDialog({
             errors={errors}
             browser={browser}
             status={status}
+            atlas={atlas}
+            atlasFailed={atlasFailed}
             chooseRefs={chooseRefs}
             onChoose={(dir) => setBrowser({ dir, staged: null })}
             onStage={(key) => setBrowser((b) => b && { ...b, staged: key })}

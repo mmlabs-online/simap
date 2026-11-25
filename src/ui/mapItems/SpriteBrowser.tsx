@@ -3,17 +3,20 @@ import type { MapItemDto } from "@/lib/map-items/types";
 import type { Direction } from "@/lib/sprites/types";
 import { mapItemsCopy } from "../copy/mapItems";
 import { Button } from "../Button";
+import type { Atlas } from "../roomlayout/loadAtlas";
+import { FramePreview } from "./FramePreview";
 import { spriteChoices } from "./map-item-art";
 
 const copy = mapItemsCopy.art.browser;
 
-/** Inline text-only chooser of package sprites for one direction. Pure: state and actions come from props. */
+/** Inline chooser (thumbnails when an atlas is given) of package sprites for one direction. Pure: state and actions come from props. */
 export function SpriteBrowser({
   item,
   dir,
   current,
   staged,
   busy,
+  atlas,
   onStage,
   onUse,
   onCancel,
@@ -23,6 +26,7 @@ export function SpriteBrowser({
   current: string | null;
   staged: string | null;
   busy: boolean;
+  atlas?: Atlas | null;
   onStage: (key: string) => void;
   onUse: () => void;
   onCancel: () => void;
@@ -60,6 +64,14 @@ export function SpriteBrowser({
                       disabled={busy}
                       onChange={() => onStage(k)}
                     />
+                    {atlas && (
+                      <FramePreview
+                        atlas={atlas}
+                        frameKey={k}
+                        box={32}
+                        label={mapItemsCopy.art.frameAlt(k)}
+                      />
+                    )}
                     <span className="font-mono text-xs">{k}</span>
                     <span className="text-xs text-on-surface-variant">{`${w} × ${h}`}</span>
                   </label>
@@ -71,6 +83,14 @@ export function SpriteBrowser({
       )}
       {staged && (
         <div className="flex flex-col gap-1 text-xs font-medium text-on-surface-variant">
+          {atlas && (
+            <FramePreview
+              atlas={atlas}
+              frameKey={staged}
+              scale={1}
+              label={mapItemsCopy.art.frameAlt(staged)}
+            />
+          )}
           <p>{copy.staged(staged)}</p>
           <p>{copy.tiles(fw, fh, iw, ih, label)}</p>
           {(fw < iw || fh < ih) && <p>{copy.smaller}</p>}

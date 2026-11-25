@@ -5,6 +5,7 @@ import { groupsCopy } from "../copy/groups";
 import { mapItemsCopy } from "../copy/mapItems";
 import { shellCopy } from "../copy/shell";
 import { MapItemsView, type MapItemsViewProps } from "./MapItemsView";
+import type { Atlas } from "../roomlayout/loadAtlas";
 import { dto } from "./test-items";
 
 const noop = () => {};
@@ -79,5 +80,27 @@ describe("MapItemsView", () => {
     expect(html.match(/<img/g)).toHaveLength(1);
     expect(html).toContain('src="blob:t"');
     expect(render({ items: ready([dto("door")]) })).not.toContain("<img");
+  });
+
+  it("sprite-only row thumb: a canvas for a chosen sprite; the img wins; none with neither", () => {
+    const frame = { x: 0, y: 0, w: 32, h: 32, anchor: [0, 0], tiles: [1, 1], blocks: false };
+    const atlas = { manifest: { frames: { "plant.large": frame } }, image: {} } as unknown as Atlas;
+    const plant = dto("plant.large");
+    const art = (sprite: string | null, hasImage: boolean) => ({
+      ...plant,
+      art: { ...plant.art, s: { sprite, hasImage, imageVersion: 1 } },
+    });
+    const sprite = render({ items: ready([art("plant.large", false)]), atlas });
+    expect(sprite.match(/<canvas/g)).toHaveLength(1);
+    const both = render({
+      items: ready([art("plant.large", true)]),
+      atlas,
+      thumbUrl: () => "blob:t",
+    });
+    expect(both).not.toContain("<canvas");
+    expect(both).toContain("<img");
+    const none = render({ items: ready([plant]), atlas });
+    expect(none).not.toContain("<canvas");
+    expect(none).not.toContain("<img");
   });
 });

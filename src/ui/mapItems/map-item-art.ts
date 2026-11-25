@@ -2,6 +2,7 @@ import { sizeFor, spriteAllowedFor, spriteFits } from "@/lib/map-items/art";
 import { MAP_ITEM_DIRS, MAP_ITEM_LIMITS, type MapItemDto } from "@/lib/map-items/types";
 import { FRAME_KEYS, REGISTRY } from "@/lib/sprites/registry";
 import { itemImageId } from "@/lib/sprites/item-art";
+import { resolveFrameKey } from "@/lib/sprites/placement";
 import type { Direction } from "@/lib/sprites/types";
 import type { ImageEntry } from "../deviceTypes/image-url-cache";
 
@@ -75,6 +76,23 @@ export const isCustomised = (item: MapItemDto): boolean =>
 export function thumbDir(item: MapItemDto): Direction | null {
   const order: Direction[] = ["s", "n", "e", "w"];
   return order.find((d) => artDirs(item).includes(d) && item.art[d].hasImage) ?? null;
+}
+
+const DIR_ROTATION = { s: 0, e: 90, n: 180, w: 270 } as const;
+
+/** The atlas frame a direction panel previews: the chosen sprite, else the library frame; null when a custom image wins. */
+export function panelFrameKey(item: MapItemDto, dir: Direction): string | null {
+  const { sprite, hasImage } = item.art[dir];
+  if (hasImage) return null;
+  return sprite ?? resolveFrameKey(item.builtinKey, DIR_ROTATION[dir]);
+}
+
+/** The chosen package sprite the row thumbnail shows: `s` first, then n, e, w; null when none is chosen. */
+export function thumbSprite(item: MapItemDto): string | null {
+  const dirs = artDirs(item);
+  const order: Direction[] = ["s", "n", "e", "w"];
+  const dir = order.find((d) => dirs.includes(d) && item.art[d].sprite !== null);
+  return dir ? item.art[dir].sprite : null;
 }
 
 /** The item an open art dialog shows, or undefined once it has left the list. */
