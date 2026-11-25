@@ -9,6 +9,9 @@ import {
   historyReducer,
 } from "./device-detail-state";
 
+export type RefreshResult = { ok: true } | { ok: false; code: string };
+export type RefreshFn = () => Promise<RefreshResult>;
+
 /** Loads one device and its first history page in parallel; stale answers are dropped. */
 export function useDeviceDetail(api: DevicesApi, deviceId: string) {
   const [detail, dispatchDetail] = useReducer(detailReducer, INITIAL_DETAIL);
@@ -49,10 +52,24 @@ export function useDeviceDetail(api: DevicesApi, deviceId: string) {
     if (mounted.current) dispatchHistory({ type: "moreLoaded", id, result });
   }, [api, deviceId]);
 
+  /** Re-reads the device and the first history page without the loading state; the old data stays until the answer. */
+  const refresh = useCallback(async (): Promise<RefreshResult> => {
+    const dId = ++detailCounter.current;
+    const hId = ++historyCounter.current;
+    dispatchDetail({ type: "refresh", id: dId });
+    dispatchHistory({ type: "refresh", id: hId });
+    const [d, h] = await Promise.all([api.get(deviceId), api.history(deviceId)]);
+    if (mounted.current) {
+      dispatchDetail({ type: "refreshed", id: dId, result: d });
+      dispatchHistory({ type: "refreshed", id: hId, result: h });
+    }
+    return d.ok ? { ok: true } : { ok: false, code: d.code };
+  }, [api, deviceId]);
+
   useEffect(() => {
     void retryDetail();
     void retryHistory();
   }, [retryDetail, retryHistory]);
 
-  return { detail, history, retryDetail, retryHistory, loadMore };
+  return { detail, history, retryDetail, retryHistory, loadMore, refresh };
 }

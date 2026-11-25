@@ -123,3 +123,32 @@ describe("DeviceDetailView ready", () => {
     expect(render()).not.toContain(devicesCopy.detail.sections.pending);
   });
 });
+
+describe("DeviceDetailView notice and actions", () => {
+  const statuses = [
+    { status: "loading", device: null },
+    { status: "error", device: null, errorCode: "unavailable" },
+    { status: "notFound", device: null },
+    {},
+  ] as const;
+
+  it("notice region is always mounted; tones map to roles", () => {
+    for (const s of statuses) expect(render({ ...s })).toContain('<div aria-live="polite">');
+    const st = render({ notice: { tone: "status", text: "Done Máy" } });
+    expect(st).toContain('role="status"');
+    expect(st).toContain("Done Máy");
+    const er = render({ notice: { tone: "error", text: "Oops" } });
+    expect(er).toContain('role="alert"');
+  });
+
+  it("actions render after the h1 only when ready", () => {
+    const html = render({ actions: <p>ACTIONS-MARK</p> });
+    expect(html.indexOf("</h1>")).toBeLessThan(html.indexOf("ACTIONS-MARK"));
+    expect(html.indexOf("ACTIONS-MARK")).toBeLessThan(
+      html.indexOf(devicesCopy.detail.sections.fields),
+    );
+    for (const s of statuses.slice(0, 3)) {
+      expect(render({ ...s, actions: <p>ACTIONS-MARK</p> })).not.toContain("ACTIONS-MARK");
+    }
+  });
+});

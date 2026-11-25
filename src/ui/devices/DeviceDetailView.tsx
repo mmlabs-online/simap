@@ -21,6 +21,10 @@ export type DeviceDetailViewProps = {
   headingRef?: React.Ref<HTMLHeadingElement>;
   /** The history card, rendered below the sections. */
   history?: React.ReactNode;
+  /** Result of the last action; the region is always mounted so a screen reader announces changes. */
+  notice?: { tone: "status" | "error"; text: string } | null;
+  /** The action buttons, rendered under the heading when the device is shown. */
+  actions?: React.ReactNode;
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -69,6 +73,8 @@ export function DeviceDetailView({
   onRetry,
   headingRef,
   history,
+  notice,
+  actions,
 }: DeviceDetailViewProps) {
   const heading = (text: string) => (
     <h1
@@ -84,6 +90,19 @@ export function DeviceDetailView({
       <Link href="/devices" className="text-sm font-semibold text-primary hover:underline">
         {copy.back}
       </Link>
+
+      <div aria-live="polite">
+        {notice &&
+          (notice.tone === "error" ? (
+            <p role="alert" className="text-sm font-semibold text-error">
+              {notice.text}
+            </p>
+          ) : (
+            <p role="status" className="text-sm font-semibold text-on-surface">
+              {notice.text}
+            </p>
+          ))}
+      </div>
 
       {status === "loading" && (
         <div aria-busy="true" className="flex flex-col gap-2">
@@ -116,6 +135,7 @@ export function DeviceDetailView({
       {status === "ready" && device && (
         <>
           {heading(device.name)}
+          {actions}
           <Section title={copy.sections.fields}>
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label={copy.labels.type}>{device.type}</Field>
