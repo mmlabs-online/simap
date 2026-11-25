@@ -886,7 +886,7 @@ describe("devices (db): return flags", () => {
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
     expect(await as(w.z, "admin")).toMatchObject({ canReturn: false, canTakeBack: true });
     await pool.query(
-      "update device_handoffs set status = 'cancelled', decided_by_id = $2 where id = $1",
+      "update device_handoffs set status = 'cancelled', decided_by_id = $2, decided_at = now() where id = $1",
       [h, w.z],
     );
     await addHandoff(pool, w.orgId, d, w.x, "pending");
