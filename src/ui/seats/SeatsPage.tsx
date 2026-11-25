@@ -10,6 +10,7 @@ import { createRequestsApi } from "../requests/requests-api";
 import { createGroupsApi } from "../groups/groups-api";
 import { createRoomsApi } from "../rooms/rooms-api";
 import { RoomMapSection } from "../roomlayout";
+import { useCatalogImages } from "../roomlayout/useCatalogImages";
 import { useSession } from "../session";
 import { AddSeatsDialog } from "./AddSeatsDialog";
 import { CannotSeatDialog } from "./CannotSeatDialog";
@@ -61,6 +62,7 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
   );
   const roomId = resolution.kind === "found" ? resolution.room.id : null;
   const map = useRoomLayout(seatsApi, roomId);
+  const catalogImages = useCatalogImages(map.state.view?.seatDevices);
   const reloadMap = map.reload;
   const refreshAll = useCallback(
     () => Promise.all([refresh(), reloadMap()]).then(() => undefined),
@@ -194,6 +196,7 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
             state={map.state}
             onRetry={() => void map.reload()}
             onSelect={openSeat}
+            catalogImages={catalogImages}
             editHref={canManageSeats(tier) ? roomEditorHref(roomCode) : undefined}
           />
         }

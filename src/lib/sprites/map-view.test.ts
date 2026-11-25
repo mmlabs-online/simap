@@ -173,4 +173,25 @@ describe("toMapView seatDevices", () => {
     const many = Array.from({ length: 12 }, () => ({ type: "PC" }));
     expect(toMapView(body({ s1: many }))?.seatDevices.s1).toHaveLength(8);
   });
+
+  it("seatDevices: keeps a valid deviceType and null; a bad shape becomes null; missing stays missing", () => {
+    const good = { id: "t1", slot: "phone", hasImage: true, imageVersion: 2 };
+    const view = toMapView(
+      body({
+        s1: [
+          { type: "A", deviceType: good },
+          { type: "B", deviceType: null },
+          { type: "C", deviceType: { ...good, slot: "fax" } },
+          { type: "D", deviceType: { ...good, imageVersion: 1.5 } },
+          { type: "E" },
+        ],
+      }),
+    );
+    const list = view?.seatDevices.s1 ?? [];
+    expect(list[0].deviceType).toEqual(good);
+    expect(list[1].deviceType).toBeNull();
+    expect(list[2].deviceType).toBeNull();
+    expect(list[3].deviceType).toBeNull();
+    expect("deviceType" in list[4]).toBe(false);
+  });
 });

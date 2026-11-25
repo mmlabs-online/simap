@@ -15,6 +15,7 @@ import type { Zoom } from "@/lib/sprites/layout";
 import type { MapView } from "@/lib/sprites/map-view";
 import { roomlayoutCopy } from "../copy/roomlayout";
 import type { SeatsApi } from "../seats/seats-api";
+import type { CatalogImages } from "./catalog-images";
 import { EditorCanvas } from "./EditorCanvas";
 import { EditorInspector } from "./EditorInspector";
 import { EditorToolbar } from "./EditorToolbar";
@@ -30,12 +31,13 @@ type Props = {
   roomId: string;
   roomCode: string;
   seatsApi: SeatsApi;
+  catalogImages?: CatalogImages;
   /** Refetches the layout; the page remounts this editor with the new view. */
   onReload: () => void;
 };
 
 /** The editor for one loaded layout: draft state, the save flow and the leave guard. */
-export function LayoutEditor({ view, roomId, roomCode, seatsApi, onReload }: Props) {
+export function LayoutEditor({ view, roomId, roomCode, seatsApi, catalogImages, onReload }: Props) {
   const [state, dispatch] = useReducer(editorReducer, view, initEditor);
   const [zoom, setZoom] = useState<Zoom>(2);
   const flags = editorFlags(state);
@@ -151,6 +153,7 @@ export function LayoutEditor({ view, roomId, roomCode, seatsApi, onReload }: Pro
           tool={tool}
           frozen={frozen}
           onAction={dispatch}
+          catalogImages={catalogImages}
         />
         <div className="flex flex-col gap-4">
           <PlacePanel
