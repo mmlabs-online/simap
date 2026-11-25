@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T07:24Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -48,3 +48,9 @@ docs/spec-v1.md §6 DEV-08; D63; D24 (no polling). Recipient-side slice split fr
 Split from SIM-037.8 with Ming's approval (2026-11-25, "ok"). No release between SIM-037.8 and SIM-037.9 (SIM-037.8 A1).
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3, tokens ~153k total (frontend-developer×1 consult 40k, ux-architect×1 consult 38k, planner×1 opus 76k; in/out split not reported)
+- Done: consults saved (consult-frontend-developer.md, consult-ux-architect.md); plan.md written, Status READY, UI only (src/ui/**), no High path.
+- In progress / next: Gate plan-approval (P1 policy) — waiting for Ming to approve plan.md (M-61). Then /run SIM-037.9 resumes at IMPLEMENT.
+- Gotchas: busy scope = all incoming buttons disabled while one action is in flight (planner's pick over the UX consult). Filter hint shows for `placed` and `unowned` (there is no `assigned` filter). The row Cancel stays visually enabled during the shared guard window (plan Assumptions).
