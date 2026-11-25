@@ -6,7 +6,7 @@ const svc = vi.hoisted(() => ({
   removeMapItemImage: vi.fn(),
   getMapItemImage: vi.fn(),
 }));
-vi.mock("@/server/map-items/image", () => svc);
+vi.mock("@/server/map-items/image", () => ({ ...svc, IMAGE_VARY: "Authorization" }));
 const pool = vi.hoisted(() => ({ getPool: vi.fn(() => ({})) }));
 vi.mock("@/server/db/pool", () => pool);
 const drive = vi.hoisted(() => ({ getDrive: vi.fn(() => null) }));
@@ -214,6 +214,7 @@ describe("map item image routes", () => {
     expect(r.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(r.headers.get("Cache-Control")).toBe("private, no-cache");
     expect(r.headers.get("ETag")).toBe('"door-e-1"');
+    expect(r.headers.get("Vary")).toBe("Authorization");
     expect(r.headers.get("Content-Disposition")).toBe("inline");
     expect(r.headers.get("Content-Security-Policy")).toBe("sandbox");
     expect(r.headers.get("Content-Length")).toBe(String(PNG.length));
@@ -233,5 +234,6 @@ describe("map item image routes", () => {
     expect(await r.text()).toBe("");
     expect(r.headers.get("ETag")).toBe('"door-e-1"');
     expect(r.headers.get("Cache-Control")).toBe("private, no-cache");
+    expect(r.headers.get("Vary")).toBe("Authorization");
   });
 });

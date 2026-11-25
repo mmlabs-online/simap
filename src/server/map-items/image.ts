@@ -1,5 +1,5 @@
 import "server-only";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { artDirAllowed, mapItemImageFits } from "@/lib/map-items/art";
 import { libraryItem } from "@/lib/map-items/library";
 import { MAP_ITEM_DIRS, type MapItemDto } from "@/lib/map-items/types";
@@ -174,6 +174,15 @@ export async function removeMapItemImage(
   return { ok: true, value: null };
 }
 
+/** Vary value for image responses (kept here: route files must not mention the auth header name). */
+export const IMAGE_VARY = "Authorization";
+
+/** ETag of one direction's image. A short org hash keeps it org-specific without exposing the org id. */
+export function mapItemEtag(scope: OrgScope, key: string, d: Direction, version: number): string {
+  const org = createHash("sha256").update(scope.orgId).digest("hex").slice(0, 12);
+  return `"${key}-${d}-${version}-${org}"`;
+}
+
 /** Any member loads one direction's image. A matching If-None-Match answers before any Drive call. Never writes. */
 export async function getMapItemImage(
   db: ImageDb,
@@ -186,7 +195,7 @@ export async function getMapItemImage(
   if (!libraryItem(key)) return notFound;
   const row = (await selectImage(db, scope, key, dir)).rows[0];
   if (!row?.file) return notFound;
-  const etag = `"${key}-${dir}-${row.version}"`;
+  const etag = mapItemEtag(scope, key, dir, row.version);
   if (etagMatches(ifNoneMatch, etag)) return { ok: true, value: { kind: "not_modified", etag } };
   try {
     const f = await useDrive(drive).getFile(row.file);

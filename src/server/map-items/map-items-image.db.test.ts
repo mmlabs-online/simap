@@ -7,7 +7,7 @@ import type { Direction } from "@/lib/sprites/types";
 import type { OrgDrive } from "@/server/drive/drive";
 import { addMember, assertTestDb, newOrg, testPool } from "@/test/db/fixtures";
 import { resetMapItem, setMapItemArt, updateMapItem } from "./edit";
-import { getMapItemImage, removeMapItemImage, setMapItemImage } from "./image";
+import { getMapItemImage, mapItemEtag, removeMapItemImage, setMapItemImage } from "./image";
 
 vi.mock("server-only", () => ({}));
 
@@ -271,7 +271,7 @@ describe("map item image (db)", () => {
     const g = await getMapItemImage(pool, d.getDrive, o.scope, "plant.large", "s", null);
     expect(g).toEqual({
       ok: true,
-      value: { kind: "bytes", bytes: png, etag: '"plant.large-s-1"' },
+      value: { kind: "bytes", bytes: png, etag: mapItemEtag(o.scope, "plant.large", "s", 1) },
     });
     const m = await getMapItemImage(
       pool,
@@ -279,13 +279,29 @@ describe("map item image (db)", () => {
       o.scope,
       "plant.large",
       "s",
-      '"plant.large-s-1"',
+      mapItemEtag(o.scope, "plant.large", "s", 1),
     );
-    expect(m).toEqual({ ok: true, value: { kind: "not_modified", etag: '"plant.large-s-1"' } });
+    expect(m).toEqual({
+      ok: true,
+      value: { kind: "not_modified", etag: mapItemEtag(o.scope, "plant.large", "s", 1) },
+    });
     expect(
       await getMapItemImage(pool, d.getDrive, o.scope, "plant.large", "s", null),
     ).toMatchObject({ ok: true });
     expect(await getMapItemImage(pool, d.getDrive, o.scope, "door", "e", null)).toEqual(notFound);
+  });
+
+  it("another org sending this org's ETag never gets 304", async () => {
+    const a = await seeded();
+    const b = await seeded();
+    const png = makePng(32, 32);
+    const d = fakeDrive(undefined, png);
+    await put(a, d, "plant.large", "s");
+    await put(b, d, "plant.large", "s");
+    const etagA = mapItemEtag(a.scope, "plant.large", "s", 1);
+    const r = await getMapItemImage(pool, d.getDrive, b.scope, "plant.large", "s", etagA);
+    expect(r).toMatchObject({ ok: true, value: { kind: "bytes" } });
+    expect(etagA).not.toContain(a.orgId);
   });
 
   it("a refused upload (wrong size) writes nothing and makes no Drive call", async () => {

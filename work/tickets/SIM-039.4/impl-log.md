@@ -41,3 +41,12 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No; only the planned files.
 - Diff size: product code about 330 lines (route 80, service 190, image-flow 60, lib 30), the rest tests.
+
+## Attempt 2 (REWORK: security-review finding 2)
+
+- `src/server/map-items/image.ts`: new `mapItemEtag(scope, key, dir, version)` gives `"<key>-<dir>-<version>-<12 hex of sha256(orgId)>"`, so the tag is org-specific and the org id is not exposed. New `IMAGE_VARY` constant (`Authorization`), kept in the server module because `routes-guarded.test.ts` forbids the word in route files.
+- `src/app/api/map-items/[key]/art/[dir]/image/route.ts`: `Vary: IMAGE_VARY` added to the shared image headers (200 and 304).
+- Tests: `image.test.ts` (org-specific ETag, no raw org id), `map-items-image.db.test.ts` (org B sending org A's ETag gets bytes, not 304), `map-items-image-routes.test.ts` (Vary on 200 and 304).
+- Device-type code untouched.
+- Checks: format:check clean; typecheck, check:layers ok; `pnpm test` 279 files passed, 2847 tests passed, 7 skipped. `pnpm test:db` on a throwaway Postgres 16 (removed after): all map-items DB tests pass; 9 failures remain only in `devices/*.db.test.ts` and `members/manage.db.test.ts` (outside this ticket, not touched).
+- Out-of-plan files: none. Follow-up: device-type image ETag has the same cross-org shape (id is a UUID, so low risk); not changed per instruction.

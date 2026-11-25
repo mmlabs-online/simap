@@ -5,7 +5,12 @@ import { getPool } from "@/server/db/pool";
 import { getDrive } from "@/server/drive/drive";
 import { apiError } from "@/server/http/respond";
 import { withAuth } from "@/server/http/with-auth";
-import { getMapItemImage, removeMapItemImage, setMapItemImage } from "@/server/map-items/image";
+import {
+  IMAGE_VARY,
+  getMapItemImage,
+  removeMapItemImage,
+  setMapItemImage,
+} from "@/server/map-items/image";
 import { readBytes } from "@/server/request/read-bytes";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +19,7 @@ const NO_STORE = { "Cache-Control": "no-store" };
 const IMAGE_HEADERS = {
   "Cache-Control": "private, no-cache",
   "X-Content-Type-Options": "nosniff",
+  Vary: IMAGE_VARY,
 };
 
 type Params = { key: string; dir: string };

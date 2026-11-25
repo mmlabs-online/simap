@@ -6,10 +6,11 @@ import type { OrgScope } from "@/server/http/org-scope";
 
 vi.mock("server-only", () => ({}));
 
-import { getMapItemImage, removeMapItemImage, setMapItemImage } from "./image";
+import { getMapItemImage, mapItemEtag, removeMapItemImage, setMapItemImage } from "./image";
 
 const SUB = "44444444-4444-4444-8444-444444444444";
 const scope = { orgId: "org-1" } as unknown as OrgScope;
+const ETAG = mapItemEtag(scope, "door", "e", 2);
 const OLD = "oldfileid_12345";
 const NEW = "newfileid_12345";
 const bytes = new Uint8Array([1, 2, 3]);
@@ -358,19 +359,22 @@ describe("getMapItemImage", () => {
     expect(g.sql).toEqual([]);
   });
 
-  it('If-None-Match match gives not_modified without Drive; the ETag is "<key>-<dir>-<version>"', async () => {
+  it("If-None-Match match gives not_modified without Drive; the ETag is org-specific and hides the org id", async () => {
     const h = harness();
-    expect(await getMapItemImage(h.db, h.getDrive, scope, "door", "e", '"door-e-2"')).toEqual({
+    expect(await getMapItemImage(h.db, h.getDrive, scope, "door", "e", ETAG)).toEqual({
       ok: true,
-      value: { kind: "not_modified", etag: '"door-e-2"' },
+      value: { kind: "not_modified", etag: ETAG },
     });
+    expect(ETAG).not.toContain("org-1");
+    const other = { orgId: "org-2" } as unknown as OrgScope;
+    expect(mapItemEtag(other, "door", "e", 2)).not.toBe(ETAG);
     expect(h.getDrive).not.toHaveBeenCalled();
   });
 
   it("a 32x64 PNG is served (the device-type size rule is not applied)", async () => {
     const h = harness();
     const r = await getMapItemImage(h.db, h.getDrive, scope, "door", "e", null);
-    expect(r).toEqual({ ok: true, value: { kind: "bytes", bytes: PNG, etag: '"door-e-2"' } });
+    expect(r).toEqual({ ok: true, value: { kind: "bytes", bytes: PNG, etag: ETAG } });
     expect(h.calls).toContain(`getFile:${OLD}`);
   });
 
