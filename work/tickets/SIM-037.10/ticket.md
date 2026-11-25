@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T08:57Z |
 | PR | — |
 
 ## Goal
@@ -48,7 +48,7 @@ docs/spec-v1.md §6 DEV-09; D63; OQ-44. UI slice split from SIM-037.4 (its plan.
 
 ## Notes / answers from Ming
 Split from SIM-037.4 with Ming's approval (2026-11-25, "duyệt").
-Waiting for Ming: plan approval (P1 gate)
+Plan approved 2026-11-25 (Ming: "duyệt"); place-mode label stays "Return" (default).
 
 ## Handoff
 
