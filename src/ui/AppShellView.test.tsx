@@ -172,6 +172,36 @@ describe("AppShellView", () => {
         expect(html).not.toContain("new decision");
       }
     });
+    it("devices badge: numeral aria-hidden, sr-only '3 incoming transfers' / '1 incoming transfer'", () => {
+      const three = link(withBadges("user", { devices: 3 }), "/devices");
+      expect(three).toMatch(/<span aria-hidden="true" class="absolute[^>]*>3</);
+      expect(three).toContain(
+        `<span class="sr-only">${shellCopy.badge.incomingTransfers(3)}</span>`,
+      );
+      expect(three).toContain("3 incoming transfers");
+      expect(link(withBadges("user", { devices: 1 }), "/devices")).toContain(
+        "1 incoming transfer<",
+      );
+    });
+    it("devices 12: 9+ visible, '12 incoming transfers' for screen readers", () => {
+      const many = link(withBadges("user", { devices: 12 }), "/devices");
+      expect(many).toMatch(/<span aria-hidden="true" class="absolute[^>]*>9\+</);
+      expect(many).toContain("12 incoming transfers");
+    });
+    it("devices 0 or missing: no badge markup, no 'incoming transfer' text", () => {
+      for (const b of [undefined, { devices: 0 }]) {
+        const html = withBadges("user", b);
+        expect(link(html, "/devices")).not.toContain('<span aria-hidden="true" class="absolute');
+        expect(html).not.toContain("incoming transfer");
+      }
+    });
+    it("myRequests and devices together: each link has its own text", () => {
+      const html = withBadges("user", { myRequests: 2, devices: 5 });
+      expect(link(html, "/requests")).toContain("2 new decisions");
+      expect(link(html, "/requests")).not.toContain("incoming transfer");
+      expect(link(html, "/devices")).toContain("5 incoming transfers");
+      expect(link(html, "/devices")).not.toContain("new decision");
+    });
     it("a badge for a nav id the tier cannot see is not rendered", () => {
       const html = withBadges("user", { approvals: 2 });
       expect(html).not.toContain("/approvals");

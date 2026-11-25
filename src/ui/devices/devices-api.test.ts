@@ -192,6 +192,47 @@ describe("devices-api transfer", () => {
     expect(calls[0][1]?.method).toBe("POST");
     expect(calls[0][1]?.body).toBeUndefined();
   });
+  it("incomingHandoffs sends GET /api/handoffs?box=incoming; { items, truncated } on 200; a malformed body is internal", async () => {
+    const { api, calls } = fake(() => jsonRes({ items: [{ id: "h1" }], truncated: true }));
+    expect(await api.incomingHandoffs()).toEqual({
+      ok: true,
+      value: { items: [{ id: "h1" }], truncated: true },
+    });
+    expect(calls[0][0]).toBe("/api/handoffs?box=incoming");
+    expect(calls[0][1]?.method).toBe("GET");
+    for (const b of [{}, { items: [] }, { items: {}, truncated: false }]) {
+      expect(await fake(() => jsonRes(b)).api.incomingHandoffs()).toEqual({
+        ok: false,
+        code: "internal",
+      });
+    }
+  });
+  it("handoffCount sends GET /api/handoffs/count; returns { incoming }; a non-number is internal", async () => {
+    const { api, calls } = fake(() => jsonRes({ incoming: 3 }));
+    expect(await api.handoffCount()).toEqual({ ok: true, value: { incoming: 3 } });
+    expect(calls[0][0]).toBe("/api/handoffs/count");
+    expect(calls[0][1]?.method).toBe("GET");
+    expect(await fake(() => jsonRes({ incoming: "3" })).api.handoffCount()).toEqual({
+      ok: false,
+      code: "internal",
+    });
+  });
+  it("confirmHandoff / declineHandoff send POST /api/handoffs/<encoded id>/confirm and /decline with no body; codes pass through", async () => {
+    const { api, calls } = fake(() => jsonRes({ id: "h 1" }));
+    expect(await api.confirmHandoff("h 1")).toEqual({ ok: true, value: { id: "h 1" } });
+    expect(await api.declineHandoff("h 1")).toEqual({ ok: true, value: { id: "h 1" } });
+    expect(calls.map((c) => c[0])).toEqual([
+      "/api/handoffs/h%201/confirm",
+      "/api/handoffs/h%201/decline",
+    ]);
+    for (const c of calls) {
+      expect(c[1]?.method).toBe("POST");
+      expect(c[1]?.body).toBeUndefined();
+    }
+    const stale = fake(() => jsonRes({ error: { code: "handoff_stale" } }, 409));
+    expect(await stale.api.confirmHandoff("h1")).toEqual({ ok: false, code: "handoff_stale" });
+    expect(await stale.api.declineHandoff("h1")).toEqual({ ok: false, code: "handoff_stale" });
+  });
   it("error codes pass through; a body without an id is internal", async () => {
     const pending = fake(() => jsonRes({ error: { code: "handoff_pending" } }, 409));
     expect(await pending.api.startTransfer("d1", body)).toEqual({

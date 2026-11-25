@@ -47,7 +47,7 @@ export function settleTransfer(result: DevicesResult<HandoffDto>): TransferSettl
 }
 
 const AUTH_CODES = ["unauthenticated", "forbidden", "member_deactivated", "org_required"];
-const NOTHING_CHANGED = [...AUTH_CODES, "unavailable", "internal", "invalid_request"];
+export const NOTHING_CHANGED = [...AUTH_CODES, "unavailable", "internal", "invalid_request"];
 
 export type CancelTransferOutcome = {
   refresh: boolean;

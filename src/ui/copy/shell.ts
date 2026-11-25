@@ -1,6 +1,10 @@
 import type { NavId } from "@/lib/nav";
 import type { Tier } from "@/lib/tier";
 
+const newDecisions = (n: number) => (n === 1 ? "1 new decision" : `${n} new decisions`);
+const incomingTransfers = (n: number) =>
+  n === 1 ? "1 incoming transfer" : `${n} incoming transfers`;
+
 /** English strings for the app shell and the route skeletons (D36). */
 export const shellCopy = {
   brand: "simap",
@@ -37,7 +41,12 @@ export const shellCopy = {
     signIn: "Sign in",
   },
   badge: {
-    newDecisions: (n: number) => (n === 1 ? "1 new decision" : `${n} new decisions`),
+    newDecisions,
+    incomingTransfers,
+    /** Screen-reader text per nav entry; an entry not listed falls back to `newDecisions`. */
+    byNav: { myRequests: newDecisions, devices: incomingTransfers } as Partial<
+      Record<NavId, (n: number) => string>
+    >,
     overflow: "9+",
   },
   pages: {

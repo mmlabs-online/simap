@@ -128,6 +128,36 @@ export function createDevicesApi(fetcher: ApiFetch) {
         { method: "POST" },
         oneHandoff,
       ),
+    confirmHandoff: (handoffId: string) =>
+      call<HandoffDto>(
+        `/api/handoffs/${encodeURIComponent(handoffId)}/confirm`,
+        { method: "POST" },
+        oneHandoff,
+      ),
+    declineHandoff: (handoffId: string) =>
+      call<HandoffDto>(
+        `/api/handoffs/${encodeURIComponent(handoffId)}/decline`,
+        { method: "POST" },
+        oneHandoff,
+      ),
+    incomingHandoffs: () =>
+      call<{ items: HandoffDto[]; truncated: boolean }>(
+        "/api/handoffs?box=incoming",
+        { method: "GET" },
+        async (res) => {
+          const body = (await res.json()) as { items?: unknown; truncated?: unknown };
+          return Array.isArray(body?.items) && typeof body.truncated === "boolean"
+            ? { ok: true, value: { items: body.items as HandoffDto[], truncated: body.truncated } }
+            : fail("internal");
+        },
+      ),
+    handoffCount: () =>
+      call<{ incoming: number }>("/api/handoffs/count", { method: "GET" }, async (res) => {
+        const body = (await res.json()) as { incoming?: unknown };
+        return typeof body?.incoming === "number"
+          ? { ok: true, value: { incoming: body.incoming } }
+          : fail("internal");
+      }),
     remove: (id: string) =>
       call<void>(devicePath(id), { method: "DELETE" }, async () => ({
         ok: true,
