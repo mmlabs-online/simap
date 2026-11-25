@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | api, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T08:19:31Z |
 | PR | — |
 
 ## Goal
@@ -43,7 +43,7 @@ Overlap, desk-tile and bounds checks use each org's catalog sizes, so a resized 
 
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
-- Waiting for Ming: plan approval (P1 gate, validator core)
+- 2026-11-25: Plan approved (Ming: "duyệt"), assumptions A1-A9 as written. Ming runs the pre-deploy SQL from the plan before 039.3 ships.
 
 ## Handoff
 
