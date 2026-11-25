@@ -59,7 +59,6 @@ refused. Role keys registered in org-admin-api (D14):
 
 | seatMGT role | Identity org role (proposed) | Granted by | Can do (from seatMGT `features.md` + code) |
 |---|---|---|---|
-| 2026-11-25 | D68 (SIM-040): device type images may be square PNGs from 24 × 24 to 100 × 100 px, at most 100 KB; the map scales them to the slot. |
 | Admin | `simap:admin` | Super Admin, admin portal | Everything a Manager can do, plus create/edit/delete rooms and seats and edit layouts. Manages any device in the org. |
 | Manager | `simap:manager` | Invitation (admin) or admin portal | Approves or rejects seat requests. Assigns and removes occupants directly. Manages members, groups/projects and seat tags. Sees the Approvals page. Places, moves and returns any device of the org (D19). |
 | User | `simap:user` | Invitation (admin, manager) or admin portal | Views all rooms, seats, members and devices of the org. Requests an empty seat. Places, edits, transfers and returns own devices (D63). |
@@ -731,6 +730,7 @@ New questions get the next free number (OQ-54).
 
 | Date | Change |
 |---|---|
+| 2026-11-25 | D68 (SIM-040): device type images may be square PNGs from 24 × 24 to 100 × 100 px, at most 100 KB; the map scales them to the slot. |
 | 2026-11-25 | D66: map item catalog, phase 1. Per-org rows for the existing library items (keyed by library key, seeded per org; placed fixtures keep `sprite_key`) drive the editor palette: Admins rename, regroup, reorder, hide/show, resize (1–4 × 1–4 tiles, refused while placed) and set art per direction (package sprite or custom PNG, fallback chain). Desk (one look per org), chair (art only), walls, windows and floors included; device types can pick a package sprite; the licensed atlas is committed. Art-per-item paragraph, LAY-01/03/06 amended, LAY-07 added, DEV-01 amended, MapItem entity; OQ-46 to OQ-51 answered; OQ-52, OQ-53 open. |
 | 2026-11-25 | D63: device lifecycle. Devices start unowned in the org inventory (Admin creates); Admin/Manager assigns with note and optional expiry; owners transfer to a member who confirms (device lands unplaced in their inventory); owners return to the org inventory and an Admin confirms; unowned devices are never placed; overdue, in-app reminder and extension request; optional serial, manufacturer, brand; device detail page with history (DEV-01 to DEV-03, DEV-07 to DEV-11; OQ-41 to OQ-45). |
 | 2026-11-24 | SIM-036.2 (D61): per-org device type catalog (name, desk slot, optional image) replaces the fixed suggested list; devices match a type by name; unknown types draw as a placeholder. |

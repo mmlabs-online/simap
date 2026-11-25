@@ -47,3 +47,18 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No, every change maps to a plan row.
 - Diff size: about +227 / -33 lines tracked, plus 3 new files.
+
+## Attempt 2 (REWORK)
+
+### Files touched
+- `docs/spec-v1.md`: moved the D68 change-log row out of the §2 role table (review Issue 1) to the top of §12 "Change log", above the D66 row. Required because the row broke the role table.
+
+### Checks
+- format:check: exit 0, "All matched files use the correct format."
+- test: exit 0 (docs-only change; unchanged from attempt 1)
+
+### Out-of-plan files
+None.
+
+### Scope self-check
+Only the misplaced row was moved; no other change.
