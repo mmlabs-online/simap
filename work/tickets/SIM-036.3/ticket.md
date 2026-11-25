@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-25T02:46:57Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/80 |
 
 ## Goal
 An Admin adds and edits the org's device types (name, where it sits on the desk, its square image) from one
@@ -48,3 +48,9 @@ management page.
 - 2026-11-25 (orchestrator): planner split the ticket; this ticket is slice 1 (page, create/edit/delete, slot picker, Type suggestions). Images (AC3 and the 422 half of AC2) move to SIM-036.6.
 
 ## Handoff
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 5 (frontend-developer×1 45k, ux-architect×1 70k, planner×1 78k, implementer×1 72k, reviewer×1 65k; default models; ~330k total)
+- Done: slice 1 — `/device-types` admin page, create/edit/delete dialogs with inline refusals, slot radios + desk diagram, nav entry (`category` icon), catalog Type suggestions in the device dialog. Review PASS on attempt 1; PR https://github.com/mmlabs-online/simap/pull/80.
+- In progress / next: SIM-036.6 (images) after merge; manual `pnpm dev` walkthrough by Ming.
+- Gotchas: review should-fix (slot `<legend>` not first child of `<fieldset>`), can go into SIM-036.6. Possible conflict with SIM-037.1 in `DeviceFormDialog.tsx`.
