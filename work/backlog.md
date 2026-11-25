@@ -66,7 +66,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-039.6 | "Map items" admin page | MERGED | P1 | M | ui, ux | SIM-039.2, SIM-039.4 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.9 | Map items page: art per direction | MERGED | P1 | M | ui, ux | SIM-039.6, SIM-039.8 | plan-approval | 1 | 2026-11-25 |
 | SIM-039.10 | Map items art: atlas previews | MERGED | P2 | S | ui | SIM-039.9 | none | 0 | 2026-11-25 |
-| SIM-039.7 | Device types: pick a bundled package sprite | BLOCKED | P2 | S | db, api, ui | SIM-039.9 | plan-approval | 0 | 2026-11-25 |
+| SIM-039.7 | Device types: pick a bundled package sprite | IN_PROGRESS | P2 | S | db, api, ui | SIM-039.9 | plan-approval | 0 | 2026-11-25 |
 | SIM-040 | Show the release version in the UI and allow device type images up to 100 × 100 px | MERGED | P2 | M | ui, api, architecture | — | plan-approval | 1 | 2026-11-25 |
 | SIM-011.2 | Members page UI: list, edit and deactivate dialogs | MERGED | P1 | M | ui | SIM-011 | plan-approval | 1 | 2026-11-24 |
 | SIM-013 | Devices: placement rules, read and placement API | MERGED | P1 | M | api | SIM-012 | plan-approval | 0 | 2026-11-23 |
