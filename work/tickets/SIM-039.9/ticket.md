@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-25 |
 | Claimed by | claude@2026-11-25T17:03Z |
-| PR | — |
+| PR | #107 |
 
 ## Goal
 Slice 2 of SIM-039.6: on the Map items page, Admins set each item's art per direction: pick a bundled package sprite,
