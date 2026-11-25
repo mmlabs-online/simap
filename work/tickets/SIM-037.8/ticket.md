@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/90 |
 
 ## Goal
 An owner (or Manager+) transfers a device to another member from the Devices page, the recipient sees incoming transfers with a nav badge and confirms or declines them, and a pending transfer shows on the device row with a Cancel action.
