@@ -8,7 +8,7 @@
 | Areas | ui, architecture |
 | Gate | none |
 | Depends on | SIM-015.3 |
-| Needs Ming | M-10 |
+| Needs Ming | re-scope (D64) |
 | Attempts | 0 |
 | Created | 2026-11-22 |
 | Claimed by | — |
@@ -43,6 +43,7 @@ Production shows the licence-checked room art instead of placeholders, and credi
 - Manual: build the image and open a room map and the Credits page.
 
 ## Notes / answers from Ming
+- 2026-11-25: D64 replaces the single-pack plan (M-9/M-10 not needed). Re-scope this ticket before running it: Admins pick art per item from a bundled package or a custom image.
 - 2026-11-22 (D58): created from the art review. Waits for M-10.
 
 ## Handoff

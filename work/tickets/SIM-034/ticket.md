@@ -45,6 +45,7 @@ D60 (supersedes, for simap, "app code never runs on the home server"); D8 (deplo
 - Manual: open the PR, watch every job run on macbook-runner and pass; after merge to main, ci runs on main; a later release/X.Y.Z push runs release on the Mac (Ming).
 
 ## Notes / answers from Ming
+- 2026-11-25: M-24 done (Ming: the runner is allowed for simap).
 - 2026-11-23: run on the existing macbook-runner (not a separate runner instance), and move all workflows including release (D60).
 
 ## Handoff
