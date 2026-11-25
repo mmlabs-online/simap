@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T14:26:34Z |
 | PR | — |
 
 ## Goal
@@ -42,7 +42,7 @@ Admins manage the catalog on one page next to Device types.
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
 - 2026-11-25 (orchestrator): planner split the ticket. This ticket is slice 1 (page, nav, grouped list, rename/regroup/show-hide, size with in-use warning, reset). Art per direction moves to SIM-039.9. No reorder UI (D67); the ticket and LAY-07 "reorder" wording is stale.
-- Waiting for Ming: plan approval (P1 gate)
+- 2026-11-25: Plan approved (Ming: "duyệt SIM-039.6") for slice 1, assumptions A1-A11 as written.
 
 ## Handoff
 
