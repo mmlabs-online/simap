@@ -40,7 +40,8 @@ describe("parsers", () => {
   it("parsePosix*: good, malformed and empty output", () => {
     expect(parsePosixListeners("p12\np40\n")).toEqual([12, 40]);
     expect(parsePosixListeners("")).toEqual([]);
-    expect(parsePosixListeners("f3\n")).toBeNull();
+    expect(parsePosixListeners("p12\nf12\np40\nf9\n")).toEqual([12, 40]);
+    expect(parsePosixListeners("12\n")).toBeNull();
     expect(parsePosixPs(" 12 12\n 40  12\n")).toEqual([
       { pid: 12, pgid: 12 },
       { pid: 40, pgid: 12 },

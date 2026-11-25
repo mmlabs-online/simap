@@ -112,9 +112,41 @@ describe("release.yml", () => {
       expect(m[1]).not.toContain("${{");
     }
   });
-  it("deploys nothing itself: GitHub runner, no docker compose, no ssh", () => {
-    expect(release).toContain("runs-on: ubuntu-latest");
-    expect(release).not.toMatch(/self-hosted|docker compose|\bssh\b/);
+  it("deploys nothing itself: macbook-runner (D60), no docker compose, no ssh", () => {
+    expect(release).toContain("runs-on: [self-hosted, macbook-runner]");
+    expect(release).not.toContain("ubuntu-latest");
+    expect(release).not.toMatch(/docker compose|\bssh\b/);
+  });
+  it("deployment clone lives in RUNNER_TEMP and keeps no token", () => {
+    const pr = stepRun("pull request on the deployment repo");
+    expect(pr).toContain('"$RUNNER_TEMP/deployment"');
+    expect(pr).toContain('git push "https://github.com/mmlabs-online/deployment.git" "$branch"');
+    const cleanup = stepRun("cleanup");
+    expect(cleanup).toContain("if: always()");
+    expect(cleanup).toContain('rm -rf "$RUNNER_TEMP/deployment"');
+    expect(cleanup).not.toMatch(/rm -rf[^\n]*docker/);
+  });
+  it("token-bearing git commands keep the token out of URLs and disable credential helpers", () => {
+    expect(release).not.toContain("x-access-token:$GH_TOKEN@");
+    for (const name of ["create version tag", "pull request on the deployment repo"]) {
+      const s = stepRun(name);
+      expect(s, name).toContain("GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0=");
+      expect(s, name).toContain("http.https://github.com/.extraheader");
+      expect(s.indexOf("GIT_CONFIG_COUNT"), name).toBeLessThan(s.search(/git (push|clone)/));
+    }
+  });
+  it("docker logout only runs against the isolated DOCKER_CONFIG", () => {
+    const cleanup = stepRun("cleanup");
+    expect(cleanup).toContain(
+      'if [ "${DOCKER_CONFIG:-}" = "$RUNNER_TEMP/docker" ]; then docker logout || true; fi',
+    );
+    expect(cleanup).not.toMatch(/^\s*docker logout/m);
+  });
+  it("login happens before the version tag is reserved", () => {
+    const tag = release.indexOf("- name: create version tag");
+    expect(release.indexOf("docker/login-action")).toBeGreaterThan(-1);
+    expect(release.indexOf("docker/login-action")).toBeLessThan(tag);
+    expect(release.indexOf("docker/setup-buildx-action")).toBeLessThan(tag);
   });
 });
 

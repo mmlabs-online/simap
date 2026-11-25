@@ -37,13 +37,16 @@ export function parseWindowsSnapshot(text, selfPid) {
   return { procs, listeners };
 }
 
-/** lsof -Fp output: one "p<pid>" line per listener. Empty is an empty list; anything else malformed is null. */
+/**
+ * lsof -Fp output: one "p<pid>" line per listener. macOS lsof also prints a file-descriptor line ("f12") after each, so
+ * other one-letter-field lines are skipped. Empty is an empty list; anything else malformed is null.
+ */
 export function parsePosixListeners(text) {
   const pids = [];
   for (const t of String(text ?? "").split(/\r?\n/)) {
     if (!t.trim()) continue;
-    if (!/^p[0-9]+$/.test(t.trim())) return null;
-    pids.push(Number(t.trim().slice(1)));
+    if (/^p[0-9]+$/.test(t.trim())) pids.push(Number(t.trim().slice(1)));
+    else if (!/^[a-zA-Z]\S*$/.test(t.trim())) return null;
   }
   return pids;
 }

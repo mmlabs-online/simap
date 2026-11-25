@@ -1,5 +1,8 @@
 name: ci
 
+# SIM-034 (D60): both jobs run on the home server's self-hosted runner (macOS). Postgres is a throwaway `docker run`
+# container (scripts/ci-postgres.sh); nothing here touches the production compose project `simap`, its containers,
+# networks, volumes or ~/.config/simap. Jobs queue behind one runner: cancel a CI run to deploy sooner.
 on:
   pull_request:
     branches: [main]
@@ -15,88 +18,99 @@ concurrency:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    runs-on: [self-hosted, macbook-runner]
+    timeout-minutes: 20
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: sweep leftovers
+        run: bash scripts/ci-postgres.sh sweep
+      - name: start postgres
+        run: bash scripts/ci-postgres.sh start host
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm check:layers
       - run: pnpm test
       - name: migrate CLI
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
         shell: bash
         run: |
           node db/migrate.js
           node db/migrate.js | tee /dev/stderr | grep -q "up to date"
       - name: migrate smoke
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
         run: node scripts/migrate-smoke.mjs
       - name: schema check
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
         run: node scripts/schema-check.mjs
       - name: db integration tests
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
         run: pnpm test:db
       - run: pnpm format:check
       - run: pnpm build
       - run: test -f .next/standalone/server.js
+      - name: stop postgres
+        if: always()
+        run: bash scripts/ci-postgres.sh stop
 
   # SIM-004: builds the production image once and checks it (scripts/check-image.sh); the check also runs the
-  # app and migrate inside the image against the postgres service. Then validates the deployment compose draft.
-  # Never pushes, no registry login.
+  # app and migrate inside the image against a throwaway Postgres on a private network. Then validates the
+  # deployment compose draft on a temp copy. Never pushes, no registry login.
   image:
     needs: ci
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: postgres
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    runs-on: [self-hosted, macbook-runner]
+    timeout-minutes: 25
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: sweep leftovers
+        run: bash scripts/ci-postgres.sh sweep
+      - name: docker config
+        run: bash scripts/ci-docker-config.sh
+      - name: start postgres
+        run: bash scripts/ci-postgres.sh start network
       - uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
       - name: build
         uses: docker/build-push-action@v6
         with:
           context: .
           load: true
           push: false
-          tags: simap:ci-local
+          tags: simap-ci:${{ github.run_id }}
           cache-from: type=gha,scope=image
           cache-to: type=gha,mode=max,scope=image
       - name: check-image
-        run: bash scripts/check-image.sh simap:ci-local
-        env:
-          CHECK_IMAGE_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
+        run: bash scripts/check-image.sh "simap-ci:$GITHUB_RUN_ID"
       - name: compose config
         shell: bash
         run: |
-          # Dummy, non-secret values: only to let `docker compose config` resolve the file.
-          printf 'SIMAP_IMAGE=mingming21400/simap:v0.0.0@sha256:%064d\n' 0 > "$RUNNER_TEMP/release.env"
-          sudo install -d -m 755 /Users/mingming/.config/simap
-          echo 'DATABASE_URL=postgres://ci:ci@postgres:5432/simap' | sudo tee /Users/mingming/.config/simap/simap.env >/dev/null
-          compose=(docker compose -p simap -f deploy/deployment-repo/apps/simap/compose.yml)
-          "${compose[@]}" --env-file "$RUNNER_TEMP/release.env" --profile migrate config --quiet
+          # Dummy, non-secret values on a temp copy of the compose file: `config` creates and stops nothing, and
+          # the production env file and project are never referenced.
+          d="$RUNNER_TEMP/compose-ci"
+          mkdir -p "$d"
+          printf 'SIMAP_IMAGE=mingming21400/simap:v0.0.0@sha256:%064d\n' 0 > "$d/release.env"
+          echo 'DATABASE_URL=postgres://ci:ci@postgres:5432/simap' > "$d/simap.env"
+          sed "s|/Users/mingming/.config/simap/simap.env|$d/simap.env|g" deploy/deployment-repo/apps/simap/compose.yml > "$d/compose.yml"
+          grep -qF "env_file: $d/simap.env" "$d/compose.yml"
+          if grep -q /Users/mingming "$d/compose.yml"; then
+            echo "::error::compose copy still names the production host path"; exit 1
+          fi
+          compose=(docker compose -p simap-ci -f "$d/compose.yml")
+          "${compose[@]}" --env-file "$d/release.env" --profile migrate config --quiet
           if "${compose[@]}" --profile migrate config --quiet 2>/dev/null; then
             echo "::error::compose config must fail without --env-file"; exit 1
           fi
+      - name: cleanup
+        if: always()
+        run: |
+          # Keep $RUNNER_TEMP/docker: the buildx post step needs its builder store to remove the builder. The runner
+          # empties RUNNER_TEMP after the post steps.
+          bash scripts/ci-postgres.sh stop
+          docker image rm "simap-ci:$GITHUB_RUN_ID" || true
+          rm -rf "$RUNNER_TEMP/compose-ci"
