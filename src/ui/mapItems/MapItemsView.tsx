@@ -6,12 +6,16 @@ import { shellCopy } from "../copy/shell";
 import { Button } from "../Button";
 import { Card } from "../Card";
 import type { ListState } from "../groups/ListSection";
+import { isCustomised } from "./map-item-art";
 import { catalogGroups } from "./map-items-state";
 
 export type MapItemsViewProps = {
   access: "ok" | "forbidden";
   items: ListState<MapItemDto>;
   onEdit: (item: MapItemDto) => void;
+  onArt: (item: MapItemDto) => void;
+  /** The blob URL of the row thumbnail (a custom image), or null. */
+  thumbUrl?: (item: MapItemDto) => string | null;
   onRetry: () => void;
 };
 
@@ -19,7 +23,14 @@ const BADGE =
   "shrink-0 rounded-full border border-outline-variant px-2 py-0.5 text-xs font-bold text-on-surface-variant";
 
 /** The Map items page body. Pure: data and handlers come from props. */
-export function MapItemsView({ access, items, onEdit, onRetry }: MapItemsViewProps) {
+export function MapItemsView({
+  access,
+  items,
+  onEdit,
+  onArt,
+  thumbUrl,
+  onRetry,
+}: MapItemsViewProps) {
   const title = (
     <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.mapItems.title}</h1>
   );
@@ -78,6 +89,15 @@ export function MapItemsView({ access, items, onEdit, onRetry }: MapItemsViewPro
                 <li key={item.builtinKey}>
                   <Card className="flex items-center justify-between gap-3 px-4 py-3">
                     <div className="flex items-center gap-3 min-w-0 flex-wrap">
+                      {thumbUrl?.(item) && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={thumbUrl(item)!}
+                          alt={mapItemsCopy.art.thumbAlt(item.name)}
+                          className="size-8 shrink-0 object-contain"
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                      )}
                       <span className="truncate text-sm font-bold text-on-surface">
                         {item.name}
                       </span>
@@ -87,16 +107,30 @@ export function MapItemsView({ access, items, onEdit, onRetry }: MapItemsViewPro
                       <span className={BADGE}>{`${item.w} × ${item.h}`}</span>
                       {item.hidden && <span className={BADGE}>{mapItemsCopy.list.hidden}</span>}
                       {item.fixedSize && <span className={BADGE}>{mapItemsCopy.list.fixed}</span>}
+                      {isCustomised(item) && (
+                        <span className={BADGE}>{mapItemsCopy.list.customised}</span>
+                      )}
                     </div>
-                    <Button
-                      variant="tonal"
-                      size="sm"
-                      icon="edit"
-                      aria-label={mapItemsCopy.editLabel(item.name)}
-                      onClick={() => onEdit(item)}
-                    >
-                      {mapItemsCopy.edit}
-                    </Button>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        variant="tonal"
+                        size="sm"
+                        icon="palette"
+                        aria-label={mapItemsCopy.artLabel(item.name)}
+                        onClick={() => onArt(item)}
+                      >
+                        {mapItemsCopy.art.button}
+                      </Button>
+                      <Button
+                        variant="tonal"
+                        size="sm"
+                        icon="edit"
+                        aria-label={mapItemsCopy.editLabel(item.name)}
+                        onClick={() => onEdit(item)}
+                      >
+                        {mapItemsCopy.edit}
+                      </Button>
+                    </div>
                   </Card>
                 </li>
               ))}

@@ -8,8 +8,10 @@ export const mapItemsCopy = {
     empty: "The map item catalog is not ready yet. Try again in a moment.",
     hidden: "Hidden",
     fixed: "Fixed size",
+    customised: "Customised",
   },
   edit: "Edit",
+  artLabel: (name: string) => `Edit art of map item ${name}`,
   editLabel: (name: string) => `Edit map item ${name}`,
   form: {
     title: "Edit map item",
@@ -57,6 +59,59 @@ export const mapItemsCopy = {
       rooms === 1
         ? "This item is placed in 1 room. Remove it from that room before changing its size."
         : `This item is placed in ${rooms} rooms. Remove it from every room before changing its size.`,
+  },
+  art: {
+    button: "Art",
+    title: (name: string) => `Art for ${name}`,
+    hint: "Each direction needs its own art; images are never rotated.",
+    close: "Close",
+    single: "Art",
+    sameForAll: "Same for every rotation",
+    dirs: { n: "North", e: "East", s: "South", w: "West" } as Record<string, string>,
+    source: {
+      image: "Custom image",
+      sprite: (key: string) => `Package sprite: ${key}`,
+      library: "Library sprite",
+      hidden: (key: string) => `Package sprite ${key} is set but hidden by the custom image.`,
+    },
+    size: (w: number, hMin: number, hMax: number) =>
+      hMin === hMax
+        ? `Image size: exactly ${w} × ${hMin} px, PNG, at most 64 KB.`
+        : `Image size: ${w} × ${hMin} px, up to ${w} × ${hMax} px with an overhang, PNG, at most 64 KB.`,
+    scale1: "1×",
+    scale2: "2×",
+    previewNA: "Preview not available",
+    choose: "Choose package sprite",
+    upload: "Upload image",
+    useLibrary: "Use library sprite",
+    useLibraryHint: "The custom image still shows until you remove it.",
+    remove: "Remove custom image",
+    saved: (dir: string) => `Saved for ${dir}`,
+    removed: (dir: string) => `Removed for ${dir}`,
+    thumbAlt: (name: string) => `Custom art of ${name}`,
+    browser: {
+      label: (dir: string) => `Package sprites for ${dir}`,
+      count: (n: number) => `${n} ${n === 1 ? "sprite fits" : "sprites fit"}`,
+      empty: "No package sprite fits this size.",
+      staged: (key: string) => `Selected: ${key}`,
+      tiles: (fw: number, fh: number, iw: number, ih: number, dir: string) =>
+        `Frame ${fw} × ${fh} tiles, item ${iw} × ${ih} tiles for ${dir}`,
+      smaller: "Smaller frames draw at the bottom-left.",
+      use: "Use this sprite",
+      cancel: "Cancel",
+    },
+    errors: {
+      image_too_large: "The image is larger than 64 KB.",
+      image_not_png: "This file is not a valid PNG image. Animated PNGs are not allowed.",
+      image_bad_size: (dir: string, w: number, hMin: number, hMax: number, px?: string) =>
+        `${px ? `This image is ${px} px. ` : ""}${dir} needs ${
+          hMin === hMax
+            ? `exactly ${w} × ${hMin} px`
+            : `${w} × ${hMin} px, up to ${w} × ${hMax} px with an overhang`
+        }.`,
+      read_failed: "The file could not be read. Try again.",
+      image_changed: "This image was changed by someone else. The latest art is shown now.",
+    },
   },
   reset: {
     title: "Reset to library defaults",
