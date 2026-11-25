@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { AppShellView } from "./AppShellView";
+import { HandoffBadgeProvider, useHandoffBadge } from "./devices/useHandoffBadge";
 import { RequestBadgeProvider, useRequestBadge } from "./requests/useRequestBadge";
 import { RoomSwitcher } from "./RoomSwitcher";
 import { useSession, useShellActions } from "./session";
@@ -12,12 +13,13 @@ function ShellWithBadge({ children }: { children: ReactNode }) {
   const actions = useShellActions();
   const pathname = usePathname() ?? "/";
   const count = useRequestBadge(pathname);
+  const incoming = useHandoffBadge(pathname);
   return (
     <AppShellView
       session={session}
       pathname={pathname}
       actions={actions}
-      badges={{ myRequests: count }}
+      badges={{ myRequests: count, devices: incoming }}
       roomSwitcher={session ? <RoomSwitcher pathname={pathname} /> : undefined}
     >
       {children}
@@ -29,7 +31,9 @@ function ShellWithBadge({ children }: { children: ReactNode }) {
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <RequestBadgeProvider>
-      <ShellWithBadge>{children}</ShellWithBadge>
+      <HandoffBadgeProvider>
+        <ShellWithBadge>{children}</ShellWithBadge>
+      </HandoffBadgeProvider>
     </RequestBadgeProvider>
   );
 }

@@ -54,6 +54,22 @@ export const devicesCopy = {
     cancelled: (name: string, inv: string) => `Transfer of ${name} (${inv}) cancelled.`,
     gone: "This transfer is no longer available. The list has been refreshed.",
   },
+  incoming: {
+    heading: (n: number) => (n === 1 ? "1 incoming transfer" : `${n} incoming transfers`),
+    hint: "The device stays with the sender until you confirm. After you confirm it goes into your inventory, not placed on a seat.",
+    from: (name: string) => `From ${name}`,
+    confirm: "Confirm receipt",
+    decline: "Decline",
+    confirmAria: (name: string, inv: string, from: string) =>
+      `Confirm receipt of ${name} (${inv}) from ${from}`,
+    declineAria: (name: string, inv: string, from: string) =>
+      `Decline ${name} (${inv}) from ${from}`,
+    confirmed: (name: string, inv: string) =>
+      `${name} (${inv}) is now in your inventory, not placed.`,
+    filterHint: 'Find it under "All" or "Not placed".',
+    declined: (name: string, inv: string) => `Transfer of ${name} (${inv}) declined.`,
+    truncated: (n: number) => `Showing the first ${n} incoming transfers.`,
+  },
   pending: { chip: "Transfer pending", to: (name: string) => `To ${name}` },
   delete: {
     title: "Delete device",

@@ -22,6 +22,8 @@ export type DevicesViewProps = {
   headingRef?: React.Ref<HTMLHeadingElement>;
   busyId?: string | null;
   notice?: { tone: "status" | "error"; text: string } | null;
+  /** The incoming-transfers section, rendered between the notice and the filter chips. */
+  incoming?: React.ReactNode;
 };
 
 /** The Devices page body. Pure: data and handlers come from props. */
@@ -38,6 +40,7 @@ export function DevicesView({
   headingRef,
   busyId,
   notice,
+  incoming,
 }: DevicesViewProps) {
   return (
     <div className="p-4 lg:p-6 flex flex-col gap-4">
@@ -68,6 +71,8 @@ export function DevicesView({
             </p>
           ))}
       </div>
+
+      {incoming}
 
       <div className="flex flex-wrap items-center gap-3">
         <FilterChips

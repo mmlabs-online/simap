@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/92 |
 
 ## Goal
 The recipient of a transfer sees it on the Devices page and as a count on the Devices nav item, and confirms receipt (the device lands in their inventory, not placed) or declines it.
@@ -46,5 +46,18 @@ docs/spec-v1.md §6 DEV-08; D63; D24 (no polling). Recipient-side slice split fr
 
 ## Notes / answers from Ming
 Split from SIM-037.8 with Ming's approval (2026-11-25, "ok"). No release between SIM-037.8 and SIM-037.9 (SIM-037.8 A1).
+Plan approved 2026-11-25 (Ming: "duyệt").
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3, tokens ~153k total (frontend-developer×1 consult 40k, ux-architect×1 consult 38k, planner×1 opus 76k; in/out split not reported)
+- Done: consults saved (consult-frontend-developer.md, consult-ux-architect.md); plan.md written, Status READY, UI only (src/ui/**), no High path.
+- In progress / next: Gate plan-approval (P1 policy) — waiting for Ming to approve plan.md (M-61). Then /run SIM-037.9 resumes at IMPLEMENT.
+- Gotchas: busy scope = all incoming buttons disabled while one action is in flight (planner's pick over the UX consult). Filter hint shows for `placed` and `unowned` (there is no `assigned` filter). The row Cancel stays visually enabled during the shared guard window (plan Assumptions).
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 5 total, tokens ~298k (frontend-developer×1 40k, ux-architect×1 38k, planner×1 76k, implementer×1 87k, reviewer×1 58k; in/out split not reported)
+- Done: plan approved (M-61); attempt 1 implemented and reviewed PASS; rebased on main (SIM-039.1), ming-todo conflict resolved (M-60..M-63 kept); checks green after rebase except 2 unrelated timing tests in the full run that pass on re-run.
+- In progress / next: Ming opens the PR (M-64, prefilled link in chat), runs the manual two-account check, merges.
+- Gotchas: no `gh` on this machine, so the PR is opened by Ming. Row Cancel looks enabled during the shared guard (follow-up).

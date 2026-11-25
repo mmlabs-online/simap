@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import type { DeviceDto, PlacementFilter } from "@/lib/devices/types";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { DeviceDto, HandoffDto, PlacementFilter } from "@/lib/devices/types";
 import { atLeastTier } from "@/lib/tier";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { createRoomsApi } from "../rooms/rooms-api";
@@ -20,7 +20,20 @@ import type { DeviceRowHandlers } from "./device-actions";
 import { filterAfterCreate } from "./device-form";
 import { createDevicesApi } from "./devices-api";
 import type { PlaceMode } from "./place-device";
+import { IncomingTransfers } from "./IncomingTransfers";
+import {
+  badgeCountAfter,
+  confirmOutcome,
+  declineOutcome,
+  focusAfter,
+  type FocusTarget,
+  type IncomingCall,
+  type IncomingOutcome,
+  type IncomingResult,
+} from "./incoming-transfer";
 import { useDevices } from "./useDevices";
+import { useSetHandoffBadge } from "./useHandoffBadge";
+import { useIncomingHandoffs } from "./useIncomingHandoffs";
 
 /** Devices page: loads the list for the chosen filter. Renders only below `AuthGate`. */
 export function DevicesPage() {
@@ -39,8 +52,51 @@ export function DevicesPage() {
   const { status, items, truncated, errorCode, reload, refresh } = useDevices(api, filter);
   const [transferring, setTransferring] = useState<DeviceDto | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const cancelling = useRef(false);
+  const acting = useRef(false);
   const [notice, setNotice] = useState<DevicesViewProps["notice"]>(null);
+  const incoming = useIncomingHandoffs(api);
+  const setBadge = useSetHandoffBadge();
+  const [incomingBusyId, setIncomingBusyId] = useState<string | null>(null);
+  const incomingHeadingRef = useRef<HTMLHeadingElement>(null);
+  const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
+
+  // Applied after the commit, so the node it points at is the new one, not the one the await replaced.
+  useEffect(() => {
+    if (focusTarget === null) return;
+    if (focusTarget.kind === "confirm") {
+      document
+        .querySelector<HTMLElement>(`[data-handoff-confirm="${CSS.escape(focusTarget.id)}"]`)
+        ?.focus();
+    } else if (focusTarget.kind === "section") {
+      incomingHeadingRef.current?.focus();
+    } else {
+      headingRef.current?.focus();
+    }
+    setFocusTarget(null);
+  }, [focusTarget]);
+
+  /** Confirm or decline: one action at a time; refreshes both lists and the badge, then moves focus. */
+  async function act(
+    item: HandoffDto,
+    call: IncomingCall,
+    outcomeOf: (r: IncomingResult) => IncomingOutcome,
+  ) {
+    if (acting.current) return;
+    acting.current = true;
+    setIncomingBusyId(item.id);
+    setNotice(null);
+    const before = incoming.items;
+    const outcome = outcomeOf(await call());
+    setNotice(outcome.notice);
+    if (outcome.refresh) {
+      const [after] = await Promise.all([incoming.refresh(), refresh()]);
+      const n = badgeCountAfter(await api.handoffCount(), after);
+      if (n !== null) setBadge(n);
+      setFocusTarget(focusAfter(before, item.id, after ?? before.filter((h) => h.id !== item.id)));
+    }
+    acting.current = false;
+    setIncomingBusyId(null);
+  }
   const actions = useMemo<DeviceRowHandlers>(
     () => ({
       onAssign: (device, mode) => {
@@ -69,14 +125,14 @@ export function DevicesPage() {
       },
       onCancelTransfer: async (device) => {
         const pending = device.pendingHandoff;
-        if (cancelling.current || !pending) return;
-        cancelling.current = true;
+        if (acting.current || !pending) return;
+        acting.current = true;
         setCancellingId(device.id);
         setNotice(null);
         const outcome = cancelOutcome(await api.cancelHandoff(pending.id), device);
         setNotice(outcome.notice);
         if (outcome.refresh) await refresh();
-        cancelling.current = false;
+        acting.current = false;
         setCancellingId(null);
         headingRef.current?.focus();
       },
@@ -99,6 +155,34 @@ export function DevicesPage() {
         headingRef={headingRef}
         busyId={cancellingId}
         notice={notice}
+        incoming={
+          <IncomingTransfers
+            items={incoming.items}
+            truncated={incoming.truncated}
+            errorCode={incoming.errorCode}
+            busyId={incomingBusyId}
+            headingRef={incomingHeadingRef}
+            onConfirm={(item) =>
+              void act(
+                item,
+                () => api.confirmHandoff(item.id),
+                (r) => confirmOutcome(r, item, filter),
+              )
+            }
+            onDecline={(item) =>
+              void act(
+                item,
+                () => api.declineHandoff(item.id),
+                (r) => declineOutcome(r, item),
+              )
+            }
+            onRetry={() =>
+              void incoming.refresh().then((items) => {
+                if (items?.length === 0) setFocusTarget({ kind: "page" });
+              })
+            }
+          />
+        }
       />
       <TransferDeviceDialog
         device={transferring}
