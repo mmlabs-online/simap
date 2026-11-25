@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T03:34:32Z |
 | PR | — |
 
 ## Goal
@@ -47,7 +47,7 @@ docs/spec-v1.md §6 DEV-01 (fields), DEV-07; D63.
 ## Notes / answers from Ming
 Ming 2026-11-25: "lên ticket và làm luôn".
 
-Waiting for Ming: plan approval (P1) and the split (UI slice → proposed SIM-037.7)
+Plan approved (2026-11-25, Ming: "ok") with assumptions A1-A11 and the split: the UI slice is SIM-037.7.
 
 ## Handoff
 
