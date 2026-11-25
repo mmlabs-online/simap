@@ -3,7 +3,9 @@ import {
   normalizeMac,
   parseDeviceQuery,
   validateDeviceCreate,
+  validateAssign,
   validateDevicePatch,
+  validateHoldingPatch,
   validatePlacementPut,
 } from "./device";
 
@@ -118,11 +120,11 @@ describe("validateDeviceCreate", () => {
   it("trims, keeps diacritics, defaults mac to null", () => {
     expect(validateDeviceCreate({ ...base, name: "  Máy in tầng 3 " })).toEqual({
       ok: true,
-      value: { ...base, mac: null },
+      value: { ...base, mac: null, serial: null, manufacturer: null, brand: null },
     });
     expect(validateDeviceCreate({ ...base, mac: "AA-BB-CC-DD-EE-FF" })).toEqual({
       ok: true,
-      value: { ...base, mac: "aa:bb:cc:dd:ee:ff" },
+      value: { ...base, mac: "aa:bb:cc:dd:ee:ff", serial: null, manufacturer: null, brand: null },
     });
     expect(validateDeviceCreate({ ...base, mac: " " }).ok).toBe(true);
     expect(validateDeviceCreate({ ...base, mac: null }).ok).toBe(true);
@@ -185,5 +187,115 @@ describe("validateDevicePatch", () => {
     expect(validateDevicePatch({ inventoryNumber: "a".repeat(61) }).ok).toBe(false);
     expect(validateDevicePatch({ mac: "zz" }).ok).toBe(false);
     expect(validateDevicePatch([]).ok).toBe(false);
+  });
+});
+
+describe("serial, manufacturer and brand", () => {
+  const none = { serial: null, manufacturer: null, brand: null };
+  it("create: missing and blank become null, values are trimmed and NFC", () => {
+    expect(validateDeviceCreate({ ...base })).toEqual({
+      ok: true,
+      value: { ...base, mac: null, ...none },
+    });
+    expect(validateDeviceCreate({ ...base, serial: "  ", brand: null })).toEqual({
+      ok: true,
+      value: { ...base, mac: null, ...none },
+    });
+    const r = validateDeviceCreate({ ...base, serial: " SN-1 ", manufacturer: "Nguyễn" });
+    expect(r).toEqual({
+      ok: true,
+      value: { ...base, mac: null, ...none, serial: "SN-1", manufacturer: "Nguyễn" },
+    });
+  });
+  it("create: limit 100, control chars and non-strings refused", () => {
+    for (const k of ["serial", "manufacturer", "brand"]) {
+      expect(validateDeviceCreate({ ...base, [k]: "a".repeat(100) }).ok).toBe(true);
+      expect(validateDeviceCreate({ ...base, [k]: "a".repeat(101) })).toEqual({
+        ok: false,
+        field: k,
+      });
+      expect(validateDeviceCreate({ ...base, [k]: "a\u0007" })).toEqual({ ok: false, field: k });
+      expect(validateDeviceCreate({ ...base, [k]: 5 })).toEqual({ ok: false, field: k });
+    }
+  });
+  it("create and patch refuse holding and owner keys", () => {
+    for (const k of ["holdingNote", "ownerId", "note", "expiresOn"]) {
+      expect(validateDeviceCreate({ ...base, [k]: "x" })).toEqual({ ok: false, field: k });
+      expect(validateDevicePatch({ [k]: "x" })).toEqual({ ok: false, field: k });
+    }
+  });
+  it("patch: a lone null is a valid patch, values are checked", () => {
+    expect(validateDevicePatch({ serial: null })).toEqual({ ok: true, value: { serial: null } });
+    expect(validateDevicePatch({ brand: " " })).toEqual({ ok: true, value: { brand: null } });
+    expect(validateDevicePatch({ brand: " HP " })).toEqual({ ok: true, value: { brand: "HP" } });
+    expect(validateDevicePatch({ serial: "a".repeat(101) })).toEqual({
+      ok: false,
+      field: "serial",
+    });
+  });
+});
+
+describe("validateAssign", () => {
+  const today = "2026-11-25";
+  const ok = (o: object) => validateAssign({ memberId: A, ...o }, today);
+  it("requires a canonical uuid and a plain object", () => {
+    expect(validateAssign("x", today)).toEqual({ ok: false, field: "body" });
+    expect(validateAssign({}, today)).toEqual({ ok: false, field: "memberId" });
+    expect(validateAssign({ memberId: A.toUpperCase() }, today)).toEqual({
+      ok: false,
+      field: "memberId",
+    });
+    expect(ok({ extra: 1 })).toEqual({ ok: false, field: "extra" });
+  });
+  it("defaults note and expiry to null", () => {
+    const empty = { ok: true, value: { memberId: A, note: null, expiresOn: null } };
+    expect(ok({})).toEqual(empty);
+    expect(ok({ note: null, expiresOn: null })).toEqual(empty);
+    expect(ok({ note: "  ", expiresOn: "" })).toEqual(empty);
+  });
+  it("note: 500 ok, 501 refused, newline ok, other control refused", () => {
+    expect(ok({ note: "a".repeat(500) }).ok).toBe(true);
+    expect(ok({ note: "a".repeat(501) })).toEqual({ ok: false, field: "note" });
+    expect(ok({ note: "a\r\nb" })).toEqual({
+      ok: true,
+      value: { memberId: A, note: "a\nb", expiresOn: null },
+    });
+    expect(ok({ note: "a\u0007" })).toEqual({ ok: false, field: "note" });
+    expect(ok({ note: 5 })).toEqual({ ok: false, field: "note" });
+  });
+  it("expiry: today allowed, yesterday and impossible dates refused", () => {
+    expect(ok({ expiresOn: "2026-11-25" }).ok).toBe(true);
+    expect(ok({ expiresOn: "2026-11-24" })).toEqual({ ok: false, field: "expiresOn" });
+    expect(ok({ expiresOn: "2026-02-30" })).toEqual({ ok: false, field: "expiresOn" });
+    expect(ok({ expiresOn: 5 })).toEqual({ ok: false, field: "expiresOn" });
+  });
+});
+
+describe("validateHoldingPatch", () => {
+  const today = "2026-11-25";
+  it("refuses an empty or non-object body and unknown keys", () => {
+    expect(validateHoldingPatch({}, today)).toEqual({ ok: false, field: "body" });
+    expect(validateHoldingPatch(null, today)).toEqual({ ok: false, field: "body" });
+    expect(validateHoldingPatch({ memberId: A }, today)).toEqual({ ok: false, field: "memberId" });
+  });
+  it("a note-only patch ignores the expiry rule", () => {
+    expect(validateHoldingPatch({ note: "hi" }, today)).toEqual({
+      ok: true,
+      value: { note: "hi" },
+    });
+  });
+  it("past expiry refused, null clears", () => {
+    expect(validateHoldingPatch({ expiresOn: "2026-11-24" }, today)).toEqual({
+      ok: false,
+      field: "expiresOn",
+    });
+    expect(validateHoldingPatch({ expiresOn: null }, today)).toEqual({
+      ok: true,
+      value: { expiresOn: null },
+    });
+    expect(validateHoldingPatch({ note: null, expiresOn: "2026-12-01" }, today)).toEqual({
+      ok: true,
+      value: { note: null, expiresOn: "2026-12-01" },
+    });
   });
 });

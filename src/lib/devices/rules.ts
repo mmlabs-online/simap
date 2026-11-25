@@ -8,6 +8,12 @@ export const canPlace = (tier: Tier, isOwner: boolean): boolean =>
 /** D19: editing or deleting a device is owner or Admin only. */
 export const canEdit = (tier: Tier, isOwner: boolean): boolean => isOwner || tier === "admin";
 
+/** DEV-07: an Admin or Manager assigns an org-inventory device to a member. */
+export const canAssign = (tier: Tier): boolean => atLeast(tier, "manager");
+
+/** DEV-07: an Admin or Manager edits an assignment's note and expiry (not the owner). */
+export const canManageHolding = (tier: Tier): boolean => atLeast(tier, "manager");
+
 /** DEV-01, OQ-41: only an Admin creates a device; it starts in the org inventory (no owner). */
 export const canCreate = (tier: Tier): boolean => tier === "admin";
 

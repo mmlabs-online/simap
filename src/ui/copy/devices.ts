@@ -4,7 +4,7 @@ import { DEVICE_LIMITS } from "@/lib/devices/types";
 export const devicesCopy = {
   retry: "Try again",
   filterLabel: "Show devices",
-  filters: { all: "All", placed: "Placed", inventory: "Inventory", unowned: "Org inventory" },
+  filters: { all: "All", placed: "Placed", inventory: "Not placed", unowned: "Org inventory" },
   columns: {
     name: "Name",
     type: "Type",
@@ -28,11 +28,8 @@ export const devicesCopy = {
   },
   delete: {
     title: "Delete device",
-    submit: { placed: "Move to inventory", confirm: "Delete device" },
-    placedBody: (name: string, inv: string, seatCode: string) =>
-      `${name} (${inv}) is at seat ${seatCode}. Move it to inventory before deleting it.`,
+    submit: "Delete device",
     confirmBody: (name: string, inv: string) => `Delete ${name} (${inv})? This can't be undone.`,
-    moved: "Moved to inventory.",
   },
   newDevice: "New device",
   typeSuggestions: ["PC", "Laptop", "Monitor", "IP phone", "Other"] as const,
@@ -90,7 +87,7 @@ export const devicesCopy = {
   roles: { primary: "Primary", secondary: "Secondary" },
   empty: {
     placed: "No devices are placed at a seat.",
-    inventory: "No devices in inventory.",
+    inventory: "No devices are unplaced.",
     unowned: "No devices in the org inventory.",
   },
   showAll: "Show all devices",

@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { OrgScope } from "@/server/http/org-scope";
 import {
+  assignDevice,
   createDevice,
   deleteDevice,
   getDevice,
   listDevices,
   placeDevice,
   updateDevice,
+  updateHolding,
 } from "./devices";
 
 const scope = { orgId: "11111111-1111-4111-8111-111111111111" } as OrgScope;
@@ -43,6 +45,11 @@ const dtoRow = {
   type: "laptop",
   inventory_number: "INV-1",
   mac: null,
+  serial: null,
+  manufacturer: null,
+  brand: null,
+  holding_note: null,
+  holding_expires_on: null,
   owner_id: ME,
   owner_name: "Me",
   mine: true,
@@ -219,6 +226,9 @@ const writes =
           type: "laptop",
           inventory_number: "INV-1",
           mac: null,
+          serial: null,
+          manufacturer: null,
+          brand: null,
           owner_id: o.owner === undefined ? ME : o.owner,
         },
       ];
@@ -241,6 +251,9 @@ const newDevice = {
   type: "laptop",
   inventoryNumber: "INV-1",
   mac: null,
+  serial: null,
+  manufacturer: null,
+  brand: null,
 };
 const writeSql = (sqls: string[]) => sqls.filter((q) => /^(update|delete|insert) /.test(q));
 
@@ -401,5 +414,185 @@ describe("placeDevice: device gone", () => {
       put({ seatId: SEAT_A, role: "secondary", expectedSeatId: null }),
     );
     expect(r).toEqual({ ok: false, status: 404, code: "not_found" });
+  });
+});
+
+/** Scripts for assign and holding edit; `member` undefined = active, null = missing. */
+const holdingScript =
+  (
+    o: {
+      member?: { status: string } | null;
+      owner?: string | null;
+      noDevice?: boolean;
+      pending?: boolean;
+      note?: string | null;
+      expires?: string | null;
+    } = {},
+  ): Script =>
+  (sql) => {
+    if (sql.startsWith("select id, status from members")) {
+      const m = o.member === undefined ? { status: "active" } : o.member;
+      return m ? [{ id: OTHER, status: m.status }] : [];
+    }
+    if (sql.startsWith("select owner_id, inventory_number from devices")) {
+      return o.noDevice
+        ? []
+        : [{ owner_id: o.owner === undefined ? null : o.owner, inventory_number: "INV-1" }];
+    }
+    if (sql.startsWith("select owner_id, holding_note as note")) {
+      return o.noDevice
+        ? []
+        : [
+            {
+              owner_id: o.owner === undefined ? OTHER : o.owner,
+              note: o.note ?? null,
+              expires_on: o.expires ?? null,
+            },
+          ];
+    }
+    if (sql.startsWith("select 1 from device_handoffs")) return o.pending ? [{ x: 1 }] : [];
+    if (sql.startsWith("select d.id")) return [dtoRow];
+    return [];
+  };
+
+const assignV = { memberId: OTHER, note: "Loan", expiresOn: "2026-12-31" };
+
+describe("assignDevice", () => {
+  it("a User is refused 422 not_allowed before any query", async () => {
+    const t = fakeDb(holdingScript());
+    expect(await assignDevice(t.db, scope, ACTOR, "user", DEV, assignV)).toEqual({
+      ok: false,
+      status: 422,
+      code: "not_allowed",
+    });
+    expect(t.calls).toEqual([]);
+  });
+
+  it("lock order: member for share, device for update, pending check, update, audit", async () => {
+    const t = fakeDb(holdingScript());
+    expect((await assignDevice(t.db, scope, ACTOR, "manager", DEV, assignV)).ok).toBe(true);
+    const s = t.sqls().slice(0, t.sqls().indexOf("commit"));
+    const order = [
+      s.findIndex((q) => q.startsWith("select id, status from members")),
+      s.findIndex((q) => q.startsWith("select owner_id, inventory_number from devices")),
+      s.findIndex((q) => q.startsWith("select 1 from device_handoffs")),
+      s.findIndex((q) => q.startsWith("update devices set owner_id")),
+      s.findIndex((q) => q.startsWith("insert into audit_log")),
+    ];
+    expect(order.every((i) => i >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+    expect(s[order[0]!]).toMatch(/for share$/);
+    expect(s[order[1]!]).toMatch(/for update$/);
+    const upd = t.calls.find(([q]) => q.startsWith("update devices set owner_id"))!;
+    expect(upd[1]).toEqual([scope.orgId, DEV, OTHER, "Loan", "2026-12-31"]);
+    expect(upd[0]).not.toMatch(/seat_id/);
+    const audit = t.calls.find(([q]) => q.startsWith("insert into audit_log"))!;
+    expect(audit[1][5]).toBe(
+      JSON.stringify({
+        memberId: OTHER,
+        note: "Loan",
+        expiresOn: "2026-12-31",
+        inventoryNumber: "INV-1",
+      }),
+    );
+  });
+
+  it("refusals write nothing and roll back", async () => {
+    const cases: [Script, number, string][] = [
+      [holdingScript({ member: { status: "inactive" } }), 422, "member_not_assignable"],
+      [holdingScript({ member: null }), 422, "member_not_assignable"],
+      [holdingScript({ owner: ME }), 409, "device_owned"],
+      [holdingScript({ pending: true }), 409, "handoff_pending"],
+      [holdingScript({ noDevice: true }), 404, "not_found"],
+    ];
+    for (const [script, status, code] of cases) {
+      const t = fakeDb(script);
+      expect(await assignDevice(t.db, scope, ACTOR, "admin", DEV, assignV)).toEqual({
+        ok: false,
+        status,
+        code,
+      });
+      expect(writeSql(t.sqls())).toEqual([]);
+      expect(t.sqls()).toContain("rollback");
+    }
+  });
+});
+
+describe("updateHolding", () => {
+  it("a User is refused 422 before any query", async () => {
+    const t = fakeDb(holdingScript());
+    expect(await updateHolding(t.db, scope, ACTOR, "user", DEV, { note: "x" })).toEqual({
+      ok: false,
+      status: 422,
+      code: "not_allowed",
+    });
+    expect(t.calls).toEqual([]);
+  });
+
+  it("unowned -> 409 not_assigned; missing -> 404", async () => {
+    const t = fakeDb(holdingScript({ owner: null }));
+    expect(await updateHolding(t.db, scope, ACTOR, "manager", DEV, { note: "x" })).toEqual({
+      ok: false,
+      status: 409,
+      code: "not_assigned",
+    });
+    const gone = fakeDb(holdingScript({ noDevice: true }));
+    expect(await updateHolding(gone.db, scope, ACTOR, "manager", DEV, { note: "x" })).toEqual({
+      ok: false,
+      status: 404,
+      code: "not_found",
+    });
+    expect(writeSql(t.sqls())).toEqual([]);
+  });
+
+  it("unchanged -> no update and no audit", async () => {
+    const t = fakeDb(holdingScript({ note: "A", expires: "2026-12-01" }));
+    const r = await updateHolding(t.db, scope, ACTOR, "manager", DEV, {
+      note: "A",
+      expiresOn: "2026-12-01",
+    });
+    expect(r.ok).toBe(true);
+    expect(writeSql(t.sqls())).toEqual([]);
+  });
+
+  it("a note-only change sets holding_note only, with from/to in the audit", async () => {
+    const t = fakeDb(holdingScript({ note: "A", expires: "2026-12-01" }));
+    expect((await updateHolding(t.db, scope, ACTOR, "admin", DEV, { note: "B" })).ok).toBe(true);
+    const upd = t.calls.find(([q]) => q.startsWith("update devices set"))!;
+    expect(upd[0]).toMatch(/^update devices set holding_note = \$3, updated_at = now\(\)/);
+    expect(upd[1]).toEqual([scope.orgId, DEV, "B"]);
+    const audit = t.calls.find(([q]) => q.startsWith("insert into audit_log"))!;
+    expect(audit[1][5]).toBe(
+      JSON.stringify({
+        ownerId: OTHER,
+        fields: ["note"],
+        from: { note: "A", expiresOn: "2026-12-01" },
+        to: { note: "B", expiresOn: "2026-12-01" },
+      }),
+    );
+  });
+
+  it("an expiry change casts to date and can clear with null", async () => {
+    const t = fakeDb(holdingScript({ note: "A", expires: "2026-12-01" }));
+    await updateHolding(t.db, scope, ACTOR, "admin", DEV, { expiresOn: null });
+    const upd = t.calls.find(([q]) => q.startsWith("update devices set"))!;
+    expect(upd[0]).toContain("holding_expires_on = $3::date");
+    expect(upd[1]).toEqual([scope.orgId, DEV, null]);
+  });
+});
+
+describe("updateDevice with serial, manufacturer and brand", () => {
+  it("writes the columns and names them in the audit fields", async () => {
+    const t = fakeDb(writes());
+    const r = await updateDevice(t.db, scope, ACTOR, "admin", DEV, {
+      serial: "SN-1",
+      manufacturer: "Dell",
+      brand: null,
+    });
+    expect(r.ok).toBe(true);
+    const upd = t.calls.find(([q]) => q.startsWith("update devices set"))!;
+    expect(upd[0]).toContain("serial = $3, manufacturer = $4");
+    const audit = t.calls.find(([q]) => q.startsWith("insert into audit_log"))!;
+    expect(audit[1][5]).toBe(JSON.stringify({ fields: ["serial", "manufacturer"] }));
   });
 });

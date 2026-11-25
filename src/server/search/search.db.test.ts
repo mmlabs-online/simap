@@ -134,6 +134,20 @@ describe("search (db)", () => {
     }
   });
 
+  it("finds a device by serial, manufacturer and brand (case and diacritics folded)", async () => {
+    const o = newOrg();
+    const dev = await addDevice(pool, o.orgId, null, null, "secondary");
+    await run(
+      "update devices set serial = 'SN-0042', manufacturer = 'Nguyễn Corp', brand = 'Đặng' where id = $1",
+      [dev],
+    );
+    for (const s of ["sn-00", "nguyen", "dang"]) {
+      const r = await find(o, q(s));
+      expect(r.devices!.items.map((i) => i.id)).toEqual([dev]);
+    }
+    expect((await find(o, q("sn-9999"))).devices!.items).toEqual([]);
+  });
+
   it("literal % and _ match only themselves", async () => {
     const o = newOrg();
     const a = await member(o.orgId, "Trần 50%_x");

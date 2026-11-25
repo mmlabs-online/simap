@@ -39,7 +39,7 @@ describe("devices-state helpers", () => {
     expect(filterOptions()).toEqual([
       { value: "all", label: "All" },
       { value: "placed", label: "Placed" },
-      { value: "inventory", label: "Inventory" },
+      { value: "inventory", label: "Not placed" },
       { value: "unowned", label: "Org inventory" },
     ]);
   });
@@ -47,7 +47,7 @@ describe("devices-state helpers", () => {
   it("listSummary: 0 / 1 / 12 devices with the filter label", () => {
     expect(listSummary(0, "all")).toBe("0 devices · All");
     expect(listSummary(1, "placed")).toBe("1 device · Placed");
-    expect(listSummary(12, "inventory")).toBe("12 devices · Inventory");
+    expect(listSummary(12, "inventory")).toBe("12 devices · Not placed");
   });
 });
 

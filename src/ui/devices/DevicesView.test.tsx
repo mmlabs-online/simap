@@ -25,6 +25,12 @@ const base: DeviceDto = {
   canEdit: false,
   canPlace: false,
   canDelete: false,
+  serial: null,
+  manufacturer: null,
+  brand: null,
+  holding: null,
+  canAssign: false,
+  canEditHolding: false,
 };
 const secondary: DeviceDto = {
   ...base,

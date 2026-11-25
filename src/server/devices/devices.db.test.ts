@@ -15,12 +15,14 @@ import {
 } from "@/test/db/fixtures";
 import { validateDeviceCreate } from "@/lib/validate/device";
 import {
+  assignDevice,
   createDevice,
   deleteDevice,
   getDevice,
   listDevices,
   placeDevice,
   updateDevice,
+  updateHolding,
 } from "./devices";
 
 let pool: pg.Pool;
@@ -556,5 +558,272 @@ describe("devices (db): create / edit / delete", () => {
     } finally {
       holder.release();
     }
+  });
+});
+
+describe("devices (db): assign and holding", () => {
+  const holdingOf = (id: string) =>
+    one(
+      "select owner_id, seat_id, role, holding_note, to_char(holding_expires_on, 'YYYY-MM-DD') as expires_on from devices where id = $1",
+      [id],
+    );
+  const auditRows = async (orgId: string, action: string) =>
+    (
+      await pool.query(
+        "select actor_sub, entity_id, meta from audit_log where org_id = $1 and action = $2",
+        [orgId, action],
+      )
+    ).rows;
+  const inventoryDevice = (orgId: string) => addDevice(pool, orgId, null, null, "secondary");
+
+  it("admin and manager assign: owner set, not placed, role unchanged, holding returned, one device.assign row", async () => {
+    const w = await world();
+    const actor = await subOf(w.z);
+    const d1 = await inventoryDevice(w.orgId);
+    const d2 = await inventoryDevice(w.orgId);
+    const r1 = await assignDevice(pool, w.scope, actor, "admin", d1, {
+      memberId: w.x,
+      note: "Loan for the project",
+      expiresOn: "2026-12-31",
+    });
+    expect(r1.ok).toBe(true);
+    if (r1.ok) {
+      expect(r1.value.owner?.id).toBe(w.x);
+      expect(r1.value.placement).toBeNull();
+      expect(r1.value.holding).toEqual({ note: "Loan for the project", expiresOn: "2026-12-31" });
+      expect(r1.value.canAssign).toBe(false);
+      expect(r1.value.canEditHolding).toBe(true);
+    }
+    const row = await holdingOf(d1);
+    expect(row).toMatchObject({ owner_id: w.x, seat_id: null, role: "secondary" });
+    expect(row.expires_on).toBe("2026-12-31");
+    const r2 = await assignDevice(pool, w.scope, actor, "manager", d2, {
+      memberId: w.y,
+      note: null,
+      expiresOn: null,
+    });
+    expect(r2.ok && r2.value.holding).toEqual({ note: null, expiresOn: null });
+    const rows = await auditRows(w.orgId, "device.assign");
+    expect(rows).toHaveLength(2);
+    const first = rows.find((r) => r.entity_id === d1)!;
+    expect(first.actor_sub).toBe(actor);
+    expect(first.meta).toMatchObject({
+      memberId: w.x,
+      note: "Loan for the project",
+      expiresOn: "2026-12-31",
+    });
+  });
+
+  it("a user is refused 422 and nothing changes; an owned device is 409 device_owned with no audit row", async () => {
+    const w = await world();
+    const actor = await subOf(w.z);
+    const free = await inventoryDevice(w.orgId);
+    expect(
+      await assignDevice(pool, w.scope, actor, "user", free, {
+        memberId: w.x,
+        note: null,
+        expiresOn: null,
+      }),
+    ).toEqual({ ok: false, status: 422, code: "not_allowed" });
+    const owned = await addDevice(pool, w.orgId, w.y, null, "secondary");
+    expect(
+      await assignDevice(pool, w.scope, actor, "admin", owned, {
+        memberId: w.x,
+        note: null,
+        expiresOn: null,
+      }),
+    ).toEqual({ ok: false, status: 409, code: "device_owned" });
+    expect((await holdingOf(owned)).owner_id).toBe(w.y);
+    expect((await holdingOf(free)).owner_id).toBeNull();
+    expect(await auditRows(w.orgId, "device.assign")).toHaveLength(0);
+  });
+
+  it("expiry round-trips as YYYY-MM-DD", async () => {
+    const w = await world();
+    const d = await inventoryDevice(w.orgId);
+    const r = await assignDevice(pool, w.scope, await subOf(w.z), "admin", d, {
+      memberId: w.x,
+      note: null,
+      expiresOn: "2026-12-31",
+    });
+    expect(r.ok && r.value.holding?.expiresOn).toBe("2026-12-31");
+    const g = await getDevice(pool, w.scope, await subOf(w.z), "admin", d);
+    expect(g.ok && g.value.holding?.expiresOn).toBe("2026-12-31");
+  });
+
+  it("two concurrent assigns: exactly one succeeds, the other is 409 device_owned; one audit row", async () => {
+    const w = await world();
+    const actor = await subOf(w.z);
+    const d = await inventoryDevice(w.orgId);
+    const rs = await Promise.all([
+      assignDevice(pool, w.scope, actor, "admin", d, {
+        memberId: w.x,
+        note: null,
+        expiresOn: null,
+      }),
+      assignDevice(pool, w.scope, actor, "manager", d, {
+        memberId: w.y,
+        note: null,
+        expiresOn: null,
+      }),
+    ]);
+    expect(rs.filter((r) => r.ok)).toHaveLength(1);
+    expect(rs.filter((r) => !r.ok)).toEqual([{ ok: false, status: 409, code: "device_owned" }]);
+    expect(await auditRows(w.orgId, "device.assign")).toHaveLength(1);
+  });
+
+  it("assign to a deactivated member, a missing member or another org's member -> 422 member_not_assignable, device unchanged", async () => {
+    const w = await world();
+    const other = await world();
+    const actor = await subOf(w.z);
+    const d = await inventoryDevice(w.orgId);
+    await pool.query("update members set status = 'deactivated' where id = $1", [w.y]);
+    for (const memberId of [w.y, randomUUID(), other.x]) {
+      expect(
+        await assignDevice(pool, w.scope, actor, "admin", d, {
+          memberId,
+          note: null,
+          expiresOn: null,
+        }),
+      ).toEqual({ ok: false, status: 422, code: "member_not_assignable" });
+    }
+    expect((await holdingOf(d)).owner_id).toBeNull();
+    expect(await auditRows(w.orgId, "device.assign")).toHaveLength(0);
+  });
+
+  it("assign then delete -> 409 device_owned; a missing device -> 404", async () => {
+    const w = await world();
+    const actor = await subOf(w.z);
+    const d = await inventoryDevice(w.orgId);
+    await assignDevice(pool, w.scope, actor, "admin", d, {
+      memberId: w.x,
+      note: null,
+      expiresOn: null,
+    });
+    expect(await deleteDevice(pool, w.scope, actor, "admin", d)).toEqual({
+      ok: false,
+      status: 409,
+      code: "device_owned",
+    });
+    expect(
+      await assignDevice(pool, w.scope, actor, "admin", randomUUID(), {
+        memberId: w.x,
+        note: null,
+        expiresOn: null,
+      }),
+    ).toEqual({ ok: false, status: 404, code: "not_found" });
+  });
+
+  it("a pending handoff -> 409 handoff_pending", async () => {
+    const w = await world();
+    const d = await inventoryDevice(w.orgId);
+    await addHandoff(pool, w.orgId, d, w.x, "pending");
+    expect(
+      await assignDevice(pool, w.scope, await subOf(w.z), "admin", d, {
+        memberId: w.x,
+        note: null,
+        expiresOn: null,
+      }),
+    ).toEqual({ ok: false, status: 409, code: "handoff_pending" });
+  });
+
+  it("holding edit: note and expiry change with one device.holding_update row (from/to); unchanged writes none; unowned -> 409 not_assigned", async () => {
+    const w = await world();
+    const actor = await subOf(w.z);
+    const d = await inventoryDevice(w.orgId);
+    expect(await updateHolding(pool, w.scope, actor, "admin", d, { note: "x" })).toEqual({
+      ok: false,
+      status: 409,
+      code: "not_assigned",
+    });
+    await assignDevice(pool, w.scope, actor, "admin", d, {
+      memberId: w.x,
+      note: "Old",
+      expiresOn: "2026-12-01",
+    });
+    const r = await updateHolding(pool, w.scope, actor, "manager", d, {
+      note: "New",
+      expiresOn: "2027-01-15",
+    });
+    expect(r.ok && r.value.holding).toEqual({ note: "New", expiresOn: "2027-01-15" });
+    const rows = await auditRows(w.orgId, "device.holding_update");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].meta).toMatchObject({
+      ownerId: w.x,
+      fields: ["note", "expiresOn"],
+      from: { note: "Old", expiresOn: "2026-12-01" },
+      to: { note: "New", expiresOn: "2027-01-15" },
+    });
+    await updateHolding(pool, w.scope, actor, "manager", d, {
+      note: "New",
+      expiresOn: "2027-01-15",
+    });
+    expect(await auditRows(w.orgId, "device.holding_update")).toHaveLength(1);
+    const cleared = await updateHolding(pool, w.scope, actor, "admin", d, { expiresOn: null });
+    expect(cleared.ok && cleared.value.holding).toEqual({ note: "New", expiresOn: null });
+    expect(await updateHolding(pool, w.scope, actor, "user", d, { note: "z" })).toEqual({
+      ok: false,
+      status: 422,
+      code: "not_allowed",
+    });
+  });
+});
+
+describe("devices (db): serial, manufacturer and brand", () => {
+  it("create and patch store them; the list DTO carries them; duplicate serial in an org -> 409 serial_taken; another org and null serials are fine", async () => {
+    const w = await world();
+    const other = await world();
+    const sub = await subOf(w.x);
+    const a = await createDevice(
+      pool,
+      w.scope,
+      sub,
+      "admin",
+      dto({ inventoryNumber: "S-1", serial: "SN-1", manufacturer: "Dell", brand: "Latitude" }),
+    );
+    expect(a.ok && a.value).toMatchObject({
+      serial: "SN-1",
+      manufacturer: "Dell",
+      brand: "Latitude",
+    });
+    expect(
+      await createDevice(
+        pool,
+        w.scope,
+        sub,
+        "admin",
+        dto({ inventoryNumber: "S-2", serial: "SN-1" }),
+      ),
+    ).toEqual({ ok: false, status: 409, code: "serial_taken" });
+    const b = await createDevice(pool, w.scope, sub, "admin", dto({ inventoryNumber: "S-2" }));
+    const c = await createDevice(pool, w.scope, sub, "admin", dto({ inventoryNumber: "S-3" }));
+    expect(b.ok && c.ok).toBe(true);
+    const bId = b.ok ? b.value.id : "";
+    expect(await updateDevice(pool, w.scope, sub, "admin", bId, { serial: "SN-1" })).toEqual({
+      ok: false,
+      status: 409,
+      code: "serial_taken",
+    });
+    const p = await updateDevice(pool, w.scope, sub, "admin", bId, {
+      serial: "SN-2",
+      manufacturer: "Nguyễn",
+    });
+    expect(p.ok && p.value).toMatchObject({ serial: "SN-2", manufacturer: "Nguyễn", brand: null });
+    const cleared = await updateDevice(pool, w.scope, sub, "admin", bId, { serial: null });
+    expect(cleared.ok && cleared.value.serial).toBeNull();
+    const list = await listDevices(pool, w.scope, sub, "admin", "all");
+    expect(list.ok && list.value.items.find((i) => i.inventoryNumber === "S-1")).toMatchObject({
+      serial: "SN-1",
+      manufacturer: "Dell",
+      brand: "Latitude",
+    });
+    const cross = await createDevice(
+      pool,
+      other.scope,
+      await subOf(other.x),
+      "admin",
+      dto({ inventoryNumber: "S-1", serial: "SN-1" }),
+    );
+    expect(cross.ok).toBe(true);
   });
 });
