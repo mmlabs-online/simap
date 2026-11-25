@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T06:56:48Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -46,4 +46,12 @@ docs/spec-v1.md §6 DEV-08; D63. UI slice split from SIM-037.3 (its plan.md, app
 ## Notes / answers from Ming
 Split from SIM-037.3 with Ming's approval (2026-11-25, "ok").
 
+Waiting for Ming: plan approval (P1) and the second split (recipient side → proposed SIM-037.9)
+
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 2 (ux-architect×1 ~47k, planner×1; default models). frontend-developer consult reused from SIM-037.3.
+- Done: consult files; plan.md READY for slice 1 (sender side: Transfer dialog, pending chip, Cancel), assumptions A1-A12; recipient side (incoming list, Confirm/Decline, nav badge) proposed as SIM-037.9.
+- In progress / next: Ming approves plan + split (M-59); then create SIM-037.9 and IMPLEMENT slice 1.
+- Gotchas: UI only, no High path. Until SIM-037.9 merges, a started transfer can only be cancelled (A1: no release in between).
