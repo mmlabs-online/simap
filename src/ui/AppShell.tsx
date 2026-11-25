@@ -2,7 +2,9 @@
 
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { shellCopy } from "./copy/shell";
 import { AppShellView } from "./AppShellView";
+import { badgeTotal } from "./devices/incoming-transfer";
 import { HandoffBadgeProvider, useHandoffBadge } from "./devices/useHandoffBadge";
 import { RequestBadgeProvider, useRequestBadge } from "./requests/useRequestBadge";
 import { RoomSwitcher } from "./RoomSwitcher";
@@ -13,13 +15,16 @@ function ShellWithBadge({ children }: { children: ReactNode }) {
   const actions = useShellActions();
   const pathname = usePathname() ?? "/";
   const count = useRequestBadge(pathname);
-  const incoming = useHandoffBadge(pathname);
+  const handoffs = useHandoffBadge(pathname);
   return (
     <AppShellView
       session={session}
       pathname={pathname}
       actions={actions}
-      badges={{ myRequests: count, devices: incoming }}
+      badges={{ myRequests: count, devices: badgeTotal(handoffs) }}
+      badgeLabels={{
+        devices: shellCopy.badge.devicesBreakdown(handoffs.incoming, handoffs.returns),
+      }}
       roomSwitcher={session ? <RoomSwitcher pathname={pathname} /> : undefined}
     >
       {children}

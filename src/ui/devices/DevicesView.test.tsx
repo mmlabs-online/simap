@@ -281,7 +281,7 @@ describe("DevicesView pending transfer", () => {
       canCancel: true,
     },
   };
-  const actions = { onTransfer: noop, onCancelTransfer: noop };
+  const actions = { onTransfer: noop, onCancelHandoff: noop };
 
   it("shows the chip and 'To Hương' in the table and the card, and keeps the owner", () => {
     const html = render({ devices: [pendingDevice], actions });

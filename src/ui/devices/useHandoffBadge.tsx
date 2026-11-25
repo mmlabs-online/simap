@@ -10,24 +10,31 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { HandoffCountDto } from "@/lib/devices/types";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { useSession } from "../session";
 import { createDevicesApi } from "./devices-api";
 
-type Badge = { count: number; set: (n: number) => void; seq: { current: number } };
+type Badge = {
+  count: HandoffCountDto;
+  set: (c: HandoffCountDto) => void;
+  seq: { current: number };
+};
+
+const ZERO: HandoffCountDto = { incoming: 0, returns: 0 };
 
 const BadgeContext = createContext<Badge | null>(null);
 
 /**
- * Holds the "incoming transfers" count. `set` bumps a sequence number first, so a fetch that started
+ * Holds the incoming transfers and pending returns counts. `set` bumps a sequence number first, so a fetch that started
  * earlier can never overwrite a newer value.
  */
 export function HandoffBadgeProvider({ children }: { children: ReactNode }) {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState<HandoffCountDto>(ZERO);
   const seq = useRef(0);
-  const set = useCallback((n: number) => {
+  const set = useCallback((c: HandoffCountDto) => {
     seq.current += 1;
-    setCount(n);
+    setCount(c);
   }, []);
   const value = useMemo(() => ({ count, set, seq }), [count, set]);
   return <BadgeContext.Provider value={value}>{children}</BadgeContext.Provider>;
@@ -36,7 +43,7 @@ export function HandoffBadgeProvider({ children }: { children: ReactNode }) {
 const noop = () => {};
 
 /** The page's way to update the badge at once (a no-op outside the provider). */
-export function useSetHandoffBadge(): (n: number) => void {
+export function useSetHandoffBadge(): (c: HandoffCountDto) => void {
   return useContext(BadgeContext)?.set ?? noop;
 }
 
@@ -44,7 +51,7 @@ export function useSetHandoffBadge(): (n: number) => void {
  * The badge count for the shell. Refreshes on mount, on a route change, on window focus and when the tab
  * becomes visible. No polling (D24). A failed refresh keeps the last count.
  */
-export function useHandoffBadge(pathname: string): number {
+export function useHandoffBadge(pathname: string): HandoffCountDto {
   const ctx = useContext(BadgeContext);
   const apiFetch = useApiFetch();
   const api = useMemo(() => createDevicesApi(apiFetch), [apiFetch]);
@@ -65,7 +72,7 @@ export function useHandoffBadge(pathname: string): number {
     const mine = ++seq.current;
     const r = await api.handoffCount();
     if (!mounted.current || !r.ok || seq.current !== mine) return;
-    set(r.value.incoming);
+    set(r.value);
   }, [api, seq, set, signedIn]);
 
   useEffect(() => {
@@ -85,5 +92,5 @@ export function useHandoffBadge(pathname: string): number {
     };
   }, [refresh]);
 
-  return ctx?.count ?? 0;
+  return ctx?.count ?? ZERO;
 }

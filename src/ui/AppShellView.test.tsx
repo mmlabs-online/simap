@@ -140,13 +140,18 @@ describe("AppShellView", () => {
   });
 
   describe("nav badge", () => {
-    const withBadges = (tier: Tier, badges?: Partial<Record<NavId, number>>) =>
+    const withBadges = (
+      tier: Tier,
+      badges?: Partial<Record<NavId, number>>,
+      badgeLabels?: Partial<Record<NavId, string>>,
+    ) =>
       renderToStaticMarkup(
         <AppShellView
           session={{ tier, email: "a@example.invalid" }}
           pathname="/"
           actions={{}}
           badges={badges}
+          badgeLabels={badgeLabels}
         >
           <p>x</p>
         </AppShellView>,
@@ -201,6 +206,24 @@ describe("AppShellView", () => {
       expect(link(html, "/requests")).not.toContain("incoming transfer");
       expect(link(html, "/devices")).toContain("5 incoming transfers");
       expect(link(html, "/devices")).not.toContain("new decision");
+    });
+    it("devices badge with badgeLabels: numeral is the given count, sr-only is the label; without badgeLabels the old text", () => {
+      const label = shellCopy.badge.devicesBreakdown(2, 1);
+      const both = link(withBadges("admin", { devices: 3 }, { devices: label }), "/devices");
+      expect(both).toMatch(/<span aria-hidden="true" class="absolute[^>]*>3</);
+      expect(both).toContain(`<span class="sr-only">${label}</span>`);
+      expect(both).not.toContain("3 incoming transfers");
+      expect(link(withBadges("admin", { devices: 3 }), "/devices")).toContain(
+        "3 incoming transfers",
+      );
+    });
+    it("devicesBreakdown(2,0) equals incomingTransfers(2); (0,1) is '1 pending return'; (2,1) gives the sum and the parts", () => {
+      expect(shellCopy.badge.devicesBreakdown(2, 0)).toBe(shellCopy.badge.incomingTransfers(2));
+      expect(shellCopy.badge.devicesBreakdown(0, 1)).toBe("1 pending return");
+      expect(shellCopy.badge.devicesBreakdown(0, 3)).toBe("3 pending returns");
+      expect(shellCopy.badge.devicesBreakdown(2, 1)).toBe(
+        "3 pending items: 2 incoming transfers, 1 pending return",
+      );
     });
     it("a badge for a nav id the tier cannot see is not rendered", () => {
       const html = withBadges("user", { approvals: 2 });

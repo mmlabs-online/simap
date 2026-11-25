@@ -58,11 +58,12 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-033 | Ship the bundled art package and the in-app Credits page | BLOCKED | P1 | S | ui, architecture | SIM-015.3 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.1 | Map item catalog: schema, per-org seed and read API | MERGED | P1 | M | db, api, security | — | plan-approval | 0 | 2026-11-25 |
 | SIM-039.2 | Map item catalog admin API | MERGED | P1 | M | api, security | SIM-039.1 | plan-approval | 0 | 2026-11-25 |
-| SIM-039.3 | Catalog footprints in the layout validator, resolver and save | DONE | P1 | M | api, architecture | SIM-039.1 | plan-approval | 0 | 2026-11-25 |
+| SIM-039.3 | Catalog footprints in the layout validator, resolver and save | MERGED | P1 | M | api, architecture | SIM-039.1 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.4 | Custom map item images per direction: upload, remove, serve | BACKLOG | P1 | M | api, security | SIM-039.1 | none | 0 | 2026-11-25 |
 | SIM-039.5 | Editor palette and map rendering from the catalog | BACKLOG | P1 | M | ui | SIM-039.3, SIM-039.4 | none | 0 | 2026-11-25 |
 | SIM-039.6 | "Map items" admin page | BACKLOG | P1 | M | ui, ux | SIM-039.2, SIM-039.4 | none | 0 | 2026-11-25 |
 | SIM-039.7 | Device types: pick a bundled package sprite | BACKLOG | P2 | S | db, api, ui | SIM-039.6 | plan-approval | 0 | 2026-11-25 |
+| SIM-040 | Show the release version in the UI and allow device type images up to 100 × 100 px | PLANNING | P2 | M | ui, api, architecture | — | plan-approval | 0 | 2026-11-25 |
 | SIM-011.2 | Members page UI: list, edit and deactivate dialogs | MERGED | P1 | M | ui | SIM-011 | plan-approval | 1 | 2026-11-24 |
 | SIM-013 | Devices: placement rules, read and placement API | MERGED | P1 | M | api | SIM-012 | plan-approval | 0 | 2026-11-23 |
 | SIM-013.1 | Device create, edit and delete API | MERGED | P1 | S | api | SIM-013 | plan-approval | 0 | 2026-11-24 |
@@ -84,7 +85,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-037.8 | Devices UI: transfer dialog and pending transfer (sender side) | MERGED | P1 | M | ui, ux | SIM-037.3 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.9 | Devices UI: incoming transfers and nav badge | MERGED | P1 | M | ui, ux | SIM-037.8 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.4 | Return a device to the org inventory with Admin confirmation | MERGED | P1 | M | api, ui, security | SIM-037.3 | plan-approval | 0 | 2026-11-25 |
-| SIM-037.10 | Devices UI: return dialog, pending returns and Admin take-back | IN_PROGRESS | P1 | M | ui, ux | SIM-037.4 | plan-approval | 0 | 2026-11-25 |
+| SIM-037.10 | Devices UI: return dialog, pending returns and Admin take-back | DONE | P1 | M | ui, ux | SIM-037.4 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.5 | Overdue badge, reminder and extension request | BACKLOG | P2 | S | api, ui | SIM-037.2, SIM-037.3 | none | 0 | 2026-11-25 |
 | SIM-037.6 | Device detail page with history | BACKLOG | P2 | M | ui, api, ux | SIM-037.4, SIM-037.5 | none | 0 | 2026-11-25 |
 | SIM-014 | Seat requests: state machine and write API | MERGED | P1 | M | api | SIM-012 | plan-approval | 1 | 2026-11-24 |
