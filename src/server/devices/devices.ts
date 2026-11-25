@@ -1,6 +1,11 @@
 import "server-only";
 import type { Tier } from "@/lib/auth/tier";
-import { canCancelHandoff, canStartTransfer } from "@/lib/devices/handoff-rules";
+import {
+  canCancelHandoff,
+  canStartReturn,
+  canStartTransfer,
+  canTakeBack,
+} from "@/lib/devices/handoff-rules";
 import {
   canAssign,
   canCreate,
@@ -99,6 +104,8 @@ const toDto = (r: DeviceRow, tier: Tier): DeviceDto => {
     canAssign: r.owner_id === null && canAssign(tier) && !pending,
     canEditHolding: r.owner_id !== null && canManageHolding(tier),
     canTransfer: r.owner_id !== null && !pending && canStartTransfer(tier, r.mine),
+    canReturn: r.owner_id !== null && !pending && canStartReturn(tier, r.mine),
+    canTakeBack: canTakeBack(tier, r.owner_id, r.h_kind),
     pendingHandoff: pending
       ? {
           id: r.h_id!,
@@ -581,7 +588,7 @@ export function deleteDevice(
   });
 }
 
-async function reload(
+export async function reload(
   c: Query,
   scope: OrgScope,
   sub: string,

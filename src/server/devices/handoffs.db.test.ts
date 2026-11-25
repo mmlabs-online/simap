@@ -2,6 +2,7 @@ import type pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   addDevice,
+  addHandoff,
   addMember,
   addRoom,
   addSeat,
@@ -17,7 +18,9 @@ import {
   countHandoffs,
   declineHandoff,
   listHandoffs,
+  startReturn,
   startTransfer,
+  takeBack,
 } from "./handoffs";
 
 let pool: pg.Pool;
@@ -360,7 +363,7 @@ describe("handoffs (db): list and count", () => {
     const od = await addDevice(pool, o.orgId, o.x, null, "secondary");
     await addTransfer(pool, o.orgId, od, o.x, o.y);
 
-    const r = await listHandoffs(pool, w.scope, w.sy, "user");
+    const r = await listHandoffs(pool, w.scope, w.sy, "user", "incoming");
     expect(r.ok && r.value.items.map((i) => i.id)).toEqual([h2, h1]);
     expect(r.ok && r.value.items[0]).toMatchObject({
       canConfirm: true,
@@ -368,11 +371,19 @@ describe("handoffs (db): list and count", () => {
       canCancel: false,
     });
     expect(r.ok && r.value.truncated).toBe(false);
-    expect(await countHandoffs(pool, w.scope, w.sy)).toEqual({ ok: true, value: { incoming: 2 } });
-    expect(await countHandoffs(pool, w.scope, w.sz)).toEqual({ ok: true, value: { incoming: 0 } });
-    expect(await countHandoffs(pool, w.scope, "00000000-0000-4000-8000-000000000000")).toEqual({
+    expect(await countHandoffs(pool, w.scope, w.sy, "user")).toEqual({
       ok: true,
-      value: { incoming: 0 },
+      value: { incoming: 2, returns: 0 },
+    });
+    expect(await countHandoffs(pool, w.scope, w.sz, "user")).toEqual({
+      ok: true,
+      value: { incoming: 0, returns: 0 },
+    });
+    expect(
+      await countHandoffs(pool, w.scope, "00000000-0000-4000-8000-000000000000", "user"),
+    ).toEqual({
+      ok: true,
+      value: { incoming: 0, returns: 0 },
     });
   });
 });
@@ -385,5 +396,218 @@ describe("handoffs (db): every decision sets decided_by_id", () => {
     expect((await handoff(h)).decided_by_id).toBeNull();
     await declineHandoff(pool, w.scope, w.sy, "user", h);
     expect((await handoff(h)).decided_by_id).toBe(w.y);
+  });
+});
+
+const ret = (note: string | null = null) => ({ kind: "return" as const, note });
+
+describe("handoffs (db): return", () => {
+  it("owner starts; nothing else changes; manager starts for another's device", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
+    const before = await dev(d);
+    const r = await startReturn(pool, w.scope, w.sx, "user", d, ret("done"));
+    expect(r.ok && r.value).toMatchObject({
+      kind: "return",
+      status: "pending",
+      from: { id: w.x },
+      to: null,
+      note: "done",
+      canCancel: true,
+      canConfirm: false,
+      canDecline: false,
+    });
+    expect(await dev(d)).toEqual(before);
+    expect(await auditRows(w.orgId, "device.return_start")).toHaveLength(1);
+    const d2 = await addDevice(pool, w.orgId, w.y, null, "secondary");
+    const m = await startReturn(pool, w.scope, w.sz, "manager", d2, ret());
+    expect(m.ok && m.value).toMatchObject({ from: { id: w.y }, requestedBy: { id: w.z } });
+  });
+
+  it("refusals write no row and no audit", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const free = await addDevice(pool, w.orgId, null, null, "secondary");
+    expect(await startReturn(pool, w.scope, w.sy, "user", d, ret())).toEqual(
+      refusal(422, "not_allowed"),
+    );
+    expect(await startReturn(pool, w.scope, w.sz, "manager", free, ret())).toEqual(
+      refusal(422, "device_unowned"),
+    );
+    await startReturn(pool, w.scope, w.sx, "user", d, ret());
+    expect(await startReturn(pool, w.scope, w.sx, "user", d, ret())).toEqual(
+      refusal(409, "handoff_pending"),
+    );
+    expect(
+      await count("select count(*)::int as n from device_handoffs where device_id = $1", [d]),
+    ).toBe(1);
+    expect(await auditRows(w.orgId, "device.return_start")).toHaveLength(1);
+  });
+
+  it("cancel by owner or manager; decline and a stranger are refused", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const h = await addHandoff(pool, w.orgId, d, w.x, "pending");
+    expect(await declineHandoff(pool, w.scope, w.sx, "user", h)).toEqual(
+      refusal(422, "not_allowed"),
+    );
+    expect(await cancelHandoff(pool, w.scope, w.sy, "user", h)).toEqual(
+      refusal(422, "not_allowed"),
+    );
+    const c = await cancelHandoff(pool, w.scope, w.sz, "manager", h);
+    expect(c.ok && c.value).toMatchObject({ status: "cancelled", decidedBy: { id: w.z } });
+    const rows = await auditRows(w.orgId, "device.return_cancel");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].meta).toMatchObject({ byManager: true });
+    const h2 = await addHandoff(pool, w.orgId, d, w.x, "pending");
+    expect((await cancelHandoff(pool, w.scope, w.sx, "user", h2)).ok).toBe(true);
+  });
+
+  it("confirm of a placed primary device clears owner, seat, note and expiry", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
+    await pool.query(
+      "update devices set holding_note = 'n', holding_expires_on = current_date + 5 where id = $1",
+      [d],
+    );
+    const h = await addHandoff(pool, w.orgId, d, w.x, "pending");
+    expect(await confirmHandoff(pool, w.scope, w.sz, "manager", h)).toEqual(
+      refusal(422, "not_allowed"),
+    );
+    expect(await confirmHandoff(pool, w.scope, w.sx, "user", h)).toEqual(
+      refusal(422, "not_allowed"),
+    );
+    const r = await confirmHandoff(pool, w.scope, w.sy, "admin", h);
+    expect(r.ok && r.value).toMatchObject({ status: "confirmed", decidedBy: { id: w.y } });
+    expect(await dev(d)).toMatchObject({
+      owner_id: null,
+      seat_id: null,
+      role: "secondary",
+      holding_note: null,
+      holding_expires_on: null,
+    });
+    const rows = await auditRows(w.orgId, "device.return_confirm");
+    expect(rows[0].meta).toMatchObject({ fromCode: "A-01", demoted: true, fromMemberId: w.x });
+    expect(rows[0].meta.expiresOn).not.toBeNull();
+    expect(await confirmHandoff(pool, w.scope, w.sy, "admin", h)).toEqual(
+      refusal(409, "handoff_not_pending"),
+    );
+  });
+
+  it("an Admin who owns the device confirms; a stale owner is 409", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.y, null, "secondary");
+    const h = await addHandoff(pool, w.orgId, d, w.y, "pending");
+    expect((await confirmHandoff(pool, w.scope, w.sy, "admin", h)).ok).toBe(true);
+    expect(await dev(d)).toMatchObject({ owner_id: null });
+    const d2 = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const h2 = await addHandoff(pool, w.orgId, d2, w.x, "pending");
+    await pool.query("update devices set owner_id = $2 where id = $1", [d2, w.z]);
+    expect(await confirmHandoff(pool, w.scope, w.sy, "admin", h2)).toEqual(
+      refusal(409, "handoff_stale"),
+    );
+  });
+
+  it("confirm vs concurrent cancel: exactly one wins", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
+    const h = await addHandoff(pool, w.orgId, d, w.x, "pending");
+    const [a, b] = await Promise.all([
+      confirmHandoff(pool, w.scope, w.sy, "admin", h),
+      cancelHandoff(pool, w.scope, w.sx, "user", h),
+    ]);
+    expect([a.ok, b.ok].filter(Boolean)).toHaveLength(1);
+    const loser = a.ok ? b : a;
+    expect(!loser.ok && loser.code).toBe("handoff_not_pending");
+  });
+});
+
+describe("handoffs (db): take-back", () => {
+  it("clears an owned placed device with no request; one audit row", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
+    const r = await takeBack(pool, w.scope, w.sy, "admin", d);
+    expect(r.ok && r.value).toMatchObject({ owner: null, placement: null });
+    expect(await dev(d)).toMatchObject({ owner_id: null, seat_id: null, role: "secondary" });
+    const rows = await auditRows(w.orgId, "device.return_take_back");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].meta).toMatchObject({ byAdmin: true, fromMemberId: w.x });
+  });
+
+  it("works on a deactivated member's device", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await pool.query("update members set status = 'deactivated' where id = $1", [w.x]);
+    expect((await takeBack(pool, w.scope, w.sy, "admin", d)).ok).toBe(true);
+  });
+
+  it("cancels a pending transfer; refuses a pending return, unowned, non-Admin, other org", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
+    const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
+    expect((await takeBack(pool, w.scope, w.sz, "admin", d)).ok).toBe(true);
+    expect(await handoff(h)).toMatchObject({ status: "cancelled", decided_by_id: w.z });
+    const cancel = await auditRows(w.orgId, "device.transfer_cancel");
+    expect(cancel[0].meta).toMatchObject({ byTakeBack: true });
+
+    const d2 = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await addHandoff(pool, w.orgId, d2, w.x, "pending");
+    expect(await takeBack(pool, w.scope, w.sz, "admin", d2)).toEqual(
+      refusal(409, "handoff_pending"),
+    );
+    expect(await dev(d2)).toMatchObject({ owner_id: w.x });
+    expect(await takeBack(pool, w.scope, w.sz, "admin", d)).toEqual(refusal(422, "device_unowned"));
+    expect(await takeBack(pool, w.scope, w.sz, "manager", d2)).toEqual(refusal(422, "not_allowed"));
+    const o = await world();
+    expect(await takeBack(pool, o.scope, o.sz, "admin", d2)).toEqual(refusal(404, "not_found"));
+  });
+
+  it("take-back vs transfer confirm: one wins, no deadlock", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
+    const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
+    const [a, b] = await Promise.all([
+      takeBack(pool, w.scope, w.sz, "admin", d),
+      confirmHandoff(pool, w.scope, w.sy, "user", h),
+    ]);
+    expect(a.ok || b.ok).toBe(true);
+    for (const r of [a, b]) if (!r.ok) expect([409, 422]).toContain(r.status);
+  });
+});
+
+describe("handoffs (db): returns list and count", () => {
+  it("lists pending returns of my org for an Admin only; counts follow the tier", async () => {
+    const w = await world();
+    const mk = () => addDevice(pool, w.orgId, w.x, null, "secondary");
+    const h1 = await addHandoff(pool, w.orgId, await mk(), w.x, "pending");
+    await pool.query(
+      "update device_handoffs set created_at = now() - interval '1 hour' where id = $1",
+      [h1],
+    );
+    const h2 = await addHandoff(pool, w.orgId, await mk(), w.x, "pending");
+    await addHandoff(pool, w.orgId, await mk(), w.x, "cancelled");
+    await addTransfer(pool, w.orgId, await mk(), w.x, w.y);
+    const o = await world();
+    const od = await addDevice(pool, o.orgId, o.x, null, "secondary");
+    await addHandoff(pool, o.orgId, od, o.x, "pending");
+
+    const r = await listHandoffs(pool, w.scope, w.sz, "admin", "returns");
+    expect(r.ok && r.value.items.map((i) => i.id)).toEqual([h2, h1]);
+    expect(r.ok && r.value.items[0]).toMatchObject({ canConfirm: true, canDecline: false });
+    expect(await listHandoffs(pool, w.scope, w.sz, "manager", "returns")).toEqual(
+      refusal(422, "not_allowed"),
+    );
+    expect(await countHandoffs(pool, w.scope, w.sz, "admin")).toEqual({
+      ok: true,
+      value: { incoming: 0, returns: 2 },
+    });
+    expect(await countHandoffs(pool, w.scope, w.sz, "manager")).toEqual({
+      ok: true,
+      value: { incoming: 0, returns: 0 },
+    });
+    expect(await countHandoffs(pool, w.scope, w.sy, "user")).toEqual({
+      ok: true,
+      value: { incoming: 1, returns: 0 },
+    });
   });
 });

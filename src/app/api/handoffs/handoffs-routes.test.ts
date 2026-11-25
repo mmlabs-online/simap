@@ -104,7 +104,14 @@ describe("GET /api/handoffs", () => {
     const r = await LIST(req("GET", "http://x/api/handoffs?box=incoming"), noParams);
     expect(r.status).toBe(200);
     expect(r.headers.get("Cache-Control")).toBe("no-store");
-    expect(svc.listHandoffs.mock.calls[0]!.slice(2)).toEqual(["s1", "user"]);
+    expect(svc.listHandoffs.mock.calls[0]!.slice(2)).toEqual(["s1", "user", "incoming"]);
+  });
+  it("passes box=returns and the tier to the service; a refusal maps to 422", async () => {
+    fakeAuth(["simap:user"]);
+    svc.listHandoffs.mockResolvedValue({ ok: false, status: 422, code: "not_allowed" });
+    const r = await LIST(req("GET", "http://x/api/handoffs?box=returns"), noParams);
+    expect(r.status).toBe(422);
+    expect(svc.listHandoffs.mock.calls[0]!.slice(2)).toEqual(["s1", "user", "returns"]);
   });
   it("400 on a missing or unknown box; 503 without a pool", async () => {
     fakeAuth(["simap:user"]);
@@ -119,13 +126,13 @@ describe("GET /api/handoffs", () => {
 });
 
 describe("GET /api/handoffs/count", () => {
-  it("returns { incoming }", async () => {
+  it("returns { incoming, returns } and passes the tier", async () => {
     fakeAuth(["simap:user"]);
-    svc.countHandoffs.mockResolvedValue({ ok: true, value: { incoming: 2 } });
+    svc.countHandoffs.mockResolvedValue({ ok: true, value: { incoming: 2, returns: 0 } });
     const r = await COUNT(req("GET", "http://x/api/handoffs/count"), noParams);
     expect(r.status).toBe(200);
-    expect(await r.json()).toEqual({ incoming: 2 });
-    expect(svc.countHandoffs.mock.calls[0]!.slice(2)).toEqual(["s1"]);
+    expect(await r.json()).toEqual({ incoming: 2, returns: 0 });
+    expect(svc.countHandoffs.mock.calls[0]!.slice(2)).toEqual(["s1", "user"]);
   });
   it("503 without a pool", async () => {
     fakeAuth(["simap:user"]);

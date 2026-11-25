@@ -314,7 +314,7 @@ describe("validateHandoffStart", () => {
   it("refuses a non-object, extra keys, other kinds and bad ids", () => {
     expect(validateHandoffStart("x")).toEqual({ ok: false, field: "body" });
     expect(ok({ extra: 1 })).toEqual({ ok: false, field: "extra" });
-    expect(ok({ kind: "return" })).toEqual({ ok: false, field: "kind" });
+    expect(ok({ kind: "extension" })).toEqual({ ok: false, field: "kind" });
     expect(ok({ toMemberId: A.toUpperCase() })).toEqual({ ok: false, field: "toMemberId" });
     expect(validateHandoffStart({ kind: "transfer" })).toEqual({
       ok: false,
@@ -333,10 +333,31 @@ describe("validateHandoffStart", () => {
   });
 });
 
+describe("validateHandoffStart return", () => {
+  const r = (o: object) => validateHandoffStart({ kind: "return", ...o });
+  it("accepts a return with a note or none; blank is null", () => {
+    expect(r({})).toEqual({ ok: true, value: { kind: "return", note: null } });
+    expect(r({ note: "   " })).toEqual({ ok: true, value: { kind: "return", note: null } });
+  });
+  it("limits the note to 500 and normalises to NFC", () => {
+    expect(r({ note: "x".repeat(500) }).ok).toBe(true);
+    expect(r({ note: "x".repeat(501) })).toEqual({ ok: false, field: "note" });
+    const nfd = "Trả máy cho phòng IT".normalize("NFD");
+    const v = r({ note: nfd });
+    expect(v.ok && v.value.kind === "return" && v.value.note).toBe(nfd.normalize("NFC"));
+  });
+  it("refuses toMemberId and other keys", () => {
+    expect(r({ toMemberId: A })).toEqual({ ok: false, field: "toMemberId" });
+    expect(r({ extra: 1 })).toEqual({ ok: false, field: "extra" });
+  });
+});
+
 describe("validateHandoffBox", () => {
   const box = (s: string) => validateHandoffBox(new URLSearchParams(s));
-  it("accepts only one box=incoming", () => {
+  it("accepts only one box, incoming or returns", () => {
     expect(box("box=incoming")).toEqual({ ok: true, value: "incoming" });
+    expect(box("box=returns")).toEqual({ ok: true, value: "returns" });
+    expect(box("box=returns&box=incoming")).toEqual({ ok: false, field: "box" });
     expect(box("")).toEqual({ ok: false, field: "box" });
     expect(box("box=outgoing")).toEqual({ ok: false, field: "box" });
     expect(box("box=incoming&box=incoming")).toEqual({ ok: false, field: "box" });

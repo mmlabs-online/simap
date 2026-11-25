@@ -3,10 +3,12 @@ import type pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   addDevice,
+  addHandoff,
   addMember,
   addPendingRequest,
   addRoom,
   addSeat,
+  addTransfer,
   assertTestDb,
   newOrg,
   testPool,
@@ -352,5 +354,57 @@ describe("members manage (db)", () => {
     const list = await listPendingInvitations(pool, a.scope);
     expect(list.map((i) => i.email).sort()).toEqual(["p1@x.vn", "p2@x.vn"]);
     expect(Object.keys(list[0]!).sort()).toEqual(["createdAt", "email", "expiresAt", "id", "role"]);
+  });
+
+  it("deactivate cancels pending handoffs from and to the member; devices stay owned", async () => {
+    const w = await world();
+    const actorSub = await subOf(w.actor);
+    const mk = (owner: string) => addDevice(pool, w.orgId, owner, null, "secondary");
+    const d1 = await mk(w.target);
+    const d2 = await mk(w.other);
+    const d3 = await mk(w.target);
+    const d4 = await mk(w.other);
+    const hFrom = await addTransfer(pool, w.orgId, d1, w.target, w.other);
+    const hTo = await addTransfer(pool, w.orgId, d2, w.other, w.target);
+    const hRet = await addHandoff(pool, w.orgId, d3, w.target, "pending");
+    const hUnrelated = await addTransfer(pool, w.orgId, d4, w.other, w.actor);
+    ok(await deactivateMember(pool, w.scope, actorSub, w.target, true));
+    const st = async (id: string) =>
+      one(
+        "select status, decided_by_id, decided_at is not null as decided from device_handoffs where id = $1",
+        [id],
+      );
+    for (const h of [hFrom, hTo, hRet]) {
+      expect(await st(h)).toEqual({ status: "cancelled", decided_by_id: w.actor, decided: true });
+    }
+    expect((await st(hUnrelated)).status).toBe("pending");
+    expect((await one("select owner_id from devices where id = $1", [d1])).owner_id).toBe(w.target);
+    expect(await audits(w.orgId, "device.transfer_cancel")).toHaveLength(2);
+    const ret = await audits(w.orgId, "device.return_cancel");
+    expect(ret).toHaveLength(1);
+    expect(ret[0].meta).toMatchObject({ byDeactivation: true, memberId: w.target });
+    const a = await audits(w.orgId, "member.deactivate");
+    expect(a[0].meta).toMatchObject({ cancelledHandoffs: 3 });
+  });
+
+  it("noop and refused deactivations cancel nothing; an actor with no member row falls back to the target", async () => {
+    const w = await world();
+    const actorSub = await subOf(w.actor);
+    const d = await addDevice(pool, w.orgId, w.target, null, "secondary");
+    const h = await addHandoff(pool, w.orgId, d, w.target, "pending");
+    expect(await deactivateMember(pool, w.scope, actorSub, w.target, false)).toMatchObject({
+      ok: false,
+      code: "member_not_empty",
+    });
+    expect(
+      await deactivateMember(pool, w.scope, await subOf(w.target), w.target, true),
+    ).toMatchObject({ ok: false, code: "cannot_deactivate_self" });
+    const status = async () =>
+      (await one("select status from device_handoffs where id = $1", [h])).status;
+    expect(await status()).toBe("pending");
+    ok(await deactivateMember(pool, w.scope, randomUUID(), w.target, true));
+    expect(
+      await one("select status, decided_by_id from device_handoffs where id = $1", [h]),
+    ).toEqual({ status: "cancelled", decided_by_id: w.target });
   });
 });
