@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T14:44:23Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/105 |
 
 ## Goal
 Admin/Manager see pending extension requests and approve or reject them; the nav badge counts them.
@@ -45,3 +45,9 @@ docs/spec-v1.md §6 DEV-10; OQ-42. Slice 2 split from SIM-037.11 (its plan.md `#
 Split from SIM-037.11 by the planner (2026-11-25); added by the orchestrator, Ming to confirm.
 
 ## Handoff
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 4, tokens ~209k total (in/out split not reported): planner×1 sonnet 58k (fast lane, no consult), implementer×1 72k, reviewer×1 49k, security-ai-generated-code-auditor×1 30k.
+- Done: Manager+ pending extensions list (Approve / Reject), tier-aware `handoffBoxes`, three-way `fetcherFor`, extensions in the badge and breakdown, and a seeded pending extension. Attempt 1 PASS; security PASS. PR #105.
+- In progress / next: Ming confirms A1–A7, merges #105, and runs the manual check (Reject needs a fresh DB or a second request, because re-seed does not recreate it).
+- Gotchas: a Manager's own overdue device with a pending extension counts twice in the badge (API semantics). test:db was not run (no server/SQL change).
