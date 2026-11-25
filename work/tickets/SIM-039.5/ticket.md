@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T13:49:47Z |
 | PR | — |
 
 ## Goal
@@ -44,7 +44,7 @@ The editor's "Add items" palette and both maps show the org's catalog: names, gr
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
 - 2026-11-25 (orchestrator): planner split the ticket. This ticket is slice 1 (palette and editor sizes from the catalog, AC 1 and AC 3). Art rendering, image loading and the image draw op (AC 2) move to SIM-039.8.
-- Waiting for Ming: plan approval (P1 gate)
+- 2026-11-25: Plan approved (Ming: "duyệt SIM-039.5") for slice 1, assumptions as written (A5: group headings show the stored group string).
 
 ## Handoff
 
