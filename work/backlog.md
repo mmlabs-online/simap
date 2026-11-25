@@ -34,7 +34,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-032 | One-command local start on production data | MERGED | P1 | M | security | SIM-031 | none | 4 | 2026-11-22 |
 | SIM-009 | Invite people to an org | MERGED | P1 | M | security, ui, api | SIM-007 | none | 1 | 2026-11-22 |
 | SIM-009.2 | Accept-invitation page | MERGED | P1 | M | security, ui | SIM-009 | none | 1 | 2026-11-22 |
-| BUG-001 | `pnpm test:db` red on main after SIM-037.2 (devices uniqueness, CSV export columns) | DONE | P0 | XS | db | — | none | 1 | 2026-11-25 |
+| BUG-001 | `pnpm test:db` red on main after SIM-037.2 (devices uniqueness, CSV export columns) | MERGED | P0 | XS | db | — | none | 1 | 2026-11-25 |
 | SIM-034 | Run simap's GitHub Actions on the Mac self-hosted runner | BACKLOG | P1 | S | security, architecture | — | plan-approval | 0 | 2026-11-23 |
 | SIM-011 | Members page, profile fields and deactivation | MERGED | P1 | M | api, ui, security | SIM-007 | plan-approval | 1 | 2026-11-22 |
 | SIM-024 | Sprite atlas, manifest, placeholder art and map renderer | MERGED | P1 | M | ui, architecture | SIM-003 | none | 1 | 2026-11-21 |
@@ -55,7 +55,14 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-015.9 | Layout editor palette, tray placement and room resize | MERGED | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
 | SIM-015.10 | Layout editor drag, marquee and keyboard shortcuts | MERGED | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
 | SIM-015.8 | Layout editor desk add and delete | MERGED | P1 | S | ui | SIM-015.7, SIM-015.9 | plan-approval | 0 | 2026-11-23 |
-| SIM-033 | Ship the real room art and an in-app Credits page | BACKLOG | P1 | S | ui, architecture | SIM-015.3 | none | 0 | 2026-11-22 |
+| SIM-033 | Ship the bundled art package and the in-app Credits page | PLANNING | P1 | S | ui, architecture | SIM-015.3 | plan-approval | 0 | 2026-11-25 |
+| SIM-039.1 | Map item catalog: schema, per-org seed and read API | BACKLOG | P1 | M | db, api, security | — | plan-approval | 0 | 2026-11-25 |
+| SIM-039.2 | Map item catalog admin API | BACKLOG | P1 | M | api, security | SIM-039.1 | none | 0 | 2026-11-25 |
+| SIM-039.3 | Catalog footprints in the layout validator, resolver and save | BACKLOG | P1 | M | api, architecture | SIM-039.1 | plan-approval | 0 | 2026-11-25 |
+| SIM-039.4 | Custom map item images per direction: upload, remove, serve | BACKLOG | P1 | M | api, security | SIM-039.1 | none | 0 | 2026-11-25 |
+| SIM-039.5 | Editor palette and map rendering from the catalog | BACKLOG | P1 | M | ui | SIM-039.3, SIM-039.4 | none | 0 | 2026-11-25 |
+| SIM-039.6 | "Map items" admin page | BACKLOG | P1 | M | ui, ux | SIM-039.2, SIM-039.4 | none | 0 | 2026-11-25 |
+| SIM-039.7 | Device types: pick a bundled package sprite | BACKLOG | P2 | S | db, api, ui | SIM-039.6 | plan-approval | 0 | 2026-11-25 |
 | SIM-011.2 | Members page UI: list, edit and deactivate dialogs | MERGED | P1 | M | ui | SIM-011 | plan-approval | 1 | 2026-11-24 |
 | SIM-013 | Devices: placement rules, read and placement API | MERGED | P1 | M | api | SIM-012 | plan-approval | 0 | 2026-11-23 |
 | SIM-013.1 | Device create, edit and delete API | MERGED | P1 | S | api | SIM-013 | plan-approval | 0 | 2026-11-24 |
@@ -73,7 +80,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-037.1 | Device lifecycle schema and unowned devices | MERGED | P1 | M | db, api, security | — | plan-approval | 1 | 2026-11-25 |
 | SIM-037.2 | Assign from org inventory and new device fields | MERGED | P1 | M | api, ui | SIM-037.1 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.7 | Devices UI: assign dialog, note/expiry edit and new device fields | MERGED | P1 | M | ui, ux | SIM-037.2 | plan-approval | 0 | 2026-11-25 |
-| SIM-037.3 | Transfer a device with recipient confirmation | PLANNING | P1 | M | api, ui, security | SIM-037.2 | plan-approval | 0 | 2026-11-25 |
+| SIM-037.3 | Transfer a device with recipient confirmation | IN_PROGRESS | P1 | M | api, ui, security | SIM-037.2 | plan-approval | 0 | 2026-11-25 |
+| SIM-037.8 | Devices UI: transfer dialog, incoming transfers and nav badge | BACKLOG | P1 | M | ui, ux | SIM-037.3 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.4 | Return a device to the org inventory with Admin confirmation | BACKLOG | P1 | M | api, ui, security | SIM-037.3 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.5 | Overdue badge, reminder and extension request | BACKLOG | P2 | S | api, ui | SIM-037.2, SIM-037.3 | none | 0 | 2026-11-25 |
 | SIM-037.6 | Device detail page with history | BACKLOG | P2 | M | ui, api, ux | SIM-037.4, SIM-037.5 | none | 0 | 2026-11-25 |
@@ -92,8 +100,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-017.3 | Search page UI | MERGED | P2 | M | ui | SIM-017.2 | none | 0 | 2026-11-24 |
 | SIM-018 | CSV export | MERGED | P2 | S | api, ui | SIM-017 | none | 0 | 2026-11-24 |
 | SIM-027 | Security headers, CSP and apiFetch hardening before go-live | MERGED | P1 | M | security, architecture | SIM-006.2 | plan-approval | 0 | 2026-11-20 |
-| SIM-038 | Sync the deploy-simap draft with the deployment repo (Drive secrets) | DONE | P2 | XS | security | — | plan-approval | 0 | 2026-11-25 |
+| SIM-038 | Sync the deploy-simap draft with the deployment repo (Drive secrets) | MERGED | P2 | XS | security | — | plan-approval | 0 | 2026-11-25 |
 | SIM-021 | Go-live checklist and first production deploy | BACKLOG | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | none | 0 | 2026-11-20 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
 
-D47 is lifted for the room map tickets (D58). SIM-033 needs re-scoping to D64 (per-item art chosen by Admins) before it runs.
+D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.

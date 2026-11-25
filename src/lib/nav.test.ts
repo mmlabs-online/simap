@@ -23,16 +23,14 @@ describe("navItemsFor", () => {
       "members",
       "myRequests",
       "approvals",
-      "groups",
     ]);
   });
-  it("groups is manager+", () => {
-    expect(ids("manager")).toContain("groups");
-    expect(ids("user")).not.toContain("groups");
-    expect(ids("admin")).toContain("groups");
+  it("groups is hidden from the nav for every tier (D65)", () => {
+    for (const tier of ["user", "manager", "admin"] as const)
+      expect(ids(tier)).not.toContain("groups");
   });
   it("admin sees all items incl. roomEditor", () => {
-    expect(ids("admin")).toHaveLength(11);
+    expect(ids("admin")).toHaveLength(10);
     expect(ids("admin")).toContain("roomEditor");
   });
   it("audit is admin only", () => {
@@ -55,7 +53,6 @@ describe("navItemsFor", () => {
       "members",
       "myRequests",
       "approvals",
-      "groups",
       "audit",
       "deviceTypes",
     ]);

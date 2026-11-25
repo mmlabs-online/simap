@@ -1,4 +1,4 @@
-# SIM-033: Ship the real room art and an in-app Credits page
+# SIM-033: Ship the bundled art package and the in-app Credits page
 
 | Field | Value |
 |---|---|
@@ -8,34 +8,35 @@
 | Areas | ui, architecture |
 | Gate | none |
 | Depends on | SIM-015.3 |
-| Needs Ming | re-scope (D64) |
+| Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
 | Claimed by | — |
 | PR | — |
 
 ## Goal
-Production shows the licence-checked room art instead of placeholders, and credits its authors as the licence requires.
+Production shows the real sprites of the bundled package (the library behind the map item catalog, D66) instead of placeholders, and credits its authors as the licence requires.
 
 ## Scope reference
-- D45 (in-app Credits page), D54, D55, D58; M-9, M-10; `assets/art/CREDITS.md`.
+- D45 (Credits page), D54, D55, D58, D64, D66 (point 5: committing the packed atlas is allowed, Ming 2026-11-25); `assets/art/CREDITS.md`.
 
 ## Scope
-- Deliver the real atlas to the production build in the way Ming chooses in M-10.
+- Commit the packed atlas of the licensed pack so the production build shows real sprites; placeholders stay for keys without a source.
+- The package sprite list (used by the SIM-039.6 sprite browser) is exactly the bundled keys.
 - An in-app Credits page listing each pack's author, source and licence from `assets/art/CREDITS.md`.
 
 ## Out of scope
+- Per-item art choice and custom images (SIM-039.x).
 - Recolouring or drawing new sprites (phase 2, D54).
-- Changing the repository's visibility, which is Ming's step (M-10).
 
 ## Acceptance criteria
 - [ ] A production image shows the real art for every key that has a source, and placeholders for the rest.
-- [ ] The way the art reaches the build follows the M-10 decision and the pack's licence.
+- [ ] The packed atlas is committed to the repo (D66 point 5) and the pack's licence screenshot and credits row are in place.
 - [ ] The Credits page shows the exact attribution text for every third-party pack in use.
-- [ ] CI still passes on a machine without the original sheets, unless M-10 makes them available.
+- [ ] CI builds from the committed atlas without the original sheets.
 
 ## Technical notes
-- The planner re-reads M-10 first, because the delivery depends on its answer.
+- M-9/M-10 are closed by D64/D66; delivery = commit the packed atlas. Check `Dockerfile`/`.dockerignore` only if the atlas path needs it (High path).
 - Files: to be set by the plan.
 
 ## Test plan
@@ -43,6 +44,7 @@ Production shows the licence-checked room art instead of placeholders, and credi
 - Manual: build the image and open a room map and the Credits page.
 
 ## Notes / answers from Ming
+- 2026-11-25: re-scoped to D66 (bundled package committed; per-item art moves to SIM-039.x).
 - 2026-11-25: D64 replaces the single-pack plan (M-9/M-10 not needed). Re-scope this ticket before running it: Admins pick art per item from a bundled package or a custom image.
 - 2026-11-22 (D58): created from the art review. Waits for M-10.
 
