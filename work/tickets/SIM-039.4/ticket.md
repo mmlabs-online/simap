@@ -58,3 +58,9 @@ Admins upload a PNG per direction for any catalog item (walls and windows includ
 - Done: map item image route (PUT/DELETE Admin, GET member), size rule per item and direction, per-direction compare-and-set, shared Drive helpers with device-type behaviour unchanged. Review PASS on attempt 1, security no 🔴 (two 🟡); PR https://github.com/mmlabs-online/simap/pull/98.
 - In progress / next: Ming decides where to fix the cross-org ETag 🟡 (here or 039.5/039.6); bug ticket for the 9 pre-existing test:db failures.
 - Gotchas: test:db on main has 9 failures (handoffs ×7, devices ×1, members ×1); 039.6 needs map-item image error copy.
+
+### 2026-11-25 — claude — DONE (attempt 2)
+- Agent calls: 3 more (implementer×1 39k, reviewer×1 34k, security-ai-generated-code-auditor×1 30k; default models)
+- Done: org-specific image ETag (`mapItemEtag`, sha256(orgId) prefix) and `Vary: Authorization`, with a DB test that org B never gets 304 for org A's tag (Ming's request). Review attempt 2 PASS, security 🟡 2 fixed; PR https://github.com/mmlabs-online/simap/pull/98 updated.
+- In progress / next: Ming merges #98; SIM-039.5 / 039.6 next (P1, plan approval).
+- Gotchas: security 🟡 1 (`toDto` null path) still open as a follow-up; 9 pre-existing test:db failures on main need a bug ticket.
