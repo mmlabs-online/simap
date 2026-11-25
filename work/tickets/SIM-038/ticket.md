@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P2 |
 | Size | XS |
 | Areas | security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T04:11:29Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -41,4 +41,12 @@ D61; `docs/requests/deployment-simap-drive.md`; `deploy/deployment-repo/README.m
 ## Notes / answers from Ming
 - 2026-11-25 (orchestrator): `Needs Ming: M-51` was a wrong reference (M-51 is the SIM-037.1 plan approval). The real blocker, the merged deployment-repo file, is now readable: `mmlabs-online/deployment` was added to the session read-only (main @ 29cb93f, PR #109 merged). Ming asked to run this ticket (2026-11-25).
 
+- Waiting for Ming: plan approval (High tier)
+
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 1 (planner×1 default 52k; no consult: area security has no consult row)
+- Done: plan READY (`plan.md`): copy the merged deploy-simap.yml byte-for-byte, add a README note on the four `SIMAP_*` secrets, and update `scripts/deploy-envfile.test.ts` (A1) because its static check forbids `${{ secrets.`.
+- In progress / next: Ming approves the plan (M-56), then implement and review.
+- Gotchas: the draft workflow lives in hidden `.github/` (A5); if oxfmt flags the copied YAML, stop instead of reformatting (A2).
