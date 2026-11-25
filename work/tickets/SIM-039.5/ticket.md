@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T13:19:54Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -43,5 +43,13 @@ The editor's "Add items" palette and both maps show the org's catalog: names, gr
 
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
+- 2026-11-25 (orchestrator): planner split the ticket. This ticket is slice 1 (palette and editor sizes from the catalog, AC 1 and AC 3). Art rendering, image loading and the image draw op (AC 2) move to SIM-039.8.
+- Waiting for Ming: plan approval (P1 gate)
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 2 (frontend-developer×1 75k, planner×1 135k; default models)
+- Done: plan READY (slice 1): `catalogPalette` from GET /api/map-items, editor `footprints` lookup from layout items + palette, geometry functions take the lookup, `MapView.items`, map-items API client and hook. Split: art rendering → SIM-039.8 (added to the board).
+- In progress / next: Ming approves A1-A9 (M-71), then implement and review.
+- Gotchas: A5 group headings show raw library group keys until renamed; AC2 wording conflicts with the spec fallback chain (spec wins, reword in 039.8).
