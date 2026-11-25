@@ -70,7 +70,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-036.6 | Device type images in the admin page | PLANNING | P2 | M | ui, ux | SIM-036.3 | none | 0 | 2026-11-25 |
 | SIM-036.4 | Draw catalog device images and slots on the map | BACKLOG | P2 | S | ui | SIM-036.2, SIM-036.5 | none | 0 | 2026-11-24 |
 | SIM-037.1 | Device lifecycle schema and unowned devices | MERGED | P1 | M | db, api, security | — | plan-approval | 1 | 2026-11-25 |
-| SIM-037.2 | Assign from org inventory and new device fields | PLANNING | P1 | M | api, ui | SIM-037.1 | plan-approval | 0 | 2026-11-25 |
+| SIM-037.2 | Assign from org inventory and new device fields | BLOCKED | P1 | M | api, ui | SIM-037.1 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.3 | Transfer a device with recipient confirmation | BACKLOG | P1 | M | api, ui, security | SIM-037.2 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.4 | Return a device to the org inventory with Admin confirmation | BACKLOG | P1 | M | api, ui, security | SIM-037.3 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.5 | Overdue badge, reminder and extension request | BACKLOG | P2 | S | api, ui | SIM-037.2, SIM-037.3 | none | 0 | 2026-11-25 |
