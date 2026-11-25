@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T02:38:50Z |
 | PR | — |
 
 ## Goal
@@ -48,7 +48,7 @@ docs/spec-v1.md §4 Device and DeviceHandoff, §5 invariant 5, §6 DEV-01 (creat
 ## Notes / answers from Ming
 Ming 2026-11-25: "lên ticket và làm luôn".
 
-Waiting for Ming: plan approval (High tier)
+Plan approved (2026-11-25, Ming: "ok") with assumptions A1-A12 as written.
 
 ## Handoff
 
