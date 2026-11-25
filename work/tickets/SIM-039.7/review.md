@@ -93,3 +93,46 @@ Reviewed commit 36ad730 (`git diff origin/main...HEAD`, branch `claude/modest-al
   (`device_handoffs_decided_check`) and `members/manage.db.test.ts` deactivate-with-release (`cancelledHandoffs` key).
   Likely from the SIM-037.x handoff changes; needs its own BUG ticket.
 - Plan A9: pick not shown in the device types list thumbnail, Devices page or seat popup.
+
+## Attempt 2 — 2026-11-25
+Verdict: PASS
+
+Reviewed HEAD b040224 (fix commit 46d3706). `git diff --stat 36ad730..HEAD`: only
+`src/ui/deviceTypes/device-type-form.test.ts` (+17) and `work/tickets/SIM-039.7/*` changed; no product, server, SQL or
+migration file changed since attempt 1, so the attempt-1 DB check results stand.
+
+### Checks (run by reviewer)
+- `pnpm typecheck` — exit 0.
+- `pnpm check:layers` — exit 0, "check-layers: 805 files, no violations".
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm test` — exit 0, "Test Files 306 passed | 1 skipped (307); Tests 3089 passed | 7 skipped (3096)" (+1 test vs
+  attempt 1, the new one). `device-type-form.test.ts` alone: 8 passed.
+- `pnpm build` — exit 0.
+- Implementer's numbers in impl-log.md Attempt 2 match my runs.
+
+### Issue 1 (attempt 1) — fixed
+`device-type-form.test.ts:69-85` > "toPatchBody sends sprite only when changed; clear sends null" asserts all four
+requested cases against the fixture (`name "Máy in"`, `slot "other"`, `sprite null`):
+- set: form sprite `device.pc` -> `{ kind: "ok", body: { sprite: "device.pc" } }`;
+- clear: type sprite `device.pc`, form `null` -> `{ kind: "ok", body: { sprite: null } }`;
+- unchanged non-null: same sprite, name/slot unchanged -> `{ kind: "unchanged" }`;
+- name change with same non-null sprite -> `{ kind: "ok", body: { name: "Scanner" } }`, plus an explicit
+  `"sprite" in body === false` check.
+Against `device-type-form.ts:47` (`if (form.sprite !== type.sprite) changed.sprite = form.sprite;`): dropping that line
+fails the set/clear cases; always sending the sprite fails the unchanged and rename cases. The guard is now covered.
+
+### Nit (attempt 1) — fixed
+impl-log.md Attempt 2 lists `src/ui/deviceTypes/image-url-cache.test.ts` under "Out-of-plan files (correction to
+attempt 1)".
+
+### Acceptance criteria
+- 1-9 unchanged from attempt 1 (all met); criterion 7's save path is now covered by the test above.
+
+### Rules (CLAUDE.md)
+- R1-R7: no change from attempt 1; R5 now satisfied. R4: the only new change is the planned test file.
+
+### Nits (do not block)
+- None new.
+
+### Follow-ups (out of scope)
+- Same as attempt 1 (pre-existing `test:db` handoff failures on `origin/main`; plan A9 thumbnails elsewhere).
