@@ -11,8 +11,8 @@
 | Needs Ming | M-46 (go-live only) |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | claude@2026-11-25T01:03:01Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/79 |
 
 ## Goal
 An Admin can give a device type its own square image, and every member of the org can load it for the map, stored in
@@ -74,4 +74,10 @@ Waiting for Ming: plan approval (ticket Gate)
 - Done: consult (api; security has no consult agent), plan READY. No High path. Gate is `plan-approval` from the ticket.
 - In progress / next: Ming approves `plan.md` (M-50; key decision A1: no row lock across the Drive upload, compare-and-set plus 409 `image_changed`). Then `/run SIM-036.5` resumes at IMPLEMENT.
 - Gotchas: ~450 product + ~800 test lines (fallback: move the `deleteDeviceType` cleanup to a follow-up). Session branch `claude/confident-cerf-67q5le`.
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 3 this run, ~194k tokens (implementer×1 opus 84.0k, reviewer×1 opus 58.7k, security-ai-generated-code-auditor×1 opus 51.2k; per-call in/out split not reported). Whole ticket: 5 calls, ~314k.
+- Done: plan approved (M-50, Ming "1ok"); attempt 1 implemented; review PASS with all checks green incl. `pnpm test:db`; security review no 🔴/🟡. PR https://github.com/mmlabs-online/simap/pull/79.
+- In progress / next: Ming reviews and merges PR #79. Then SIM-036.3 and SIM-036.4 become runnable. Manual Drive check after M-46.
+- Gotchas: three 🟢 security suggestions are follow-ups. UI must load the image via `apiFetch` + `blob:` URL. Session branch `claude/confident-cerf-67q5le`.
 
