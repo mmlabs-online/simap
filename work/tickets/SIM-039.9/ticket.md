@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T17:03Z |
 | PR | — |
 
 ## Goal
@@ -47,7 +47,7 @@ upload or remove a custom image, or go back to the library sprite.
 ## Notes / answers from Ming
 - 2026-11-25: split from SIM-039.6 by its planner (ticket too large for one cycle).
 - 2026-11-25 (orchestrator): planner split the ticket. This ticket is slice 2a (art dialog, sprite browser as text, upload/remove with previews for custom images). Atlas previews move to SIM-039.10.
-- Waiting for Ming: plan approval (P1 gate)
+- 2026-11-25: Plan approved by Ming (A1-A14 as written).
 
 ## Handoff
 
