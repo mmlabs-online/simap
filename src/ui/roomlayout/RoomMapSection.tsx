@@ -48,6 +48,7 @@ export function RoomMapSection({ state, onRetry, onSelect, editHref, catalogImag
         layout={view.layout}
         seatViews={view.seatViews}
         seatDevices={view.seatDevices}
+        items={view.items}
         zoom={zoom}
         onZoom={setZoom}
         onSelect={onSelect}

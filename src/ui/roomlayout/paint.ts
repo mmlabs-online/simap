@@ -3,6 +3,8 @@ import { fitsCanvas } from "@/lib/sprites/zoom";
 import type { Atlas } from "./loadAtlas";
 
 const SHADOW_FILL = "rgba(32,42,58,.18)";
+const PLACEHOLDER_FILL = "#c9ccd1";
+const PLACEHOLDER_LINE = "#8a8f98";
 
 const tintCaches = new WeakMap<HTMLImageElement, Map<string, HTMLCanvasElement>>();
 
@@ -57,7 +59,7 @@ export function paintRoom(
   list: DrawList,
   zoom: number,
   createCanvas: () => HTMLCanvasElement = defaultCanvas,
-  images: (typeId: string, version: number) => CanvasImageSource | null = () => null,
+  images: (src: string, version: number) => CanvasImageSource | null = () => null,
 ): boolean {
   // Resizing resets the context state, so size first and set smoothing after.
   const w = list.bounds.w * zoom;
@@ -78,7 +80,7 @@ export function paintRoom(
       continue;
     }
     if (op.type === "image") {
-      const src = images(op.typeId, op.version);
+      const src = images(op.src, op.version);
       if (src) {
         const smooth = smoothFor(src, op.w);
         if (smooth) {
@@ -88,6 +90,19 @@ export function paintRoom(
         ctx.drawImage(src, op.x, op.y, op.w, op.h);
         if (smooth) ctx.imageSmoothingEnabled = false;
       }
+      continue;
+    }
+    if (op.type === "placeholder") {
+      // A neutral square with an outline and one hatch; painted in room coordinates, not from the atlas.
+      ctx.fillStyle = PLACEHOLDER_FILL;
+      ctx.fillRect(op.x, op.y, op.w, op.h);
+      ctx.strokeStyle = PLACEHOLDER_LINE;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(op.x + 0.5, op.y + 0.5, op.w - 1, op.h - 1);
+      ctx.beginPath();
+      ctx.moveTo(op.x, op.y + op.h);
+      ctx.lineTo(op.x + op.w, op.y);
+      ctx.stroke();
       continue;
     }
     const frame = atlas.manifest.frames[op.key];

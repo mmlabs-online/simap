@@ -1,5 +1,6 @@
 import { ApiAccessError, type ApiFetch } from "@/lib/api/fetch";
 import type { MapItemDto, MapItemPatchValue } from "@/lib/map-items/types";
+import type { Direction } from "@/lib/sprites/types";
 
 export type MapItemsResult<T> =
   | { ok: true; value: T }
@@ -65,6 +66,15 @@ export function createMapItemsApi(fetcher: ApiFetch) {
           body: JSON.stringify(value),
         },
         json,
+      ),
+    getArtImage: (key: string, dir: Direction) =>
+      call<Blob>(
+        `${base}/${encodeURIComponent(key)}/art/${dir}/image`,
+        { method: "GET" },
+        async (res) => {
+          const blob = await res.blob();
+          return blob.type.startsWith("image/png") ? { ok: true, value: blob } : fail("internal");
+        },
       ),
     reset: (key: string) =>
       call(`${base}/${encodeURIComponent(key)}/reset`, { method: "POST" }, json),

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import {
   ZOOM_LEVELS,
+  type LayoutItem,
   type RoomLayout,
   type SeatDevice,
   type SeatView,
@@ -45,6 +46,8 @@ type Props = {
   onSelect?: (seatCode: string) => void;
   /** Catalog device images from `useCatalogImages`; without it every catalog image draws as the placeholder. */
   catalogImages?: CatalogImages;
+  /** The layout's catalog rows (`LayoutResponse.items`); without them every item draws its built-in frame. */
+  items?: readonly LayoutItem[];
 };
 
 /** Canvas art plus an HTML seat overlay. Loads `/sprites/office.png|json`; a bad atlas shows an error view. */
@@ -56,6 +59,7 @@ export function RoomMap({
   onZoom,
   onSelect,
   catalogImages,
+  items,
 }: Props) {
   const { atlas, failed, setFailed } = useAtlas();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -63,9 +67,12 @@ export function RoomMap({
   const list = useMemo(
     () =>
       atlas
-        ? buildDrawList(layout, seatViews, atlas.manifest, seatDevices, catalogImages?.ready)
+        ? buildDrawList(layout, seatViews, atlas.manifest, seatDevices, catalogImages?.ready, {
+            items,
+            image: catalogImages?.itemSize,
+          })
         : null,
-    [atlas, layout, seatViews, seatDevices, catalogImages?.version],
+    [atlas, layout, seatViews, seatDevices, items, catalogImages?.version],
   );
 
   const allowed = useMemo(() => (list ? allowedZooms(list.bounds) : []), [list]);
@@ -77,7 +84,7 @@ export function RoomMap({
     if (!paintRoom(canvas, atlas, list, effective, undefined, catalogImages?.source)) {
       setFailed(true);
     }
-  }, [atlas, list, effective, setFailed]);
+  }, [atlas, list, effective, setFailed, catalogImages]);
 
   if (failed) return <RoomMapStatus status="error" />;
   if (!atlas || !list) return <RoomMapStatus status="loading" />;

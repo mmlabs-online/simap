@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { roomEditorHref } from "@/lib/nav";
+import { placedArtEntries } from "@/lib/sprites/item-art";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { Card } from "../Card";
 import { seatsCopy } from "../copy/seats";
@@ -62,7 +63,12 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
   );
   const roomId = resolution.kind === "found" ? resolution.room.id : null;
   const map = useRoomLayout(seatsApi, roomId);
-  const catalogImages = useCatalogImages(map.state.view?.seatDevices);
+  const mapView = map.state.view;
+  const art = useMemo(
+    () => (mapView ? placedArtEntries(mapView.layout, mapView.items) : undefined),
+    [mapView],
+  );
+  const catalogImages = useCatalogImages(mapView?.seatDevices, art);
   const reloadMap = map.reload;
   const refreshAll = useCallback(
     () => Promise.all([refresh(), reloadMap()]).then(() => undefined),

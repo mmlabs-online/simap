@@ -96,3 +96,38 @@ describe("map-items-api writes", () => {
     expect(await bad.api.patch("k", { w: 1 })).toEqual({ ok: false, code: "internal" });
   });
 });
+
+describe("map-items-api getArtImage", () => {
+  const png = () => new Response(new Blob(["x"], { type: "image/png" }), { status: 200 });
+
+  it("GETs the encoded key and direction and returns the blob", async () => {
+    const a = api(png);
+    const r = await a.api.getArtImage("plant large/x", "e");
+    expect(r.ok).toBe(true);
+    expect(a.calls[0][0]).toBe("/api/map-items/plant%20large%2Fx/art/e/image");
+    expect(a.calls[0][1]?.method).toBe("GET");
+  });
+
+  it("a non-png body is not ok; a 404 code is returned", async () => {
+    expect(await api(() => new Response("x", { status: 200 })).api.getArtImage("k", "s")).toEqual({
+      ok: false,
+      code: "internal",
+    });
+    expect(
+      await api(() => jsonRes({ error: { code: "not_found" } }, 404)).api.getArtImage("k", "s"),
+    ).toEqual({ ok: false, code: "not_found" });
+  });
+
+  it("never throws: signed_out and a fetch failure", async () => {
+    const t = (e: unknown) =>
+      createMapItemsApi((async () => Promise.reject(e)) as unknown as ApiFetch);
+    expect(await t(new ApiAccessError("signed_out")).getArtImage("k", "s")).toEqual({
+      ok: false,
+      code: "unauthenticated",
+    });
+    expect(await t(new Error("net")).getArtImage("k", "s")).toEqual({
+      ok: false,
+      code: "unavailable",
+    });
+  });
+});

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import {
   editorFlags,
+  editorItems,
   editorReducer,
   initEditor,
   savePayload,
@@ -10,7 +11,9 @@ import {
 import { catalogPalette } from "@/lib/layout-editor/palette";
 import { runSave } from "@/lib/layout-editor/save-run";
 import { isTextField, keyAction } from "@/lib/layout-editor/shortcuts";
+import { draftToRoomLayout } from "@/lib/layout-editor/draft";
 import { roomDetailHref } from "@/lib/nav";
+import { placedArtEntries, type ItemArtEntry } from "@/lib/sprites/item-art";
 import type { Zoom } from "@/lib/sprites/layout";
 import type { MapView } from "@/lib/sprites/map-view";
 import { roomlayoutCopy } from "../copy/roomlayout";
@@ -35,6 +38,8 @@ type Props = {
   palette: Pick<MapItemsState, "status" | "items" | "reload">;
   /** Refetches the layout; the page remounts this editor with the new view. */
   onReload: () => void;
+  /** The custom images the draft shows, called when the set changes (the page loads them). */
+  onArtEntries?: (entries: readonly ItemArtEntry[]) => void;
 };
 
 /** The editor for one loaded layout: draft state, the save flow and the leave guard. */
@@ -46,6 +51,7 @@ export function LayoutEditor({
   catalogImages,
   palette,
   onReload,
+  onArtEntries,
 }: Props) {
   const [state, dispatch] = useReducer(editorReducer, view, (v: MapView) =>
     initEditor(v, palette.items),
@@ -60,6 +66,20 @@ export function LayoutEditor({
     () => new Map([...palette.items, ...view.items].map((i) => [i.builtinKey, i.name])),
     [palette.items, view.items],
   );
+  const artItems = useMemo(
+    () => editorItems(state.layoutItems, state.palette),
+    [state.layoutItems, state.palette],
+  );
+  const entries = useMemo(
+    () => placedArtEntries(draftToRoomLayout(state.history.present), artItems),
+    [state.history.present, artItems],
+  );
+  const entriesKey = entries.map((e) => `${e.id}@${e.imageVersion}`).join(",");
+  const entriesRef = useRef(entries);
+  entriesRef.current = entries;
+  useEffect(() => {
+    onArtEntries?.(entriesRef.current);
+  }, [entriesKey, onArtEntries]);
   const flags = editorFlags(state);
   const saving = state.save.status === "saving";
   const guard = useLeaveGuard(flags.dirty);
@@ -176,6 +196,7 @@ export function LayoutEditor({
           frozen={frozen}
           onAction={dispatch}
           catalogImages={catalogImages}
+          items={artItems}
           footprints={state.footprints}
         />
         <div className="flex flex-col gap-4">

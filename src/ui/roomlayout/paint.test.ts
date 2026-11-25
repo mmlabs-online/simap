@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { RoomLayout } from "@/lib/sprites/layout";
-import { buildDrawList } from "@/lib/sprites/placement";
+import { buildDrawList, type DrawOp } from "@/lib/sprites/placement";
 import type { SpriteManifest } from "@/lib/sprites/types";
 import type { Atlas } from "./loadAtlas";
 import { paintRoom, smoothFor, tintedFrame } from "./paint";
@@ -104,7 +104,7 @@ describe("paintRoom catalog images", () => {
     list.ops.push({
       type: "image",
       layer: "furniture",
-      typeId: "t1",
+      src: "t1",
       version: 2,
       x: 10,
       y: 12,
@@ -156,6 +156,56 @@ describe("paintRoom catalog images", () => {
     const log: Call[] = [];
     expect(paintRoom(fakeCanvas(log), atlas(), withImage(), 2)).toBe(true);
     expect(log.some((c) => c[0] === "drawImage" && c[4] === 24)).toBe(false);
+  });
+});
+
+describe("paintRoom item art", () => {
+  const listWith = (op: DrawOp) => {
+    const list = buildDrawList(layout, {}, manifest);
+    list.ops.push(op);
+    return list;
+  };
+  const rect = { x: 40, y: 8, w: 32, h: 64 };
+
+  it("an item image draws once at its box 1:1 with smoothing off", () => {
+    const log: Call[] = [];
+    const src = { naturalWidth: 32 } as unknown as CanvasImageSource;
+    const list = listWith({
+      type: "image",
+      layer: "furniture",
+      src: "item:a|s",
+      version: 1,
+      ...rect,
+    });
+    paintRoom(fakeCanvas(log), atlas(), list, 2, undefined, () => src);
+    expect(log.filter((c) => c[0] === "drawImage" && c[1] === src)).toEqual([
+      ["drawImage", src, 40, 8, 32, 64],
+    ]);
+    expect(log).not.toContainEqual(["set imageSmoothingEnabled", true]);
+  });
+
+  it("a placeholder paints fill, outline and hatch, and no image", () => {
+    const log: Call[] = [];
+    const list = listWith({ type: "placeholder", layer: "furniture", ...rect });
+    expect(paintRoom(fakeCanvas(log), atlas(), list, 2)).toBe(true);
+    expect(log).toContainEqual(["fillRect", 40, 8, 32, 64]);
+    expect(log).toContainEqual(["strokeRect", 40.5, 8.5, 31, 63]);
+    expect(log).toContainEqual(["lineTo", 72, 8]);
+    expect(log.some((c) => c[0] === "drawImage" && c[2] === 40)).toBe(false);
+  });
+
+  it("a missing image source draws nothing and later ops still paint", () => {
+    const log: Call[] = [];
+    const list = listWith({
+      type: "image",
+      layer: "furniture",
+      src: "item:a|s",
+      version: 1,
+      ...rect,
+    });
+    list.ops.push({ type: "placeholder", layer: "furniture", x: 0, y: 0, w: 32, h: 32 });
+    expect(paintRoom(fakeCanvas(log), atlas(), list, 2)).toBe(true);
+    expect(log).toContainEqual(["fillRect", 0, 0, 32, 32]);
   });
 });
 

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SeatDevice, SeatDeviceType } from "@/lib/sprites/layout";
+import type { ItemArtEntry } from "@/lib/sprites/item-art";
 import { createCatalogImages } from "./catalog-images";
 
 const type = (over: Partial<SeatDeviceType> = {}): SeatDeviceType => ({
@@ -81,5 +82,83 @@ describe("createCatalogImages", () => {
     c.dispose();
     expect(revoke).toHaveBeenCalledWith("blob:1");
     expect(c.ready(type())).toBe(false);
+  });
+});
+
+describe("createCatalogImages items", () => {
+  const entry = (key: string, dir: ItemArtEntry["dir"], imageVersion = 1): ItemArtEntry => ({
+    id: `item:${key}|${dir}`,
+    key,
+    dir,
+    hasImage: true,
+    imageVersion,
+  });
+  const sized = { naturalWidth: 32, naturalHeight: 64 } as unknown as CanvasImageSource;
+  const setupItems = () => {
+    const load = vi.fn(async (_id: string) => new Blob(["x"]));
+    const revoke = vi.fn();
+    let n = 0;
+    const c = createCatalogImages({
+      load,
+      create: () => `blob:${++n}`,
+      revoke,
+      decode: async () => sized,
+      onChange: () => {},
+    });
+    return { c, load, revoke };
+  };
+
+  it("loads once per key, direction and version; two directions load twice", async () => {
+    const { c, load } = setupItems();
+    c.sync({}, [entry("plant.large", "s"), entry("plant.large", "e")]);
+    c.sync({}, [entry("plant.large", "s"), entry("plant.large", "e")]);
+    await flush();
+    expect(load.mock.calls.map((a) => a[0]).sort()).toEqual([
+      "item:plant.large|e",
+      "item:plant.large|s",
+    ]);
+  });
+
+  it("a version bump revokes and reloads; a removed entry is revoked", async () => {
+    const { c, load, revoke } = setupItems();
+    c.sync({}, [entry("a", "s")]);
+    await flush();
+    c.sync({}, [entry("a", "s", 2)]);
+    await flush();
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(revoke).toHaveBeenCalledWith("blob:1");
+    c.sync({}, []);
+    expect(revoke).toHaveBeenCalledWith("blob:2");
+  });
+
+  it("a failed load stays failed until the version changes", async () => {
+    const load = vi.fn(async () => null);
+    const c = createCatalogImages({
+      load,
+      create: () => "blob:1",
+      revoke: () => {},
+      decode: async () => sized,
+      onChange: () => {},
+    });
+    c.sync({}, [entry("a", "s")]);
+    await flush();
+    c.sync({}, [entry("a", "s")]);
+    await flush();
+    expect(load).toHaveBeenCalledTimes(1);
+    expect(c.itemSize("a", "s", 1)).toBeNull();
+    c.sync({}, [entry("a", "s", 2)]);
+    await flush();
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
+  it("devices and items share one cache; itemSize is the natural size for the matching version", async () => {
+    const { c, load } = setupItems();
+    c.sync(devices(type()), [entry("a", "s", 3)]);
+    await flush();
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(c.ready(type())).toBe(true);
+    expect(c.itemSize("a", "s", 3)).toEqual({ w: 32, h: 64 });
+    expect(c.itemSize("a", "s", 2)).toBeNull();
+    expect(c.itemSize("a", "n", 3)).toBeNull();
   });
 });
