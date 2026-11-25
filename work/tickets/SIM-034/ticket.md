@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | REWORK |
 | Priority | P1 |
 | Size | S |
 | Areas | security, architecture |
 | Gate | plan-approval |
 | Depends on | — |
 | Needs Ming | M-24 |
-| Attempts | 1 |
+| Attempts | 2 |
 | Created | 2026-11-23 |
 | Claimed by | — |
 | PR | https://github.com/mmlabs-online/simap/pull/108 |
@@ -47,6 +47,7 @@ D60 (supersedes, for simap, "app code never runs on the home server"); D8 (deplo
 ## Notes / answers from Ming
 Waiting for Ming: plan approval (High tier) — M-74 (first filed as M-73; renumbered, that number went to SIM-039.8).
 Plan approved (2026-11-26, Ming: "Duyệt, dùng mặc định" — Q1–Q7 take the plan's defaults).
+Extra rework allowed (2026-11-26, Ming: "Cho thêm 1 rework trên PR #108"): the first real CI run on MacBookPro (run 45664740286) failed `pnpm test` in `scripts/dev-process.test.ts` (2 tests, owner() "unknown" instead of "owned"); later steps were skipped.
 - 2026-11-25: M-24 done (Ming: the runner is allowed for simap).
 - 2026-11-23: run on the existing macbook-runner (not a separate runner instance), and move all workflows including release (D60).
 
