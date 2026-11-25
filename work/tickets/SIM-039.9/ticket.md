@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REWORK |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -56,3 +56,9 @@ upload or remove a custom image, or go back to the library sprite.
 - Done: plan READY (slice 2a, ~480 product lines): API putArt/putImage/deleteImage, pure art helpers and upload precheck with map-item error copy, page-level image cache, art dialog with per-direction panels, inline text sprite browser, row Art button, Customised badge and thumbnail. Split: atlas previews → SIM-039.10 (added to the board).
 - In progress / next: Ming approves A1-A14 (M-74), then implement and review.
 - Gotchas: the image hook and dialog wiring have no unit tests (no DOM in Vitest; jsdom not allowed) — reviewer checks a local run.
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 4 (implementer×2, reviewer×2; default models). No security audit (UI only, no trigger paths).
+- Done: slice 2a built: API putArt/putImage/deleteImage, art helpers and upload precheck with map-item copy, page image cache, art dialog per direction, inline text sprite browser, row Art button, Customised badge, thumbnail. Review attempt 1 REWORK (not_found reload, dialog reopening after Retry, focus return after picking a sprite, "South" in non-directional size error); attempt 2 PASS. Checks green (3053 tests, build ok).
+- In progress / next: Ming merges the PR; manual click-through (pick sprite, upload/remove per direction) after merge. Then SIM-039.10 / SIM-039.7.
+- Gotchas: product code ~750 lines vs ~480 estimate (dialog JSX). Dialog/hook wiring has no DOM tests. Follow-ups: dead `useMapItems.ts`; consider a DOM test layer (needs Ming's decision, jsdom not allowed today).
