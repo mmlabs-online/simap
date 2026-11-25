@@ -35,7 +35,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-009 | Invite people to an org | MERGED | P1 | M | security, ui, api | SIM-007 | none | 1 | 2026-11-22 |
 | SIM-009.2 | Accept-invitation page | MERGED | P1 | M | security, ui | SIM-009 | none | 1 | 2026-11-22 |
 | BUG-001 | `pnpm test:db` red on main after SIM-037.2 (devices uniqueness, CSV export columns) | MERGED | P0 | XS | db | — | none | 1 | 2026-11-25 |
-| BUG-002 | Starting a transfer, return or extension always fails (orgQuery guard rejects the insert) | DONE | P0 | XS | api, db | — | none | 0 | 2026-11-25 |
+| BUG-002 | Starting a transfer, return or extension always fails (orgQuery guard rejects the insert) | MERGED | P0 | XS | api, db | — | none | 0 | 2026-11-25 |
 | SIM-034 | Run simap's GitHub Actions on the Mac self-hosted runner | BACKLOG | P1 | S | security, architecture | — | plan-approval | 0 | 2026-11-23 |
 | SIM-011 | Members page, profile fields and deactivation | MERGED | P1 | M | api, ui, security | SIM-007 | plan-approval | 1 | 2026-11-22 |
 | SIM-024 | Sprite atlas, manifest, placeholder art and map renderer | MERGED | P1 | M | ui, architecture | SIM-003 | none | 1 | 2026-11-21 |
@@ -91,7 +91,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-037.10 | Devices UI: return dialog, pending returns and Admin take-back | MERGED | P1 | M | ui, ux | SIM-037.4 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.5 | Overdue badge, reminder and extension request | MERGED | P2 | S | api, ui | SIM-037.2, SIM-037.3 | none | 1 | 2026-11-25 |
 | SIM-037.11 | Devices UI: overdue chip and filter, owner banner, extension requests | MERGED | P2 | M | ui, ux | SIM-037.5 | none | 1 | 2026-11-25 |
-| SIM-037.12 | Devices UI: pending extensions for Manager+ | BACKLOG | P2 | S | ui | SIM-037.11 | none | 0 | 2026-11-25 |
+| SIM-037.12 | Devices UI: pending extensions for Manager+ | PLANNING | P2 | S | ui | SIM-037.11 | none | 0 | 2026-11-25 |
 | SIM-037.6 | Device detail page with history | MERGED | P2 | M | ui, api, ux | SIM-037.4, SIM-037.5 | none | 0 | 2026-11-25 |
 | SIM-037.13 | Device detail page: viewer actions | BACKLOG | P2 | M | ui, ux | SIM-037.6 | none | 0 | 2026-11-25 |
 | SIM-014 | Seat requests: state machine and write API | MERGED | P1 | M | api | SIM-012 | plan-approval | 1 | 2026-11-24 |
