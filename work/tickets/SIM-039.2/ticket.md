@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T07:42:54Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -41,5 +41,12 @@ Admins rename, regroup, reorder, hide/show, reset, pick a package sprite per dir
 
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
+- Waiting for Ming: plan approval (P1 gate)
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 2 (api-platform-engineer×1 47k, planner×1 119k; default models)
+- Done: plan READY (`plan.md`): admin routes PATCH /api/map-items/[key], PUT .../art/[dir], POST .../reset; new codes item_in_use (with rooms), item_fixed_size, item_name_taken, sprite_not_allowed; lock rules; audited writes; Drive cleanup after a resize or reset. No migration, no High path.
+- In progress / next: Ming approves A1-A9 (M-64), then implement and review.
+- Gotchas: audit entity_id is a uuid, so the key goes in meta.key; apiError (High path) left alone, routes build the item_in_use body; sibling notes for 039.3 (for key share), 039.4 (compare w/h), 039.6, 039.7.
