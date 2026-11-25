@@ -15,8 +15,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-25T18:26:06Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/114 |
 
 ## Report
 Found by the orchestrator on the first full `image` job run on MacBookPro (PR #110, 2026-11-26). Ming: "làm tiếp" after the finding was reported.
@@ -56,3 +56,9 @@ Found by the orchestrator on the first full `image` job run on MacBookPro (PR #1
 ## Notes / answers from Ming
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 4, tokens ~90k total (in/out split not reported): planner×1 sonnet 23k (fast lane), implementer×1 25k, reviewer×1 sonnet 25k, security-ai-generated-code-auditor×1 17k.
+- Done: the safety check now matches the production env path, not the runner home. The regression test fails on main's ci.yml (re-run by the reviewer). Review and security PASS. PR #114.
+- In progress / next: this PR's own CI run on MacBookPro verifies AC3 (`compose config` green). Ming merges #114 and #110; main CI should then be fully green.
+- Gotchas: the "exactly one production literal" test forced the `prod=` variable approach.
