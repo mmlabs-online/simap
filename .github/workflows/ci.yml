@@ -93,12 +93,13 @@ jobs:
           # Dummy, non-secret values on a temp copy of the compose file: `config` creates and stops nothing, and
           # the production env file and project are never referenced.
           d="$RUNNER_TEMP/compose-ci"
+          prod=/Users/mingming/.config/simap
           mkdir -p "$d"
           printf 'SIMAP_IMAGE=mingming21400/simap:v0.0.0@sha256:%064d\n' 0 > "$d/release.env"
           echo 'DATABASE_URL=postgres://ci:ci@postgres:5432/simap' > "$d/simap.env"
-          sed "s|/Users/mingming/.config/simap/simap.env|$d/simap.env|g" deploy/deployment-repo/apps/simap/compose.yml > "$d/compose.yml"
+          sed "s|$prod/simap.env|$d/simap.env|g" deploy/deployment-repo/apps/simap/compose.yml > "$d/compose.yml"
           grep -qF "env_file: $d/simap.env" "$d/compose.yml"
-          if grep -q /Users/mingming "$d/compose.yml"; then
+          if grep -qF "$prod" "$d/compose.yml"; then
             echo "::error::compose copy still names the production host path"; exit 1
           fi
           compose=(docker compose -p simap-ci -f "$d/compose.yml")
