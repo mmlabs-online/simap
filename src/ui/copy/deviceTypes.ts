@@ -20,7 +20,7 @@ export const deviceTypesCopy = {
     replace: "Choose another PNG",
     remove: "Remove image",
     keepCurrent: "Keep current image",
-    hint: `PNG, ${IMAGE_LIMITS.px} x ${IMAGE_LIMITS.px} px, up to ${IMAGE_LIMITS.maxBytes / 1024} KB`,
+    hint: `PNG, square, ${IMAGE_LIMITS.minPx} x ${IMAGE_LIMITS.minPx} to ${IMAGE_LIMITS.maxPx} x ${IMAGE_LIMITS.maxPx} px, up to ${IMAGE_LIMITS.maxBytes / 1024} KB`,
     pendingRemove: "The image will be removed when you save.",
     imageSaveFailed: "The type was saved, but the image was not. ",
     readFailed: "The file could not be read. Pick it again.",

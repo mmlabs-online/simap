@@ -16,7 +16,7 @@ export type DrawOp =
   | ({ type: "shadow"; layer: "shadow" } & Rect)
   | ({ type: "image"; layer: Layer; typeId: string; version: number } & Rect);
 
-/** Catalog device images are drawn 1:1 at this size. */
+/** The slot box: every catalog image (24-100 px, D68) is drawn scaled to this square. */
 export const DEVICE_IMAGE = 24;
 
 /** Desk footprint in pixels (room coordinates), for the seat buttons. */

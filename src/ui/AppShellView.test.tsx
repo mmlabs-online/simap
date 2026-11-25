@@ -70,6 +70,35 @@ describe("AppShellView", () => {
     expect(html).toContain(shellCopy.actions.signOut);
   });
 
+  describe("version", () => {
+    const withVersion = (tier: Tier | null, version: string) =>
+      renderToStaticMarkup(
+        <AppShellView
+          session={tier ? { tier, email: "a@example.invalid", orgName: "Org" } : null}
+          pathname="/"
+          actions={{}}
+          version={version}
+        >
+          <p>x</p>
+        </AppShellView>,
+      );
+
+    it("shows the version for user, manager and admin; not when signed out", () => {
+      for (const tier of ["user", "manager", "admin"] as const) {
+        const html = withVersion(tier, "v1.2.3");
+        expect(html).toContain(">v1.2.3<");
+        expect(html).toContain('title="simap release v1.2.3"');
+      }
+      expect(withVersion(null, "v1.2.3")).not.toContain("v1.2.3");
+    });
+
+    it("dev version renders dev with the development title", () => {
+      const html = withVersion("user", "dev");
+      expect(html).toContain(">dev<");
+      expect(html).toContain('title="Development build (no release tag)"');
+    });
+  });
+
   it("signed out shows the sign-in placeholder and no nav", () => {
     const html = render(null);
     expect(html).toContain(shellCopy.signedOut.title);

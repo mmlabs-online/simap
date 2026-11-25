@@ -164,7 +164,8 @@ CI runs the same check (job `image`) on every pull request.
 1. Ming pushes a branch `release/X.Y.Z` (no `v`, e.g. `release/0.1.0`) from a commit on `main` (agents never push `release/*`).
 2. The `release` workflow tags the commit, builds and pushes `mingming21400/simap:vX.Y.Z`, runs `check-image.sh` on
    the pushed digest and opens `release/simap-vX.Y.Z` on `mmlabs-online/deployment`, changing only
-   `apps/simap/release.env` (image pinned by digest). It deploys nothing itself.
+   `apps/simap/release.env` (image pinned by digest). It deploys nothing itself. The workflow passes the tag as
+   build arg `SIMAP_VERSION`, and the app header shows it (`dev` for a build without it).
 3. Ming reviews and merges that PR; `deploy-simap` on the home server backs up the databases, runs the one-shot
    `migrate` service, then replaces the app and waits for `/api/readyz`.
 4. Rollback restores the previous image; migrations are forward-only (expand, then contract).

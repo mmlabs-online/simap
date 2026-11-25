@@ -59,6 +59,7 @@ refused. Role keys registered in org-admin-api (D14):
 
 | seatMGT role | Identity org role (proposed) | Granted by | Can do (from seatMGT `features.md` + code) |
 |---|---|---|---|
+| 2026-11-25 | D68 (SIM-040): device type images may be square PNGs from 24 × 24 to 100 × 100 px, at most 100 KB; the map scales them to the slot. |
 | Admin | `simap:admin` | Super Admin, admin portal | Everything a Manager can do, plus create/edit/delete rooms and seats and edit layouts. Manages any device in the org. |
 | Manager | `simap:manager` | Invitation (admin) or admin portal | Approves or rejects seat requests. Assigns and removes occupants directly. Manages members, groups/projects and seat tags. Sees the Approvals page. Places, moves and returns any device of the org (D19). |
 | User | `simap:user` | Invitation (admin, manager) or admin portal | Views all rooms, seats, members and devices of the org. Requests an empty seat. Places, edits, transfers and returns own devices (D63). |
@@ -268,7 +269,7 @@ gives it back to the org inventory.
 - [ ] A device type is picked from the org's device type catalog or typed freely (D37, D61). Each org starts with PC,
   Laptop, Monitor, IP phone and Other.
 - [ ] An Admin manages the catalog: add, rename, change the desk slot, delete (name unique in the org, case- and
-  space-insensitive, at most 60 characters, at most 100 types; an optional 24 × 24 px PNG image, SIM-036.5, or a
+  space-insensitive, at most 60 characters, at most 100 types; an optional square PNG image, 24 × 24 to 100 × 100 px, at most 100 KB (D68), SIM-036.5, or a
   device sprite picked from the bundled package, D66; image first, then the picked sprite, then the slot's built-in
   sprite). A device's
   type matches a catalog type by name; renaming or deleting a type never changes devices, which then draw as the

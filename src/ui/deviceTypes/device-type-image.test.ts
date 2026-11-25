@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { apiErrorMessage } from "../copy/api";
 import { deviceTypesCopy } from "../copy/deviceTypes";
-import { checkImageFile, imageCheckMessage, imageFieldView } from "./device-type-image";
+import { IMAGE_LIMITS } from "@/lib/validate/png";
+import {
+  checkImageFile,
+  imageCheckMessage,
+  imageFieldView,
+  thumbRendering,
+} from "./device-type-image";
 
 const SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
@@ -75,17 +81,24 @@ describe("checkImageFile", () => {
       code: "image_bad_size",
     });
   });
-  it("size 20481 gives image_too_large and never calls arrayBuffer", async () => {
+  it("100 x 100 PNG is ok, 101 x 101 gives image_bad_size", async () => {
+    expect((await checkImageFile(fileOf(png(100, 100)))).ok).toBe(true);
+    expect(await checkImageFile(fileOf(png(101, 101)))).toEqual({
+      ok: false,
+      code: "image_bad_size",
+    });
+  });
+  it("size maxBytes+1 gives image_too_large and never calls arrayBuffer", async () => {
     const arrayBuffer = vi.fn();
-    expect(await checkImageFile({ size: 20481, arrayBuffer })).toEqual({
+    expect(await checkImageFile({ size: IMAGE_LIMITS.maxBytes + 1, arrayBuffer })).toEqual({
       ok: false,
       code: "image_too_large",
     });
     expect(arrayBuffer).not.toHaveBeenCalled();
   });
-  it("size 20480 valid PNG is ok", async () => {
-    const b = png(24, 24, 20480);
-    expect(b.length).toBe(20480);
+  it("a valid PNG padded to exactly maxBytes is ok", async () => {
+    const b = png(100, 100, IMAGE_LIMITS.maxBytes);
+    expect(b.length).toBe(IMAGE_LIMITS.maxBytes);
     expect((await checkImageFile(fileOf(b))).ok).toBe(true);
   });
   it("text bytes, JPEG header and an empty file give image_not_png", async () => {
@@ -112,6 +125,13 @@ describe("imageCheckMessage", () => {
     expect(imageCheckMessage("image_bad_size")).toBe(apiErrorMessage("image_bad_size"));
     expect(imageCheckMessage("image_too_large")).toBe(apiErrorMessage("image_too_large"));
     expect(imageCheckMessage("read_failed")).toBe(deviceTypesCopy.form.readFailed);
+  });
+});
+
+describe("thumbRendering", () => {
+  it("null, 24 and 48 are pixelated; 49 and 100 are auto", () => {
+    for (const n of [null, 24, 48] as const) expect(thumbRendering(n, 48)).toBe("pixelated");
+    for (const n of [49, 100]) expect(thumbRendering(n, 48)).toBe("auto");
   });
 });
 

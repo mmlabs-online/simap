@@ -3,7 +3,7 @@
 # git tag, builds and pushes mingming21400/simap, then opens a pull
 # request release/simap-vX.Y.Z on mmlabs-online/deployment that changes only apps/simap/release.env
 # (image pinned by digest). Merging it runs deploy-simap on macbook-runner; this workflow deploys nothing itself.
-# Copied from tudocuatui's release.yml (no version build arg). Runbook: README.md, "Release and deploy".
+# Copied from tudocuatui's release.yml (plus the SIMAP_VERSION build arg, shown in the UI, SIM-040). Runbook: README.md, "Release and deploy".
 # The deploy runs backup + migrate before replacing the app.
 #
 # Secrets in this repo:
@@ -95,6 +95,7 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ env.NAMESPACE }}/simap:${{ steps.version.outputs.tag }}
+          build-args: SIMAP_VERSION=${{ steps.version.outputs.tag }}
           provenance: false
           sbom: false
           cache-from: type=gha,scope=image

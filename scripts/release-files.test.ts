@@ -103,6 +103,10 @@ describe("release.yml", () => {
     expect(pr.match(/^ {12}echo "[A-Z_]+=/gm)).toHaveLength(2);
     expect(pr).toContain('!= "apps/$APP/release.env"');
   });
+  it("build and push passes the tag as build arg SIMAP_VERSION", () => {
+    const build = stepRun("build and push");
+    expect(build).toContain("build-args: SIMAP_VERSION=${{ steps.version.outputs.tag }}");
+  });
   it("no ${{ inside run blocks", () => {
     for (const m of release.matchAll(/^ {8}run: \|\n((?: {10}.*\n|\n)+)/gm)) {
       expect(m[1]).not.toContain("${{");
@@ -111,5 +115,22 @@ describe("release.yml", () => {
   it("deploys nothing itself: GitHub runner, no docker compose, no ssh", () => {
     expect(release).toContain("runs-on: ubuntu-latest");
     expect(release).not.toMatch(/self-hosted|docker compose|\bssh\b/);
+  });
+});
+
+describe("Dockerfile", () => {
+  const dockerfile = read("Dockerfile");
+  const froms = [...dockerfile.matchAll(/^FROM /gm)].map((m) => m.index!);
+  const buildStage = dockerfile.slice(froms[0], froms[1]);
+  const runtimeStage = dockerfile.slice(froms[1]);
+  it("ARG SIMAP_VERSION=dev only in the build stage, inline on the pnpm build RUN", () => {
+    expect(froms).toHaveLength(2);
+    expect(buildStage).toMatch(/^ARG SIMAP_VERSION=dev$/m);
+    expect(buildStage).toMatch(/^RUN NEXT_PUBLIC_SIMAP_VERSION="\$SIMAP_VERSION" .*pnpm build$/m);
+    expect(runtimeStage).not.toMatch(/^ARG /m);
+    expect(runtimeStage).not.toContain("SIMAP_VERSION");
+  });
+  it("no ENV with SIMAP or NEXT_PUBLIC", () => {
+    expect(dockerfile).not.toMatch(/^ENV .*(SIMAP|NEXT_PUBLIC)/m);
   });
 });

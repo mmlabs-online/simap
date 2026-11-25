@@ -11,8 +11,10 @@ COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
 COPY . .
-# Needs network: next/font/google fetches fonts at build time. Inline variable, never ENV.
-RUN NEXT_TELEMETRY_DISABLED=1 pnpm build
+# SIM-040: the release tag (public, shown in the UI header); `dev` when the build passes none.
+ARG SIMAP_VERSION=dev
+# Needs network: next/font/google fetches fonts at build time. Inline variables, never ENV.
+RUN NEXT_PUBLIC_SIMAP_VERSION="$SIMAP_VERSION" NEXT_TELEMETRY_DISABLED=1 pnpm build
 
 FROM node:22-bookworm-slim
 WORKDIR /app

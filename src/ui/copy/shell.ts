@@ -15,6 +15,11 @@ const devicesBreakdown = (incoming: number, returns: number) => {
 /** English strings for the app shell and the route skeletons (D36). */
 export const shellCopy = {
   brand: "simap",
+  version: {
+    label: (v: string) => v,
+    title: (v: string) =>
+      v === "dev" ? "Development build (no release tag)" : `simap release ${v}`,
+  },
   navLabel: "Main navigation",
   skipLink: "Skip to main content",
   nav: {

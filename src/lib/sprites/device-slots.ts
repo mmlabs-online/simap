@@ -65,7 +65,7 @@ export function deviceKind(type: string): DeviceKind {
   return Object.hasOwn(KINDS, norm) ? KINDS[norm] : "other";
 }
 
-/** What is drawn for a device: the built-in sprite of its kind, the square placeholder, or the catalog image (24 x 24). */
+/** What is drawn for a device: the built-in sprite of its kind, the square placeholder, or the catalog image (24-100 px, drawn in the 24 px slot box, D68). */
 export type DeviceArt =
   | { type: "sprite" }
   | { type: "placeholder" }
