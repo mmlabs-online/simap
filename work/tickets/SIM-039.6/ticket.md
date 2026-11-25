@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T14:26:34Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/103 |
 
 ## Goal
 Admins manage the catalog on one page next to Device types.
@@ -51,3 +51,9 @@ Admins manage the catalog on one page next to Device types.
 - Done: plan READY (slice 1, ~480 product lines): MapItemsPage/View, edit dialog, size editor with confirm before deleting images, in-use 409 with room count, reset dialog, nav entry (icon `chair`), API client patch/reset. Split: art per direction → SIM-039.9 (added to the board).
 - In progress / next: Ming approves A1-A11 (M-72), then implement and review.
 - Gotchas: reorder dropped (D67); slice 1 slightly over the 400-line guide (A11: reset can move to slice 2 if needed).
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 5 (frontend-developer×1 45k, ux-architect×1 43k, planner×1 127k, implementer×1 81k, reviewer×1 66k; default models; ~362k total)
+- Done: slice 1 — Map items admin page (grouped list, edit dialog with rename/regroup/hide/size, in-use warning, reset), nav entry, API client patch/reset. Review PASS on attempt 1; PR https://github.com/mmlabs-online/simap/pull/103.
+- In progress / next: SIM-039.8 (map art rendering) is runnable; SIM-039.9 (art per direction on this page) after 039.6 and 039.8 merge.
+- Gotchas: "reorder" wording in ticket/LAY-07 is stale (D67).
