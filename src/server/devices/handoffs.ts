@@ -1,6 +1,7 @@
 import "server-only";
-import type { Tier } from "@/lib/auth/tier";
+import { atLeast, type Tier } from "@/lib/auth/tier";
 import {
+  decideExtensionStart,
   decideHandoffAction,
   decideReturnStart,
   decideTransferStart,
@@ -251,6 +252,62 @@ export function startReturn(
   });
 }
 
+/** DEV-10: the owner asks for a new expiry. Lock order device, then handoff, as startReturn. */
+export function startExtension(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  tier: Tier,
+  deviceId: string,
+  v: Extract<HandoffStartValue, { kind: "extension" }>,
+): Promise<Result<HandoffDto>> {
+  return inTx(db, async (c) => {
+    const me = await actorMemberId(c, scope, actorSub);
+    const { rows: dev } = await orgQuery<{ owner_id: string | null; inventory_number: string }>(
+      c,
+      scope,
+      "select owner_id, inventory_number from devices where org_id = $1 and id = $2 for update",
+      [deviceId],
+    );
+    if (!dev[0]) throw new Abort(notFound);
+    const { rows: pending } = await orgQuery(
+      c,
+      scope,
+      "select 1 from device_handoffs where org_id = $1 and device_id = $2 and status = 'pending'",
+      [deviceId],
+    );
+    const decision = decideExtensionStart({
+      actorMemberId: me,
+      ownerId: dev[0].owner_id,
+      pending: pending.length > 0,
+    });
+    if (decision.kind === "refuse") throw refuse(decision.status, decision.code);
+    const { rows: ins } = await orgQuery<{ id: string }>(
+      c,
+      scope,
+      `insert into device_handoffs (org_id, device_id, kind, from_member_id, to_member_id, requested_by_id, note,
+         new_expires_on)
+       values ($1, $2, 'extension', $3, null, $3, $4, $5) returning id`,
+      [deviceId, me, v.note, v.newExpiresOn],
+    );
+    const id = ins[0]!.id;
+    await writeAudit(c, scope, {
+      actorSub,
+      action: "device.extension_start",
+      entity: "device",
+      entityId: deviceId,
+      meta: {
+        handoffId: id,
+        fromMemberId: dev[0].owner_id,
+        inventoryNumber: dev[0].inventory_number,
+        newExpiresOn: v.newExpiresOn,
+        note: v.note,
+      },
+    });
+    return loadOne(c, scope, tier, me, id);
+  });
+}
+
 type Lite = {
   kind: HandoffKind;
   status: HandoffStatus;
@@ -485,13 +542,74 @@ function confirmReturnOnce(
   });
 }
 
-/** Confirm: the recipient of a transfer, or an Admin for a return. Permission is checked before any lock (R7). */
+/** DEV-10: a Manager+ approves; the device expiry becomes the requested date. Placement is not touched. */
+function confirmExtensionOnce(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  tier: Tier,
+  id: string,
+  h0: LiteDevice,
+  me: string | null,
+  today: string,
+): Promise<Result<HandoffDto>> {
+  return inTx(db, async (c) => {
+    const { rows: dev } = await orgQuery<{
+      owner_id: string | null;
+      expires_on: string | null;
+      inventory_number: string;
+    }>(
+      c,
+      scope,
+      `select owner_id, to_char(holding_expires_on, 'YYYY-MM-DD') as expires_on, inventory_number
+       from devices where org_id = $1 and id = $2 for update`,
+      [h0.device_id],
+    );
+    if (!dev[0]) throw new Abort(notFound);
+    const { rows: locked } = await orgQuery<Lite & { new_expires_on: string }>(
+      c,
+      scope,
+      `select kind, status, from_member_id, to_member_id, to_char(new_expires_on, 'YYYY-MM-DD') as new_expires_on
+       from device_handoffs where org_id = $1 and id = $2 for update`,
+      [id],
+    );
+    const h = locked[0]!;
+    if (h.status !== "pending") throw refuse(409, "handoff_not_pending");
+    if (dev[0].owner_id !== h.from_member_id || h.new_expires_on <= today) {
+      throw refuse(409, "handoff_stale");
+    }
+    await orgQuery(
+      c,
+      scope,
+      "update devices set holding_expires_on = $3, updated_at = now() where org_id = $1 and id = $2",
+      [h0.device_id, h.new_expires_on],
+    );
+    await setConfirmed(c, scope, id, me);
+    await writeAudit(c, scope, {
+      actorSub,
+      action: "device.extension_confirm",
+      entity: "device",
+      entityId: h0.device_id,
+      meta: {
+        handoffId: id,
+        fromMemberId: h.from_member_id,
+        inventoryNumber: dev[0].inventory_number,
+        fromExpiresOn: dev[0].expires_on,
+        toExpiresOn: h.new_expires_on,
+      },
+    });
+    return loadOne(c, scope, tier, me, id);
+  });
+}
+
+/** Confirm: the recipient of a transfer, an Admin for a return, a Manager+ for an extension. Permission is checked before any lock (R7). */
 export async function confirmHandoff(
   db: Db,
   scope: OrgScope,
   actorSub: string,
   tier: Tier,
   id: string,
+  today: string,
 ): Promise<Result<HandoffDto>> {
   const me = await actorMemberId(db, scope, actorSub);
   const { rows: first } = await orgQuery<LiteDevice>(
@@ -513,6 +631,9 @@ export async function confirmHandoff(
     status: h0.status,
   });
   if (early.kind === "refuse") return { ok: false, status: early.status, code: early.code };
+  if (h0.kind === "extension") {
+    return confirmExtensionOnce(db, scope, actorSub, tier, id, h0, me, today);
+  }
   const once = h0.kind === "return" ? confirmReturnOnce : confirmTransferOnce;
   const r = await once(db, scope, actorSub, tier, id, h0, me);
   // the device moved between the first read and the lock: look again once (A12)
@@ -602,7 +723,10 @@ export async function takeBack(
   return r;
 }
 
-/** DEV-08: pending transfers addressed to the caller. DEV-09: org-wide pending returns (Admin). Newest first. */
+/**
+ * DEV-08: pending transfers addressed to the caller. DEV-09: org-wide pending returns (Admin).
+ * DEV-10: org-wide pending extensions (Manager+). Newest first.
+ */
 export async function listHandoffs(
   db: Query,
   scope: OrgScope,
@@ -611,16 +735,19 @@ export async function listHandoffs(
   box: HandoffBox,
 ): Promise<Result<HandoffListResponse>> {
   if (box === "returns" && tier !== "admin") return { ok: false, status: 422, code: "not_allowed" };
+  if (box === "extensions" && !atLeast(tier, "manager")) {
+    return { ok: false, status: 422, code: "not_allowed" };
+  }
   const me = await actorMemberId(db, scope, actorSub);
   if (me === null) return { ok: true, value: { items: [], truncated: false } };
   const items =
-    box === "returns"
+    box === "returns" || box === "extensions"
       ? await handoffRows(
           db,
           scope,
           tier,
           me,
-          "h.kind = 'return' and h.status = 'pending'",
+          `h.kind = '${box === "returns" ? "return" : "extension"}' and h.status = 'pending'`,
           [],
           INBOX_LIMIT + 1,
         )
@@ -644,17 +771,23 @@ export async function countHandoffs(
   scope: OrgScope,
   actorSub: string,
   tier: Tier,
+  today: string,
 ): Promise<Result<HandoffCountDto>> {
   const me = await actorMemberId(db, scope, actorSub);
-  if (me === null) return { ok: true, value: { incoming: 0, returns: 0 } };
-  const { rows } = await orgQuery<{ incoming: number; returns: number }>(
+  if (me === null) {
+    return { ok: true, value: { incoming: 0, returns: 0, extensions: 0, overdue: 0 } };
+  }
+  const { rows } = await orgQuery<HandoffCountDto>(
     db,
     scope,
     `select count(*) filter (where to_member_id = $2)::int as incoming,
-       count(*) filter (where kind = 'return' and $3::boolean)::int as returns
+       count(*) filter (where kind = 'return' and $3::boolean)::int as returns,
+       count(*) filter (where kind = 'extension' and $4::boolean)::int as extensions,
+       (select count(*)::int from devices
+         where org_id = $1 and owner_id = $2 and holding_expires_on < $5::date) as overdue
      from device_handoffs
      where org_id = $1 and status = 'pending'`,
-    [me, tier === "admin"],
+    [me, tier === "admin", atLeast(tier, "manager"), today],
   );
-  return { ok: true, value: { incoming: rows[0]!.incoming, returns: rows[0]!.returns } };
+  return { ok: true, value: rows[0]! };
 }

@@ -21,6 +21,7 @@ describe("parseDeviceQuery", () => {
     expect(q("placement=placed")).toEqual({ ok: true, value: "placed" });
     expect(q("placement=inventory")).toEqual({ ok: true, value: "inventory" });
     expect(q("placement=unowned")).toEqual({ ok: true, value: "unowned" });
+    expect(q("placement=overdue")).toEqual({ ok: true, value: "overdue" });
     expect(q("placement=")).toEqual({ ok: true, value: "all" });
     expect(q("x=1")).toEqual({ ok: true, value: "all" });
     expect(q("placement=nope")).toEqual({ ok: false, field: "placement" });
@@ -302,8 +303,10 @@ describe("validateHoldingPatch", () => {
   });
 });
 
+const TODAY = "2026-11-25";
+
 describe("validateHandoffStart", () => {
-  const ok = (o: object) => validateHandoffStart({ kind: "transfer", toMemberId: A, ...o });
+  const ok = (o: object) => validateHandoffStart({ kind: "transfer", toMemberId: A, ...o }, TODAY);
   it("accepts a transfer with and without a note", () => {
     expect(ok({})).toEqual({
       ok: true,
@@ -312,11 +315,11 @@ describe("validateHandoffStart", () => {
     expect(ok({ note: " hi " })).toMatchObject({ ok: true, value: { note: "hi" } });
   });
   it("refuses a non-object, extra keys, other kinds and bad ids", () => {
-    expect(validateHandoffStart("x")).toEqual({ ok: false, field: "body" });
+    expect(validateHandoffStart("x", TODAY)).toEqual({ ok: false, field: "body" });
     expect(ok({ extra: 1 })).toEqual({ ok: false, field: "extra" });
-    expect(ok({ kind: "extension" })).toEqual({ ok: false, field: "kind" });
+    expect(ok({ kind: "swap" })).toEqual({ ok: false, field: "kind" });
     expect(ok({ toMemberId: A.toUpperCase() })).toEqual({ ok: false, field: "toMemberId" });
-    expect(validateHandoffStart({ kind: "transfer" })).toEqual({
+    expect(validateHandoffStart({ kind: "transfer" }, TODAY)).toEqual({
       ok: false,
       field: "toMemberId",
     });
@@ -334,7 +337,7 @@ describe("validateHandoffStart", () => {
 });
 
 describe("validateHandoffStart return", () => {
-  const r = (o: object) => validateHandoffStart({ kind: "return", ...o });
+  const r = (o: object) => validateHandoffStart({ kind: "return", ...o }, TODAY);
   it("accepts a return with a note or none; blank is null", () => {
     expect(r({})).toEqual({ ok: true, value: { kind: "return", note: null } });
     expect(r({ note: "   " })).toEqual({ ok: true, value: { kind: "return", note: null } });
@@ -352,11 +355,44 @@ describe("validateHandoffStart return", () => {
   });
 });
 
+describe("validateHandoffStart extension", () => {
+  const e = (o: object) =>
+    validateHandoffStart({ kind: "extension", newExpiresOn: "2026-12-31", ...o }, TODAY);
+  it("accepts a future date with or without a note", () => {
+    expect(e({})).toEqual({
+      ok: true,
+      value: { kind: "extension", newExpiresOn: "2026-12-31", note: null },
+    });
+    expect(e({ note: " more time " })).toMatchObject({ ok: true, value: { note: "more time" } });
+  });
+  it("refuses a missing, non-string, malformed or impossible date", () => {
+    const bad = { ok: false, field: "newExpiresOn" };
+    expect(validateHandoffStart({ kind: "extension" }, TODAY)).toEqual(bad);
+    expect(e({ newExpiresOn: 20261231 })).toEqual(bad);
+    expect(e({ newExpiresOn: "31/12/2026" })).toEqual(bad);
+    expect(e({ newExpiresOn: "2026-02-30" })).toEqual(bad);
+    expect(e({ newExpiresOn: null })).toEqual(bad);
+  });
+  it("requires a date after today: yesterday and today refused, tomorrow accepted", () => {
+    const bad = { ok: false, field: "newExpiresOn" };
+    expect(e({ newExpiresOn: "2026-11-24" })).toEqual(bad);
+    expect(e({ newExpiresOn: "2026-11-25" })).toEqual(bad);
+    expect(e({ newExpiresOn: "2026-11-26" }).ok).toBe(true);
+  });
+  it("refuses toMemberId and other keys; limits the note to 500", () => {
+    expect(e({ toMemberId: A })).toEqual({ ok: false, field: "toMemberId" });
+    expect(e({ extra: 1 })).toEqual({ ok: false, field: "extra" });
+    expect(e({ note: "x".repeat(500) }).ok).toBe(true);
+    expect(e({ note: "x".repeat(501) })).toEqual({ ok: false, field: "note" });
+  });
+});
+
 describe("validateHandoffBox", () => {
   const box = (s: string) => validateHandoffBox(new URLSearchParams(s));
   it("accepts only one box, incoming or returns", () => {
     expect(box("box=incoming")).toEqual({ ok: true, value: "incoming" });
     expect(box("box=returns")).toEqual({ ok: true, value: "returns" });
+    expect(box("box=extensions")).toEqual({ ok: true, value: "extensions" });
     expect(box("box=returns&box=incoming")).toEqual({ ok: false, field: "box" });
     expect(box("")).toEqual({ ok: false, field: "box" });
     expect(box("box=outgoing")).toEqual({ ok: false, field: "box" });

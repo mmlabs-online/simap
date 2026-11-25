@@ -4,7 +4,13 @@ import { DEVICE_LIMITS } from "@/lib/devices/types";
 export const devicesCopy = {
   retry: "Try again",
   filterLabel: "Show devices",
-  filters: { all: "All", placed: "Placed", inventory: "Not placed", unowned: "Org inventory" },
+  filters: {
+    all: "All",
+    placed: "Placed",
+    inventory: "Not placed",
+    unowned: "Org inventory",
+    overdue: "Overdue",
+  },
   columns: {
     name: "Name",
     type: "Type",
@@ -212,6 +218,7 @@ export const devicesCopy = {
     placed: "No devices are placed at a seat.",
     inventory: "No devices are unplaced.",
     unowned: "No devices in the org inventory.",
+    overdue: "No overdue devices.",
   },
   showAll: "Show all devices",
   summary: (n: number, label: string) => `${n} ${n === 1 ? "device" : "devices"} · ${label}`,

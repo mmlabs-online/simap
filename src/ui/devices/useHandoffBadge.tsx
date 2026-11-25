@@ -21,7 +21,7 @@ type Badge = {
   seq: { current: number };
 };
 
-const ZERO: HandoffCountDto = { incoming: 0, returns: 0 };
+const ZERO: HandoffCountDto = { incoming: 0, returns: 0, extensions: 0, overdue: 0 };
 
 const BadgeContext = createContext<Badge | null>(null);
 

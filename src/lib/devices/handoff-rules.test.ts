@@ -4,6 +4,7 @@ import {
   canCancelHandoff,
   canStartTransfer,
   canTakeBack,
+  decideExtensionStart,
   decideHandoffAction,
   decideReturnStart,
   decideTransferStart,
@@ -244,18 +245,97 @@ describe("decideHandoffAction kind=return", () => {
       canDecline: false,
     });
   });
-  it("kind=extension refuses every action", () => {
-    for (const action of ["confirm", "decline", "cancel"] as const) {
-      expect(
-        decideHandoffAction({
-          ...a,
-          kind: "extension",
-          action,
-          tier: "admin",
-          actorMemberId: "from",
-        }),
-      ).toEqual({ kind: "refuse", status: 422, code: "not_allowed" });
+});
+
+describe("decideExtensionStart", () => {
+  const ok = { actorMemberId: "o", ownerId: "o", pending: false };
+  it("the owner may ask", () => {
+    expect(decideExtensionStart(ok)).toEqual({ kind: "ok" });
+  });
+  it("a non-owner (user or manager) and a missing member are not allowed", () => {
+    expect(decideExtensionStart({ ...ok, actorMemberId: "x" })).toEqual({
+      kind: "refuse",
+      status: 422,
+      code: "not_allowed",
+    });
+    expect(decideExtensionStart({ ...ok, actorMemberId: null })).toEqual({
+      kind: "refuse",
+      status: 422,
+      code: "not_allowed",
+    });
+  });
+  it("an unowned device is refused; a pending handoff is 409; permission comes before pending", () => {
+    expect(decideExtensionStart({ ...ok, ownerId: null })).toEqual({
+      kind: "refuse",
+      status: 422,
+      code: "device_unowned",
+    });
+    expect(decideExtensionStart({ ...ok, pending: true })).toEqual({
+      kind: "refuse",
+      status: 409,
+      code: "handoff_pending",
+    });
+    expect(decideExtensionStart({ ...ok, actorMemberId: "x", pending: true })).toMatchObject({
+      status: 422,
+      code: "not_allowed",
+    });
+  });
+});
+
+describe("decideHandoffAction extension", () => {
+  const ext = {
+    kind: "extension" as const,
+    fromId: "from",
+    toId: null,
+    status: "pending" as const,
+  };
+  const run = (action: "confirm" | "decline" | "cancel", tier: Tier, me: string | null) =>
+    decideHandoffAction({ ...ext, action, tier, actorMemberId: me }).kind === "ok";
+  it("confirm and decline: Manager and Admin only, not the owner", () => {
+    for (const action of ["confirm", "decline"] as const) {
+      expect(run(action, "manager", "x")).toBe(true);
+      expect(run(action, "admin", "x")).toBe(true);
+      expect(run(action, "user", "from")).toBe(false);
+      expect(run(action, "user", "x")).toBe(false);
+      expect(run(action, "manager", null)).toBe(false);
     }
+  });
+  it("cancel: the owner or a Manager+", () => {
+    expect(run("cancel", "user", "from")).toBe(true);
+    expect(run("cancel", "manager", "x")).toBe(true);
+    expect(run("cancel", "user", "x")).toBe(false);
+  });
+  it("is 409 when not pending, after the permission check", () => {
+    expect(
+      decideHandoffAction({
+        ...ext,
+        action: "confirm",
+        tier: "manager",
+        actorMemberId: "x",
+        status: "confirmed",
+      }),
+    ).toEqual({ kind: "refuse", status: 409, code: "handoff_not_pending" });
+    expect(
+      decideHandoffAction({
+        ...ext,
+        action: "confirm",
+        tier: "user",
+        actorMemberId: "x",
+        status: "confirmed",
+      }),
+    ).toMatchObject({ status: 422, code: "not_allowed" });
+  });
+  it("flags per role", () => {
+    expect(handoffFlags({ ...ext, tier: "manager", actorMemberId: "x" })).toEqual({
+      canCancel: true,
+      canConfirm: true,
+      canDecline: true,
+    });
+    expect(handoffFlags({ ...ext, tier: "user", actorMemberId: "from" })).toEqual({
+      canCancel: true,
+      canConfirm: false,
+      canDecline: false,
+    });
   });
 });
 

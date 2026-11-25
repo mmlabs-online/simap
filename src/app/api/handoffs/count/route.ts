@@ -1,3 +1,4 @@
+import { todayUtc7 } from "@/lib/devices/holding";
 import { countHandoffs } from "@/server/devices/handoffs";
 import { getPool } from "@/server/db/pool";
 import { apiError } from "@/server/http/respond";
@@ -9,7 +10,7 @@ export const GET = withAuth(
   async (_req, ctx) => {
     const pool = getPool();
     if (!pool) return apiError(503, "unavailable");
-    const r = await countHandoffs(pool, ctx.scope, ctx.sub, ctx.tier);
+    const r = await countHandoffs(pool, ctx.scope, ctx.sub, ctx.tier, todayUtc7(new Date()));
     if (!r.ok) return apiError(r.status, r.code);
     return Response.json(r.value, { headers: { "Cache-Control": "no-store" } });
   },

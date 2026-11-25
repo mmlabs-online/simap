@@ -130,11 +130,13 @@ describe("focusAfter", () => {
 
 describe("badgeCountAfter", () => {
   it("ok count wins; failed count with both lists -> their lengths; one list null -> null", () => {
-    const counts = { incoming: 4, returns: 1 };
+    const counts = { incoming: 4, returns: 1, extensions: 0, overdue: 0 };
     expect(badgeCountAfter({ ok: true, value: counts }, [item("a")], [])).toEqual(counts);
     expect(badgeCountAfter(err("internal"), [item("a"), item("b")], [item("c")])).toEqual({
       incoming: 2,
       returns: 1,
+      extensions: 0,
+      overdue: 0,
     });
     expect(badgeCountAfter(err("internal"), null, [])).toBeNull();
     expect(badgeCountAfter(err("internal"), [], null)).toBeNull();
@@ -144,7 +146,7 @@ describe("badgeCountAfter", () => {
 
 describe("badgeTotal", () => {
   it("sums incoming and returns", () => {
-    expect(badgeTotal({ incoming: 2, returns: 3 })).toBe(5);
+    expect(badgeTotal({ incoming: 2, returns: 3, extensions: 0, overdue: 0 })).toBe(5);
   });
 });
 

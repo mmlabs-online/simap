@@ -64,7 +64,8 @@ describe("handoff action routes", () => {
       const r = await handler(req("POST"), idRoute);
       expect(r.status).toBe(200);
       expect(r.headers.get("Cache-Control")).toBe("no-store");
-      expect(fn.mock.calls[0]!.slice(2)).toEqual(["s1", "user", ID]);
+      expect(fn.mock.calls[0]!.slice(2, 5)).toEqual(["s1", "user", ID]);
+      if (name === "confirm") expect(fn.mock.calls[0]![5]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
     it(`${name}: bad uuid -> 404, no pool -> 503, no service call`, async () => {
       fakeAuth(["simap:user"]);
@@ -113,6 +114,13 @@ describe("GET /api/handoffs", () => {
     expect(r.status).toBe(422);
     expect(svc.listHandoffs.mock.calls[0]!.slice(2)).toEqual(["s1", "user", "returns"]);
   });
+  it("passes box=extensions and the tier to the service", async () => {
+    fakeAuth(["simap:manager"]);
+    svc.listHandoffs.mockResolvedValue({ ok: true, value: { items: [], truncated: false } });
+    const r = await LIST(req("GET", "http://x/api/handoffs?box=extensions"), noParams);
+    expect(r.status).toBe(200);
+    expect(svc.listHandoffs.mock.calls[0]!.slice(2)).toEqual(["s1", "manager", "extensions"]);
+  });
   it("400 on a missing or unknown box; 503 without a pool", async () => {
     fakeAuth(["simap:user"]);
     expect((await LIST(req("GET"), noParams)).status).toBe(400);
@@ -126,13 +134,15 @@ describe("GET /api/handoffs", () => {
 });
 
 describe("GET /api/handoffs/count", () => {
-  it("returns { incoming, returns } and passes the tier", async () => {
+  it("returns the four counts and passes the tier and today", async () => {
     fakeAuth(["simap:user"]);
-    svc.countHandoffs.mockResolvedValue({ ok: true, value: { incoming: 2, returns: 0 } });
+    const value = { incoming: 2, returns: 0, extensions: 0, overdue: 1 };
+    svc.countHandoffs.mockResolvedValue({ ok: true, value });
     const r = await COUNT(req("GET", "http://x/api/handoffs/count"), noParams);
     expect(r.status).toBe(200);
-    expect(await r.json()).toEqual({ incoming: 2, returns: 0 });
-    expect(svc.countHandoffs.mock.calls[0]!.slice(2)).toEqual(["s1", "user"]);
+    expect(await r.json()).toEqual(value);
+    expect(svc.countHandoffs.mock.calls[0]!.slice(2, 4)).toEqual(["s1", "user"]);
+    expect(svc.countHandoffs.mock.calls[0]![4]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
   it("503 without a pool", async () => {
     fakeAuth(["simap:user"]);
