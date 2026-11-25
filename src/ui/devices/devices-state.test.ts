@@ -38,12 +38,13 @@ describe("devices-state helpers", () => {
     expect(emptyText("unowned")).toBe(devicesCopy.empty.unowned);
   });
 
-  it("filterOptions: order all, placed, inventory, unowned (Org inventory) with copy labels", () => {
+  it("filterOptions lists all five filters, Overdue last, with copy labels", () => {
     expect(filterOptions()).toEqual([
       { value: "all", label: "All" },
       { value: "placed", label: "Placed" },
       { value: "inventory", label: "Not placed" },
       { value: "unowned", label: "Org inventory" },
+      { value: "overdue", label: "Overdue" },
     ]);
   });
 
@@ -137,6 +138,11 @@ describe("detailsText and expiryText", () => {
     expect(expiryText({ expiresOn: "2026-12-31" })).toBe("Until 2026-12-31");
     expect(expiryText({ expiresOn: null })).toBe("No expiry");
   });
+  it("expiryText overdue gives 'Expired on <date>'; no expiry stays No expiry", () => {
+    expect(expiryText({ expiresOn: "2026-11-24" }, true)).toBe("Expired on 2026-11-24");
+    expect(expiryText({ expiresOn: "2026-11-24" }, false)).toBe("Until 2026-11-24");
+    expect(expiryText({ expiresOn: null }, true)).toBe("No expiry");
+  });
 });
 
 describe("pendingText", () => {
@@ -148,9 +154,18 @@ describe("pendingText", () => {
     to: { id: "m", displayName: "Hương" },
     ...over,
   });
-  it("is null without a handoff and for an extension", () => {
+  it("is null without a handoff", () => {
     expect(pendingText(withHandoff(null))).toBeNull();
-    expect(pendingText(withHandoff(handoff({ kind: "extension" })))).toBeNull();
+  });
+  it("an extension gives the extension chip and 'Requested until <date>'", () => {
+    expect(
+      pendingText(
+        withHandoff(handoff({ kind: "extension", to: null, newExpiresOn: "2026-12-31" })),
+      ),
+    ).toEqual({ chip: "Extension pending", to: "Requested until 2026-12-31" });
+    expect(
+      pendingText(withHandoff(handoff({ kind: "extension", to: null, newExpiresOn: null }))),
+    ).toEqual({ chip: "Extension pending", to: null });
   });
   it("a return gives the return chip with no 'to'", () => {
     expect(pendingText(withHandoff(handoff({ kind: "return", to: null })))).toEqual({

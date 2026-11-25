@@ -108,7 +108,7 @@ describe("DevicesView rows", () => {
     const html = render();
     expect(html).toContain(`<caption class="sr-only">${devicesCopy.caption}</caption>`);
     expect(html.match(/<th scope="col"/g)).toHaveLength(7);
-    expect(html.match(/<button/g)).toHaveLength(4); // only the filter chips
+    expect(html.match(/<button/g)).toHaveLength(5); // only the filter chips
     expect(html).not.toMatch(/Edit|Delete|Move to/);
   });
 });
@@ -136,10 +136,10 @@ describe("DevicesView row actions", () => {
 });
 
 describe("DevicesView filter and states", () => {
-  it("renders four radios in a radiogroup with only the current one checked", () => {
+  it("renders five radios in a radiogroup with only the current one checked", () => {
     const html = render({ filter: "placed" });
     expect(html).toContain(`role="radiogroup" aria-label="${devicesCopy.filterLabel}"`);
-    expect(html.match(/role="radio"/g)).toHaveLength(4);
+    expect(html.match(/role="radio"/g)).toHaveLength(5);
     expect(html.match(/aria-checked="true"/g)).toHaveLength(1);
     expect(html).toMatch(/aria-checked="true"[^>]*>Placed</);
   });
@@ -253,6 +253,17 @@ describe("DevicesView details and holding", () => {
     const plain = render({ devices: [base] });
     expect(plain).not.toContain("Until");
     expect(plain).not.toContain("No expiry");
+  });
+
+  it("an overdue row shows the Overdue chip and 'Expired on <date>'; overdue false shows neither", () => {
+    const html = render({ devices: [{ ...held, overdue: true }] });
+    // The filter chip also reads "Overdue"; the row chip adds one per layout (table and card).
+    expect(html.split(devicesCopy.overdueChip)).toHaveLength(4);
+    expect(html).toContain("Expired on 2026-12-31");
+    expect(html).not.toContain("Until 2026-12-31");
+    const plain = render({ devices: [held, heldNoExpiry] });
+    expect(plain.split(devicesCopy.overdueChip)).toHaveLength(2);
+    expect(plain).not.toContain("Expired on");
   });
 
   it("Assign and Note / expiry buttons follow the flags; neither when both are false", () => {

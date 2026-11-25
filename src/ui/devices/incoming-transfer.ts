@@ -84,7 +84,8 @@ export function badgeCountAfter(
     : { incoming: incoming.length, returns: returns.length, extensions: 0, overdue: 0 };
 }
 
-export const badgeTotal = (c: HandoffCountDto): number => c.incoming + c.returns;
+/** Incoming transfers, pending returns and the caller's overdue devices; `extensions` joins with the Manager list. */
+export const badgeTotal = (c: HandoffCountDto): number => c.incoming + c.returns + c.overdue;
 
 /** The lists the caller may fetch. `box=returns` is Admin only, so a non-Admin never asks for it (it answers 422). */
 export const handoffBoxes = (isAdmin: boolean): HandoffBox[] =>

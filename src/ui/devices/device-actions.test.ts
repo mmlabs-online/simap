@@ -162,7 +162,7 @@ describe("transfer actions", () => {
     const no = (p: object) =>
       rowActions(d({ canPlace: false, pendingHandoff: pending(p) }), { onCancelHandoff });
     expect(no({ canCancel: false })).toEqual([]);
-    expect(no({ kind: "extension" })).toEqual([]);
+    expect(no({ kind: "extension", canCancel: false })).toEqual([]);
     expect(rowActions(d({ canPlace: false, pendingHandoff: null }), { onCancelHandoff })).toEqual(
       [],
     );
@@ -208,7 +208,7 @@ describe("return and take-back actions", () => {
     a[1].run();
     expect(onReturn).toHaveBeenCalledWith(expect.objectContaining({ id: "d1" }));
   });
-  it("cancelReturn for a pending return with canCancel; cancelTransfer for a transfer; none without canCancel; extension -> none", () => {
+  it("cancelReturn for a pending return with canCancel; cancelTransfer for a transfer; none without canCancel; extension -> cancelExtension", () => {
     const onCancelHandoff = vi.fn();
     const p = (over: object) =>
       owned({
@@ -223,7 +223,27 @@ describe("return and take-back actions", () => {
       "cancelTransfer",
     ]);
     expect(rowActions(p({ kind: "return", canCancel: false }), { onCancelHandoff })).toEqual([]);
-    expect(rowActions(p({ kind: "extension" }), { onCancelHandoff })).toEqual([]);
+    const ext = rowActions(p({ kind: "extension" }), { onCancelHandoff });
+    expect(ext.map((x) => x.key)).toEqual(["cancelExtension"]);
+    expect(ext[0].label).toBe("Cancel extension");
+    expect(ext[0].ariaLabel).toBe("Cancel extension of device INV-7");
+    expect(rowActions(p({ kind: "extension", canCancel: false }), { onCancelHandoff })).toEqual([]);
+  });
+  it("extend: mine && overdue && no pending -> extend; otherwise none; busyId disables it", () => {
+    const onExtend = vi.fn();
+    const row = owned({ canReturn: false, canTakeBack: false, mine: true, overdue: true });
+    const a = rowActions(row, { onExtend });
+    expect(a.map((x) => x.key)).toEqual(["extend"]);
+    expect(a[0].ariaLabel).toBe("Request an extension for device INV-7");
+    a[0].run();
+    expect(onExtend).toHaveBeenCalledWith(expect.objectContaining({ id: "d1" }));
+    expect(rowActions({ ...row, mine: false }, { onExtend })).toEqual([]);
+    expect(rowActions({ ...row, overdue: false }, { onExtend })).toEqual([]);
+    expect(
+      rowActions({ ...row, pendingHandoff: pending({ kind: "extension" }) }, { onExtend }),
+    ).toEqual([]);
+    expect(rowActions(row, {})).toEqual([]);
+    expect(rowActions(row, { onExtend }, "d1")[0].disabled).toBe(true);
   });
   it("takeBack when canTakeBack (danger), also with a pending transfer alongside cancelTransfer; absent when canTakeBack is false", () => {
     const onTakeBack = vi.fn();
