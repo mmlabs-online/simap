@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T13:49:47Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/101 |
 
 ## Goal
 The editor's "Add items" palette and both maps show the org's catalog: names, groups, order, hidden flags, sizes and art.
@@ -53,3 +53,9 @@ The editor's "Add items" palette and both maps show the org's catalog: names, gr
 - Done: plan READY (slice 1): `catalogPalette` from GET /api/map-items, editor `footprints` lookup from layout items + palette, geometry functions take the lookup, `MapView.items`, map-items API client and hook. Split: art rendering → SIM-039.8 (added to the board).
 - In progress / next: Ming approves A1-A9 (M-71), then implement and review.
 - Gotchas: A5 group headings show raw library group keys until renamed; AC2 wording conflicts with the spec fallback chain (spec wins, reword in 039.8).
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 4 (frontend-developer×1 75k, planner×1 135k, implementer×1 107k, reviewer×1 66k; default models; ~383k total)
+- Done: slice 1 — palette from the catalog, editor sizes from the catalog (footprints lookup in editor state), MapView.items, map-items API client and hook. Review PASS on attempt 1; PR https://github.com/mmlabs-online/simap/pull/101.
+- In progress / next: SIM-039.8 (art rendering) after merge; SIM-039.6 (admin page) is also runnable.
+- Gotchas: pre-existing test:db failures on main are now 18 (devices, handoffs, members) — bug ticket needed.
