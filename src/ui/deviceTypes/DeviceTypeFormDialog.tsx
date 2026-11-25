@@ -10,6 +10,7 @@ import {
 import { deviceTypesCopy } from "../copy/deviceTypes";
 import { kitCopy } from "../copy/kit";
 import { DialogField, EntityFormDialog } from "../EntityFormDialog";
+import type { Atlas } from "../roomlayout/loadAtlas";
 import { DeskSlotDiagram } from "./DeskSlotDiagram";
 import { emptyForm, formFromType, type DeviceTypeForm } from "./device-type-form";
 import {
@@ -20,6 +21,7 @@ import {
 } from "./device-type-image";
 import { saveDeviceType } from "./device-type-save";
 import { DeviceTypeImageField } from "./DeviceTypeImageField";
+import { DeviceTypeSpriteField } from "./DeviceTypeSpriteField";
 import type { DeviceTypesApi } from "./device-types-api";
 
 const copy = deviceTypesCopy.form;
@@ -31,6 +33,8 @@ type Props = {
   item: DeviceTypeDto | null;
   api: DeviceTypesApi;
   imageUrl: (t: DeviceTypeDto) => string | null;
+  /** Package atlas for the sprite thumbnails; null while loading or failed. */
+  atlas: Atlas | null;
   onClose: () => void;
   onDone: () => void;
 };
@@ -40,7 +44,7 @@ export function DeviceTypeFormDialog(props: Props) {
   return <DeviceTypeFormInner key={props.item?.id ?? "new"} {...props} />;
 }
 
-function DeviceTypeFormInner({ item, api, imageUrl, onClose, onDone }: Props) {
+function DeviceTypeFormInner({ item, api, imageUrl, atlas, onClose, onDone }: Props) {
   const [current, setCurrent] = useState<DeviceTypeDto | null>(item);
   const [form, setForm] = useState<DeviceTypeForm>(item ? formFromType(item) : emptyForm());
   const [draft, setDraft] = useState<ImageDraft>({ kind: "keep" });
@@ -100,6 +104,14 @@ function DeviceTypeFormInner({ item, api, imageUrl, onClose, onDone }: Props) {
         form={form}
         onName={(name) => setForm((f) => ({ ...f, name }))}
         onSlot={(slot) => setForm((f) => ({ ...f, slot }))}
+      />
+      <DeviceTypeSpriteField
+        value={form.sprite}
+        slot={form.slot}
+        imageShown={draft.kind === "replace" || (draft.kind === "keep" && !!current?.hasImage)}
+        atlas={atlas}
+        disabled={submitting}
+        onChange={(sprite) => setForm((f) => ({ ...f, sprite }))}
       />
       <DeviceTypeImageField
         view={imageFieldView(draft, current?.hasImage ?? false, current ? imageUrl(current) : null)}

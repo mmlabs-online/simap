@@ -43,7 +43,7 @@ const req = (method: string, body?: unknown) =>
     body: body === undefined ? undefined : JSON.stringify(body),
     headers: { "content-type": "application/json", authorization: "Bearer t" },
   });
-const dto = { id: ID, name: "PC", slot: "pc", hasImage: false, imageVersion: 0 };
+const dto = { id: ID, name: "PC", slot: "pc", hasImage: false, imageVersion: 0, sprite: null };
 
 beforeEach(() => {
   for (const f of Object.values(svc)) f.mockReset();
@@ -139,6 +139,30 @@ describe("device-types routes", () => {
     expect([p.status, await p.json()]).toEqual([409, { error: { code: "name_taken" } }]);
     const u = await PATCH(req("PATCH", { name: "X" }), idRoute);
     expect([u.status, await u.json()]).toEqual([404, { error: { code: "not_found" } }]);
+  });
+
+  it("sprite: PATCH and POST forward it; bad shape 400 without service call; 422 mapped", async () => {
+    fakeAuth(["simap:admin"]);
+    svc.createDeviceType.mockResolvedValue({ ok: true, value: dto });
+    svc.updateDeviceType.mockResolvedValue({ ok: true, value: dto });
+    await POST(req("POST", { name: "X", slot: "pc", sprite: "device.pc" }), noParams);
+    await PATCH(req("PATCH", { sprite: null }), idRoute);
+    expect(svc.createDeviceType.mock.calls[0]!.slice(2)).toEqual([
+      "s1",
+      { name: "X", slot: "pc", sprite: "device.pc" },
+    ]);
+    expect(svc.updateDeviceType.mock.calls[0]!.slice(2)).toEqual(["s1", ID, { sprite: null }]);
+    svc.createDeviceType.mockClear();
+    svc.updateDeviceType.mockClear();
+    expect((await PATCH(req("PATCH", { sprite: " x" }), idRoute)).status).toBe(400);
+    expect((await POST(req("POST", { name: "X", slot: "pc", sprite: 1 }), noParams)).status).toBe(
+      400,
+    );
+    expect(svc.createDeviceType).not.toHaveBeenCalled();
+    expect(svc.updateDeviceType).not.toHaveBeenCalled();
+    svc.updateDeviceType.mockResolvedValue({ ok: false, status: 422, code: "sprite_not_allowed" });
+    const r = await PATCH(req("PATCH", { sprite: "plant.large" }), idRoute);
+    expect([r.status, await r.json()]).toEqual([422, { error: { code: "sprite_not_allowed" } }]);
   });
 
   it("DELETE type: the image file is discarded after commit, and not on a 404", async () => {

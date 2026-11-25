@@ -24,6 +24,15 @@ export const deviceTypesCopy = {
     pendingRemove: "The image will be removed when you save.",
     imageSaveFailed: "The type was saved, but the image was not. ",
     readFailed: "The file could not be read. Pick it again.",
+    sprite: {
+      legend: "Sprite on the map",
+      builtIn: (slot: string) => `Built-in for the slot (${slot})`,
+      hint: "Used when there is no image. Monitor and laptop looks turn with the desk.",
+      hiddenByImage: "The image hides this sprite. Remove the image to show it.",
+      unavailable: (key: string) =>
+        `The saved sprite "${key}" is no longer available. Pick another.`,
+      frameAlt: (key: string) => `Sprite ${key}`,
+    },
     alt: { current: "Current image", staged: "New image, not saved yet", none: "No image" },
   },
   thumb: { none: "No image" },
@@ -37,6 +46,7 @@ export const deviceTypesCopy = {
   fieldErrors: {
     name: "Enter a name of up to 60 characters, without control characters.",
     slot: "Pick a place on the desk.",
+    sprite: "Pick a sprite from the list.",
     body: "Some of the information is not valid. Check it and try again.",
   },
   diagram: {

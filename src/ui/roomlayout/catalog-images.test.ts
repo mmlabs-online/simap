@@ -8,6 +8,7 @@ const type = (over: Partial<SeatDeviceType> = {}): SeatDeviceType => ({
   slot: "phone",
   hasImage: true,
   imageVersion: 1,
+  sprite: null,
   ...over,
 });
 const devices = (...types: SeatDeviceType[]): Record<string, SeatDevice[]> => ({

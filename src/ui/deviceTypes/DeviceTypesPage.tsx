@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { DeviceTypeDto } from "@/lib/device-types/types";
+import { useAtlas } from "../roomlayout/useAtlas";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { useList } from "../groups/useList";
 import { useSession } from "../session";
@@ -44,6 +45,7 @@ function DeviceTypesLoaded() {
   const apiFetch = useApiFetch();
   const api = useMemo(() => createDeviceTypesApi(apiFetch), [apiFetch]);
   const types = useList(api.list);
+  const { atlas } = useAtlas();
   const imageUrl = useDeviceTypeImages(api, types.status === "ready" ? types.items : NO_ITEMS);
   const [dialog, setDialog] = useState<Dialog>({ kind: "none" });
 
@@ -69,6 +71,7 @@ function DeviceTypesLoaded() {
           item={dialog.item}
           api={api}
           imageUrl={imageUrl}
+          atlas={atlas}
           onClose={close}
           onDone={done}
         />

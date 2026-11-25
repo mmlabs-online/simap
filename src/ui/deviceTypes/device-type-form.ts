@@ -7,15 +7,20 @@ import type {
 import { validateDeviceTypeCreate, validateDeviceTypePatch } from "@/lib/validate/device-type";
 import { deviceTypesCopy } from "../copy/deviceTypes";
 
-export type DeviceTypeForm = { name: string; slot: DeviceKind };
+export type DeviceTypeForm = { name: string; slot: DeviceKind; sprite: string | null };
 
-export const emptyForm = (): DeviceTypeForm => ({ name: "", slot: "other" });
-export const formFromType = (t: DeviceTypeDto): DeviceTypeForm => ({ name: t.name, slot: t.slot });
+export const emptyForm = (): DeviceTypeForm => ({ name: "", slot: "other", sprite: null });
+export const formFromType = (t: DeviceTypeDto): DeviceTypeForm => ({
+  name: t.name,
+  slot: t.slot,
+  sprite: t.sprite,
+});
 
 export function fieldMessage(field: string): string {
   const e = deviceTypesCopy.fieldErrors;
   if (field === "name") return e.name;
   if (field === "slot") return e.slot;
+  if (field === "sprite") return e.sprite;
   return e.body;
 }
 
@@ -39,6 +44,7 @@ export function toPatchBody(form: DeviceTypeForm, type: DeviceTypeDto): PatchRes
   const changed: Partial<DeviceTypeForm> = {};
   if (norm(form.name) !== type.name) changed.name = form.name;
   if (form.slot !== type.slot) changed.slot = form.slot;
+  if (form.sprite !== type.sprite) changed.sprite = form.sprite;
   if (Object.keys(changed).length === 0) return { kind: "unchanged" };
   const v = validateDeviceTypePatch(changed);
   return v.ok ? { kind: "ok", body: v.value } : { kind: "invalid", message: fieldMessage(v.field) };

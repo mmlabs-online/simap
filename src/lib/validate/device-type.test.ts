@@ -4,6 +4,34 @@ import {
   validateDeviceTypePatch as patch,
 } from "./device-type";
 
+describe("sprite on create and patch", () => {
+  it("absent, null or a well-formed key; shape only", () => {
+    expect(create({ name: "A", slot: "pc" })).toEqual({
+      ok: true,
+      value: { name: "A", slot: "pc" },
+    });
+    expect(create({ name: "A", slot: "pc", sprite: null })).toMatchObject({
+      value: { sprite: null },
+    });
+    expect(create({ name: "A", slot: "pc", sprite: "device.laptop" })).toMatchObject({
+      value: { sprite: "device.laptop" },
+    });
+    expect(patch({ sprite: null })).toEqual({ ok: true, value: { sprite: null } });
+    expect(patch({ name: "A", slot: "pc", sprite: "plant.large" })).toEqual({
+      ok: true,
+      value: { name: "A", slot: "pc", sprite: "plant.large" },
+    });
+  });
+
+  it("bad values name the sprite field; unknown keys are still refused", () => {
+    for (const sprite of [1, {}, " x", "", "a".repeat(121)]) {
+      expect(create({ name: "A", slot: "pc", sprite })).toEqual({ ok: false, field: "sprite" });
+      expect(patch({ sprite })).toEqual({ ok: false, field: "sprite" });
+    }
+    expect(patch({ sprite: null, other: 1 })).toEqual({ ok: false, field: "other" });
+  });
+});
+
 describe("validateDeviceTypeCreate", () => {
   it("valid; NFC; spaces collapsed; NBSP collapsed", () => {
     expect(create({ name: "PC", slot: "pc" })).toEqual({

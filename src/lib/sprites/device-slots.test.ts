@@ -4,6 +4,7 @@ import {
   SLOTS,
   STACK,
   deviceKind,
+  type DeviceKind,
   placeDevices,
   resolveDeviceArt,
   type DevicePlacement,
@@ -106,6 +107,7 @@ describe("resolveDeviceArt", () => {
     slot: "phone",
     hasImage: true,
     imageVersion: 3,
+    sprite: null,
     ...over,
   });
   const ready = () => true;
@@ -131,6 +133,24 @@ describe("resolveDeviceArt", () => {
     ).toEqual({ kind: "pc", art: { type: "sprite" } });
   });
 
+  it("no image, sprite set: packageSprite at the type's slot", () => {
+    expect(
+      resolveDeviceArt(
+        { type: "PC", deviceType: t({ slot: "pc", hasImage: false, sprite: "device.laptop" }) },
+        ready,
+      ),
+    ).toEqual({ kind: "pc", art: { type: "packageSprite", family: "device.laptop" } });
+  });
+
+  it("image wins over sprite; image not ready with sprite: placeholder", () => {
+    expect(
+      resolveDeviceArt({ type: "X", deviceType: t({ sprite: "device.laptop" }) }, ready).art,
+    ).toEqual({ type: "image", typeId: "t1", version: 3 });
+    expect(
+      resolveDeviceArt({ type: "X", deviceType: t({ sprite: "device.laptop" }) }, notReady).art,
+    ).toEqual({ type: "placeholder" });
+  });
+
   it("deviceType null: device.other placeholder in the other slot", () => {
     expect(resolveDeviceArt({ type: "PC", deviceType: null }, ready)).toEqual({
       kind: "other",
@@ -150,5 +170,29 @@ describe("resolveDeviceArt", () => {
     expect(p.key).toBe("device.other");
     expect(p.kind).toBe("phone");
     expect(p.offset).toEqual([SLOTS.phone[0].du, -SLOTS.phone[0].dv]);
+  });
+});
+
+describe("placeDevices packageSprite", () => {
+  const pk = (kind: DeviceKind, family: string) =>
+    ({ kind, art: { type: "packageSprite", family } }) as const;
+  it("directional family follows the desk", () => {
+    for (const dir of DIRS) {
+      const [p] = placeDevices(DESK, footprint(dir), dir, [pk("pc", "device.laptop")]);
+      expect(p.key).toBe(`device.laptop.${dir}`);
+    }
+  });
+  it("non-directional family draws its own key, on a directional slot too", () => {
+    const [p] = placeDevices(DESK, [2, 1], "e", [pk("laptop", "device.pc")]);
+    expect(p.key).toBe("device.pc");
+  });
+  it("unknown family falls back to the slot sprite", () => {
+    const [p] = placeDevices(DESK, [2, 1], "n", [pk("monitor", "device.printer")]);
+    expect(p.key).toBe("device.monitor.n");
+  });
+  it("keeps the slot's offsets", () => {
+    const [a] = placeDevices(DESK, [2, 1], "s", [pk("pc", "device.phone")]);
+    const [b] = placeDevices(DESK, [2, 1], "s", ["PC"]);
+    expect([a.x, a.y, a.offset, a.under]).toEqual([b.x, b.y, b.offset, b.under]);
   });
 });
