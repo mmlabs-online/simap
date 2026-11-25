@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T08:02Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -46,5 +46,12 @@ docs/spec-v1.md §6 DEV-09; D63; OQ-44 (deactivated or removed owner).
 
 ## Notes / answers from Ming
 Ming 2026-11-25: "lên ticket và làm luôn".
+Waiting for Ming: plan approval (P1 gate) and the split (UI to SIM-037.10)
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3, tokens ~173k total (api-platform-engineer×1 consult 37k, frontend-developer×1 consult 38k, planner×1 opus 98k; in/out split not reported)
+- Done: consults saved; plan.md READY for slice 1 (API, DTO flags, deactivation cancels handoffs; no migration, no High path, Medium tier). Split proposal: UI to a new ticket SIM-037.10.
+- In progress / next: Ming approves the plan (A1–A12) and the split (M-65). Then create SIM-037.10 on the board and resume /run SIM-037.4 at IMPLEMENT.
+- Gotchas: security review trigger fires (src/server/). Member "remove" has no code path (A3, deactivation only). A10 race to record as a `debt` issue at PR time.
