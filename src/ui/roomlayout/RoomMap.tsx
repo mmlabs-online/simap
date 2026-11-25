@@ -11,6 +11,7 @@ import {
 import { buildDrawList } from "@/lib/sprites/placement";
 import { allowedZooms, clampZoom } from "@/lib/sprites/zoom";
 import { roomlayoutCopy } from "../copy/roomlayout";
+import type { CatalogImages } from "./catalog-images";
 import { paintRoom } from "./paint";
 import { SeatOverlay } from "./SeatOverlay";
 import { useAtlas } from "./useAtlas";
@@ -42,16 +43,29 @@ type Props = {
   /** Shows the zoom buttons when given. */
   onZoom?: (zoom: Zoom) => void;
   onSelect?: (seatCode: string) => void;
+  /** Catalog device images from `useCatalogImages`; without it every catalog image draws as the placeholder. */
+  catalogImages?: CatalogImages;
 };
 
 /** Canvas art plus an HTML seat overlay. Loads `/sprites/office.png|json`; a bad atlas shows an error view. */
-export function RoomMap({ layout, seatViews, seatDevices, zoom, onZoom, onSelect }: Props) {
+export function RoomMap({
+  layout,
+  seatViews,
+  seatDevices,
+  zoom,
+  onZoom,
+  onSelect,
+  catalogImages,
+}: Props) {
   const { atlas, failed, setFailed } = useAtlas();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const list = useMemo(
-    () => (atlas ? buildDrawList(layout, seatViews, atlas.manifest, seatDevices) : null),
-    [atlas, layout, seatViews, seatDevices],
+    () =>
+      atlas
+        ? buildDrawList(layout, seatViews, atlas.manifest, seatDevices, catalogImages?.ready)
+        : null,
+    [atlas, layout, seatViews, seatDevices, catalogImages?.version],
   );
 
   const allowed = useMemo(() => (list ? allowedZooms(list.bounds) : []), [list]);
@@ -60,7 +74,9 @@ export function RoomMap({ layout, seatViews, seatDevices, zoom, onZoom, onSelect
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!atlas || !list || !canvas || effective === null) return;
-    if (!paintRoom(canvas, atlas, list, effective)) setFailed(true);
+    if (!paintRoom(canvas, atlas, list, effective, undefined, catalogImages?.source)) {
+      setFailed(true);
+    }
   }, [atlas, list, effective, setFailed]);
 
   if (failed) return <RoomMapStatus status="error" />;

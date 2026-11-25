@@ -1,5 +1,7 @@
 import type { DeviceTypeDto } from "@/lib/device-types/types";
 
+type Typed = Pick<DeviceTypeDto, "id" | "hasImage" | "imageVersion">;
+
 type Entry =
   | { version: number; state: "loading" }
   | { version: number; state: "ready"; url: string }
@@ -53,7 +55,7 @@ export function createImageUrlCache({ load, create, revoke, limit = 4, onChange 
   }
 
   return {
-    sync(types: readonly DeviceTypeDto[]) {
+    sync(types: readonly Typed[]) {
       if (disposed) return;
       const ids = new Set(types.map((t) => t.id));
       for (const id of [...entries.keys()]) if (!ids.has(id)) drop(id);
@@ -70,7 +72,7 @@ export function createImageUrlCache({ load, create, revoke, limit = 4, onChange 
       }
       pump();
     },
-    url(t: DeviceTypeDto): string | null {
+    url(t: Typed): string | null {
       if (!t.hasImage) return null;
       const e = entries.get(t.id);
       return e && e.version === t.imageVersion && e.state === "ready" ? e.url : null;

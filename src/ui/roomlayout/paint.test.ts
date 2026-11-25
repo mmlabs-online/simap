@@ -98,6 +98,40 @@ describe("paintRoom", () => {
   });
 });
 
+describe("paintRoom catalog images", () => {
+  const withImage = () => {
+    const list = buildDrawList(layout, {}, manifest);
+    list.ops.push({
+      type: "image",
+      layer: "furniture",
+      typeId: "t1",
+      version: 2,
+      x: 10,
+      y: 12,
+      w: 24,
+      h: 24,
+    });
+    return list;
+  };
+
+  it("draws the image 1:1 at the op position with smoothing off", () => {
+    const log: Call[] = [];
+    const src = {} as CanvasImageSource;
+    const seen: unknown[] = [];
+    const images = (id: string, v: number) => (seen.push([id, v]), src);
+    expect(paintRoom(fakeCanvas(log), atlas(), withImage(), 2, undefined, images)).toBe(true);
+    expect(log[0]).toEqual(["set imageSmoothingEnabled", false]);
+    expect(log).toContainEqual(["drawImage", src, 10, 12, 24, 24]);
+    expect(seen).toEqual([["t1", 2]]);
+  });
+
+  it("a null source skips the op without throwing", () => {
+    const log: Call[] = [];
+    expect(paintRoom(fakeCanvas(log), atlas(), withImage(), 2)).toBe(true);
+    expect(log.some((c) => c[0] === "drawImage" && c[4] === 24)).toBe(false);
+  });
+});
+
 describe("tintedFrame", () => {
   it("tint resets the composite to source-over and is cached per atlas", () => {
     const log: Call[] = [];
