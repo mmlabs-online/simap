@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | MERGED |
 | Priority | P2 |
 | Size | S |
 | Areas | ui |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-24 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/84 |
 
 ## Goal
 Devices on desks use their catalog type's image and slot, so an Admin-defined type (e.g. headset) shows up on the map
@@ -45,3 +45,9 @@ right after it is created.
 - 2026-11-24 (D61).
 
 ## Handoff
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 3 (planner×1 sonnet 65k, implementer×1 default 75k, reviewer×1 default 49k; ~190k total; fast lane, no consult)
+- Done: catalog images and slots on the room map and editor (resolveDeviceArt, image draw op, paint, per-page image cache with placeholder fallback). Review PASS on attempt 1; PR https://github.com/mmlabs-online/simap/pull/84.
+- In progress / next: Ming's manual check (Headset type with image; blocked image shows placeholder); confirm assumptions A1–A4.
+- Gotchas: centring (A3) not checked by eye; three review nits in RoomMap/EditorCanvas deps and useCatalogImages.

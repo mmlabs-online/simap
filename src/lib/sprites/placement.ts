@@ -1,6 +1,6 @@
-import { placeDevices } from "./device-slots";
+import { placeDevices, resolveDeviceArt } from "./device-slots";
 import { avatarFor, avatarFrames, avatarView } from "./avatar";
-import type { RoomLayout, Rotation, SeatDevice, SeatView } from "./layout";
+import type { RoomLayout, Rotation, SeatDevice, SeatDeviceType, SeatView } from "./layout";
 import { overlayFor } from "./overlay";
 import { REGISTRY } from "./registry";
 import type { Direction, Layer, SpriteManifest } from "./types";
@@ -13,7 +13,11 @@ export type Rect = { x: number; y: number; w: number; h: number };
 
 export type DrawOp =
   | ({ type: "frame"; layer: Layer; key: string; tint: string | null } & Rect)
-  | ({ type: "shadow"; layer: "shadow" } & Rect);
+  | ({ type: "shadow"; layer: "shadow" } & Rect)
+  | ({ type: "image"; layer: Layer; typeId: string; version: number } & Rect);
+
+/** Catalog device images are drawn 1:1 at this size. */
+export const DEVICE_IMAGE = 24;
 
 /** Desk footprint in pixels (room coordinates), for the seat buttons. */
 export type SeatBox = { id: string; code: string; tileX: number; tileY: number } & Rect;
@@ -76,6 +80,8 @@ type Item = {
   under: boolean;
   /** Row of the desk a device sits on; null for ordinary items. */
   hostRow: number | null;
+  /** A catalog image drawn instead of the frame, centred on the frame's box. */
+  image: { typeId: string; version: number } | null;
 };
 
 type SeatItem = {
@@ -100,6 +106,7 @@ export function buildDrawList(
   seatViews: Readonly<Record<string, SeatView>>,
   manifest: SpriteManifest,
   seatDevices: Readonly<Record<string, readonly SeatDevice[]>> = {},
+  imageReady: (t: SeatDeviceType) => boolean = () => false,
 ): DrawList {
   const unknown: string[] = [];
   const ops: DrawOp[] = [];
@@ -147,7 +154,7 @@ export function buildDrawList(
     key: string,
     x: number,
     y: number,
-    extra: Partial<Pick<Item, "offset" | "under" | "hostRow" | "sub">> = {},
+    extra: Partial<Pick<Item, "offset" | "under" | "hostRow" | "sub" | "image">> = {},
   ) => {
     const frame = manifest.frames[key];
     const reg = REGISTRY[key];
@@ -164,6 +171,7 @@ export function buildDrawList(
       offset: [0, 0],
       under: false,
       hostRow: null,
+      image: null,
       ...extra,
     });
   };
@@ -201,7 +209,7 @@ export function buildDrawList(
       chairX: chair.x,
       chairY: chair.y,
     });
-    const types = (seatDevices[seat.id] ?? []).map((d) => d.type);
+    const types = (seatDevices[seat.id] ?? []).map((d) => resolveDeviceArt(d, imageReady));
     placeDevices(seat, footprint, dir, types).forEach((d, n) => {
       if (!manifest.frames[d.key]) {
         unknown.push(d.key);
@@ -212,6 +220,7 @@ export function buildDrawList(
         offset: d.offset,
         under: d.under,
         hostRow: seat.y + footprint[1] - 1,
+        image: d.art.type === "image" ? { typeId: d.art.typeId, version: d.art.version } : null,
       });
     });
     seatBoxes.push({
@@ -258,7 +267,20 @@ export function buildDrawList(
         h: 4,
       });
     }
-    emitFrame(item.layer, item.key, item.x, item.y, item.offset);
+    if (item.image) {
+      const f = manifest.frames[item.key];
+      emit({
+        type: "image",
+        layer: item.layer,
+        ...item.image,
+        x: item.x * TILE + f.anchor[0] + item.offset[0] + Math.floor((f.w - DEVICE_IMAGE) / 2),
+        y: item.y * TILE + f.anchor[1] + item.offset[1] + Math.floor((f.h - DEVICE_IMAGE) / 2),
+        w: DEVICE_IMAGE,
+        h: DEVICE_IMAGE,
+      });
+    } else {
+      emitFrame(item.layer, item.key, item.x, item.y, item.offset);
+    }
   }
 
   for (const s of seatItems) {

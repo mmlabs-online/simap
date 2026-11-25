@@ -25,6 +25,7 @@ import { buildDrawList, TILE } from "@/lib/sprites/placement";
 import { allowedZooms, clampZoom } from "@/lib/sprites/zoom";
 import { roomlayoutCopy } from "../copy/roomlayout";
 import { GestureOverlay } from "./GestureOverlay";
+import type { CatalogImages } from "./catalog-images";
 import { paintRoom } from "./paint";
 import { RoomMapStatus } from "./RoomMap";
 import { useAtlas } from "./useAtlas";
@@ -41,6 +42,8 @@ type Props = {
   frozen: boolean;
   /** Select, drag-move and place actions from the pointer gestures. */
   onAction: (effect: GestureEffect) => void;
+  /** Catalog device images from `useCatalogImages`. */
+  catalogImages?: CatalogImages;
 };
 
 /**
@@ -56,6 +59,7 @@ export function EditorCanvas({
   tool,
   frozen,
   onAction,
+  catalogImages,
 }: Props) {
   const { atlas, failed, setFailed } = useAtlas();
   const [hover, setHover] = useState<Point | null>(null);
@@ -71,8 +75,17 @@ export function EditorCanvas({
   onActionRef.current = onAction;
 
   const list = useMemo(
-    () => (atlas ? buildDrawList(draftToRoomLayout(draft), {}, atlas.manifest, seatDevices) : null),
-    [atlas, draft, seatDevices],
+    () =>
+      atlas
+        ? buildDrawList(
+            draftToRoomLayout(draft),
+            {},
+            atlas.manifest,
+            seatDevices,
+            catalogImages?.ready,
+          )
+        : null,
+    [atlas, draft, seatDevices, catalogImages?.version],
   );
   const allowed = useMemo(() => (list ? allowedZooms(list.bounds) : []), [list]);
   const effective = clampZoom(zoom, allowed);
@@ -101,7 +114,9 @@ export function EditorCanvas({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!atlas || !list || !canvas || effective === null) return;
-    if (!paintRoom(canvas, atlas, list, effective)) setFailed(true);
+    if (!paintRoom(canvas, atlas, list, effective, undefined, catalogImages?.source)) {
+      setFailed(true);
+    }
   }, [atlas, list, effective, setFailed]);
 
   // A running gesture is stale once the draft or the zoom changes under it (undo, zoom control).

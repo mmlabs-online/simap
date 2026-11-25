@@ -5,8 +5,10 @@ import {
   STACK,
   deviceKind,
   placeDevices,
+  resolveDeviceArt,
   type DevicePlacement,
 } from "./device-slots";
+import type { SeatDeviceType } from "./layout";
 import type { Direction } from "./types";
 
 const DIRS: Direction[] = ["s", "e", "n", "w"];
@@ -95,5 +97,58 @@ describe("placeDevices", () => {
     expect(list[2].offset).toEqual([last.du + STACK[0], -last.dv + STACK[1]]);
     expect(list[3].offset).toEqual([last.du + 2 * STACK[0], -last.dv + 2 * STACK[1]]);
     expect(list[2].x).toBe(list[1].x);
+  });
+});
+
+describe("resolveDeviceArt", () => {
+  const t = (over: Partial<SeatDeviceType> = {}): SeatDeviceType => ({
+    id: "t1",
+    slot: "phone",
+    hasImage: true,
+    imageVersion: 3,
+    ...over,
+  });
+  const ready = () => true;
+  const notReady = () => false;
+
+  it("catalog image ready: image art at the type's slot", () => {
+    expect(resolveDeviceArt({ type: "Headset", deviceType: t() }, ready)).toEqual({
+      kind: "phone",
+      art: { type: "image", typeId: "t1", version: 3 },
+    });
+  });
+
+  it("image not ready (loading or failed): placeholder at the type's slot", () => {
+    expect(resolveDeviceArt({ type: "Headset", deviceType: t() }, notReady)).toEqual({
+      kind: "phone",
+      art: { type: "placeholder" },
+    });
+  });
+
+  it("no image: built-in sprite of the slot", () => {
+    expect(
+      resolveDeviceArt({ type: "PC", deviceType: t({ slot: "pc", hasImage: false }) }, ready),
+    ).toEqual({ kind: "pc", art: { type: "sprite" } });
+  });
+
+  it("deviceType null: device.other placeholder in the other slot", () => {
+    expect(resolveDeviceArt({ type: "PC", deviceType: null }, ready)).toEqual({
+      kind: "other",
+      art: { type: "placeholder" },
+    });
+  });
+
+  it("deviceType undefined keeps the name-based kind", () => {
+    expect(resolveDeviceArt({ type: " laptop " }, ready)).toEqual({
+      kind: "laptop",
+      art: { type: "sprite" },
+    });
+  });
+
+  it("placeholder art draws device.other at the kind's slot", () => {
+    const [p] = placeDevices(DESK, [2, 1], "s", [{ kind: "phone", art: { type: "placeholder" } }]);
+    expect(p.key).toBe("device.other");
+    expect(p.kind).toBe("phone");
+    expect(p.offset).toEqual([SLOTS.phone[0].du, -SLOTS.phone[0].dv]);
   });
 });
