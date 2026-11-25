@@ -105,3 +105,5 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.
+
+SIM-033 waits for M-60 (Ming packs the real atlas from a PC; deferred 2026-11-25).
