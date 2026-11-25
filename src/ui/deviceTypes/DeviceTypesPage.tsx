@@ -9,6 +9,7 @@ import { DeleteDeviceTypeDialog } from "./DeleteDeviceTypeDialog";
 import { DeviceTypeFormDialog } from "./DeviceTypeFormDialog";
 import { DeviceTypesView } from "./DeviceTypesView";
 import { createDeviceTypesApi } from "./device-types-api";
+import { useDeviceTypeImages } from "./useDeviceTypeImages";
 import { canManageDeviceTypes } from "./device-types-state";
 
 type Dialog =
@@ -18,6 +19,7 @@ type Dialog =
 
 const NO_LIST = { status: "ready", items: [], errorCode: null } as const;
 const noop = () => {};
+const NO_ITEMS: DeviceTypeDto[] = [];
 
 /** Device types page. Below Admin it shows the no-access message and mounts no data hook. */
 export function DeviceTypesPage() {
@@ -31,6 +33,7 @@ export function DeviceTypesPage() {
         onEdit={noop}
         onDelete={noop}
         onRetry={noop}
+        imageUrl={() => null}
       />
     );
   }
@@ -41,6 +44,7 @@ function DeviceTypesLoaded() {
   const apiFetch = useApiFetch();
   const api = useMemo(() => createDeviceTypesApi(apiFetch), [apiFetch]);
   const types = useList(api.list);
+  const imageUrl = useDeviceTypeImages(api, types.status === "ready" ? types.items : NO_ITEMS);
   const [dialog, setDialog] = useState<Dialog>({ kind: "none" });
 
   const close = () => setDialog({ kind: "none" });
@@ -58,9 +62,16 @@ function DeviceTypesLoaded() {
         onEdit={(item) => setDialog({ kind: "form", item })}
         onDelete={(item) => setDialog({ kind: "delete", item })}
         onRetry={() => void types.reload()}
+        imageUrl={imageUrl}
       />
       {dialog.kind === "form" && (
-        <DeviceTypeFormDialog item={dialog.item} api={api} onClose={close} onDone={done} />
+        <DeviceTypeFormDialog
+          item={dialog.item}
+          api={api}
+          imageUrl={imageUrl}
+          onClose={close}
+          onDone={done}
+        />
       )}
       {dialog.kind === "delete" && (
         <DeleteDeviceTypeDialog item={dialog.item} api={api} onClose={close} onDone={done} />

@@ -17,6 +17,7 @@ const render = (p: Partial<DeviceTypesViewProps> = {}) =>
       onEdit={noop}
       onDelete={noop}
       onRetry={noop}
+      imageUrl={() => null}
       {...p}
     />,
   );
@@ -51,5 +52,13 @@ describe("DeviceTypesView", () => {
     expect(html).toContain(`aria-label="${deviceTypesCopy.editLabel("Máy in")}"`);
     expect(html).toContain(`aria-label="${deviceTypesCopy.deleteLabel("Máy in")}"`);
     expect(html).toContain(deviceTypesCopy.list.new);
+  });
+  it("row shows the image when imageUrl returns a url; placeholder otherwise", () => {
+    const types = { status: "ready", items: [type], errorCode: null } as const;
+    const withImg = render({ types, imageUrl: () => "blob:x" });
+    expect(withImg).toMatch(/<img[^>]*src="blob:x"[^>]*image-rendering:pixelated/);
+    const without = render({ types });
+    expect(without).not.toContain("<img");
+    expect(without).toContain(deviceTypesCopy.thumb.none);
   });
 });

@@ -73,4 +73,40 @@ describe("device-types-api", () => {
       code: "unavailable",
     });
   });
+  it("getImage reads a blob through the fetcher; a non-PNG content type is internal", async () => {
+    const a = fake(
+      () => new Response(new Uint8Array([1, 2]), { headers: { "content-type": "image/png" } }),
+    );
+    const r = await a.api.getImage("a/b");
+    expect(r.ok && r.value.size).toBe(2);
+    expect(a.calls[0][0]).toBe("/api/device-types/a%2Fb/image");
+    const b = fake(() => new Response("x", { headers: { "content-type": "text/html" } }));
+    expect(await b.api.getImage("a")).toEqual({ ok: false, code: "internal" });
+  });
+  it("putImage sends PUT with content-type image/png and a Blob body, reads the DTO", async () => {
+    const a = fake(() => jsonRes(dto));
+    expect(await a.api.putImage("a/b", new Uint8Array([1, 2, 3]))).toEqual({
+      ok: true,
+      value: dto,
+    });
+    const [path, init] = a.calls[0];
+    expect(path).toBe("/api/device-types/a%2Fb/image");
+    expect(init?.method).toBe("PUT");
+    expect(new Headers(init?.headers).get("content-type")).toBe("image/png");
+    expect(init?.body).toBeInstanceOf(Blob);
+    expect((init?.body as Blob).size).toBe(3);
+  });
+  it("putImage 422 image_too_large gives {ok:false, code}", async () => {
+    const a = fake(() => jsonRes({ error: { code: "image_too_large" } }, 422));
+    expect(await a.api.putImage("x", new Uint8Array(1))).toEqual({
+      ok: false,
+      code: "image_too_large",
+    });
+  });
+  it("removeImage: 204 is ok", async () => {
+    const a = fake(() => new Response(null, { status: 204 }));
+    expect(await a.api.removeImage("a/b")).toEqual({ ok: true, value: null });
+    expect(a.calls[0][0]).toBe("/api/device-types/a%2Fb/image");
+    expect(a.calls[0][1]?.method).toBe("DELETE");
+  });
 });

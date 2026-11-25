@@ -62,6 +62,26 @@ export function createDeviceTypesApi(fetcher: ApiFetch) {
     create: (body: DeviceTypeCreateValue) => call(base, withBody("POST", body), json),
     update: (id: string, patch: DeviceTypePatchValue) =>
       call(`${base}/${encodeURIComponent(id)}`, withBody("PATCH", patch), json),
+    getImage: (id: string) =>
+      call<Blob>(`${base}/${encodeURIComponent(id)}/image`, { method: "GET" }, async (res) => {
+        const blob = await res.blob();
+        return blob.type.startsWith("image/png") ? { ok: true, value: blob } : fail("internal");
+      }),
+    putImage: (id: string, bytes: Uint8Array<ArrayBuffer>) =>
+      call(
+        `${base}/${encodeURIComponent(id)}/image`,
+        {
+          method: "PUT",
+          headers: { "content-type": "image/png" },
+          body: new Blob([bytes], { type: "image/png" }),
+        },
+        json,
+      ),
+    removeImage: (id: string) =>
+      call<null>(`${base}/${encodeURIComponent(id)}/image`, { method: "DELETE" }, async () => ({
+        ok: true,
+        value: null,
+      })),
     remove: (id: string) =>
       call<null>(`${base}/${encodeURIComponent(id)}`, { method: "DELETE" }, async () => ({
         ok: true,

@@ -3,7 +3,11 @@ import { deviceTypesCopy } from "../copy/deviceTypes";
 import { shellCopy } from "../copy/shell";
 import { Button } from "../Button";
 import { Card } from "../Card";
+import { DeviceTypeThumb } from "./DeviceTypeThumb";
 import { ListSection, type ListState } from "../groups/ListSection";
+
+/** The list thumbnail sits beside the name, so its alt text is empty. */
+const DECORATIVE = "";
 
 export type DeviceTypesViewProps = {
   access: "ok" | "forbidden";
@@ -12,6 +16,7 @@ export type DeviceTypesViewProps = {
   onEdit: (type: DeviceTypeDto) => void;
   onDelete: (type: DeviceTypeDto) => void;
   onRetry: () => void;
+  imageUrl: (type: DeviceTypeDto) => string | null;
 };
 
 /** The Device types page body. Pure: data and handlers come from props. */
@@ -44,11 +49,14 @@ export function DeviceTypesView(props: DeviceTypesViewProps) {
         onRetry={props.onRetry}
         renderRow={(t) => (
           <>
-            <div className="flex items-baseline gap-3 min-w-0">
-              <span className="truncate text-sm font-bold text-on-surface">{t.name}</span>
-              <span className="shrink-0 text-sm font-medium text-on-surface-variant">
-                {deviceTypesCopy.slots[t.slot].label}
-              </span>
+            <div className="flex items-center gap-3 min-w-0">
+              <DeviceTypeThumb url={props.imageUrl(t)} alt={DECORATIVE} />
+              <div className="flex items-baseline gap-3 min-w-0">
+                <span className="truncate text-sm font-bold text-on-surface">{t.name}</span>
+                <span className="shrink-0 text-sm font-medium text-on-surface-variant">
+                  {deviceTypesCopy.slots[t.slot].label}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <Button
