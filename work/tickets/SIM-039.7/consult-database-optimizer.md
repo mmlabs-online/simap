@@ -1,0 +1,27 @@
+## Findings
+- device_types (20261124160000_device_types.sql): id, org_id, name, slot, image_drive_file_id (check regex), image_version, timestamps; unique (org_id,id). No sprite column. A device type is a single-art row (no per-direction art), so the map_items 4-direction art_*_sprite columns are only a naming/constraint precedent.
+- Precedent (20261125200000_map_items.sql): sprite key stored as plain nullable `text` with a format-only CHECK, `^[A-Za-z0-9][A-Za-z0-9._/-]{0,119}$`. No DB-level FK or enum to the registry. Real validation is in app code: `spriteAllowedFor` / `spriteFits` (src/lib/map-items/art.ts) using `isFrameKey` (src/lib/sprites/registry.ts), returning 422 `sprite_not_allowed`. `setMapItemSprite` in src/server/map-items/edit.ts does it inside inTx. It writes audit with meta {key, dir, from, to}. It skips the write and audit when unchanged.
+- src/server/device-types/device-types.ts: `COLS` / `Row` / `toDto` are shared (also used by image.ts and layout.ts, so adding a column touches all three). Every query goes through `orgQuery` with `org_id = $1`. Writes run in `inTx` with `writeAudit` (device_type.create/update/delete). `updateDeviceType` takes a patch of name/slot and audits `fields`.
+- Spec says a type's art is image OR picked sprite OR slot sprite. Upload wins (AC1).
+
+## Recommendations
+1. Column, not table: one nullable value per type, 1:1 with the row. Migration is expand-only (R2): `alter table device_types add column sprite_key text null;` plus `constraint device_types_sprite_key_check check (sprite_key ~ '^[A-Za-z0-9][A-Za-z0-9._/-]{0,119}$')`. Copy the map_items regex so the two stay in sync. A nullable column with no default needs no table rewrite, and an ADD CONSTRAINT CHECK on an all-null column is a cheap scan. Do not add an FK: the keys live in the registry, not the DB. No seed or backfill is needed; null means "slot sprite". The previous image ignores the column, so it keeps working. Do not touch the seed function. Call the column `sprite_key` to match the placed-item columns, or `art_sprite` to match map_items. Pick one and say why in the plan.
+2. Validation in the lib layer: add a `sprite` field to the device-type patch validator in `src/lib/validate/`. Use `isFrameKey(key)` and, if the 039.6 browser filters by group, an allowed-group check. Slot-based fit is not needed. Refuse with 422 `sprite_not_allowed` (the 039.2 vocabulary). Allow `null` to clear. Check whether `spriteAllowedFor`'s floor-layer rule suits device art, since it takes a LibraryItem `kind`. A device sprite is presumably a non-floor object, so add a small `deviceSpriteAllowed` rather than faking a kind. Also confirm device frames are 1 tile or smaller. Decide the fit rule (the renderer draws a smaller frame bottom-left aligned, OQ-53).
+3. Server: extend `updateDeviceType` patch with `sprite`. Add `sprite_key` to `COLS`, `Row`, `toDto` (as `spriteKey: string | null` in `DeviceTypeDto`). Update the SQL in the existing update with `$5`, and keep the no-op short-circuit (`!nameChanged && !slotChanged && !spriteChanged`). Audit: add "sprite" to `fields` and `meta.sprite: {from, to}`. This reuses the `device_type.update` action, which is Admin-only and runs after the auth wrapper (R7). The `for update` row lock already serialises it.
+4. Interaction with upload: do not clear `sprite_key` when an image is uploaded or removed. The renderer precedence image → sprite → slot sprite then handles it, and removing the upload falls back to the pick. Show in the UI that an upload hides the pick. Image set/clear in image.ts selects COLS, so check that it returns the new field.
+5. R6: every new SQL statement keeps `org_id = $1` via `orgQuery`. Layout's device-type lookup (layout.ts) must also select `sprite_key` scoped by org. Add `device-types.db.test.ts` cases: set, clear, cross-org id returns 404, an unknown key is refused and not persisted, and the audit row. Add a unit test for the validator. Add a layout test where the sprite is drawn and an upload still wins.
+6. Check `sql-sync.test.ts` and `pg-error.ts` for lists of columns or constraint names that need the new CHECK. The SIM-036.2 note says tests pin SQL pieces.
+7. Do not rename a registry frame key without a migration. Stored keys are not FK-checked, so an unknown key must degrade to the slot sprite in the renderer (like `resolveLayout` dropping unknown keys) rather than throw. Test that.
+
+## Risks
+- High path (migration): needs Ming's plan approval.
+- A registry key removed in a later release leaves dangling `sprite_key` values. The renderer fallback covers the display, but the picker should show "unavailable".
+- `COLS` is shared by image.ts, layout.ts and device-types.ts. If one query is missed, the DTO field is undefined and the picker shows the wrong state.
+- If the sprite fit or group rule is left out, an oversized frame (for example a 3x2 table) could be picked for a device.
+- Lost update: the UI patch should send only changed fields. The row lock handles races.
+
+## Open questions
+- Column name: `sprite_key` (matches seats/fixtures) or `art_sprite` (matches map_items)?
+- Which registry groups may a device pick, and what is the max frame size?
+- Should the plan keep the pick when an image is uploaded (recommended), or clear it?
+- Does the DTO also need the sprite shown in the devices list or the seat popup, or only the device types page and the renderer?
