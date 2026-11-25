@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T03:28:14Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/82 |
 
 ## Goal
 Slice 2 of SIM-036.3: an Admin uploads, previews and removes a device type's square image on the Device types page.
@@ -44,3 +44,9 @@ Slice 2 of SIM-036.3: an Admin uploads, previews and removes a device type's squ
 - 2026-11-25: split from SIM-036.3 by its planner (ticket too large for one cycle).
 
 ## Handoff
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 5 (frontend-developer×1 37k, ux-architect×1 45k, planner×1 77k, implementer×1 65k, reviewer×1 56k; default models; ~280k total)
+- Done: images on the Device types page (list thumbs via blob URL cache, upload with client check, staged remove, two-step save with partial-failure handling) plus the SIM-036.3 legend fix. Review PASS on attempt 1; PR https://github.com/mmlabs-online/simap/pull/82.
+- In progress / next: Ming's manual upload check on the deployed app (needs Drive).
+- Gotchas: follow-ups A11 (dialog height, no scroll) and three review nits in useDeviceTypeImages.ts / pick().
