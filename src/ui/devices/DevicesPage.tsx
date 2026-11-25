@@ -19,8 +19,10 @@ import { cancelOutcome } from "./transfer-device";
 import { confirmReturnOutcome, takeBackDone } from "./return-device";
 import { PendingReturns } from "./PendingReturns";
 import { ReturnDeviceDialog } from "./ReturnDeviceDialog";
+import { ExtendDeviceDialog } from "./ExtendDeviceDialog";
+import { OverdueBanner } from "./OverdueBanner";
 import { TakeBackDeviceDialog } from "./TakeBackDeviceDialog";
-import type { DeviceRowHandlers } from "./device-actions";
+import { bannerHandlers, type DeviceRowHandlers } from "./device-actions";
 import { filterAfterCreate } from "./device-form";
 import { createDevicesApi } from "./devices-api";
 import type { PlaceMode } from "./place-device";
@@ -55,6 +57,8 @@ export function DevicesPage() {
   const [deleting, setDeleting] = useState<DeviceDto | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const { status, items, truncated, errorCode, reload, refresh } = useDevices(api, filter);
+  // A separate list, so the banner does not depend on the page filter.
+  const overdue = useDevices(api, "overdue");
   const [transferring, setTransferring] = useState<DeviceDto | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const acting = useRef(false);
@@ -63,6 +67,7 @@ export function DevicesPage() {
   const returns = useHandoffList(api, "returns", handoffBoxes(isAdmin).includes("returns"));
   const [returning, setReturning] = useState<DeviceDto | null>(null);
   const [takingBack, setTakingBack] = useState<DeviceDto | null>(null);
+  const [extending, setExtending] = useState<DeviceDto | null>(null);
   const setBadge = useSetHandoffBadge();
   const [incomingBusyId, setIncomingBusyId] = useState<string | null>(null);
   const incomingHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -86,11 +91,19 @@ export function DevicesPage() {
 
   /** Refreshes the device list, both handoff lists and the nav badge. Resolves to the two lists (null when one failed). */
   async function refreshAll() {
-    const [inc, ret] = await Promise.all([incoming.refresh(), returns.refresh(), refresh()]);
+    const [inc, ret] = await Promise.all([
+      incoming.refresh(),
+      returns.refresh(),
+      refresh(),
+      overdue.refresh(),
+    ]);
     const count = badgeCountAfter(await api.handoffCount(), inc, ret);
     if (count !== null) setBadge(count);
     return { inc, ret };
   }
+
+  /** Refreshes the device list and the overdue list (an expiry edit can clear overdue). */
+  const refreshDevices = () => Promise.all([refresh(), overdue.refresh()]);
 
   /** Confirm, decline or cancel from a list: one action at a time; refreshes everything, then moves focus. */
   async function act(
@@ -146,6 +159,10 @@ export function DevicesPage() {
         setNotice(null);
         setReturning(device);
       },
+      onExtend: (device) => {
+        setNotice(null);
+        setExtending(device);
+      },
       onTakeBack: (device) => {
         setNotice(null);
         setTakingBack(device);
@@ -156,11 +173,7 @@ export function DevicesPage() {
         acting.current = true;
         setCancellingId(device.id);
         setNotice(null);
-        const outcome = cancelOutcome(
-          await api.cancelHandoff(pending.id),
-          device,
-          pending.kind === "return" ? "return" : "transfer",
-        );
+        const outcome = cancelOutcome(await api.cancelHandoff(pending.id), device, pending.kind);
         setNotice(outcome.notice);
         if (outcome.refresh) await refreshAll();
         acting.current = false;
@@ -168,7 +181,7 @@ export function DevicesPage() {
         headingRef.current?.focus();
       },
     }),
-    [api, refresh, incoming.refresh, returns.refresh, setBadge],
+    [api, refresh, overdue.refresh, incoming.refresh, returns.refresh, setBadge],
   );
 
   return (
@@ -188,6 +201,13 @@ export function DevicesPage() {
         notice={notice}
         incoming={
           <>
+            <OverdueBanner
+              devices={overdue.items}
+              truncated={overdue.truncated}
+              handlers={bannerHandlers(actions)}
+              busyId={cancellingId}
+              onShowAll={() => setFilter("overdue")}
+            />
             <IncomingTransfers
               items={incoming.items}
               truncated={incoming.truncated}
@@ -252,14 +272,14 @@ export function DevicesPage() {
         devicesApi={api}
         seatsApi={seatsApi}
         onClose={() => setTransferring(null)}
-        onStale={() => void refresh()}
+        onStale={() => void refreshDevices()}
         onDone={(device) => {
           setTransferring(null);
           setNotice({
             tone: "status",
             text: devicesCopy.transfer.sent(device.name, device.inventoryNumber),
           });
-          void refresh().then(() => headingRef.current?.focus());
+          void refreshDevices().then(() => headingRef.current?.focus());
         }}
       />
       <ReturnDeviceDialog
@@ -272,6 +292,20 @@ export function DevicesPage() {
           setNotice({
             tone: "status",
             text: devicesCopy.giveBack.sent(device.name, device.inventoryNumber),
+          });
+          void refreshAll().then(() => headingRef.current?.focus());
+        }}
+      />
+      <ExtendDeviceDialog
+        device={extending}
+        devicesApi={api}
+        onClose={() => setExtending(null)}
+        onStale={() => void refreshAll()}
+        onDone={(device) => {
+          setExtending(null);
+          setNotice({
+            tone: "status",
+            text: devicesCopy.extend.sent(device.name, device.inventoryNumber),
           });
           void refreshAll().then(() => headingRef.current?.focus());
         }}
@@ -295,10 +329,10 @@ export function DevicesPage() {
         roomsApi={roomsApi}
         seatsApi={seatsApi}
         onClose={() => setPlacing(null)}
-        onStale={() => void refresh()}
+        onStale={() => void refreshDevices()}
         onDone={() => {
           setPlacing(null);
-          void refresh();
+          void refreshDevices();
         }}
       />
       <AssignDeviceDialog
@@ -308,10 +342,10 @@ export function DevicesPage() {
         devicesApi={api}
         seatsApi={seatsApi}
         onClose={() => setHolding(null)}
-        onStale={() => void refresh()}
+        onStale={() => void refreshDevices()}
         onDone={(mode) => {
           setHolding(null);
-          const done = refresh();
+          const done = refreshDevices();
           // An assigned row leaves the filter or swaps its button; an edited row keeps its button.
           if (mode === "assign") void done.then(() => headingRef.current?.focus());
         }}
@@ -326,17 +360,17 @@ export function DevicesPage() {
           const next = created ? filterAfterCreate(filter) : filter;
           setForm(null);
           if (next !== filter) setFilter(next);
-          else void refresh();
+          else void refreshDevices();
         }}
       />
       <DeleteDeviceDialog
         device={deleting}
         api={api}
         onClose={() => setDeleting(null)}
-        onStale={() => void refresh()}
+        onStale={() => void refreshDevices()}
         onDone={() => {
           setDeleting(null);
-          void refresh().then(() => headingRef.current?.focus());
+          void refreshDevices().then(() => headingRef.current?.focus());
         }}
       />
     </>

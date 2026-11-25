@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
 | Gate | none |
 | Depends on | SIM-037.5 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/100 |
 
 ## Goal
 Owners see their overdue devices (chip, filter, nav badge, banner) and ask for an extension or give the device back; Admin/Manager see pending extensions and approve or reject them.
@@ -47,3 +47,9 @@ docs/spec-v1.md §6 DEV-10, DEV-02; D63; OQ-42. UI slice split from SIM-037.5 (i
 Split from SIM-037.5 by the planner (2026-11-25); added by the orchestrator, Ming to confirm.
 
 ## Handoff
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 10, tokens ~496k total (in/out split not reported): frontend-developer×1 65k, ux-architect×1 53k, planner×1 94k, implementer×2 111k+29k, reviewer×2 73k+25k, security-ai-generated-code-auditor×2 28k+18k; all on their default models.
+- Done: slice 1 only (owner side). The planner split the Manager+ pending-extensions list into SIM-037.12. Attempt 1 was REWORK: the overdue banner got the full row-handler set. Attempt 2 PASS (`bannerHandlers`). Security PASS on both attempts. Checks green, including build. PR #100.
+- In progress / next: Ming confirms the split and assumptions A1–A9, reviews and merges #100, then SIM-037.12.
+- Gotchas: the `?placement=overdue` list is org-wide on the server, so the banner filters `mine` on the client. The seed device belongs to a seed member, not Ming's dev user; see the manual check in plan.md. The rebase on main needed a force-with-lease push of the ticket branch, which held only this run's own commits.

@@ -79,6 +79,18 @@ describe("settleTransfer", () => {
   });
 });
 
+describe("cancelOutcome extension", () => {
+  const device = { name: "Máy trạm", inventoryNumber: "INV-1" };
+  it("ok uses extend.cancelled; handoff_not_pending uses extend.gone", () => {
+    expect(cancelOutcome(ok, device, "extension").notice.text).toBe(
+      devicesCopy.extend.cancelled("Máy trạm", "INV-1"),
+    );
+    expect(cancelOutcome(fail("handoff_not_pending"), device, "extension").notice.text).toBe(
+      devicesCopy.extend.gone,
+    );
+  });
+});
+
 describe("cancelOutcome", () => {
   const device = { name: "Máy trạm", inventoryNumber: "INV-1" };
   it("ok shows the cancelled notice and refreshes", () => {

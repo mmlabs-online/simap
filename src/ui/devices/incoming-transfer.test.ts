@@ -145,8 +145,8 @@ describe("badgeCountAfter", () => {
 });
 
 describe("badgeTotal", () => {
-  it("sums incoming and returns", () => {
-    expect(badgeTotal({ incoming: 2, returns: 3, extensions: 0, overdue: 0 })).toBe(5);
+  it("sums incoming, returns and overdue (not extensions yet)", () => {
+    expect(badgeTotal({ incoming: 2, returns: 3, extensions: 4, overdue: 1 })).toBe(6);
   });
 });
 

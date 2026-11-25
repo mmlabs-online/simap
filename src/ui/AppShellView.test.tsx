@@ -237,7 +237,12 @@ describe("AppShellView", () => {
       expect(link(html, "/devices")).not.toContain("new decision");
     });
     it("devices badge with badgeLabels: numeral is the given count, sr-only is the label; without badgeLabels the old text", () => {
-      const label = shellCopy.badge.devicesBreakdown(2, 1);
+      const label = shellCopy.badge.devicesBreakdown({
+        incoming: 2,
+        returns: 1,
+        extensions: 0,
+        overdue: 0,
+      });
       const both = link(withBadges("admin", { devices: 3 }, { devices: label }), "/devices");
       expect(both).toMatch(/<span aria-hidden="true" class="absolute[^>]*>3</);
       expect(both).toContain(`<span class="sr-only">${label}</span>`);
@@ -246,12 +251,17 @@ describe("AppShellView", () => {
         "3 incoming transfers",
       );
     });
-    it("devicesBreakdown(2,0) equals incomingTransfers(2); (0,1) is '1 pending return'; (2,1) gives the sum and the parts", () => {
-      expect(shellCopy.badge.devicesBreakdown(2, 0)).toBe(shellCopy.badge.incomingTransfers(2));
-      expect(shellCopy.badge.devicesBreakdown(0, 1)).toBe("1 pending return");
-      expect(shellCopy.badge.devicesBreakdown(0, 3)).toBe("3 pending returns");
-      expect(shellCopy.badge.devicesBreakdown(2, 1)).toBe(
-        "3 pending items: 2 incoming transfers, 1 pending return",
+    it("devicesBreakdown: one part alone, several parts as 'N pending items: ...', zero parts left out", () => {
+      const c = (incoming: number, returns: number, extensions: number, overdue: number) =>
+        shellCopy.badge.devicesBreakdown({ incoming, returns, extensions, overdue });
+      expect(c(2, 0, 0, 0)).toBe(shellCopy.badge.incomingTransfers(2));
+      expect(c(0, 1, 0, 0)).toBe("1 pending return");
+      expect(c(0, 3, 0, 0)).toBe("3 pending returns");
+      expect(c(0, 0, 0, 1)).toBe("1 overdue device");
+      expect(c(0, 0, 0, 2)).toBe("2 overdue devices");
+      expect(c(2, 1, 0, 0)).toBe("3 pending items: 2 incoming transfers, 1 pending return");
+      expect(c(2, 1, 5, 1)).toBe(
+        "4 pending items: 2 incoming transfers, 1 pending return, 1 overdue device",
       );
     });
     it("a badge for a nav id the tier cannot see is not rendered", () => {

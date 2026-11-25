@@ -62,9 +62,10 @@ export type CancelTransferOutcome = {
 export function cancelOutcome(
   result: DevicesResult<HandoffDto>,
   device: Pick<DeviceDto, "name" | "inventoryNumber">,
-  kind: "transfer" | "return",
+  kind: "transfer" | "return" | "extension",
 ): CancelTransferOutcome {
-  const c = kind === "return" ? devicesCopy.giveBack : copy;
+  const c =
+    kind === "return" ? devicesCopy.giveBack : kind === "extension" ? devicesCopy.extend : copy;
   if (result.ok) {
     return {
       refresh: true,
