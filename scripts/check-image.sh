@@ -80,7 +80,7 @@ echo "== start checks"
 expect_exit() { # <expected> <description> <docker run args...>
   local want="$1" what="$2"; shift 2
   # Portable 30 s cap (macOS has no GNU timeout): detached run, poll, 124 if still running (as GNU timeout).
-  docker run -d --name "$EXITNAME" --network none "$@" >/dev/null 2>&1
+  docker run -d --label simap-ci=1 --name "$EXITNAME" --network none "$@" >/dev/null 2>&1
   local got=124 i
   for i in $(seq 1 30); do
     if [ "$(docker inspect -f '{{.State.Running}}' "$EXITNAME" 2>/dev/null)" != true ]; then
@@ -102,7 +102,7 @@ status() { probe "$1" "$2" | head -n 1; }
 
 echo "== smoke"
 # Same hardening as the deployment compose file; no DB and no network here, so /api/readyz must be 503.
-docker run -d --name "$NAME" --cap-drop ALL --security-opt no-new-privileges --network none \
+docker run -d --label simap-ci=1 --name "$NAME" --cap-drop ALL --security-opt no-new-privileges --network none \
   "${ID[@]}" "$IMAGE" >/dev/null
 
 ok=0
@@ -148,7 +148,7 @@ if [ -n "${CHECK_IMAGE_DATABASE_URL:-}" ]; then
   }
   fresh=$(q "select to_regclass('schema_migrations') is null") || { echo "::error::db smoke: cannot reach the database"; exit 1; }
   # The app first, on the not yet migrated database: it must be ready and must not create anything.
-  docker run -d --name "$DBNAME" --network "$NET" -e DATABASE_URL="$CHECK_IMAGE_DATABASE_URL" \
+  docker run -d --label simap-ci=1 --name "$DBNAME" --network "$NET" -e DATABASE_URL="$CHECK_IMAGE_DATABASE_URL" \
     -e PORT=3000 "${ID[@]}" "$IMAGE" >/dev/null
   ok=0
   for _ in $(seq 1 30); do

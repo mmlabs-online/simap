@@ -39,3 +39,42 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No: each change is in the plan's file list.
 - Diff size: about +300 / -66 lines excluding the two new scripts and the new test file.
+
+## Attempt 2 (REWORK) — 2026-11-26
+
+### Files touched
+| File | Required because |
+|---|---|
+| `.github/workflows/ci.yml` | Issue 1: `cleanup` no longer removes `$RUNNER_TEMP/docker` (comment explains why) |
+| `.github/workflows/release.yml` | Issue 1 (same); S2: tag push, clone and push send the token as an `http.<url>.extraheader` through `GIT_CONFIG_*` env with `credential.helper` empty, URLs are token-free (the `remote set-url` line became unnecessary and is removed); S3: `docker logout` only when `DOCKER_CONFIG` equals `$RUNNER_TEMP/docker` |
+| `scripts/ci-docker-config.sh` | S1: config has `"auths":{"ci.invalid":{}}` so the CLI does not auto-detect `osxkeychain`; `umask 077` before `mkdir` |
+| `scripts/check-image.sh` | security 🟡 5 (optional, applied): `--label simap-ci=1` on the three `docker run -d` calls so the sweep can find leftovers |
+| `scripts/ci-workflows.test.ts` | 3 new tests: no main-step `rm -rf` of the docker config dir; auths placeholder + umask order; check-image `run -d` labelled |
+| `scripts/release-files.test.ts` | cleanup test now asserts `rm -rf "$RUNNER_TEMP/deployment"` and no docker dir removal; push assertion uses the token-free URL; new tests for credential helper/extraheader and the guarded logout |
+
+### Deviations from plan
+- Plan 4.9/6 listed removing `$RUNNER_TEMP/docker` in cleanup; dropped (it breaks setup-buildx-action's post step, which removes the builder). The runner empties `RUNNER_TEMP` after the post steps.
+- Plan said the clone/push URL carries `x-access-token`; now the token goes in an http extraheader (env), URLs carry no token.
+- README wording ("a cleanup step that logs out and removes the clone") is still correct; unchanged.
+
+### Checks
+- format:check: "All matched files use the correct format."
+- typecheck: exit 0; check:layers: no violations (785 files)
+- test: "Test Files 298 passed | 1 skipped (299)", "Tests 3009 passed | 9 skipped (3018)"
+- build: exit 0 ("Compiled successfully")
+- `bash -n` ok on ci-postgres.sh, ci-docker-config.sh, check-image.sh
+
+### Additions to Ming's checks (first run / after merge)
+- `docker ps -a --filter name=buildx_buildkit` and `docker volume ls --filter name=buildx_buildkit` are empty after a run.
+- Buildx version (review Issue 2): the setup-buildx log "Buildx version" and `docker buildx version` in the build step show the pinned latest, not the host's. If the host's older buildx wins, drop the `docker-buildx` dir from `cliPluginsExtraDirs` or order it after the config dir.
+- Before the first release: `which docker-credential-osxkeychain`; after a login with the isolated config, `config.json` has no `credsStore`. After the release: `security find-internet-password -s github.com -a x-access-token` finds nothing; `~/.docker/config.json` unchanged.
+- Security 🟡 6: repo Settings > Actions "Run workflows from fork pull requests" off; runner group Default "Allow public repositories" off (add to ming-todo).
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+- Review nits (docker info in process substitution, sweep of simap-smoke/exit names now partly covered by the label, `wait_healthy` message) left as is.
+
+### Scope self-check
+Only the listed review issues and the optional 🟡 5 were changed.

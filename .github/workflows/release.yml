@@ -95,8 +95,12 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Token as an http header with credential helpers off: the macOS keychain helper never stores it.
+          export GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0= GIT_CONFIG_KEY_1=http.https://github.com/.extraheader
+          GIT_CONFIG_VALUE_1="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          export GIT_CONFIG_VALUE_1
           git tag "$TAG" "$GITHUB_SHA"
-          git push "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" "refs/tags/$TAG"
+          git push "https://github.com/$GITHUB_REPOSITORY.git" "refs/tags/$TAG"
 
       - name: build and push
         id: image
@@ -130,9 +134,12 @@ jobs:
         run: |
           branch="release/$APP-$TAG"
           image_ref="$NAMESPACE/simap:$TAG@$DIGEST"
-          git clone --depth 1 "https://x-access-token:$GH_TOKEN@github.com/mmlabs-online/deployment.git" "$RUNNER_TEMP/deployment"
+          # Token as an http header with credential helpers off: the macOS keychain helper never stores it.
+          export GIT_CONFIG_COUNT=2 GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0= GIT_CONFIG_KEY_1=http.https://github.com/.extraheader
+          GIT_CONFIG_VALUE_1="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          export GIT_CONFIG_VALUE_1
+          git clone --depth 1 "https://github.com/mmlabs-online/deployment.git" "$RUNNER_TEMP/deployment"
           cd "$RUNNER_TEMP/deployment"
-          git remote set-url origin https://github.com/mmlabs-online/deployment.git
           git switch -c "$branch"
           mkdir -p "apps/$APP"
           {
@@ -147,7 +154,7 @@ jobs:
             echo "::error::release commit must change only apps/$APP/release.env"; exit 1
           fi
           git commit -m "$APP $TAG"
-          git push "https://x-access-token:$GH_TOKEN@github.com/mmlabs-online/deployment.git" "$branch"
+          git push "https://github.com/mmlabs-online/deployment.git" "$branch"
           gh pr create --repo mmlabs-online/deployment --base main --head "$branch" \
             --title "$APP $TAG" \
             --body "Deploys \`$image_ref\` (Next.js server; deploy runs backup + migrate, then replaces the app; $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA). Merging runs deploy-$APP on macbook-runner."
@@ -158,6 +165,9 @@ jobs:
         env:
           DIGEST: ${{ steps.image.outputs.digest }}
         run: |
-          docker logout || true
+          # Only the isolated config: if an early step failed, DOCKER_CONFIG is unset and logout would hit the
+          # host's real ~/.docker login. The buildx post step still needs $RUNNER_TEMP/docker, so it is not removed
+          # here (the runner empties RUNNER_TEMP after the post steps).
+          if [ "${DOCKER_CONFIG:-}" = "$RUNNER_TEMP/docker" ]; then docker logout || true; fi
           if [ -n "$DIGEST" ]; then docker image rm "$NAMESPACE/simap@$DIGEST" || true; fi
-          rm -rf "$RUNNER_TEMP/deployment" "$RUNNER_TEMP/docker"
+          rm -rf "$RUNNER_TEMP/deployment"

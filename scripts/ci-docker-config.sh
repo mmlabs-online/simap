@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # SIM-034 (D60): an isolated Docker client config for jobs on the self-hosted macOS runner, so docker login and a
 # pinned buildx never touch the host's ~/.docker (production deploys use it). bash 3.2 compatible, never needs root.
-# Writes $RUNNER_TEMP/docker/config.json (no credsStore, credHelpers or auths; plugin dirs found from the host CLI)
+# Writes $RUNNER_TEMP/docker/config.json (a placeholder auths entry so the CLI never auto-detects the macOS keychain
+# store; plugin dirs found from the host CLI)
 # and exports DOCKER_CONFIG and DOCKER_HOST through $GITHUB_ENV.
 set -euo pipefail
 
@@ -19,8 +20,9 @@ while read -r p; do
   case "$dirs" in *"\"$d\""*) ;; *) dirs="${dirs:+$dirs,}\"$d\"" ;; esac
 done < <(docker info --format '{{range .ClientInfo.Plugins}}{{.Path}}{{"\n"}}{{end}}')
 
+umask 077
 mkdir -p "$dir"
-printf '{"cliPluginsExtraDirs":[%s]}\n' "$dirs" > "$dir/config.json"
+printf '{"auths":{"ci.invalid":{}},"cliPluginsExtraDirs":[%s]}\n' "$dirs" > "$dir/config.json"
 DOCKER_CONFIG="$dir" DOCKER_HOST="$host" docker version >/dev/null
 {
   echo "DOCKER_CONFIG=$dir"

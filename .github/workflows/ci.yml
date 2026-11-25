@@ -109,6 +109,8 @@ jobs:
       - name: cleanup
         if: always()
         run: |
+          # Keep $RUNNER_TEMP/docker: the buildx post step needs its builder store to remove the builder. The runner
+          # empties RUNNER_TEMP after the post steps.
           bash scripts/ci-postgres.sh stop
           docker image rm "simap-ci:$GITHUB_RUN_ID" || true
-          rm -rf "$RUNNER_TEMP/docker" "$RUNNER_TEMP/compose-ci"
+          rm -rf "$RUNNER_TEMP/compose-ci"

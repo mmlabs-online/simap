@@ -121,4 +121,21 @@ describe("workflows on the self-hosted runner", () => {
     expect(ci).toContain("tags: simap-ci:${{ github.run_id }}");
     expect(step(ci, "cleanup")).toContain("if: always()");
   });
+  it("never removes the docker config dir in a main step (the buildx post step needs it)", () => {
+    for (const name of ["ci.yml", "release.yml"]) {
+      expect(workflows[name], name).not.toMatch(/rm -rf[^\n]*RUNNER_TEMP\/docker"/);
+    }
+  });
+  it("isolated docker config pins an auths entry (no macOS keychain auto-detect) and a private umask", () => {
+    const sh = read("scripts/ci-docker-config.sh");
+    expect(sh).toContain('{"auths":{"ci.invalid":{}},');
+    expect(sh.indexOf("umask 077")).toBeGreaterThan(-1);
+    expect(sh.indexOf("umask 077")).toBeLessThan(sh.indexOf('mkdir -p "$dir"'));
+  });
+  it("every check-image docker run -d is labelled simap-ci=1", () => {
+    const sh = read("scripts/check-image.sh");
+    const runs = sh.match(/docker run -d[^\n]*/g) ?? [];
+    expect(runs.length).toBeGreaterThan(0);
+    for (const r of runs) expect(r).toContain("--label simap-ci=1");
+  });
 });
