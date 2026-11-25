@@ -175,8 +175,10 @@ export function startTransfer(
     const { rows: ins } = await orgQuery<{ id: string }>(
       c,
       scope,
+      // The select-from-subselect form satisfies orgQuery's org_id = $1 guard (as writeAudit).
       `insert into device_handoffs (org_id, device_id, kind, from_member_id, to_member_id, requested_by_id, note)
-       values ($1, $2, 'transfer', $3, $4, $5, $6) returning id`,
+       select o.org_id, $2::uuid, 'transfer', $3::uuid, $4::uuid, $5::uuid, $6::text
+       from (select $1::uuid as org_id) o where o.org_id = $1::uuid returning id`,
       [deviceId, dev[0].owner_id, v.toMemberId, me, v.note],
     );
     const id = ins[0]!.id;
@@ -232,7 +234,8 @@ export function startReturn(
       c,
       scope,
       `insert into device_handoffs (org_id, device_id, kind, from_member_id, to_member_id, requested_by_id, note)
-       values ($1, $2, 'return', $3, null, $4, $5) returning id`,
+       select o.org_id, $2::uuid, 'return', $3::uuid, null, $4::uuid, $5::text
+       from (select $1::uuid as org_id) o where o.org_id = $1::uuid returning id`,
       [deviceId, dev[0].owner_id, me, v.note],
     );
     const id = ins[0]!.id;
@@ -287,7 +290,8 @@ export function startExtension(
       scope,
       `insert into device_handoffs (org_id, device_id, kind, from_member_id, to_member_id, requested_by_id, note,
          new_expires_on)
-       values ($1, $2, 'extension', $3, null, $3, $4, $5) returning id`,
+       select o.org_id, $2::uuid, 'extension', $3::uuid, null, $3::uuid, $4::text, $5::date
+       from (select $1::uuid as org_id) o where o.org_id = $1::uuid returning id`,
       [deviceId, me, v.note, v.newExpiresOn],
     );
     const id = ins[0]!.id;

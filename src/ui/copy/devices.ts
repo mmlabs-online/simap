@@ -117,6 +117,24 @@ export const devicesCopy = {
     filterHint: 'Find it under "All", "Not placed" or "Org inventory".',
     truncated: (n: number) => `Showing the first ${n} pending returns.`,
   },
+  extensions: {
+    heading: (n: number) => (n === 1 ? "1 extension request" : `${n} extension requests`),
+    hint: "Approving sets the device's new expiry date.",
+    approve: "Approve",
+    reject: "Reject",
+    approveAria: (name: string, inv: string, owner: string) =>
+      `Approve extension of ${name} (${inv}) for ${owner}`,
+    rejectAria: (name: string, inv: string, owner: string) =>
+      `Reject extension of ${name} (${inv}) for ${owner}`,
+    owner: (name: string) => `Owner: ${name}`,
+    change: (current: string, requested: string) =>
+      `Current expiry ${current} → requested ${requested}`,
+    noExpiry: "none",
+    approved: (name: string, inv: string, date: string) =>
+      `Extension of ${name} (${inv}) approved. It now expires on ${date}.`,
+    rejected: (name: string, inv: string) => `Extension of ${name} (${inv}) rejected.`,
+    truncated: (n: number) => `Showing the first ${n} extension requests.`,
+  },
   transfer: {
     title: "Transfer device",
     submit: "Send transfer",

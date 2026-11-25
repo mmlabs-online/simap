@@ -6,12 +6,15 @@ const newDecisions = (n: number) => (n === 1 ? "1 new decision" : `${n} new deci
 const incomingTransfers = (n: number) =>
   n === 1 ? "1 incoming transfer" : `${n} incoming transfers`;
 const pendingReturns = (n: number) => (n === 1 ? "1 pending return" : `${n} pending returns`);
+const extensionRequests = (n: number) =>
+  n === 1 ? "1 extension request" : `${n} extension requests`;
 const overdueDevices = (n: number) => (n === 1 ? "1 overdue device" : `${n} overdue devices`);
-/** The Devices badge text: incoming transfers, pending returns and overdue devices, zero parts left out. */
+/** The Devices badge text: incoming transfers, pending returns, extension requests and overdue devices, zero parts left out. */
 const devicesBreakdown = (c: HandoffCountDto) => {
   const parts: [number, string][] = [
     [c.incoming, incomingTransfers(c.incoming)],
     [c.returns, pendingReturns(c.returns)],
+    [c.extensions, extensionRequests(c.extensions)],
     [c.overdue, overdueDevices(c.overdue)],
   ];
   const shown = parts.filter(([n]) => n > 0);
@@ -66,6 +69,7 @@ export const shellCopy = {
     newDecisions,
     incomingTransfers,
     pendingReturns,
+    extensionRequests,
     overdueDevices,
     devicesBreakdown,
     /** Screen-reader text per nav entry; an entry not listed falls back to `newDecisions`. */

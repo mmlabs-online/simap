@@ -261,8 +261,10 @@ describe("AppShellView", () => {
       expect(c(0, 0, 0, 1)).toBe("1 overdue device");
       expect(c(0, 0, 0, 2)).toBe("2 overdue devices");
       expect(c(2, 1, 0, 0)).toBe("3 pending items: 2 incoming transfers, 1 pending return");
-      expect(c(2, 1, 5, 1)).toBe(
-        "4 pending items: 2 incoming transfers, 1 pending return, 1 overdue device",
+      expect(c(0, 0, 1, 0)).toBe("1 extension request");
+      expect(c(0, 0, 3, 0)).toBe("3 extension requests");
+      expect(c(2, 1, 3, 1)).toBe(
+        "7 pending items: 2 incoming transfers, 1 pending return, 3 extension requests, 1 overdue device",
       );
     });
     it("a badge for a nav id the tier cannot see is not rendered", () => {

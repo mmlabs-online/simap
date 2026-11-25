@@ -178,6 +178,7 @@ export function createDevicesApi(fetcher: ApiFetch) {
       call<DeviceDto>(`${devicePath(id)}/take-back`, { method: "POST" }, oneDevice),
     incomingHandoffs: () => listHandoffs("incoming"),
     pendingReturns: () => listHandoffs("returns"),
+    pendingExtensions: () => listHandoffs("extensions"),
     handoffCount: () =>
       call<HandoffCountDto>("/api/handoffs/count", { method: "GET" }, async (res) => {
         const body = (await res.json()) as {

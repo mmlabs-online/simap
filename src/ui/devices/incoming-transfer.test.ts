@@ -8,6 +8,7 @@ import {
   badgeTotal,
   confirmOutcome,
   declineOutcome,
+  fetcherFor,
   focusAfter,
   handoffBoxes,
   incomingReducer,
@@ -131,29 +132,41 @@ describe("focusAfter", () => {
 describe("badgeCountAfter", () => {
   it("ok count wins; failed count with both lists -> their lengths; one list null -> null", () => {
     const counts = { incoming: 4, returns: 1, extensions: 0, overdue: 0 };
-    expect(badgeCountAfter({ ok: true, value: counts }, [item("a")], [])).toEqual(counts);
-    expect(badgeCountAfter(err("internal"), [item("a"), item("b")], [item("c")])).toEqual({
-      incoming: 2,
-      returns: 1,
-      extensions: 0,
-      overdue: 0,
-    });
-    expect(badgeCountAfter(err("internal"), null, [])).toBeNull();
-    expect(badgeCountAfter(err("internal"), [], null)).toBeNull();
-    expect(badgeCountAfter({ ok: true, value: counts }, null, null)).toEqual(counts);
+    expect(badgeCountAfter({ ok: true, value: counts }, [item("a")], [], [])).toEqual(counts);
+    expect(
+      badgeCountAfter(err("internal"), [item("a"), item("b")], [item("c")], [item("d")]),
+    ).toEqual({ incoming: 2, returns: 1, extensions: 1, overdue: 0 });
+    expect(badgeCountAfter(err("internal"), null, [], [])).toBeNull();
+    expect(badgeCountAfter(err("internal"), [], null, [])).toBeNull();
+    expect(badgeCountAfter(err("internal"), [], [], null)).toBeNull();
+    expect(badgeCountAfter({ ok: true, value: counts }, null, null, null)).toEqual(counts);
   });
 });
 
 describe("badgeTotal", () => {
-  it("sums incoming, returns and overdue (not extensions yet)", () => {
-    expect(badgeTotal({ incoming: 2, returns: 3, extensions: 4, overdue: 1 })).toBe(6);
+  it("sums incoming, returns, extensions and overdue", () => {
+    expect(badgeTotal({ incoming: 2, returns: 3, extensions: 4, overdue: 1 })).toBe(10);
   });
 });
 
 describe("handoffBoxes", () => {
-  it("non-Admin -> ['incoming'] only; Admin -> both", () => {
-    expect(handoffBoxes(false)).toEqual(["incoming"]);
-    expect(handoffBoxes(true)).toEqual(["incoming", "returns"]);
+  it("user -> incoming; manager -> + extensions; admin -> incoming, returns, extensions", () => {
+    expect(handoffBoxes(false, false)).toEqual(["incoming"]);
+    expect(handoffBoxes(false, true)).toEqual(["incoming", "extensions"]);
+    expect(handoffBoxes(true, true)).toEqual(["incoming", "returns", "extensions"]);
+  });
+});
+
+describe("fetcherFor", () => {
+  it("maps each box to its own API call", () => {
+    const api = {
+      incomingHandoffs: () => Promise.resolve(err("a")),
+      pendingReturns: () => Promise.resolve(err("b")),
+      pendingExtensions: () => Promise.resolve(err("c")),
+    };
+    expect(fetcherFor(api, "incoming")).toBe(api.incomingHandoffs);
+    expect(fetcherFor(api, "returns")).toBe(api.pendingReturns);
+    expect(fetcherFor(api, "extensions")).toBe(api.pendingExtensions);
   });
 });
 
