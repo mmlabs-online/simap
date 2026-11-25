@@ -174,3 +174,34 @@ describe("devices-api assign and holding", () => {
     });
   });
 });
+
+describe("devices-api transfer", () => {
+  const body = { kind: "transfer" as const, toMemberId: "m1", note: "Chuyển máy" };
+  it("startTransfer sends POST /api/devices/<id>/handoffs with the JSON body", async () => {
+    const { api, calls } = fake(() => jsonRes({ id: "h1" }, 201));
+    expect(await api.startTransfer("d/1", body)).toEqual({ ok: true, value: { id: "h1" } });
+    expect(calls[0][0]).toBe("/api/devices/d%2F1/handoffs");
+    expect(calls[0][1]?.method).toBe("POST");
+    expect(new Headers(calls[0][1]?.headers).get("content-type")).toBe("application/json");
+    expect(JSON.parse(String(calls[0][1]?.body))).toEqual(body);
+  });
+  it("cancelHandoff sends POST /api/handoffs/<id>/cancel with no body", async () => {
+    const { api, calls } = fake(() => jsonRes({ id: "h 1" }));
+    expect(await api.cancelHandoff("h 1")).toEqual({ ok: true, value: { id: "h 1" } });
+    expect(calls[0][0]).toBe("/api/handoffs/h%201/cancel");
+    expect(calls[0][1]?.method).toBe("POST");
+    expect(calls[0][1]?.body).toBeUndefined();
+  });
+  it("error codes pass through; a body without an id is internal", async () => {
+    const pending = fake(() => jsonRes({ error: { code: "handoff_pending" } }, 409));
+    expect(await pending.api.startTransfer("d1", body)).toEqual({
+      ok: false,
+      code: "handoff_pending",
+    });
+    const gone = fake(() => jsonRes({ error: { code: "handoff_not_pending" } }, 409));
+    expect(await gone.api.cancelHandoff("h1")).toEqual({ ok: false, code: "handoff_not_pending" });
+    const bad = fake(() => jsonRes({}));
+    expect(await bad.api.cancelHandoff("h1")).toEqual({ ok: false, code: "internal" });
+    expect(await bad.api.startTransfer("d1", body)).toEqual({ ok: false, code: "internal" });
+  });
+});

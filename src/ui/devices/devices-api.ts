@@ -3,6 +3,8 @@ import type {
   AssignValue,
   DeviceDto,
   DevicePatchValue,
+  HandoffDto,
+  HandoffStartValue,
   HoldingPatchValue,
   PlacementFilter,
 } from "@/lib/devices/types";
@@ -51,6 +53,10 @@ export function createDevicesApi(fetcher: ApiFetch) {
   const oneDevice = async (res: Response): Promise<DevicesResult<DeviceDto>> => {
     const body: unknown = await res.json();
     return isDevice(body) ? { ok: true, value: body as DeviceDto } : fail("internal");
+  };
+  const oneHandoff = async (res: Response): Promise<DevicesResult<HandoffDto>> => {
+    const body: unknown = await res.json();
+    return isDevice(body) ? { ok: true, value: body as HandoffDto } : fail("internal");
   };
   const devicePath = (id: string) => `/api/devices/${encodeURIComponent(id)}`;
 
@@ -105,6 +111,22 @@ export function createDevicesApi(fetcher: ApiFetch) {
           body: JSON.stringify(body),
         },
         oneDevice,
+      ),
+    startTransfer: (id: string, body: HandoffStartValue) =>
+      call<HandoffDto>(
+        `${devicePath(id)}/handoffs`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        oneHandoff,
+      ),
+    cancelHandoff: (handoffId: string) =>
+      call<HandoffDto>(
+        `/api/handoffs/${encodeURIComponent(handoffId)}/cancel`,
+        { method: "POST" },
+        oneHandoff,
       ),
     remove: (id: string) =>
       call<void>(devicePath(id), { method: "DELETE" }, async () => ({

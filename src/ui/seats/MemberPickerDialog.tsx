@@ -27,10 +27,16 @@ export function MemberPickerFields({
   onSelect,
   onMore,
   onRetry,
+  occupantLabel = copy.pickerSitsHere,
+  listLabel = copy.pickerList,
 }: {
   state: PickerState;
   query: string;
   occupantId: string | null;
+  /** Suffix of the disabled occupant option; defaults to the seat wording. */
+  occupantLabel?: string;
+  /** Accessible name of the radio list. */
+  listLabel?: string;
   canMore: boolean;
   onQuery: (q: string) => void;
   onSelect: (id: string) => void;
@@ -52,7 +58,7 @@ export function MemberPickerFields({
       />
       <div
         role="radiogroup"
-        aria-label={copy.pickerList}
+        aria-label={listLabel}
         aria-busy={state.status === "loading"}
         className="max-h-[35dvh] overflow-y-auto flex flex-col gap-1"
       >
@@ -76,7 +82,7 @@ export function MemberPickerFields({
                 {m.employeeCode !== null && (
                   <span className="text-on-surface-variant"> {m.employeeCode}</span>
                 )}
-                {here && <span className="text-on-surface-variant"> ({copy.pickerSitsHere})</span>}
+                {here && <span className="text-on-surface-variant"> ({occupantLabel})</span>}
               </span>
             </label>
           );

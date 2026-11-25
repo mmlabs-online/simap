@@ -30,7 +30,31 @@ export const devicesCopy = {
     editAria: (inv: string) => `Edit device ${inv}`,
     delete: "Delete",
     deleteAria: (inv: string) => `Delete device ${inv}`,
+    transfer: "Transfer",
+    transferAria: (inv: string) => `Transfer device ${inv}`,
+    cancelTransfer: "Cancel transfer",
+    cancelTransferAria: (inv: string) => `Cancel transfer of device ${inv}`,
   },
+  transfer: {
+    title: "Transfer device",
+    submit: "Send transfer",
+    currentOwner: "Current owner",
+    ownerSuffix: "current owner",
+    recipients: "Transfer to",
+    note: "Note for the recipient",
+    noteHint: "Optional. The recipient sees it with the transfer.",
+    expiryHint: "The current expiry date, if any, stays with the device.",
+    nextBefore:
+      'The recipient must confirm before the device moves. Until then it stays with you, marked as "Transfer pending". You can cancel at any time.',
+    nextAfter: (name: string) =>
+      `${name} will see this in Devices and must confirm. Until they do, the device stays where it is. After they confirm it goes into their inventory, not placed on a seat.`,
+    errors: { invalid: "The server refused this. Check the note and the recipient." },
+    sent: (name: string, inv: string) =>
+      `Transfer of ${name} (${inv}) sent. It waits for the recipient to confirm.`,
+    cancelled: (name: string, inv: string) => `Transfer of ${name} (${inv}) cancelled.`,
+    gone: "This transfer is no longer available. The list has been refreshed.",
+  },
+  pending: { chip: "Transfer pending", to: (name: string) => `To ${name}` },
   delete: {
     title: "Delete device",
     submit: "Delete device",

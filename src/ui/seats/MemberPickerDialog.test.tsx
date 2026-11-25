@@ -58,3 +58,31 @@ describe("MemberPickerFields", () => {
     expect(html).toContain("(sits here)");
   });
 });
+
+describe("MemberPickerFields labels", () => {
+  it("default disabled label is still 'sits here' and the list keeps its default name", () => {
+    const html = render(ready(), "a");
+    expect(html).toContain("(sits here)");
+    expect(html).toContain('aria-label="Active members"');
+  });
+  it("occupantLabel and listLabel override both", () => {
+    const html = renderToStaticMarkup(
+      <MemberPickerFields
+        state={ready()}
+        query=""
+        occupantId="a"
+        occupantLabel="current owner"
+        listLabel="Transfer to"
+        canMore={false}
+        onQuery={() => {}}
+        onSelect={() => {}}
+        onMore={() => {}}
+        onRetry={() => {}}
+      />,
+    );
+    expect(html).toContain("(current owner)");
+    expect(html).not.toContain("sits here");
+    expect(html).toContain('aria-label="Transfer to"');
+    expect(html).not.toContain("Active members");
+  });
+});
