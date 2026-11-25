@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T14:06:00Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -41,5 +41,13 @@ Admins manage the catalog on one page next to Device types.
 
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
+- 2026-11-25 (orchestrator): planner split the ticket. This ticket is slice 1 (page, nav, grouped list, rename/regroup/show-hide, size with in-use warning, reset). Art per direction moves to SIM-039.9. No reorder UI (D67); the ticket and LAY-07 "reorder" wording is stale.
+- Waiting for Ming: plan approval (P1 gate)
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3 (frontend-developer×1 45k, ux-architect×1 43k, planner×1 127k; default models)
+- Done: plan READY (slice 1, ~480 product lines): MapItemsPage/View, edit dialog, size editor with confirm before deleting images, in-use 409 with room count, reset dialog, nav entry (icon `chair`), API client patch/reset. Split: art per direction → SIM-039.9 (added to the board).
+- In progress / next: Ming approves A1-A11 (M-72), then implement and review.
+- Gotchas: reorder dropped (D67); slice 1 slightly over the 400-line guide (A11: reset can move to slice 2 if needed).
