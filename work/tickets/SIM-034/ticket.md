@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | REWORK |
 | Priority | P1 |
 | Size | S |
 | Areas | security, architecture |
 | Gate | plan-approval |
 | Depends on | — |
 | Needs Ming | M-24 |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-23 |
 | Claimed by | claude@2026-11-25T17:02:52Z |
 | PR | — |
