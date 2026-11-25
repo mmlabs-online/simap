@@ -56,6 +56,9 @@ const SPECS: Record<ExportKind, Spec> = {
       "Type",
       "Inventory number",
       "MAC",
+      "Serial",
+      "Manufacturer",
+      "Brand",
       "Role",
       "Owner name",
       "Owner employee code",
@@ -63,7 +66,7 @@ const SPECS: Record<ExportKind, Spec> = {
       "Room code",
       "Seat code",
     ],
-    sql: `select d.name, d.type, d.inventory_number, d.mac, d.role,
+    sql: `select d.name, d.type, d.inventory_number, d.mac, d.serial, d.manufacturer, d.brand, d.role,
         m.display_name as owner_name, m.employee_code as owner_code,
         d.seat_id, s.code as seat_code, r.code as room_code
       from devices d
@@ -78,6 +81,9 @@ const SPECS: Record<ExportKind, Spec> = {
       r.type,
       r.inventory_number,
       r.mac,
+      r.serial,
+      r.manufacturer,
+      r.brand,
       r.role,
       r.owner_name,
       r.owner_code,

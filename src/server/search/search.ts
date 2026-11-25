@@ -127,6 +127,9 @@ const devices = (c: Query, scope: OrgScope, f: SearchFilter) => {
         like("d.name", p),
         like("d.inventory_number", p),
         like("d.mac", p),
+        like("d.serial", p),
+        like("d.manufacturer", p),
+        like("d.brand", p),
         like("m.display_name", p),
       ];
       if (mac !== null) alts.push(`replace(d.mac, ':', '') like ${bind(`%${mac}%`)}`);
