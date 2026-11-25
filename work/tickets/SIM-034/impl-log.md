@@ -78,3 +78,37 @@ None.
 
 ### Scope self-check
 Only the listed review issues and the optional 🟡 5 were changed.
+
+## Attempt 3 (REWORK, extra rework allowed by Ming: first runner CI failed)
+
+Root cause: macOS `lsof -nP -iTCP:<port> -sTCP:LISTEN -Fp` prints a file-descriptor line after each `p<pid>` line
+(`p33091\nf12\n`; measured on the runner with a temporary diagnostic step). `parsePosixListeners` in
+`scripts/dev-process.mjs` treated the `f12` line as malformed and returned null, so `owner()` answered "unknown". It was
+not a PATH problem: lsof is at `/usr/sbin/lsof` and the job PATH already has `/usr/sbin`. `ps` and lsof both ran fine
+(status 0, 35-56 ms).
+
+Files touched
+- `scripts/dev-process.mjs` (OUT-OF-PLAN, SIM-032 code): `parsePosixListeners` now collects `p<pid>` lines and skips other
+  one-letter field lines; digits-only or otherwise odd lines are still malformed (null). Required because the code was wrong
+  on macOS; a workflow change cannot fix it.
+- `scripts/dev-process.test.ts` (OUT-OF-PLAN, same reason): the parser test now covers `p12\nf12\np40\nf9\n` -> [12, 40] and
+  keeps `12\n` -> null (the old `f3\n` -> null case is no longer malformed). The two real-tree owner tests are unchanged.
+- `.github/workflows/ci.yml`: a temporary diagnostic step was added and removed again; net diff vs attempt 2 is empty.
+- `work/ming-todo.md`: merge conflict with main (PR was CONFLICTING, so no pull_request CI ran); our items renumbered M-75
+  and M-76 (main took M-74). Earlier handoff text in ticket.md still says M-74/M-75; read those as M-75/M-76.
+
+Runs (self-hosted macOS runner)
+- 45664740286: `pnpm test` failed, 2 owner tests (the original failure).
+- 45667637399: diagnostic step output above; same 2 failures.
+- 45668454103 (after the fix): typecheck, check:layers, `pnpm test`, migrate CLI, migrate smoke, schema check all green.
+  `pnpm test:db` fails with exactly the 3 known failures (devices.db "return flags", manage.db "deactivate with release",
+  map-items.db ordering; 3 failed | 287 passed), which also fail on main (run 45664750414). Because that step fails the job,
+  format:check, build, the standalone check and the `image` job (check-image, compose config) did not run on the runner yet.
+  A temporary `continue-on-error` on the db step to reach them was blocked by the permission classifier, so I did not do it.
+
+Local checks (Windows): format:check clean, typecheck ok, check:layers 796 files no violations, `pnpm test` green on two
+runs (one earlier run showed 1 failed test I could not identify; the next two were green).
+
+Follow-ups
+- Ming decides: fix the 3 test:db failures (separate ticket) or allow a temporary non-blocking db step so the rest of the
+  CI job and the image job can be seen on the runner. Until then AC for build/image is unverified on the runner.
