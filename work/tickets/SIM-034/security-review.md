@@ -100,3 +100,30 @@ I read the three workflows, `scripts/ci-postgres.sh`, `scripts/ci-docker-config.
 - Move DOCKERHUB_* and DEPLOY_REPO_TOKEN into a GitHub Environment (e.g. `release`, deployment branches `release/*`). Add a ruleset so only Ming can create `release/*` branches. Today any same-repo PR workflow can reference the repository secrets.
 - Run the runner as its own macOS user, with no read access to `~/.config/simap` or Ming's keychain or `~/.docker`. That is the real isolation boundary on this host.
 - Add the credential-helper and keychain checks above to the plan's "Ming verification after merge".
+
+## Attempt 2
+
+**SIM-034 security re-check, attempt 2**
+
+**Result: no blockers. All 5 attempt-1 findings are fixed. The rework adds no new 🔴 or 🟡.** I checked by reading the files; I ran no commands.
+
+### Attempt-1 findings
+- 🟢 **S1 keychain auto-detect** (`d:\project\simap-game-ui\scripts\ci-docker-config.sh:23-25`): fixed.
+  - The config now writes `"auths":{"ci.invalid":{}}`. That makes the Docker CLI's `ContainsAuth()` return true, so `DetectDefaultStore` is skipped and `credsStore` stays empty. `docker login` then stores the auth in this file, not in osxkeychain.
+  - `umask 077` comes before `mkdir` and the write, so the directory is 0700 and `config.json` is 0600.
+- 🟢 **S2 git credential helper** (`d:\project\simap-game-ui\.github\workflows\release.yml:98-103` and `:137-157`): fixed.
+  - **Helper off:** `GIT_CONFIG_KEY_0=credential.helper` with an empty value is command-line scope. An empty `credential.helper` resets the helper list, so Apple git's system-level `osxkeychain` helper is dropped.
+  - **base64 on macOS:** BSD `/usr/bin/base64` does not wrap lines, and GNU's 76-column wrapping is removed by `tr -d '\n'`. The header is a single line on both.
+  - **Token exposure:** `printf` is a bash builtin, so the token is never in an exec'd argv, and `base64` reads it from stdin. Nothing echoes it and there is no `set -x`. The URLs (`:103`, `:141`, `:157`) carry no token. `persist-credentials: false` is still set (`:41`).
+- 🟢 **S3 unguarded docker logout** (`release.yml:171`): fixed. Logout runs only when `DOCKER_CONFIG` equals `$RUNNER_TEMP/docker`. If setup failed early, the variable is unset and the host's `~/.docker` login is left alone. A bare `docker logout` targets Docker Hub, which is the registry login-action used (`:86-89`).
+- 🟢 **4 buildx builder leak** (`d:\project\simap-game-ui\.github\workflows\ci.yml:110-116`, `release.yml:168-170`): fixed. The docker config directory is no longer deleted in the main steps, so setup-buildx's post step can still find and remove its builder.
+- 🟢 **5 unlabelled containers** (`d:\project\simap-game-ui\scripts\check-image.sh:83,105,151`): fixed. All three `docker run -d` calls now have `--label simap-ci=1`, and `d:\project\simap-game-ui\scripts\ci-postgres.sh:21-24` sweeps containers and networks by that label.
+
+### New notes (none block)
+- 🟢 **Base64 header is not masked.** GitHub masks the raw token, not its base64 form. Nothing prints that form today, but if anyone adds `set -x` or `env` output to those two steps later, it would leak. Optional fix: add a comment saying "no `set -x` here". Or add `echo "::add-mask::$GIT_CONFIG_VALUE_1"` (the full value, with the `AUTHORIZATION: basic ` prefix). Don't use a `${...#AUTHORIZATION: basic }` substitution: inside a workflow `run:` block, `${{` is template syntax, but `${...#...}` is ordinary shell and works.
+- 🟢 **Header is in the environment for the whole step** (`release.yml:138-160`). The deploy step's other processes (`git commit`, `gh pr create`) can read it. None of them runs code from the cloned repo (clone does not run hooks), so this is acceptable. Keep it that way: never run a script from `$RUNNER_TEMP/deployment` in that step.
+- 🟢 **Git version.** `GIT_CONFIG_COUNT` needs git 2.31 or newer; Xcode CLT ships 2.39 or newer. Older git would ignore it and the push would fail without auth, storing nothing, so it fails safe. Ming can confirm with `git --version` on the runner.
+- 🟢 **Docker auth file if logout fails.** The Docker Hub auth stays in `$RUNNER_TEMP/docker/config.json` (0600) until the runner empties `RUNNER_TEMP` at job end. Low risk, since the runner is single-tenant. Ming's post-run check in impl-log, "config.json has no credsStore", covers it.
+
+### Follow-ups (out of scope)
+- 🟡 6 from attempt 1 is still open: turn off fork PR workflows, and turn off public repositories on the runner group. These are GitHub settings for Ming, not code; impl-log says they go to `work/ming-todo.md`.

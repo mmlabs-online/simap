@@ -93,3 +93,61 @@ From `security-review.md` → Attempt 1 (🔴, added by the orchestrator; full d
 - 🔴 S2: `release.yml:99, 133, 150`: token-bearing git commands can store DEPLOY_REPO_TOKEN / GITHUB_TOKEN in git's `osxkeychain` credential helper. Fix: disable `credential.helper` on every token-bearing git command (better: send the token as an http extraheader through `GIT_CONFIG_*` env, not in the URL), plus a test.
 - 🔴 S3: `release.yml:156-163`: the `if: always()` cleanup runs `docker logout` even when `DOCKER_CONFIG` was never set (an early guard fails), so it logs out the host's real `~/.docker`. Fix: log out only when `DOCKER_CONFIG` equals `$RUNNER_TEMP/docker`, plus a test.
 The security review's 🟡 4 is the same issue as Issue 1 above. Its 🟡 5 (label check-image containers `simap-ci=1`) and 🟡 6 (fork settings are Ming's check) are should-fix / Ming follow-ups.
+
+## Attempt 2 — 2026-11-26
+Verdict: PASS
+
+Branch `ticket/SIM-034` (HEAD a5d22af, code in 04b69b3) vs `origin/main`. Rework diff checked: `git diff 3be4094..04b69b3`. The whole diff was re-read briefly. The workflows cannot run on this Windows box. AC2 and AC5 come from the PR run, as plan step 9 says: they are first-run checks, not blockers (see below).
+
+### Checks (run by reviewer)
+- `pnpm format:check`: "All matched files use the correct format." (exit 0)
+- `pnpm typecheck`: exit 0
+- `pnpm check:layers`: "check-layers: 785 files, no violations"
+- `pnpm test`: "Test Files 298 passed | 1 skipped (299)", "Tests 3009 passed | 9 skipped (3018)". This matches impl-log attempt 2 (+5 tests since attempt 1).
+- `pnpm build`: "Compiled successfully", exit 0
+- `bash -n` on `scripts/ci-postgres.sh`, `scripts/ci-docker-config.sh` and `scripts/check-image.sh`: all ok. The new shell code (`umask 077`, `export A=1 B= C=…`, `${DOCKER_CONFIG:-}`, `[ = ]`, `base64 | tr -d '\n'`) works in bash 3.2 and BSD. macOS `base64` does not wrap by default and GNU's does; `tr -d '\n'` covers both.
+- `pnpm test:db`: CI only (the PR's `ci` job).
+
+### Fixes from attempt 1
+- **Issue 1 (buildx builder leak): fixed.** `rm -rf "$RUNNER_TEMP/docker"` is gone from both cleanups (ci.yml:116 now removes only `compose-ci`, release.yml:173 only `deployment`), and both have the explanatory comment. `DOCKER_CONFIG` stays in place for the `Post docker/setup-buildx-action` builder removal and for login-action's post logout. The runner empties `RUNNER_TEMP` at job end. After the logouts, the leftover `config.json` holds only the `ci.invalid` placeholder. Tests: `ci-workflows.test.ts › never removes the docker config dir in a main step…` and `release-files.test.ts › deployment clone lives in RUNNER_TEMP…` (`not.toMatch(/rm -rf[^\n]*docker/)`). Ming's buildx_buildkit checks are listed in impl-log.
+- **S1 (keychain auto-detect): fixed.** ci-docker-config.sh:25 writes `{"auths":{"ci.invalid":{}},…}`. A non-empty `auths` makes docker/cli's `ContainsAuth()` true, so `DetectDefaultStore` (osxkeychain) is skipped, and `docker login` from login-action writes into the file. `umask 077` comes before the `mkdir` (line 23), so the dir and file are 0700/0600. Test: `ci-workflows.test.ts › isolated docker config pins an auths entry… and a private umask`.
+- **S2 (git credential helper): fixed, the stronger variant.** release.yml:98-103 (tag push) and :137-157 (clone, push): `GIT_CONFIG_COUNT=2`, `credential.helper` is set to empty (resets the system/global helper list, so osxkeychain is off), and the token goes as an `http.https://github.com/.extraheader` basic header (same form actions/checkout uses), so no 401 happens and git never calls `credential approve`. URLs and argv carry no token. The clone does not keep the header in its config, and `remote set-url` is no longer needed. `gh pr create` uses `GH_TOKEN` from env and does not touch git credentials. Tests: `release-files.test.ts › token-bearing git commands keep the token out of URLs…` (no `x-access-token:$GH_TOKEN@` anywhere, env set before the first `git push|clone` in both steps).
+- **S3 (logout against host `~/.docker`): fixed.** release.yml:171 runs `docker logout` only when `DOCKER_CONFIG` equals `$RUNNER_TEMP/docker`. `ci-docker-config.sh` writes `DOCKER_CONFIG` to `$GITHUB_ENV` last, after `docker version` succeeds, so a failed guard or config step means no logout. login-action and its post step run only after the config step succeeded. Test: `release-files.test.ts › docker logout only runs against the isolated DOCKER_CONFIG` (also asserts that no unguarded `docker logout` line exists).
+- **Security 🟡 5 (optional): applied.** check-image.sh:83, :105 and :151 add `--label simap-ci=1` to the three `docker run -d` calls. Test: `every check-image docker run -d is labelled simap-ci=1`. Release does not sweep, so the label has no effect there.
+- **Issue 2 (buildx version shadowing):** recorded as a first-run check in impl-log, as asked.
+
+### Acceptance criteria
+- [x] AC1: unchanged since attempt 1 (ci.yml:21/:63, risk-tier.yml:21, release.yml:35). Tests pass.
+- [ ] AC2 (first-run check, not a blocker): the PR run on MacBookPro is green. The orchestrator pastes the run URL into impl-log before Ming merges. Local equivalents are green (above).
+- [x] AC3 (static part): the Postgres isolation is as in attempt 1. The buildx builder is now removed by its post step, and the check-image containers are labelled for the sweep. Run-log and host confirmation: Ming verification.
+- [x] AC4: `no sudo…` test passes. No new interactive path: the credential helper is off, so git cannot prompt for or store credentials.
+- [ ] AC5 (first-run check, not a blocker): the PR gets `risk:high` from the Mac runner. The code is unchanged since attempt 1.
+
+If the PR run fails on AC2 or AC5, that is a new finding for a follow-up rework or escalation. It is not a defect visible in this diff.
+
+### Issues
+None blocking.
+
+### Rules (CLAUDE.md)
+- R3: no token in URLs, argv, logs or the host keychain any more. Secrets reach `run:` only via `env:`. No `${{ }}` in any `run:` block (re-grepped; the rework added none).
+- No `sudo`. No production names or paths beyond attempt 1's `sed` source in ci.yml:99, which is asserted absent from the copy. No prune, `-p simap `, `5432:5432` or `--network host`.
+- R4: the rework touches only files in the plan's list. The plan deviations (no `$RUNNER_TEMP/docker` removal, extraheader instead of a token URL) are recorded in impl-log.
+- R5: green checks, and each fix has a static test.
+- No violations found.
+
+### Blockers from review agents
+None open from attempt 1: S1–S3 are fixed as shown above. The orchestrator adds any new security-review attempt 2 findings here.
+
+### First-run / Ming checks the PR must carry (in addition to attempt 1's list and plan "Ming verification after merge")
+- `docker ps -a --filter name=buildx_buildkit` and `docker volume ls --filter name=buildx_buildkit` are empty after the `image` run.
+- The setup-buildx "Buildx version" log line shows the pinned latest, not the host's buildx (Issue 2).
+- Before the first release: `which docker-credential-osxkeychain`. After it: `security find-internet-password -s github.com -a x-access-token` finds nothing, and `~/.docker/config.json` is unchanged.
+- The tag push and deployment clone/push succeed with the extraheader auth (needs git >= 2.31 for `GIT_CONFIG_COUNT`; Apple CLT git meets this).
+- Security 🟡 6: impl-log says "add to ming-todo", but the branch's ming-todo.md has only M-73. The orchestrator adds the fork-PR / runner-group settings item to `work/ming-todo.md` (on main, per the board rule) or to the PR body.
+
+### Nits (do not block)
+- Attempt 1's nits remain as they were (`docker info` inside `< <(...)`, `wait_healthy` message, README line length). impl-log lists them.
+- The extraheader block is duplicated in two steps. It is fine at this size, and a shared script would be a follow-up.
+
+### Follow-ups (out of scope)
+- Same as attempt 1 and security-review follow-ups (GitHub Environment for release secrets, dedicated runner user, kit changes for risk-tier.yml).
