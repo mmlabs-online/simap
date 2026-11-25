@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T03:22:11Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -47,4 +47,12 @@ docs/spec-v1.md §6 DEV-01 (fields), DEV-07; D63.
 ## Notes / answers from Ming
 Ming 2026-11-25: "lên ticket và làm luôn".
 
+Waiting for Ming: plan approval (P1) and the split (UI slice → proposed SIM-037.7)
+
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3 (api-platform-engineer×1 ~51k, frontend-developer×1 ~78k, planner×1; default models).
+- Done: consult files; plan.md READY for slice 1 (API + data + SIM-037.1 carry-overs), assumptions A1-A11; planner proposes the UI slice as a new ticket SIM-037.7.
+- In progress / next: Ming approves plan + split (M-53); then create SIM-037.7 and IMPLEMENT slice 1.
+- Gotchas: no High path in slice 1 (no migration). Deactivation counts only placed devices (A8 → debt issue). Spec DEV-01 still mentions the "Move to inventory" delete warning (A9).
