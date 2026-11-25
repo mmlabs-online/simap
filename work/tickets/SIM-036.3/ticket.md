@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -44,5 +44,7 @@ management page.
 
 ## Notes / answers from Ming
 - 2026-11-24: "cho phép admin đặt thêm loại device kèm hình ảnh đại diện" (D61).
+
+- 2026-11-25 (orchestrator): planner split the ticket; this ticket is slice 1 (page, create/edit/delete, slot picker, Type suggestions). Images (AC3 and the 422 half of AC2) move to SIM-036.6.
 
 ## Handoff
