@@ -18,6 +18,8 @@ import { TransferDeviceDialog } from "./TransferDeviceDialog";
 import { cancelOutcome } from "./transfer-device";
 import { confirmReturnOutcome, takeBackDone } from "./return-device";
 import { PendingReturns } from "./PendingReturns";
+import { PendingExtensions } from "./PendingExtensions";
+import { approveExtensionOutcome, rejectExtensionOutcome } from "./extension-device";
 import { ReturnDeviceDialog } from "./ReturnDeviceDialog";
 import { ExtendDeviceDialog } from "./ExtendDeviceDialog";
 import { OverdueBanner } from "./OverdueBanner";
@@ -53,6 +55,7 @@ export function DevicesPage() {
   const [holding, setHolding] = useState<{ device: DeviceDto; mode: AssignMode } | null>(null);
   const session = useSession();
   const isAdmin = session ? atLeastTier(session.tier, "admin") : false;
+  const isManager = session ? atLeastTier(session.tier, "manager") : false;
   const [form, setForm] = useState<{ device: DeviceDto | null } | null>(null);
   const [deleting, setDeleting] = useState<DeviceDto | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -64,7 +67,9 @@ export function DevicesPage() {
   const acting = useRef(false);
   const [notice, setNotice] = useState<DevicesViewProps["notice"]>(null);
   const incoming = useHandoffList(api, "incoming", true);
-  const returns = useHandoffList(api, "returns", handoffBoxes(isAdmin).includes("returns"));
+  const boxes = handoffBoxes(isAdmin, isManager);
+  const returns = useHandoffList(api, "returns", boxes.includes("returns"));
+  const extensions = useHandoffList(api, "extensions", boxes.includes("extensions"));
   const [returning, setReturning] = useState<DeviceDto | null>(null);
   const [takingBack, setTakingBack] = useState<DeviceDto | null>(null);
   const [extending, setExtending] = useState<DeviceDto | null>(null);
@@ -72,6 +77,7 @@ export function DevicesPage() {
   const [incomingBusyId, setIncomingBusyId] = useState<string | null>(null);
   const incomingHeadingRef = useRef<HTMLHeadingElement>(null);
   const returnsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const extensionsHeadingRef = useRef<HTMLHeadingElement>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
 
   // Applied after the commit, so the node it points at is the new one, not the one the await replaced.
@@ -82,24 +88,30 @@ export function DevicesPage() {
         .querySelector<HTMLElement>(`[data-handoff-confirm="${CSS.escape(focusTarget.id)}"]`)
         ?.focus();
     } else if (focusTarget.kind === "section") {
-      (focusTarget.list === "returns" ? returnsHeadingRef : incomingHeadingRef).current?.focus();
+      (focusTarget.list === "returns"
+        ? returnsHeadingRef
+        : focusTarget.list === "extensions"
+          ? extensionsHeadingRef
+          : incomingHeadingRef
+      ).current?.focus();
     } else {
       headingRef.current?.focus();
     }
     setFocusTarget(null);
   }, [focusTarget]);
 
-  /** Refreshes the device list, both handoff lists and the nav badge. Resolves to the two lists (null when one failed). */
+  /** Refreshes the device list, the three handoff lists and the nav badge. Resolves to the three lists (null when one failed). */
   async function refreshAll() {
-    const [inc, ret] = await Promise.all([
+    const [inc, ret, ext] = await Promise.all([
       incoming.refresh(),
       returns.refresh(),
+      extensions.refresh(),
       refresh(),
       overdue.refresh(),
     ]);
-    const count = badgeCountAfter(await api.handoffCount(), inc, ret);
+    const count = badgeCountAfter(await api.handoffCount(), inc, ret, ext);
     if (count !== null) setBadge(count);
-    return { inc, ret };
+    return { inc, ret, ext };
   }
 
   /** Refreshes the device list and the overdue list (an expiry edit can clear overdue). */
@@ -116,12 +128,17 @@ export function DevicesPage() {
     acting.current = true;
     setIncomingBusyId(item.id);
     setNotice(null);
-    const before = list === "returns" ? returns.items : incoming.items;
+    const before =
+      list === "returns"
+        ? returns.items
+        : list === "extensions"
+          ? extensions.items
+          : incoming.items;
     const outcome = outcomeOf(await call());
     setNotice(outcome.notice);
     if (outcome.refresh) {
-      const { inc, ret } = await refreshAll();
-      const after = list === "returns" ? ret : inc;
+      const { inc, ret, ext } = await refreshAll();
+      const after = list === "returns" ? ret : list === "extensions" ? ext : inc;
       setFocusTarget(
         focusAfter(before, item.id, after ?? before.filter((h) => h.id !== item.id), list),
       );
@@ -181,7 +198,15 @@ export function DevicesPage() {
         headingRef.current?.focus();
       },
     }),
-    [api, refresh, overdue.refresh, incoming.refresh, returns.refresh, setBadge],
+    [
+      api,
+      refresh,
+      overdue.refresh,
+      incoming.refresh,
+      returns.refresh,
+      extensions.refresh,
+      setBadge,
+    ],
   );
 
   return (
@@ -260,6 +285,34 @@ export function DevicesPage() {
               }
               onRetry={() =>
                 void returns.refresh().then((items) => {
+                  if (items?.length === 0) setFocusTarget({ kind: "page" });
+                })
+              }
+            />
+            <PendingExtensions
+              items={extensions.items}
+              truncated={extensions.truncated}
+              errorCode={extensions.errorCode}
+              busyId={incomingBusyId}
+              headingRef={extensionsHeadingRef}
+              onApprove={(item) =>
+                void act(
+                  "extensions",
+                  item,
+                  () => api.confirmHandoff(item.id),
+                  (r) => approveExtensionOutcome(r, item),
+                )
+              }
+              onReject={(item) =>
+                void act(
+                  "extensions",
+                  item,
+                  () => api.declineHandoff(item.id),
+                  (r) => rejectExtensionOutcome(r, item),
+                )
+              }
+              onRetry={() =>
+                void extensions.refresh().then((items) => {
                   if (items?.length === 0) setFocusTarget({ kind: "page" });
                 })
               }

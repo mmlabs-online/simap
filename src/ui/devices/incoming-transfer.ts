@@ -1,7 +1,7 @@
 import type { HandoffBox, HandoffCountDto, HandoffDto, PlacementFilter } from "@/lib/devices/types";
 import { apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
-import type { DevicesResult } from "./devices-api";
+import type { DevicesApi, DevicesResult } from "./devices-api";
 import { NOTHING_CHANGED } from "./transfer-device";
 
 const copy = devicesCopy.incoming;
@@ -77,19 +77,40 @@ export function badgeCountAfter(
   count: DevicesResult<HandoffCountDto>,
   incoming: HandoffDto[] | null,
   returns: HandoffDto[] | null,
+  extensions: HandoffDto[] | null,
 ): HandoffCountDto | null {
   if (count.ok) return count.value;
-  return incoming === null || returns === null
+  return incoming === null || returns === null || extensions === null
     ? null
-    : { incoming: incoming.length, returns: returns.length, extensions: 0, overdue: 0 };
+    : {
+        incoming: incoming.length,
+        returns: returns.length,
+        extensions: extensions.length,
+        overdue: 0,
+      };
 }
 
-/** Incoming transfers, pending returns and the caller's overdue devices; `extensions` joins with the Manager list. */
-export const badgeTotal = (c: HandoffCountDto): number => c.incoming + c.returns + c.overdue;
+/** Incoming transfers, pending returns, extension requests (Manager+) and the caller's overdue devices. */
+export const badgeTotal = (c: HandoffCountDto): number =>
+  c.incoming + c.returns + c.extensions + c.overdue;
 
-/** The lists the caller may fetch. `box=returns` is Admin only, so a non-Admin never asks for it (it answers 422). */
-export const handoffBoxes = (isAdmin: boolean): HandoffBox[] =>
-  isAdmin ? ["incoming", "returns"] : ["incoming"];
+/** The lists the caller may fetch. `box=returns` is Admin only and `box=extensions` Manager+; a lower tier never asks for them (it answers 422). */
+export const handoffBoxes = (isAdmin: boolean, isManager: boolean): HandoffBox[] => [
+  "incoming",
+  ...(isAdmin ? (["returns"] as const) : []),
+  ...(isManager ? (["extensions"] as const) : []),
+];
+
+/** The API call that loads one handoff list. */
+export const fetcherFor = (
+  api: Pick<DevicesApi, "incomingHandoffs" | "pendingReturns" | "pendingExtensions">,
+  box: HandoffBox,
+) =>
+  box === "returns"
+    ? api.pendingReturns
+    : box === "extensions"
+      ? api.pendingExtensions
+      : api.incomingHandoffs;
 
 export type IncomingState = {
   status: "loading" | "error" | "ready";

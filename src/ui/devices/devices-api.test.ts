@@ -273,6 +273,15 @@ describe("devices-api transfer", () => {
     expect(calls[0][0]).toBe("/api/handoffs?box=returns");
     expect(calls[0][1]?.method).toBe("GET");
   });
+  it("pendingExtensions GETs /api/handoffs?box=extensions", async () => {
+    const { api, calls } = fake(() => jsonRes({ items: [], truncated: false }));
+    expect(await api.pendingExtensions()).toEqual({
+      ok: true,
+      value: { items: [], truncated: false },
+    });
+    expect(calls[0][0]).toBe("/api/handoffs?box=extensions");
+    expect(calls[0][1]?.method).toBe("GET");
+  });
   it("confirmHandoff / declineHandoff send POST /api/handoffs/<encoded id>/confirm and /decline with no body; codes pass through", async () => {
     const { api, calls } = fake(() => jsonRes({ id: "h 1" }));
     expect(await api.confirmHandoff("h 1")).toEqual({ ok: true, value: { id: "h 1" } });
