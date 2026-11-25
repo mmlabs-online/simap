@@ -24,6 +24,11 @@ export async function checkImageFile(file: {
   return png.ok ? { ok: true, bytes } : { ok: false, code: png.code };
 }
 
+/** `pixelated` for a source at or below the box (or not loaded yet), so small art stays crisp; `auto` smooths a downscale. */
+export function thumbRendering(naturalWidth: number | null, box: number): "pixelated" | "auto" {
+  return naturalWidth === null || naturalWidth <= box ? "pixelated" : "auto";
+}
+
 export function imageCheckMessage(code: ImageCheckCode): string {
   return code === "read_failed" ? deviceTypesCopy.form.readFailed : apiErrorMessage(code);
 }

@@ -12,6 +12,7 @@ vi.mock("@/server/db/pool", () => pool);
 const drive = vi.hoisted(() => ({ getDrive: vi.fn(() => null) }));
 vi.mock("@/server/drive/drive", () => drive);
 
+import { IMAGE_LIMITS } from "@/lib/validate/png";
 import { DELETE, GET, PUT } from "./[id]/image/route";
 
 const ISSUER = "https://api.mmlabs.online";
@@ -43,7 +44,7 @@ function crc32(b: Uint8Array): number {
   }
   return (c ^ 0xffffffff) >>> 0;
 }
-function pngOf(w: number, h: number): Uint8Array {
+function pngOf(w: number, h: number, padTo = 0): Uint8Array {
   const chunk = (type: string, data: Uint8Array) => {
     const out = new Uint8Array(12 + data.length);
     const v = new DataView(out.buffer);
@@ -60,12 +61,15 @@ function pngOf(w: number, h: number): Uint8Array {
   new DataView(hd.buffer).setUint32(0, w);
   new DataView(hd.buffer).setUint32(4, h);
   hd.set([8, 6, 0, 0, 0], 8);
-  const parts = [
+  const build = (pad: Uint8Array[]) => [
     new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     chunk("IHDR", hd),
+    ...pad,
     chunk("IDAT", new Uint8Array(deflateSync(Buffer.alloc(97 * 24)))),
     chunk("IEND", new Uint8Array(0)),
   ];
+  const base = build([]).reduce((n, p) => n + p.length, 0);
+  const parts = padTo ? build([chunk("tEXt", new Uint8Array(padTo - base - 12))]) : build([]);
   const all = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let at = 0;
   for (const p of parts) {
@@ -150,11 +154,12 @@ describe("device type image routes", () => {
     fakeAuth(["simap:admin"]);
     const cases: [Request, number, string][] = [
       [put(PNG, { "content-type": "image/jpeg" }), 422, "image_not_png"],
-      [put(PNG, { "content-length": "20481" }), 422, "image_too_large"],
-      [put(new Uint8Array(20481)), 422, "image_too_large"],
+      [put(PNG, { "content-length": String(IMAGE_LIMITS.maxBytes + 1) }), 422, "image_too_large"],
+      [put(new Uint8Array(IMAGE_LIMITS.maxBytes + 1)), 422, "image_too_large"],
       [put(new Uint8Array(0)), 422, "image_not_png"],
       [put(new TextEncoder().encode("<html>x</html>")), 422, "image_not_png"],
       [put(pngOf(23, 24)), 422, "image_bad_size"],
+      [put(pngOf(101, 101)), 422, "image_bad_size"],
     ];
     for (const [r, status, code] of cases) {
       const res = await PUT(r, idRoute);
@@ -176,6 +181,18 @@ describe("device type image routes", () => {
     expect(a[3]).toBe("s1");
     expect(a[4]).toBe(ID);
     expect(a[5]).toEqual(PNG);
+  });
+
+  it("a 100x100 PNG padded to maxBytes reaches the service", async () => {
+    fakeAuth(["simap:admin"]);
+    svc.setDeviceTypeImage.mockResolvedValue({
+      ok: true,
+      value: { id: ID, name: "PC", slot: "pc", hasImage: true, imageVersion: 1 },
+    });
+    const big = pngOf(100, 100, IMAGE_LIMITS.maxBytes);
+    expect(big.length).toBe(IMAGE_LIMITS.maxBytes);
+    expect((await PUT(put(big), idRoute)).status).toBe(200);
+    expect(svc.setDeviceTypeImage.mock.calls[0]![5]).toEqual(big);
   });
 
   it("service refusal maps to its status and code", async () => {

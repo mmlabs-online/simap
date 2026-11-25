@@ -3,12 +3,17 @@
 import { useState } from "react";
 import { deviceTypesCopy } from "../copy/deviceTypes";
 import { Icon } from "../Icon";
+import { thumbRendering } from "./device-type-image";
 
 const SIZE = 48;
 
-/** A device type image at 2x with nearest-neighbour zoom, or a dashed placeholder. */
+/**
+ * A device type image fitted into a 48 px box, or a dashed placeholder. Sources up to the box (and any image before
+ * it loads) use nearest-neighbour zoom; larger ones (D68) are smoothed.
+ */
 export function DeviceTypeThumb({ url, alt }: { url: string | null; alt: string }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState<{ url: string; width: number } | null>(null);
   if (url && url !== failedUrl) {
     return (
       <img
@@ -16,8 +21,11 @@ export function DeviceTypeThumb({ url, alt }: { url: string | null; alt: string 
         width={SIZE}
         height={SIZE}
         alt={alt}
-        className="shrink-0 object-contain [image-rendering:pixelated]"
-        style={{ imageRendering: "pixelated" }}
+        className="shrink-0 object-contain"
+        style={{
+          imageRendering: thumbRendering(loaded?.url === url ? loaded.width : null, SIZE),
+        }}
+        onLoad={(e) => setLoaded({ url, width: e.currentTarget.naturalWidth })}
         onError={() => setFailedUrl(url)}
       />
     );

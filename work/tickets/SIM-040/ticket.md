@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, api, architecture |
 | Gate | plan-approval |
 | Depends on | — |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/97 |
 
 ## Goal
 Every signed-in user can see which release of simap is running (for example "simap v0.1.9"), so a bug report or a
@@ -73,4 +73,18 @@ app"); the planner records it as a new decision. Related: `.github/workflows/rel
 - 2026-11-25 (Ming): add to this ticket: "ảnh 24x24 pixel quá nhỏ để lên layout bị vỡ, giới hạn 100x100pixel đi".
   Answers: square, at most 100 × 100 px (D68); at most 100 KB; device types only; merge into SIM-040.
 
+- 2026-11-25: Plan approved (Ming: "duyệt SIM-040"), assumptions A1-A7 as written (A1: map device image box stays 24 px).
+
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3 (frontend-developer×1 42k, api-platform-engineer×1 51k, planner×1; default models)
+- Done: plan READY (`plan.md`): build arg SIMAP_VERSION → NEXT_PUBLIC_SIMAP_VERSION at build time, parseVersion helper, version after the brand in the header; IMAGE_LIMITS square 24–100 px / 100 KB, copy from the limits, DRIVE_MAX_BYTES 64→128 KB (added to scope, consultant blocker), smoothing for large images on the map, thumbnail rendering helper, spec line update.
+- In progress / next: Ming approves A1-A7 (M-69), in particular A1 (map slot stays 24 px).
+- Gotchas: High paths Dockerfile, release.yml, .env.example; security review will run (server/drive).
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 9 (frontend-developer×1 42k, api-platform-engineer×1 51k, planner×1 104k, implementer×2 (64k default, 19k sonnet), reviewer×2 (64k, 23k), security-ai-generated-code-auditor×2 (45k, 21k sonnet); first review/security dispatch failed on a usage limit and was re-run; ~430k total)
+- Done: release version in the header via build arg (Dockerfile, release.yml); device type images square 24–100 px / 100 KB (D68), Drive cap 128 KB, map smoothing, thumbnail rendering, spec update. Review attempt 1 REWORK (spec change-log row in the wrong table), attempt 2 PASS; security no 🔴/🟡; PR https://github.com/mmlabs-online/simap/pull/97.
+- In progress / next: Ming checks the header version after the next release and a 100 px upload on production.
+- Gotchas: check-image not run locally (no Docker), CI covers it; A1 keeps the 24 px map box.

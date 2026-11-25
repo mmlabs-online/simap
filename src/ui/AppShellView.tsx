@@ -4,6 +4,7 @@ import { isActive, navItemsFor, type NavId } from "@/lib/nav";
 import type { Session } from "@/lib/session";
 import { Avatar } from "./Avatar";
 import { Button, IconButton } from "./Button";
+import { APP_VERSION } from "./app-version";
 import { Card } from "./Card";
 import { shellCopy } from "./copy/shell";
 import { Icon } from "./Icon";
@@ -24,6 +25,7 @@ export function AppShellView({
   roomSwitcher,
   badges,
   badgeLabels,
+  version = APP_VERSION,
   children,
 }: {
   session: Session | null;
@@ -34,6 +36,8 @@ export function AppShellView({
   badges?: Partial<Record<NavId, number>>;
   /** Screen-reader text per nav entry; it replaces the default text for the entry's count. */
   badgeLabels?: Partial<Record<NavId, string>>;
+  /** The release tag shown in the header (SIM-040); defaults to the build-time constant. */
+  version?: string;
   children: ReactNode;
 }) {
   const navItems = session
@@ -119,6 +123,12 @@ export function AppShellView({
           </span>
           {session && (
             <>
+              <span
+                title={shellCopy.version.title(version)}
+                className="flex-none whitespace-nowrap text-[11px] font-semibold text-on-surface-variant"
+              >
+                {shellCopy.version.label(version)}
+              </span>
               <span className="ml-2 min-w-0 max-w-[40vw] truncate text-[13px] font-semibold text-on-surface-variant">
                 {session.orgName}
               </span>

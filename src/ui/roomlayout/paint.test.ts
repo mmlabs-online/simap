@@ -4,7 +4,7 @@ import type { RoomLayout } from "@/lib/sprites/layout";
 import { buildDrawList } from "@/lib/sprites/placement";
 import type { SpriteManifest } from "@/lib/sprites/types";
 import type { Atlas } from "./loadAtlas";
-import { paintRoom, tintedFrame } from "./paint";
+import { paintRoom, smoothFor, tintedFrame } from "./paint";
 
 const manifest = JSON.parse(
   readFileSync(new URL("../../../public/sprites/office.json", import.meta.url), "utf8"),
@@ -123,6 +123,33 @@ describe("paintRoom catalog images", () => {
     expect(log[0]).toEqual(["set imageSmoothingEnabled", false]);
     expect(log).toContainEqual(["drawImage", src, 10, 12, 24, 24]);
     expect(seen).toEqual([["t1", 2]]);
+  });
+
+  it("a 100 px source draws at the op size with smoothing on for that op only", () => {
+    const log: Call[] = [];
+    const src = { naturalWidth: 100 } as unknown as CanvasImageSource;
+    paintRoom(fakeCanvas(log), atlas(), withImage(), 2, undefined, () => src);
+    const at = log.findIndex((c) => c[0] === "drawImage" && c[1] === src);
+    expect(log[at]).toEqual(["drawImage", src, 10, 12, 24, 24]);
+    expect(log[at - 2]).toEqual(["set imageSmoothingEnabled", true]);
+    expect(log[at - 1]).toEqual(["set imageSmoothingQuality", "high"]);
+    expect(log[at + 1]).toEqual(["set imageSmoothingEnabled", false]);
+  });
+
+  it("a 24 px source keeps smoothing off", () => {
+    const log: Call[] = [];
+    const src = { naturalWidth: 24 } as unknown as CanvasImageSource;
+    paintRoom(fakeCanvas(log), atlas(), withImage(), 2, undefined, () => src);
+    expect(log).not.toContainEqual(["set imageSmoothingEnabled", true]);
+    expect(log).toContainEqual(["drawImage", src, 10, 12, 24, 24]);
+  });
+
+  it("smoothFor: naturalWidth, plain width, missing width", () => {
+    const as = (o: object) => o as CanvasImageSource;
+    expect(smoothFor(as({ naturalWidth: 25 }), 24)).toBe(true);
+    expect(smoothFor(as({ naturalWidth: 24 }), 24)).toBe(false);
+    expect(smoothFor(as({ width: 64 }), 24)).toBe(true);
+    expect(smoothFor(as({}), 24)).toBe(false);
   });
 
   it("a null source skips the op without throwing", () => {

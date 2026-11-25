@@ -65,10 +65,15 @@ const text = (s: string) => new TextEncoder().encode(s);
 const notPng = { ok: false, code: "image_not_png" };
 
 describe("validatePng", () => {
-  it("limits", () => expect(IMAGE_LIMITS).toEqual({ px: 24, maxBytes: 20480 }));
+  it("limits", () => expect(IMAGE_LIMITS).toEqual({ minPx: 24, maxPx: 100, maxBytes: 102400 }));
 
   it("accepts a valid 24x24 RGBA PNG fixture", () => {
     expect(validatePng(png())).toEqual({ ok: true });
+  });
+
+  it("accepts square PNGs at 24, 48, 64 and 100 px", () => {
+    for (const n of [24, 48, 64, 100])
+      expect(validatePng(png({ w: n, h: n }))).toEqual({ ok: true });
   });
 
   it("image_not_png for non-PNG and malformed input", () => {
@@ -116,8 +121,11 @@ describe("validatePng", () => {
     for (const [w, h] of [
       [23, 24],
       [24, 23],
+      [23, 23],
+      [24, 25],
+      [100, 99],
+      [101, 101],
       [0, 0],
-      [48, 48],
       [0xffffffff, 0xffffffff],
     ] as const) {
       expect(validatePng(png({ w, h }))).toEqual(bad);

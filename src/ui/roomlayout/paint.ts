@@ -42,6 +42,14 @@ export function tintedFrame(
   return out;
 }
 
+/** True when the source is wider than the op box, so drawing it is a downscale (D68). */
+export function smoothFor(src: CanvasImageSource, w: number): boolean {
+  const s = src as { naturalWidth?: unknown; width?: unknown };
+  const natural =
+    typeof s.naturalWidth === "number" ? s.naturalWidth : typeof s.width === "number" ? s.width : 0;
+  return natural > w;
+}
+
 /** Draws the list at an integer zoom. Returns false when the canvas is over the budget, did not take the size, or has no 2D context. */
 export function paintRoom(
   canvas: HTMLCanvasElement,
@@ -71,7 +79,15 @@ export function paintRoom(
     }
     if (op.type === "image") {
       const src = images(op.typeId, op.version);
-      if (src) ctx.drawImage(src, op.x, op.y, op.w, op.h);
+      if (src) {
+        const smooth = smoothFor(src, op.w);
+        if (smooth) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+        }
+        ctx.drawImage(src, op.x, op.y, op.w, op.h);
+        if (smooth) ctx.imageSmoothingEnabled = false;
+      }
       continue;
     }
     const frame = atlas.manifest.frames[op.key];

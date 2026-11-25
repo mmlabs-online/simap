@@ -268,7 +268,7 @@ gives it back to the org inventory.
 - [ ] A device type is picked from the org's device type catalog or typed freely (D37, D61). Each org starts with PC,
   Laptop, Monitor, IP phone and Other.
 - [ ] An Admin manages the catalog: add, rename, change the desk slot, delete (name unique in the org, case- and
-  space-insensitive, at most 60 characters, at most 100 types; an optional 24 × 24 px PNG image, SIM-036.5, or a
+  space-insensitive, at most 60 characters, at most 100 types; an optional square PNG image, 24 × 24 to 100 × 100 px, at most 100 KB (D68), SIM-036.5, or a
   device sprite picked from the bundled package, D66; image first, then the picked sprite, then the slot's built-in
   sprite). A device's
   type matches a catalog type by name; renaming or deleting a type never changes devices, which then draw as the
@@ -730,6 +730,7 @@ New questions get the next free number (OQ-54).
 
 | Date | Change |
 |---|---|
+| 2026-11-25 | D68 (SIM-040): device type images may be square PNGs from 24 × 24 to 100 × 100 px, at most 100 KB; the map scales them to the slot. |
 | 2026-11-25 | D66: map item catalog, phase 1. Per-org rows for the existing library items (keyed by library key, seeded per org; placed fixtures keep `sprite_key`) drive the editor palette: Admins rename, regroup, reorder, hide/show, resize (1–4 × 1–4 tiles, refused while placed) and set art per direction (package sprite or custom PNG, fallback chain). Desk (one look per org), chair (art only), walls, windows and floors included; device types can pick a package sprite; the licensed atlas is committed. Art-per-item paragraph, LAY-01/03/06 amended, LAY-07 added, DEV-01 amended, MapItem entity; OQ-46 to OQ-51 answered; OQ-52, OQ-53 open. |
 | 2026-11-25 | D63: device lifecycle. Devices start unowned in the org inventory (Admin creates); Admin/Manager assigns with note and optional expiry; owners transfer to a member who confirms (device lands unplaced in their inventory); owners return to the org inventory and an Admin confirms; unowned devices are never placed; overdue, in-app reminder and extension request; optional serial, manufacturer, brand; device detail page with history (DEV-01 to DEV-03, DEV-07 to DEV-11; OQ-41 to OQ-45). |
 | 2026-11-24 | SIM-036.2 (D61): per-org device type catalog (name, desk slot, optional image) replaces the fixed suggested list; devices match a type by name; unknown types draw as a placeholder. |

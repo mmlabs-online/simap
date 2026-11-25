@@ -1,5 +1,5 @@
-/** D61: device type images are square PNGs, 24 x 24 px, at most 20 KB. */
-export const IMAGE_LIMITS = { px: 24, maxBytes: 20480 } as const;
+/** D68 (amends D61): device type images are square PNGs, 24 x 24 to 100 x 100 px, at most 100 KB. */
+export const IMAGE_LIMITS = { minPx: 24, maxPx: 100, maxBytes: 102400 } as const;
 
 export type PngResult = { ok: true } | { ok: false; code: "image_not_png" | "image_bad_size" };
 
@@ -65,6 +65,8 @@ export function validatePng(bytes: Uint8Array): PngResult {
       break;
     }
   }
-  const { px } = IMAGE_LIMITS;
-  return width === px && height === px ? { ok: true } : { ok: false, code: "image_bad_size" };
+  const { minPx, maxPx } = IMAGE_LIMITS;
+  return width === height && width >= minPx && width <= maxPx
+    ? { ok: true }
+    : { ok: false, code: "image_bad_size" };
 }
