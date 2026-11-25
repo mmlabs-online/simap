@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T07:05:53Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -43,5 +43,12 @@ Each org has one catalog row per library item (fixtures, floors, `desk.single`, 
 
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
+- Waiting for Ming: plan approval (High tier)
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3 (database-optimizer×1 40k, api-platform-engineer×1 37k, planner×1 122k; default models; ~199k total)
+- Done: plan READY (`plan.md`): migration `20261125200000_map_items.sql` (map_items + map_item_catalogs + seed function + members trigger + backfill, 53 seeded rows), `GET /api/map-items`, DTO for SIM-039.2 to 039.6, sync test against the library, DB tests and schema-check.
+- In progress / next: Ming approves the plan with A1-A11 (M-62), then implement (local Postgres 16 throwaway cluster, plan step 9) and review.
+- Gotchas: A2 spec says rotation 0 = `n` but the code draws `s` at rotation 0 (sizes equal today); A10 future keys.json additions need a follow-up to reach existing orgs.
