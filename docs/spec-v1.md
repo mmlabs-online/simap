@@ -122,13 +122,14 @@ needs to show.
 
 | Entity | Key fields | Notes |
 |---|---|---|
-| Room | org, code (unique, e.g. `C302`), name, description, floor | Layout fixtures belong to the room (LAY-03). |
+| Room | org, code (unique, e.g. `C302`), name, description, floor | Layout fixtures belong to the room (LAY-03); a placed fixture keeps its library `sprite_key`, which also names its map item (LAY-07). |
 | Seat | org, code (unique, `<room code>-NN`), sequence no. (unique within the room), room, occupant (member, optional), group tag, project tag, layout geometry (x, y, rotation, width, height) | Status is **not stored** (invariant 6). |
 | Member | org, Identity `sub` (unique in the org, required), email (from the token), display name, employee code (unique, optional), group (optional) | Profile of one org account (D12). |
 | Device | org, name, type, inventory number (unique), MAC (unique, optional), serial number (unique, optional), manufacturer, brand, owner (member, optional; empty = org inventory, D63), expiry date and note of the current holding, seat (optional; empty = not placed), role at the seat (primary / secondary) | Owner changes only through assign, transfer and return (DEV-07 to DEV-09). |
 | DeviceHandoff | org, device, kind (transfer / return / extension), from member, to member (transfer), requested by, note, new expiry (extension), status (pending / confirmed / declined / cancelled), decided by, decided at | At most one pending per device (DEV-08 to DEV-10). Device history (DEV-11) is read from these rows and the audit log. |
 | SeatRequest | org, seat, subject member (who will sit there), created by, status (pending / approved / rejected / cancelled), note, decided by, decided at | |
 | DeviceType | org, name (unique, case- and space-insensitive), desk slot, optional image | Org catalog (D61); devices match it by name, no reference. |
+| MapItem | org, library key (unique; a base key of the sprite library, e.g. `door`, `table.meeting`, `plant.small`, `floor.wood`, `desk.single`, `chair.office`), name (unique, case- and space-insensitive), palette group, order, size (width × height in tiles), shown in palette (yes/no), art per direction: library sprite, another bundled package sprite, or a custom image | Per-org catalog of the existing library items (LAY-07, D64, D66). One row per library item, seeded per org; phase 1 has no Admin-created item kinds. Placed fixtures keep `sprite_key`; the catalog row is found by (org, library key). |
 | Group | org, name (unique), colour | Label only. |
 | Project | org, code (unique), name | Label only. |
 | AuditLog | org, actor (Identity `sub`), action, entity, entity id, meta, time | One row per change (SYS-03). |
@@ -267,7 +268,9 @@ gives it back to the org inventory.
 - [ ] A device type is picked from the org's device type catalog or typed freely (D37, D61). Each org starts with PC,
   Laptop, Monitor, IP phone and Other.
 - [ ] An Admin manages the catalog: add, rename, change the desk slot, delete (name unique in the org, case- and
-  space-insensitive, at most 60 characters, at most 100 types; an optional 24 × 24 px PNG image, SIM-036.5). A device's
+  space-insensitive, at most 60 characters, at most 100 types; an optional 24 × 24 px PNG image, SIM-036.5, or a
+  device sprite picked from the bundled package, D66; image first, then the picked sprite, then the slot's built-in
+  sprite). A device's
   type matches a catalog type by name; renaming or deleting a type never changes devices, which then draw as the
   placeholder until their type matches again.
 - [ ] A device has name, type, inventory number (unique), and optional MAC (unique if set; format checked), serial
@@ -391,20 +394,38 @@ One map per room in v1; a whole-floor map is v2 (D49).
 The pixel style is limited to end-user surfaces (sign-in, room browser and map, my seat, requests); management screens
 use the clean UI kit (D52). Art rules: `docs/art/style-guide.md`.
 
+**Art per item (D64, D66, Ming 2026-11-25).** No single art pack is picked for simap. Each map item (LAY-07) and each
+device type (DEV-01) gets its art from a sprite of the **bundled package** (the licence-checked pack whose packed atlas
+is committed to the repo, D66) or from a **custom image** the Admin uploads (stored in Google Drive as for device
+types, D61). Fallback order for each direction of an item: custom image → chosen package sprite → the library's
+built-in frame → the square placeholder. The overlay sprites (seat state, avatars, device placeholder) stay built-in
+and are not chosen per item. Every bundled third-party package is credited on the in-app Credits page (D45).
+
 **LAY-01 Tile-grid layout that saves** (supersedes D20's free-form editor)
 - [ ] A room has a size in tiles (width × height). An Admin opens the room's editor, places items on whole tiles and
   saves. Positions survive reloads and sessions.
-- [ ] Items: seat desks (a desk sprite may cover several tiles), fixtures, and walls/floor. Rotation in 4 directions
-  only; size is fixed by the sprite; no free resize.
-- [ ] Items cannot overlap where the manifest says they block (e.g. two desks on one tile), and no fixture is placed on a desk tile (D61, D62).
+- [ ] Items: seat desks (a desk sprite may cover several tiles), fixtures, and walls/floor, all from the org's map item
+  catalog (LAY-07). Rotation in 4 directions only, for directional items; a non-directional item saves rotation 0.
+  An item's footprint is its catalog size (width × height at rotation 0; 90° and 270° swap width and height); no
+  per-placement resize.
+- [ ] Items cannot overlap where the library says they block (e.g. two desks on one tile), and no fixture is placed
+  on a desk tile (D61, D62). The validator, layout read and editor take footprints from the org's catalog, not from
+  the sprite registry alone.
 
 **LAY-02 Desk = seat**
 - [ ] Each desk on the grid is one seat record. Placing a desk creates a seat and its code (ROO-02). Removing a desk
   deletes the seat, with the SEA-01 guard.
 
 **LAY-03 Layout fixtures**
-- [ ] An Admin adds, moves, rotates and deletes fixtures from the sprite palette: door, window, wall, stairs,
-  elevator, server rack, cabinet, pillar, plant, blocked area, label. They are saved with the room.
+- [ ] An Admin adds, moves, rotates and deletes fixtures from the editor's "Add items" palette. The palette is the
+  org's map item catalog (LAY-07): only items marked "shown in palette", under the Admin's group names, in the
+  Admin's order, with the Admin's item names, sizes and art. Fixtures are saved with the room, still as `sprite_key`
+  (no change to saved layouts).
+- [ ] Each org starts with a catalog seeded with one row per base key of today's palette (cabinet, circulation, door,
+  label, lamp, marker, partition, plant, prop, rack, shelf, sofa, table, wall, whiteboard, window groups, plus
+  `desk.single`), every `floor.*` key and `chair.office`; each row has the library's group, a readable name from the key
+  (e.g. "wall t s", "window double"), the library footprint as its size and no custom art. Existing layouts keep
+  drawing exactly as before.
 
 **LAY-05 Editor controls**
 - [ ] Sprite palette, click/drag to place, rotate (R), delete, multi-select and move a group by whole tiles, zoom
@@ -416,8 +437,51 @@ use the clean UI kit (D52). Art rules: `docs/art/style-guide.md`.
 - [ ] Every device placed at a seat is drawn on its desk, one sprite per device, at its catalog type's slot and
   image (built-in sprite when the type has no image); a device whose type is not in the catalog draws as the square
   placeholder (D37, D61, D62).
+- [ ] Every placed fixture, desk, chair and floor tile is drawn with its map item's current art for the placed
+  direction, using the fallback order of "Art per item": a custom image is drawn 1:1 in room pixels with
+  nearest-neighbour zoom and is never rotated; a package or built-in sprite smaller than the item's size is drawn at
+  its own size, bottom-left aligned in the footprint. A custom image that cannot be loaded falls back the same way.
+  Art changes show at the next layout load (LAY-07, D64, D66).
 - [ ] Occupants are generated 32 px layered avatars (body/hair/shirt colours derived from `sub`, stable per person);
   no real photos (D44, D51). Name tags appear only on hover or keyboard focus, at every zoom (D50).
+
+**LAY-07 Map item catalog (Admin)** (D64; Ming 2026-11-25: "admin có thêm nơi setup và lựa chọn các item được add
+vào sơ đồ phòng kèm ảnh cho item đó"; "idea là để admin có quyền điều chỉnh list items này và cách nó hiển thị (ảnh)
+trên layout")
+**Phase 1 (D66): the Admin manages the existing library items.** Creating new item kinds, several desk looks per
+org and a per-desk look choice are a later phase.
+- [ ] An Admin has a "Map items" management page (clean UI kit, D52), beside Device types, that controls the editor's
+  "Add items" palette (LAY-03) and how each item looks on the map. Any member can read the catalog (the map needs
+  it); only an Admin changes it.
+- [ ] Each item shows its library key (read only), name (unique in the org, case- and space-insensitive, at most 60
+  characters), group (at most 40 characters; the palette groups by it), order (within its group; groups are ordered
+  too), **size in tiles, always visible as `w × h`**, shown in palette (yes/no) and its art per direction (n/e/s/w
+  for directional items, one image otherwise), previewed at 1× and 2×.
+- [ ] The Admin can rename, regroup and reorder items and groups, hide or show an item, change its size, set its art,
+  and reset an item to the library defaults. Items are never deleted. Hiding only removes an item from the palette:
+  placed fixtures of a hidden item keep drawing and can still be moved, rotated and deleted, and a save that keeps
+  them is accepted; a save that places a hidden item anew is refused (422).
+- [ ] **Size.** Default is the library footprint (e.g. plant 1 × 1, meeting table 3 × 2, door 1 × 2). The Admin can
+  set 1–4 × 1–4 tiles (e.g. door 2 × 2). Size is stored for rotation 0 (direction `n`, or the only frame); at 90° and
+  270° width and height swap. A size change is refused with 409 `item_in_use` while any room has the item placed (the
+  message says how many rooms and that the fixtures must be removed first), so a saved layout never starts to
+  overlap. A size change removes the item's custom images, because they no longer fit (the page warns first, OQ-52).
+  Fixed sizes: `desk.single` (seat footprint and device slots, D61/D62), `chair.office` and `floor.*` (1 × 1) cannot
+  be resized.
+- [ ] **Art per direction.** For each direction the Admin picks a sprite from the bundled package browser (its frame
+  must fit the item's size for that direction), or uploads a custom image, or leaves the library sprite. A missing
+  direction falls back as in "Art per item"; one image is never rotated to fill another direction.
+- [ ] **Custom image rules** (walls, windows and floors included): PNG only (no APNG: an `acTL` chunk is refused),
+  width = 32 × the item's width in tiles for that direction, height = 32 × its height, or up to 32 px taller for an
+  upward overhang (floors: exactly 32 × 32, no overhang); transparent background allowed; at most 64 KB. Stored in
+  Google Drive and served behind the bearer exactly like device type images (SIM-036.5: header checked on the server
+  before any DB or Drive call, server-chosen file name, org-scoped, ETag, `private, no-cache`). Removing an image
+  falls back to the next art source.
+- [ ] **Desk and chair.** The `desk.single` row can be renamed and given art per direction; its size and device slots
+  do not change, and the look applies to every desk in the org. `chair.office` is not placeable (never in the
+  palette): it only sets the art of the chair drawn at each seat.
+- [ ] Every catalog change is audited (SYS-03) and is refused for any org but the token's (R6). Item art changes show
+  in open maps at the next layout load.
 
 **Room view (all roles)**
 - [ ] `/rooms/<code>` shows the saved pixel layout read-only with LAY-06 overlays, zoom and pan (works at 390 px), and
@@ -643,12 +707,30 @@ Owner: Ming for all of them. Each blocks the tickets named after it. IDs are sta
 - **OQ-45 Existing devices.** simap is not live, so only dev/test data exists. Default: the migration keeps each
   device's owner with no expiry; no backfill. *Blocks: SIM-037.1.*
 
-New questions get the next free number (OQ-46).
+**Map item catalog (LAY-07, D64, D66, 2026-11-25).**
+- **OQ-46** — answered D66: 32 px per tile of the item's size, up to 32 px upward overhang, at most 64 KB, PNG, no APNG.
+- **OQ-47** — answered D66: `desk.single` is a catalog row (rename, art per direction; size and slots fixed; one desk
+  look per org); `chair.office` is a non-placeable row for chair art. Per-desk looks are a later phase.
+- **OQ-48** — answered D66: custom images per direction (n/e/s/w); a missing direction falls back; never rotated.
+- **OQ-49** — answered D66: the packed atlas of the licensed pack is committed; Credits page (SIM-033 re-scoped).
+- **OQ-50** — answered D66: device types can also pick a bundled package sprite.
+- **OQ-51** — answered D66: walls, windows and floors are catalog rows; custom upload allowed for them.
+
+Still open (defaults stand until Ming answers; reversible):
+- **OQ-52 Resizing an item that has custom images.** Default: a size change (only possible while the item is not
+  placed anywhere) deletes the item's custom images after a warning, since they no longer fit. Alternative: refuse
+  the resize until the Admin removes the images. *Blocks: SIM-039.2.*
+- **OQ-53 Package sprite on a resized item.** Default: when the item's size differs from the sprite's frame, the
+  sprite draws at its own size, bottom-left aligned in the footprint, and the whole footprint blocks; the Admin page
+  suggests uploading fitted art. Alternative: nearest-neighbour stretch by whole tiles. *Blocks: SIM-039.4.*
+
+New questions get the next free number (OQ-54).
 
 ## 12. Change log
 
 | Date | Change |
 |---|---|
+| 2026-11-25 | D66: map item catalog, phase 1. Per-org rows for the existing library items (keyed by library key, seeded per org; placed fixtures keep `sprite_key`) drive the editor palette: Admins rename, regroup, reorder, hide/show, resize (1–4 × 1–4 tiles, refused while placed) and set art per direction (package sprite or custom PNG, fallback chain). Desk (one look per org), chair (art only), walls, windows and floors included; device types can pick a package sprite; the licensed atlas is committed. Art-per-item paragraph, LAY-01/03/06 amended, LAY-07 added, DEV-01 amended, MapItem entity; OQ-46 to OQ-51 answered; OQ-52, OQ-53 open. |
 | 2026-11-25 | D63: device lifecycle. Devices start unowned in the org inventory (Admin creates); Admin/Manager assigns with note and optional expiry; owners transfer to a member who confirms (device lands unplaced in their inventory); owners return to the org inventory and an Admin confirms; unowned devices are never placed; overdue, in-app reminder and extension request; optional serial, manufacturer, brand; device detail page with history (DEV-01 to DEV-03, DEV-07 to DEV-11; OQ-41 to OQ-45). |
 | 2026-11-24 | SIM-036.2 (D61): per-org device type catalog (name, desk slot, optional image) replaces the fixed suggested list; devices match a type by name; unknown types draw as a placeholder. |
 | 2026-11-20 | First draft from Ming's `/idea` brief: seatMGT rebuild on Next.js + mmlabs Identity + shared Postgres, deployed like tudocuatui. |
