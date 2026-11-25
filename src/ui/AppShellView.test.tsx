@@ -107,7 +107,7 @@ describe("AppShellView", () => {
     expect(html).not.toContain("child-marker");
   });
 
-  it("admin on /rooms/A1: nav landmark, 9 links, one aria-current", () => {
+  it("admin on /rooms/A1: nav landmark, 10 links, one aria-current", () => {
     const html = render("admin", "/rooms/A1");
     expect(html).toContain(`<nav aria-label="${shellCopy.navLabel}"`);
     expect(hrefs(html)).toEqual([
@@ -120,6 +120,7 @@ describe("AppShellView", () => {
       "/approvals",
       "/audit",
       "/device-types",
+      "/map-items",
     ]);
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(

@@ -26,6 +26,7 @@ export { LayoutEditorPage } from "./roomlayout/LayoutEditorPage";
 export { AuditPage } from "./audit/AuditPage";
 export { GroupsPage } from "./groups/GroupsPage";
 export { DeviceTypesPage } from "./deviceTypes/DeviceTypesPage";
+export { MapItemsPage } from "./mapItems/MapItemsPage";
 export { ApprovalsPage } from "./requests/ApprovalsPage";
 export { MyRequestsPage } from "./requests/MyRequestsPage";
 export { DevicesPage } from "./devices/DevicesPage";
