@@ -38,6 +38,8 @@ export const API_ERROR_CODES = [
   "handoff_pending",
   "inventory_number_taken",
   "mac_taken",
+  "serial_taken",
+  "not_assigned",
   "group_name_taken",
   "project_code_taken",
   "in_use",

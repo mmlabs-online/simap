@@ -1,8 +1,10 @@
 import "server-only";
 import type { Tier } from "@/lib/auth/tier";
 import {
+  canAssign,
   canCreate,
   canEdit,
+  canManageHolding,
   canPlace,
   decideDelete,
   decidePlacement,
@@ -12,11 +14,13 @@ import {
 } from "@/lib/devices/rules";
 import {
   DEVICE_LIMITS,
+  type AssignValue,
   type DeviceCreateValue,
   type DeviceDto,
   type DeviceListResponse,
   type DevicePatchValue,
   type DeviceRole,
+  type HoldingPatchValue,
   type PlacementFilter,
 } from "@/lib/devices/types";
 import type { PlacementPutValue } from "@/lib/validate/device";
@@ -31,7 +35,13 @@ export type Db = TxPool & Query;
 export type Refusal = {
   ok: false;
   status: 404 | 409 | 422;
-  code: "not_found" | PlacementRefusalCode | DeviceConflictCode | DeleteRefusalCode;
+  code:
+    | "not_found"
+    | "member_not_assignable"
+    | "not_assigned"
+    | PlacementRefusalCode
+    | DeviceConflictCode
+    | DeleteRefusalCode;
 };
 export type Result<T> = { ok: true; value: T } | Refusal;
 
@@ -67,6 +77,11 @@ type DeviceRow = {
   type: string;
   inventory_number: string;
   mac: string | null;
+  serial: string | null;
+  manufacturer: string | null;
+  brand: string | null;
+  holding_note: string | null;
+  holding_expires_on: string | null;
   owner_id: string | null;
   owner_name: string | null;
   mine: boolean;
@@ -83,6 +98,10 @@ const toDto = (r: DeviceRow, tier: Tier): DeviceDto => ({
   type: r.type,
   inventoryNumber: r.inventory_number,
   mac: r.mac,
+  serial: r.serial,
+  manufacturer: r.manufacturer,
+  brand: r.brand,
+  holding: r.owner_id === null ? null : { note: r.holding_note, expiresOn: r.holding_expires_on },
   owner: r.owner_id === null ? null : { id: r.owner_id, displayName: r.owner_name! },
   placement: r.seat_id
     ? {
@@ -97,6 +116,8 @@ const toDto = (r: DeviceRow, tier: Tier): DeviceDto => ({
   canEdit: canEdit(tier, r.mine),
   canPlace: r.owner_id !== null && canPlace(tier, r.mine),
   canDelete: tier === "admin" && r.owner_id === null,
+  canAssign: r.owner_id === null && canAssign(tier),
+  canEditHolding: r.owner_id !== null && canManageHolding(tier),
 });
 
 /** $2 is the caller's sub (for `mine`); `where` and its values start at $3. Every join repeats org_id (R6). */
@@ -112,7 +133,8 @@ async function deviceRows(
   const { rows } = await orgQuery<DeviceRow>(
     db,
     scope,
-    `select d.id, d.name, d.type, d.inventory_number, d.mac, d.owner_id, m.display_name as owner_name,
+    `select d.id, d.name, d.type, d.inventory_number, d.mac, d.serial, d.manufacturer, d.brand, d.holding_note,
+       to_char(d.holding_expires_on, 'YYYY-MM-DD') as holding_expires_on, d.owner_id, m.display_name as owner_name,
        coalesce(m.sub = $2::uuid, false) as mine, d.role, d.seat_id, s.code as seat_code, s.room_id, r.code as room_code
      from devices d
        left join members m on m.org_id = d.org_id and m.id = d.owner_id
@@ -316,11 +338,11 @@ export function createDevice(
     const { rows: ins } = await orgQuery<{ id: string }>(
       c,
       scope,
-      `insert into devices (org_id, name, type, inventory_number, mac)
-       select o.org_id, $2::text, $3::text, $4::text, $5::text
+      `insert into devices (org_id, name, type, inventory_number, mac, serial, manufacturer, brand)
+       select o.org_id, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text, $8::text
        from (select $1::uuid as org_id) o where o.org_id = $1::uuid
        returning id`,
-      [v.name, v.type, v.inventoryNumber, v.mac],
+      [v.name, v.type, v.inventoryNumber, v.mac, v.serial, v.manufacturer, v.brand],
     );
     const id = ins[0]!.id;
     await writeAudit(c, scope, {
@@ -339,9 +361,12 @@ const COLUMNS = [
   ["type", "type"],
   ["inventoryNumber", "inventory_number"],
   ["mac", "mac"],
+  ["serial", "serial"],
+  ["manufacturer", "manufacturer"],
+  ["brand", "brand"],
 ] as const;
 
-/** DEV-01: owner or Admin edits name, type, inventory number and MAC. Only the device row is locked. */
+/** DEV-01: owner or Admin edits name, type, inventory number, MAC, serial, manufacturer and brand. Only the device row is locked. */
 export function updateDevice(
   db: Db,
   scope: OrgScope,
@@ -357,11 +382,14 @@ export function updateDevice(
       type: string;
       inventory_number: string;
       mac: string | null;
+      serial: string | null;
+      manufacturer: string | null;
+      brand: string | null;
       owner_id: string | null;
     }>(
       c,
       scope,
-      `select id, name, type, inventory_number, mac, owner_id from devices
+      `select id, name, type, inventory_number, mac, serial, manufacturer, brand, owner_id from devices
        where org_id = $1 and id = $2 for update`,
       [id],
     );
@@ -393,6 +421,124 @@ export function updateDevice(
       },
     });
     return reload(c, scope, actorSub, tier, id);
+  });
+}
+
+/**
+ * DEV-07: an Admin or Manager assigns an org-inventory device to an active member. Lock order as in
+ * deactivateMember: the member row (for share) first, then the device.
+ */
+export function assignDevice(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  tier: Tier,
+  deviceId: string,
+  v: AssignValue,
+): Promise<Result<DeviceDto>> {
+  // before any query (R7): a domain refusal, never a late 401/403
+  if (!canAssign(tier)) return Promise.resolve({ ok: false, status: 422, code: "not_allowed" });
+  return inTx(db, async (c) => {
+    const { rows: mem } = await orgQuery<{ id: string; status: string }>(
+      c,
+      scope,
+      "select id, status from members where org_id = $1 and id = $2 for share",
+      [v.memberId],
+    );
+    if (!mem[0] || mem[0].status !== "active") throw refuse(422, "member_not_assignable");
+    const { rows } = await orgQuery<{ owner_id: string | null; inventory_number: string }>(
+      c,
+      scope,
+      "select owner_id, inventory_number from devices where org_id = $1 and id = $2 for update",
+      [deviceId],
+    );
+    const cur = rows[0];
+    if (!cur) throw new Abort(notFound);
+    if (cur.owner_id !== null) throw refuse(409, "device_owned");
+    const { rows: pending } = await orgQuery(
+      c,
+      scope,
+      "select 1 from device_handoffs where org_id = $1 and device_id = $2 and status = 'pending'",
+      [deviceId],
+    );
+    if (pending.length > 0) throw refuse(409, "handoff_pending");
+    await orgQuery(
+      c,
+      scope,
+      `update devices set owner_id = $3, holding_note = $4, holding_expires_on = $5::date, updated_at = now()
+       where org_id = $1 and id = $2`,
+      [deviceId, v.memberId, v.note, v.expiresOn],
+    );
+    await writeAudit(c, scope, {
+      actorSub,
+      action: "device.assign",
+      entity: "device",
+      entityId: deviceId,
+      meta: {
+        memberId: v.memberId,
+        note: v.note,
+        expiresOn: v.expiresOn,
+        inventoryNumber: cur.inventory_number,
+      },
+    });
+    return reload(c, scope, actorSub, tier, deviceId);
+  });
+}
+
+const HOLDING_COLUMNS = [
+  ["note", "holding_note"],
+  ["expiresOn", "holding_expires_on"],
+] as const;
+
+/** DEV-07: an Admin or Manager edits the current assignment's note and expiry. Only the device row is locked. */
+export function updateHolding(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  tier: Tier,
+  deviceId: string,
+  patch: HoldingPatchValue,
+): Promise<Result<DeviceDto>> {
+  if (!canManageHolding(tier)) {
+    return Promise.resolve({ ok: false, status: 422, code: "not_allowed" });
+  }
+  return inTx(db, async (c) => {
+    const { rows } = await orgQuery<{
+      owner_id: string | null;
+      note: string | null;
+      expires_on: string | null;
+    }>(
+      c,
+      scope,
+      `select owner_id, holding_note as note, to_char(holding_expires_on, 'YYYY-MM-DD') as expires_on
+       from devices where org_id = $1 and id = $2 for update`,
+      [deviceId],
+    );
+    const cur = rows[0];
+    if (!cur) throw new Abort(notFound);
+    if (cur.owner_id === null) throw refuse(409, "not_assigned");
+    const before = { note: cur.note, expiresOn: cur.expires_on };
+    const changed = HOLDING_COLUMNS.filter(([key]) => key in patch && patch[key] !== before[key]);
+    if (changed.length === 0) return reload(c, scope, actorSub, tier, deviceId);
+    // column names come only from HOLDING_COLUMNS; values are parameters
+    const sets = changed
+      .map(([key, col], i) => `${col} = $${i + 3}${key === "expiresOn" ? "::date" : ""}`)
+      .join(", ");
+    await orgQuery(
+      c,
+      scope,
+      `update devices set ${sets}, updated_at = now() where org_id = $1 and id = $2`,
+      [deviceId, ...changed.map(([key]) => patch[key])],
+    );
+    const after = { ...before, ...patch };
+    await writeAudit(c, scope, {
+      actorSub,
+      action: "device.holding_update",
+      entity: "device",
+      entityId: deviceId,
+      meta: { ownerId: cur.owner_id, fields: changed.map(([key]) => key), from: before, to: after },
+    });
+    return reload(c, scope, actorSub, tier, deviceId);
   });
 }
 

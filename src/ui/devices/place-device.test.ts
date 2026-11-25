@@ -26,6 +26,12 @@ const device = (over: Partial<DeviceDto> = {}): DeviceDto => ({
   canEdit: true,
   canPlace: true,
   canDelete: false,
+  serial: null,
+  manufacturer: null,
+  brand: null,
+  holding: null,
+  canAssign: false,
+  canEditHolding: false,
   ...over,
 });
 const placed = (seatId = "s0", role: "primary" | "secondary" = "secondary") =>

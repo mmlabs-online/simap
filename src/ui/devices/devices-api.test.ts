@@ -116,7 +116,15 @@ describe("devices-api create and update", () => {
   const dev = { id: "d1", name: "x" };
   it("create sends POST /api/devices with JSON", async () => {
     const { api, calls } = fake(() => jsonRes(dev, 201));
-    const body = { name: "x", type: "PC", inventoryNumber: "I", mac: null };
+    const body = {
+      name: "x",
+      type: "PC",
+      inventoryNumber: "I",
+      mac: null,
+      serial: null,
+      manufacturer: null,
+      brand: null,
+    };
     expect(await api.create(body)).toEqual({ ok: true, value: dev });
     expect(calls[0][0]).toBe("/api/devices");
     expect(calls[0][1]?.method).toBe("POST");

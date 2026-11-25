@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { Tier } from "@/lib/auth/tier";
 import {
+  canAssign,
   canCreate,
   canEdit,
+  canManageHolding,
   canPlace,
   decideDelete,
   decidePlacement,
@@ -178,5 +180,16 @@ describe("decidePlacement", () => {
     expect(
       decidePlacement(input({ ...m, target: { seatId: A, occupantId: OTHER, primaryId: null } })),
     ).toEqual(refuse(409, "owner_not_occupant"));
+  });
+});
+
+describe("canAssign / canManageHolding", () => {
+  it.each([
+    ["admin", true],
+    ["manager", true],
+    ["user", false],
+  ] as [Tier, boolean][])("%s -> %s", (tier, ok) => {
+    expect(canAssign(tier)).toBe(ok);
+    expect(canManageHolding(tier)).toBe(ok);
   });
 });

@@ -33,6 +33,12 @@ const device: DeviceDto = {
   canEdit: true,
   canPlace: true,
   canDelete: false,
+  serial: null,
+  manufacturer: null,
+  brand: null,
+  holding: null,
+  canAssign: false,
+  canEditHolding: false,
 };
 const body = (r: ReturnType<typeof toCreateBody>) => {
   if (r.kind !== "ok") throw new Error("expected ok");
@@ -48,12 +54,15 @@ describe("form setup", () => {
 });
 
 describe("toCreateBody", () => {
-  it("sends name, type, inventoryNumber and mac only (a new device has no owner)", () => {
+  it("sends the form fields; the optional serial, manufacturer and brand stay null until the form has them (a new device has no owner)", () => {
     expect(body(toCreateBody(filled()))).toEqual({
       name: "Desk PC",
       type: "PC",
       inventoryNumber: "INV-1",
       mac: null,
+      serial: null,
+      manufacturer: null,
+      brand: null,
     });
   });
   it("normalises the MAC; blank is null; garbage is invalid", () => {

@@ -7,6 +7,8 @@ const svc = vi.hoisted(() => ({
   getDevice: vi.fn(),
   listDevices: vi.fn(),
   placeDevice: vi.fn(),
+  assignDevice: vi.fn(),
+  updateHolding: vi.fn(),
 }));
 vi.mock("@/server/devices/devices", () => svc);
 vi.mock("@/server/db/pool", () => ({ getPool: () => ({}) }));
@@ -14,6 +16,8 @@ vi.mock("@/server/db/pool", () => ({ getPool: () => ({}) }));
 import { GET as listGET, POST } from "./route";
 import { DELETE, GET, PATCH } from "./[id]/route";
 import { PUT } from "./[id]/placement/route";
+import { POST as ASSIGN } from "./[id]/assignment/route";
+import { PATCH as HOLDING } from "./[id]/holding/route";
 
 const ISSUER = "https://api.mmlabs.online";
 const ID = "33333333-3333-4333-8333-333333333333";
@@ -114,7 +118,7 @@ describe("devices routes", () => {
 
 describe("devices write routes", () => {
   const create = { name: "Laptop", type: "Laptop", inventoryNumber: "INV-1" };
-  const createValue = { ...create, mac: null };
+  const createValue = { ...create, mac: null, serial: null, manufacturer: null, brand: null };
 
   it("POST 201, PATCH 200, DELETE 204 call the service with ctx.scope, ctx.sub, ctx.tier; all no-store", async () => {
     fakeAuth(["simap:manager"]);
@@ -175,5 +179,84 @@ describe("devices write routes", () => {
     expect([o.status, await o.json()]).toEqual([409, { error: { code: "device_owned" } }]);
     expect([c.status, await c.json()]).toEqual([409, { error: { code: "mac_taken" } }]);
     expect([u.status, await u.json()]).toEqual([422, { error: { code: "not_allowed" } }]);
+  });
+});
+
+describe("assignment and holding routes", () => {
+  const MEMBER = "88888888-8888-4888-8888-888888888888";
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    // 2026-11-26 in UTC+7
+    vi.setSystemTime(new Date("2026-11-25T17:30:00Z"));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("without a token both are 401 and the service is not called", async () => {
+    vi.stubEnv("MM_IDENTITY_ISSUER", ISSUER);
+    const bare = (m: string) => new Request("http://x/api/devices", { method: m });
+    expect((await ASSIGN(bare("POST"), idRoute)).status).toBe(401);
+    expect((await HOLDING(bare("PATCH"), idRoute)).status).toBe(401);
+    for (const f of Object.values(svc)) expect(f).not.toHaveBeenCalled();
+  });
+
+  it("POST assignment: 400 for a bad body and for an expiry before today (UTC+7), 404 for a non-uuid id", async () => {
+    fakeAuth(["simap:manager"]);
+    const post = (b: unknown) => ASSIGN(req("POST", undefined, b), idRoute);
+    expect((await post({})).status).toBe(400);
+    expect((await post({ memberId: MEMBER, extra: 1 })).status).toBe(400);
+    expect((await post({ memberId: MEMBER, expiresOn: "2026-11-25" })).status).toBe(400);
+    expect((await post({ memberId: MEMBER, note: "x".repeat(501) })).status).toBe(400);
+    const bad = { params: Promise.resolve({ id: "nope" }) };
+    expect((await ASSIGN(req("POST", undefined, { memberId: MEMBER }), bad)).status).toBe(404);
+    expect(svc.assignDevice).not.toHaveBeenCalled();
+  });
+
+  it("POST assignment: 200 with the DTO, no-store; today (UTC+7) is allowed", async () => {
+    fakeAuth(["simap:manager"]);
+    svc.assignDevice.mockResolvedValue({ ok: true, value: { id: ID } });
+    const r = await ASSIGN(
+      req("POST", undefined, { memberId: MEMBER, note: " hi ", expiresOn: "2026-11-26" }),
+      idRoute,
+    );
+    expect(r.status).toBe(200);
+    expect(r.headers.get("Cache-Control")).toBe("no-store");
+    expect(await r.json()).toEqual({ id: ID });
+    expect(svc.assignDevice.mock.calls[0]!.slice(2)).toEqual([
+      "s1",
+      "manager",
+      ID,
+      { memberId: MEMBER, note: "hi", expiresOn: "2026-11-26" },
+    ]);
+  });
+
+  it("POST assignment: a refusal becomes apiError", async () => {
+    fakeAuth(["simap:manager"]);
+    svc.assignDevice.mockResolvedValue({ ok: false, status: 409, code: "device_owned" });
+    const r = await ASSIGN(req("POST", undefined, { memberId: MEMBER }), idRoute);
+    expect([r.status, await r.json()]).toEqual([409, { error: { code: "device_owned" } }]);
+  });
+
+  it("PATCH holding: 400 for an empty body or a past expiry, 200 otherwise", async () => {
+    fakeAuth(["simap:manager"]);
+    const patch = (b: unknown) => HOLDING(req("PATCH", undefined, b), idRoute);
+    expect((await patch({})).status).toBe(400);
+    expect((await patch({ expiresOn: "2026-11-25" })).status).toBe(400);
+    expect(svc.updateHolding).not.toHaveBeenCalled();
+    svc.updateHolding.mockResolvedValue({ ok: true, value: { id: ID } });
+    const r = await patch({ note: null, expiresOn: "2026-12-01" });
+    expect(r.status).toBe(200);
+    expect(r.headers.get("Cache-Control")).toBe("no-store");
+    expect(svc.updateHolding.mock.calls[0]!.slice(2)).toEqual([
+      "s1",
+      "manager",
+      ID,
+      { note: null, expiresOn: "2026-12-01" },
+    ]);
+    svc.updateHolding.mockResolvedValue({ ok: false, status: 409, code: "not_assigned" });
+    const n = await patch({ note: "x" });
+    expect([n.status, await n.json()]).toEqual([409, { error: { code: "not_assigned" } }]);
   });
 });

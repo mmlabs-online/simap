@@ -14,6 +14,8 @@ describe("deviceConflict", () => {
       "inventory_number_taken",
     );
     expect(deviceConflict(pgErr("23505", "devices_org_mac_key"))).toBe("mac_taken");
+    expect(deviceConflict(pgErr("23505", "devices_org_serial_key"))).toBe("serial_taken");
+    expect(deviceConflict(pgErr("23514", "devices_org_serial_key"))).toBeNull();
     expect(deviceConflict(pgErr("23514", "devices_unowned_not_placed_check"))).toBe(
       "device_unowned",
     );

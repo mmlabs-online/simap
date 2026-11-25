@@ -1,8 +1,11 @@
+import { parseCalendarDay } from "@/lib/devices/holding";
 import {
   DEVICE_LIMITS,
+  type AssignValue,
   type DeviceCreateValue,
   type DevicePatchValue,
   type DeviceRole,
+  type HoldingPatchValue,
   type PlacementFilter,
 } from "@/lib/devices/types";
 import type { Validated } from "./room";
@@ -85,18 +88,46 @@ function text(v: unknown, max: number): string | null {
   return s;
 }
 
+/** Like `text` but blank or null = null (no value) and invalid = undefined. */
+function optText(v: unknown, max: number): string | null | undefined {
+  if (v === null) return null;
+  if (typeof v !== "string") return undefined;
+  if (v.trim() === "") return null;
+  return text(v, max) ?? undefined;
+}
+
+const CONTROL_NOT_NEWLINE = /[^\P{Cc}\n]|\p{Cf}/u;
+
+/** A note: like `optText` but line breaks are allowed (CRLF becomes LF). */
+function noteText(v: unknown, max: number): string | null | undefined {
+  if (v === null) return null;
+  if (typeof v !== "string") return undefined;
+  const s = v.replace(/\r\n/g, "\n").normalize("NFC").trim();
+  if (s === "") return null;
+  if (CONTROL_NOT_NEWLINE.test(s) || [...s].length > max) return undefined;
+  return s;
+}
+
 const TEXT_MAX = {
   name: DEVICE_LIMITS.name,
   type: DEVICE_LIMITS.type,
   inventoryNumber: DEVICE_LIMITS.inventoryNumber,
 } as const;
 
+const OPT_MAX = {
+  serial: DEVICE_LIMITS.serial,
+  manufacturer: DEVICE_LIMITS.manufacturer,
+  brand: DEVICE_LIMITS.brand,
+} as const;
+const OPT_KEYS = ["serial", "manufacturer", "brand"] as const;
+
+/** Holding keys (note, expiry) are never accepted here: only DEV-07 changes them. */
+const DEVICE_KEYS: readonly string[] = ["name", "type", "inventoryNumber", "mac", ...OPT_KEYS];
+
 export function validateDeviceCreate(body: unknown): Validated<DeviceCreateValue> {
   if (!isPlainObject(body)) return { ok: false, field: "body" };
   // `ownerId` is an unknown key: a new device has no owner (DEV-01)
-  const extra = Object.keys(body).find(
-    (k) => !["name", "type", "inventoryNumber", "mac"].includes(k),
-  );
+  const extra = Object.keys(body).find((k) => !DEVICE_KEYS.includes(k));
   if (extra !== undefined) return { ok: false, field: extra };
   const name = text(body.name, TEXT_MAX.name);
   if (name === null) return { ok: false, field: "name" };
@@ -106,14 +137,20 @@ export function validateDeviceCreate(body: unknown): Validated<DeviceCreateValue
   if (inventoryNumber === null) return { ok: false, field: "inventoryNumber" };
   const mac = body.mac === undefined ? null : normalizeMac(body.mac);
   if (mac === undefined) return { ok: false, field: "mac" };
-  return { ok: true, value: { name, type, inventoryNumber, mac } };
+  const opt = {} as Record<(typeof OPT_KEYS)[number], string | null>;
+  for (const k of OPT_KEYS) {
+    const t = body[k] === undefined ? null : optText(body[k], OPT_MAX[k]);
+    if (t === undefined) return { ok: false, field: k };
+    opt[k] = t;
+  }
+  return { ok: true, value: { name, type, inventoryNumber, mac, ...opt } };
 }
 
-/** A non-empty partial of name, type, inventoryNumber and mac. `ownerId` is an unknown key: the owner never changes. */
+/** A non-empty partial of the device fields. `ownerId` is an unknown key: the owner never changes. */
 export function validateDevicePatch(body: unknown): Validated<DevicePatchValue> {
   if (!isPlainObject(body)) return { ok: false, field: "body" };
   const keys = Object.keys(body);
-  const extra = keys.find((k) => !["name", "type", "inventoryNumber", "mac"].includes(k));
+  const extra = keys.find((k) => !DEVICE_KEYS.includes(k));
   if (extra !== undefined) return { ok: false, field: extra };
   if (keys.length === 0) return { ok: false, field: "body" };
   const value: DevicePatchValue = {};
@@ -127,6 +164,55 @@ export function validateDevicePatch(body: unknown): Validated<DevicePatchValue> 
     const mac = normalizeMac(body.mac);
     if (mac === undefined) return { ok: false, field: "mac" };
     value.mac = mac;
+  }
+  for (const k of OPT_KEYS) {
+    if (!(k in body)) continue;
+    const t = optText(body[k], OPT_MAX[k]);
+    if (t === undefined) return { ok: false, field: k };
+    value[k] = t;
+  }
+  return { ok: true, value };
+}
+
+/** `undefined`/null/blank = no expiry (null); invalid or before `today` = undefined. `today` is a UTC+7 day. */
+function expiry(v: unknown, today: string): string | null | undefined {
+  if (v === undefined || v === null) return null;
+  if (typeof v === "string" && v.trim() === "") return null;
+  const day = parseCalendarDay(v);
+  if (day === null || day < today) return undefined;
+  return day;
+}
+
+/** DEV-07 assign body. The clock is injected (`today` = `todayUtc7(now)`). */
+export function validateAssign(body: unknown, today: string): Validated<AssignValue> {
+  if (!isPlainObject(body)) return { ok: false, field: "body" };
+  const extra = Object.keys(body).find((k) => !["memberId", "note", "expiresOn"].includes(k));
+  if (extra !== undefined) return { ok: false, field: extra };
+  if (!isCanonicalUuid(body.memberId)) return { ok: false, field: "memberId" };
+  const note = body.note === undefined ? null : noteText(body.note, DEVICE_LIMITS.note);
+  if (note === undefined) return { ok: false, field: "note" };
+  const expiresOn = expiry(body.expiresOn, today);
+  if (expiresOn === undefined) return { ok: false, field: "expiresOn" };
+  return { ok: true, value: { memberId: body.memberId, note, expiresOn } };
+}
+
+/** DEV-07 holding edit: a non-empty partial; only the keys sent are checked (an overdue note stays editable). */
+export function validateHoldingPatch(body: unknown, today: string): Validated<HoldingPatchValue> {
+  if (!isPlainObject(body)) return { ok: false, field: "body" };
+  const keys = Object.keys(body);
+  const extra = keys.find((k) => !["note", "expiresOn"].includes(k));
+  if (extra !== undefined) return { ok: false, field: extra };
+  if (keys.length === 0) return { ok: false, field: "body" };
+  const value: HoldingPatchValue = {};
+  if ("note" in body) {
+    const note = body.note === undefined ? null : noteText(body.note, DEVICE_LIMITS.note);
+    if (note === undefined) return { ok: false, field: "note" };
+    value.note = note;
+  }
+  if ("expiresOn" in body) {
+    const expiresOn = expiry(body.expiresOn, today);
+    if (expiresOn === undefined) return { ok: false, field: "expiresOn" };
+    value.expiresOn = expiresOn;
   }
   return { ok: true, value };
 }
