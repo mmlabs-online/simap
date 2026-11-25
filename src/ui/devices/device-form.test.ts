@@ -42,6 +42,8 @@ const device: DeviceDto = {
   holding: null,
   canAssign: false,
   canEditHolding: false,
+  canTransfer: false,
+  pendingHandoff: null,
 };
 const body = (r: ReturnType<typeof toCreateBody>) => {
   if (r.kind !== "ok") throw new Error("expected ok");

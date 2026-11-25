@@ -41,7 +41,11 @@ export const apiCopy = {
     device_placed: "This device is at a seat. Move it to inventory before deleting it.",
     device_unowned: "A device in the org inventory can't be placed at a seat.",
     device_owned: "This device has an owner, so it is no longer in the org inventory.",
-    handoff_pending: "This device has a pending handoff. Resolve it before deleting the device.",
+    handoff_pending: "This device already has a pending transfer or return.",
+    handoff_not_pending: "This transfer was already answered or cancelled. Refresh and try again.",
+    handoff_stale:
+      "The device changed hands since this transfer was started. Refresh and try again.",
+    invalid_recipient: "Choose someone other than the current owner.",
     inventory_number_taken: "Another device already has this inventory number.",
     mac_taken: "Another device already has this MAC address.",
     serial_taken: "Another device already has this serial number.",

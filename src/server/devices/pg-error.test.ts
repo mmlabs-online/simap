@@ -19,6 +19,10 @@ describe("deviceConflict", () => {
     expect(deviceConflict(pgErr("23514", "devices_unowned_not_placed_check"))).toBe(
       "device_unowned",
     );
+    expect(deviceConflict(pgErr("23505", "device_handoffs_one_pending_idx"))).toBe(
+      "handoff_pending",
+    );
+    expect(deviceConflict(pgErr("23514", "device_handoffs_one_pending_idx"))).toBeNull();
     expect(deviceConflict(pgErr("23514", "devices_serial_check"))).toBeNull();
     expect(deviceConflict(pgErr("23505", "devices_pkey"))).toBeNull();
     expect(deviceConflict(pgErr("23514", "devices_org_mac_key"))).toBeNull();

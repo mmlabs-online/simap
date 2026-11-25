@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui, security |
@@ -48,4 +48,18 @@ docs/spec-v1.md §6 DEV-08; D63; OQ-43 (expiry carries over).
 ## Notes / answers from Ming
 Ming 2026-11-25: "lên ticket và làm luôn".
 
+Plan approved (2026-11-25, Ming: "ok") with assumptions A1-A14 (migration kept) and the split: the UI slice is SIM-037.8.
+
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3 (api-platform-engineer×1 ~53k, frontend-developer×1 ~58k, planner×1; default models).
+- Done: consult files; plan.md READY for slice 1 (API + migration + device-row fields), High tier (decided_by_id CHECK migration), assumptions A1-A14; UI slice proposed as SIM-037.8.
+- In progress / next: Ming approves plan + split (M-57); then create SIM-037.8 and IMPLEMENT slice 1.
+- Gotchas: BUG-001 (another session) edits devices.ts / rules.ts / devices.db.test.ts — expect a merge. Member-deactivation cancel of handoffs left to SIM-037.4 (A5).
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 3 since plan approval (implementer×1 ~132k incl. one resume after a rate-limit stop, reviewer×1 ~83k, security auditor via general-purpose×1 ~99k; default models).
+- Done: slice 1 implemented (attempt 1); review PASS (DB tests pending CI); security no 🔴/🟡. Merged origin/main; local checks green (dev-process flaky: failed once alone, then 21/21 twice; file untouched by the diff).
+- In progress / next: Ming opens the PR (M-58, prefilled link in chat), merges after CI `test:db` is green (High tier); then SIM-037.8 (UI) and SIM-037.4.
+- Gotchas: no `gh` here. A5 (deactivation cancels handoffs) is SIM-037.4.

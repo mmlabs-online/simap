@@ -5,6 +5,7 @@ import {
   type DeviceCreateValue,
   type DevicePatchValue,
   type DeviceRole,
+  type HandoffStartValue,
   type HoldingPatchValue,
   type PlacementFilter,
 } from "@/lib/devices/types";
@@ -194,6 +195,25 @@ export function validateAssign(body: unknown, today: string): Validated<AssignVa
   const expiresOn = expiry(body.expiresOn, today);
   if (expiresOn === undefined) return { ok: false, field: "expiresOn" };
   return { ok: true, value: { memberId: body.memberId, note, expiresOn } };
+}
+
+/** DEV-08 start body. Only `kind: "transfer"` until SIM-037.4 / SIM-037.5. */
+export function validateHandoffStart(body: unknown): Validated<HandoffStartValue> {
+  if (!isPlainObject(body)) return { ok: false, field: "body" };
+  const extra = Object.keys(body).find((k) => !["kind", "toMemberId", "note"].includes(k));
+  if (extra !== undefined) return { ok: false, field: extra };
+  if (body.kind !== "transfer") return { ok: false, field: "kind" };
+  if (!isCanonicalUuid(body.toMemberId)) return { ok: false, field: "toMemberId" };
+  const note = body.note === undefined ? null : noteText(body.note, DEVICE_LIMITS.note);
+  if (note === undefined) return { ok: false, field: "note" };
+  return { ok: true, value: { kind: "transfer", toMemberId: body.toMemberId, note } };
+}
+
+/** `GET /api/handoffs?box=`: exactly one `box`, and only `incoming` for now. */
+export function validateHandoffBox(params: URLSearchParams): Validated<"incoming"> {
+  const all = params.getAll("box");
+  if (all.length !== 1 || all[0] !== "incoming") return { ok: false, field: "box" };
+  return { ok: true, value: "incoming" };
 }
 
 /** DEV-07 holding edit: a non-empty partial; only the keys sent are checked (an overdue note stays editable). */

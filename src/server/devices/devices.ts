@@ -1,5 +1,6 @@
 import "server-only";
 import type { Tier } from "@/lib/auth/tier";
+import { canCancelHandoff, canStartTransfer } from "@/lib/devices/handoff-rules";
 import {
   canAssign,
   canCreate,
@@ -8,9 +9,7 @@ import {
   canPlace,
   decideDelete,
   decidePlacement,
-  type DeleteRefusalCode,
   type PlacementInput,
-  type PlacementRefusalCode,
 } from "@/lib/devices/rules";
 import {
   DEVICE_LIMITS,
@@ -20,54 +19,25 @@ import {
   type DeviceListResponse,
   type DevicePatchValue,
   type DeviceRole,
+  type HandoffKind,
   type HoldingPatchValue,
   type PlacementFilter,
 } from "@/lib/devices/types";
 import type { PlacementPutValue } from "@/lib/validate/device";
 import { writeAudit } from "@/server/audit/write";
-import { withTx, type TxClient, type TxPool } from "@/server/db/tx";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
-import { deviceConflict, type DeviceConflictCode } from "./pg-error";
+import {
+  Abort,
+  actorMemberId,
+  inTx,
+  notFound,
+  refuse,
+  type Db,
+  type Query,
+  type Result,
+} from "./tx";
 
-type Query = { query(text: string, values: unknown[]): Promise<{ rows: any[] }> };
-export type Db = TxPool & Query;
-
-export type Refusal = {
-  ok: false;
-  status: 404 | 409 | 422;
-  code:
-    | "not_found"
-    | "member_not_assignable"
-    | "not_assigned"
-    | PlacementRefusalCode
-    | DeviceConflictCode
-    | DeleteRefusalCode;
-};
-export type Result<T> = { ok: true; value: T } | Refusal;
-
-const notFound: Refusal = { ok: false, status: 404, code: "not_found" };
-
-/** Thrown inside a transaction to roll it back and answer with a domain refusal. */
-class Abort extends Error {
-  constructor(readonly refusal: Refusal) {
-    super("abort");
-  }
-}
-
-async function inTx<T>(pool: Db, fn: (c: TxClient) => Promise<T>): Promise<Result<T>> {
-  try {
-    return { ok: true, value: await withTx(pool, fn) };
-  } catch (err) {
-    if (err instanceof Abort) return err.refusal;
-    // the deferred owner trigger fires at COMMIT, so this wraps withTx
-    const code = deviceConflict(err);
-    if (code) return { ok: false, status: code === "device_unowned" ? 422 : 409, code };
-    throw err;
-  }
-}
-
-const refuse = (status: Refusal["status"], code: Refusal["code"]) =>
-  new Abort({ ok: false, status, code });
+export type { Db, Refusal, Result } from "./tx";
 
 // ---- reads ----------------------------------------------------------------------------------------------------
 
@@ -90,35 +60,57 @@ type DeviceRow = {
   seat_code: string | null;
   room_id: string | null;
   room_code: string | null;
+  h_id: string | null;
+  h_kind: HandoffKind | null;
+  h_created_at: string | null;
+  h_to_id: string | null;
+  h_to_name: string | null;
+  h_by_id: string | null;
+  h_by_name: string | null;
+  h_from_me: boolean;
 };
 
-const toDto = (r: DeviceRow, tier: Tier): DeviceDto => ({
-  id: r.id,
-  name: r.name,
-  type: r.type,
-  inventoryNumber: r.inventory_number,
-  mac: r.mac,
-  serial: r.serial,
-  manufacturer: r.manufacturer,
-  brand: r.brand,
-  holding: r.owner_id === null ? null : { note: r.holding_note, expiresOn: r.holding_expires_on },
-  owner: r.owner_id === null ? null : { id: r.owner_id, displayName: r.owner_name! },
-  placement: r.seat_id
-    ? {
-        seatId: r.seat_id,
-        seatCode: r.seat_code!,
-        roomId: r.room_id!,
-        roomCode: r.room_code!,
-        role: r.role,
-      }
-    : null,
-  mine: r.mine,
-  canEdit: canEdit(tier, r.mine),
-  canPlace: r.owner_id !== null && canPlace(tier, r.mine),
-  canDelete: tier === "admin" && r.owner_id === null,
-  canAssign: r.owner_id === null && canAssign(tier),
-  canEditHolding: r.owner_id !== null && canManageHolding(tier),
-});
+const toDto = (r: DeviceRow, tier: Tier): DeviceDto => {
+  const pending = r.h_id !== null;
+  return {
+    id: r.id,
+    name: r.name,
+    type: r.type,
+    inventoryNumber: r.inventory_number,
+    mac: r.mac,
+    serial: r.serial,
+    manufacturer: r.manufacturer,
+    brand: r.brand,
+    holding: r.owner_id === null ? null : { note: r.holding_note, expiresOn: r.holding_expires_on },
+    owner: r.owner_id === null ? null : { id: r.owner_id, displayName: r.owner_name! },
+    placement: r.seat_id
+      ? {
+          seatId: r.seat_id,
+          seatCode: r.seat_code!,
+          roomId: r.room_id!,
+          roomCode: r.room_code!,
+          role: r.role,
+        }
+      : null,
+    mine: r.mine,
+    canEdit: canEdit(tier, r.mine),
+    canPlace: r.owner_id !== null && canPlace(tier, r.mine),
+    canDelete: tier === "admin" && r.owner_id === null && !pending,
+    canAssign: r.owner_id === null && canAssign(tier) && !pending,
+    canEditHolding: r.owner_id !== null && canManageHolding(tier),
+    canTransfer: r.owner_id !== null && !pending && canStartTransfer(tier, r.mine),
+    pendingHandoff: pending
+      ? {
+          id: r.h_id!,
+          kind: r.h_kind!,
+          to: r.h_to_id === null ? null : { id: r.h_to_id, displayName: r.h_to_name! },
+          requestedBy: { id: r.h_by_id!, displayName: r.h_by_name! },
+          createdAt: r.h_created_at!,
+          canCancel: canCancelHandoff(tier, r.h_from_me),
+        }
+      : null,
+  };
+};
 
 /** $2 is the caller's sub (for `mine`); `where` and its values start at $3. Every join repeats org_id (R6). */
 async function deviceRows(
@@ -135,11 +127,18 @@ async function deviceRows(
     scope,
     `select d.id, d.name, d.type, d.inventory_number, d.mac, d.serial, d.manufacturer, d.brand, d.holding_note,
        to_char(d.holding_expires_on, 'YYYY-MM-DD') as holding_expires_on, d.owner_id, m.display_name as owner_name,
-       coalesce(m.sub = $2::uuid, false) as mine, d.role, d.seat_id, s.code as seat_code, s.room_id, r.code as room_code
+       coalesce(m.sub = $2::uuid, false) as mine, d.role, d.seat_id, s.code as seat_code, s.room_id, r.code as room_code,
+       h.id as h_id, h.kind as h_kind, to_char(h.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') as h_created_at, 
+       h.to_member_id as h_to_id, ht.display_name as h_to_name, h.requested_by_id as h_by_id,
+       hr.display_name as h_by_name, coalesce(hf.sub = $2::uuid, false) as h_from_me
      from devices d
        left join members m on m.org_id = d.org_id and m.id = d.owner_id
        left join seats s on s.org_id = d.org_id and s.id = d.seat_id
        left join rooms r on r.org_id = s.org_id and r.id = s.room_id
+       left join device_handoffs h on h.org_id = d.org_id and h.device_id = d.id and h.status = 'pending'
+       left join members ht on ht.org_id = h.org_id and ht.id = h.to_member_id
+       left join members hr on hr.org_id = h.org_id and hr.id = h.requested_by_id
+       left join members hf on hf.org_id = h.org_id and hf.id = h.from_member_id
      where d.org_id = $1 and ${where}
      order by lower(d.name), d.id limit ${limit}`,
     [sub, ...values],
@@ -312,16 +311,6 @@ export function placeDevice(
     });
     return reload(c, scope, actorSub, tier, deviceId);
   });
-}
-
-async function actorMemberId(c: Query, scope: OrgScope, actorSub: string): Promise<string | null> {
-  const { rows } = await orgQuery<{ id: string }>(
-    c,
-    scope,
-    "select id from members where org_id = $1 and sub = $2",
-    [actorSub],
-  );
-  return rows[0]?.id ?? null;
 }
 
 /** DEV-01, OQ-41: only an Admin creates a device; it has no owner and starts in the org inventory (D63). */
