@@ -1,5 +1,5 @@
 import { EntityFormDialog } from "../EntityFormDialog";
-import { CLIP } from "./SeatsView";
+import { CLIP } from "../clip";
 
 /** Shared confirm for Delete and Release. Cancel comes first, so it takes focus when the dialog opens. */
 export function ConfirmSeatDialog({
