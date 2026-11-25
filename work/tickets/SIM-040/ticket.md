@@ -80,5 +80,5 @@ app"); the planner records it as a new decision. Related: `.github/workflows/rel
 ### 2026-11-25 — claude — BLOCKED
 - Agent calls: 3 (frontend-developer×1 42k, api-platform-engineer×1 51k, planner×1; default models)
 - Done: plan READY (`plan.md`): build arg SIMAP_VERSION → NEXT_PUBLIC_SIMAP_VERSION at build time, parseVersion helper, version after the brand in the header; IMAGE_LIMITS square 24–100 px / 100 KB, copy from the limits, DRIVE_MAX_BYTES 64→128 KB (added to scope, consultant blocker), smoothing for large images on the map, thumbnail rendering helper, spec line update.
-- In progress / next: Ming approves A1-A7 (M-67), in particular A1 (map slot stays 24 px).
+- In progress / next: Ming approves A1-A7 (M-69), in particular A1 (map slot stays 24 px).
 - Gotchas: High paths Dockerfile, release.yml, .env.example; security review will run (server/drive).
