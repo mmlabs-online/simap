@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Type | bug |
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Severity | S1 |
 | Priority | P0 |
 | Size | XS |
