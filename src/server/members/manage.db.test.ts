@@ -147,6 +147,7 @@ describe("members manage (db)", () => {
       seats: 1,
       devices: 2,
       demoted: 1,
+      cancelledHandoffs: 0,
       cancelledRequests: 1,
     });
   });

@@ -62,7 +62,7 @@ export function toDto(r: Row): MapItemDto | null {
   };
 }
 
-/** Any member lists the org's catalog by name; hidden rows only for Admins (D67 1, 2). */
+/** Any member lists the org's catalog by name; hidden rows only for Admins (D67 1, 2). Order is by code point (collate "C"), independent of the database locale; the UI re-sorts linguistically. */
 export async function listMapItems(
   db: Query,
   scope: OrgScope,
@@ -72,7 +72,7 @@ export async function listMapItems(
     db,
     scope,
     `select ${COLS} from map_items where org_id = $1 and ($2::boolean or not hidden)
-     order by lower(name), builtin_key limit ${MAP_ITEM_LIMITS.list}`,
+     order by lower(name) collate "C", builtin_key collate "C" limit ${MAP_ITEM_LIMITS.list}`,
     [opts.includeHidden],
   );
   const items = rows.map(toDto).filter((i): i is MapItemDto => i !== null);
