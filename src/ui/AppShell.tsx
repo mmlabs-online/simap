@@ -23,7 +23,7 @@ function ShellWithBadge({ children }: { children: ReactNode }) {
       actions={actions}
       badges={{ myRequests: count, devices: badgeTotal(handoffs) }}
       badgeLabels={{
-        devices: shellCopy.badge.devicesBreakdown(handoffs.incoming, handoffs.returns),
+        devices: shellCopy.badge.devicesBreakdown(handoffs),
       }}
       roomSwitcher={session ? <RoomSwitcher pathname={pathname} /> : undefined}
     >

@@ -23,10 +23,12 @@ describe("devices-api list", () => {
     await api.list("all");
     await api.list("placed");
     await api.list("inventory");
+    await api.list("overdue");
     expect(calls.map((c) => c[0])).toEqual([
       "/api/devices?placement=all",
       "/api/devices?placement=placed",
       "/api/devices?placement=inventory",
+      "/api/devices?placement=overdue",
     ]);
     expect(calls[0][1]?.method).toBe("GET");
   });
@@ -234,6 +236,20 @@ describe("devices-api transfer", () => {
     expect(calls[0][0]).toBe("/api/devices/d%2F1/handoffs");
     expect(calls[0][1]?.method).toBe("POST");
     expect(JSON.parse(String(calls[0][1]?.body))).toEqual({ kind: "return", note: "Trả máy" });
+  });
+  it("startExtension posts {kind:'extension', newExpiresOn, note} to /api/devices/:id/handoffs", async () => {
+    const { api, calls } = fake(() => jsonRes({ id: "h1" }, 201));
+    expect(await api.startExtension("d/1", "2026-12-31", null)).toEqual({
+      ok: true,
+      value: { id: "h1" },
+    });
+    expect(calls[0][0]).toBe("/api/devices/d%2F1/handoffs");
+    expect(calls[0][1]?.method).toBe("POST");
+    expect(JSON.parse(String(calls[0][1]?.body))).toEqual({
+      kind: "extension",
+      newExpiresOn: "2026-12-31",
+      note: null,
+    });
   });
   it("takeBack posts to /api/devices/:id/take-back with no body and reads a DeviceDto", async () => {
     const { api, calls } = fake(() => jsonRes({ id: "d1" }));

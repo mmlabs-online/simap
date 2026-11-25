@@ -46,6 +46,34 @@ export const devicesCopy = {
     takeBackAria: (inv: string, owner: string) => `Take device ${inv} back from ${owner}`,
     cancelReturn: "Cancel return",
     cancelReturnAria: (inv: string) => `Cancel return of device ${inv}`,
+    extend: "Extend",
+    extendAria: (inv: string) => `Request an extension for device ${inv}`,
+    cancelExtension: "Cancel extension",
+    cancelExtensionAria: (inv: string) => `Cancel extension of device ${inv}`,
+  },
+  extend: {
+    title: "Request an extension",
+    submit: "Send request",
+    currentExpiry: "Current expiry",
+    newDate: "New expiry date",
+    newDateHint: "Dates are in UTC+7. Pick a day after today.",
+    note: "Note for the approver",
+    noteHint: "Optional. The Admin or Manager sees it with the request.",
+    next: "An Admin or Manager must approve. Until then the device stays with you and stays overdue. You can cancel at any time.",
+    sent: (name: string, inv: string) =>
+      `Extension request for ${name} (${inv}) sent. It waits for an Admin or Manager to approve.`,
+    cancelled: (name: string, inv: string) => `Extension request for ${name} (${inv}) cancelled.`,
+    gone: "This extension request is no longer available. The list has been refreshed.",
+    errors: {
+      dateInvalid: "Pick a date after today (UTC+7).",
+      invalid: "The server refused this. Check the date and the note.",
+    },
+  },
+  overdueChip: "Overdue",
+  overdueBanner: {
+    heading: (n: number) => (n === 1 ? "1 overdue device" : `${n} overdue devices`),
+    hint: "These devices are past their expiry date. Request an extension or give them back.",
+    showAll: "Show all overdue",
   },
   giveBack: {
     title: "Give device back to org",
@@ -127,7 +155,9 @@ export const devicesCopy = {
   pending: {
     chip: "Transfer pending",
     returnChip: "Return pending",
+    extensionChip: "Extension pending",
     to: (name: string) => `To ${name}`,
+    newDate: (d: string) => `Requested until ${d}`,
   },
   delete: {
     title: "Delete device",
@@ -182,7 +212,11 @@ export const devicesCopy = {
     },
   },
   details: { serial: (s: string) => `SN: ${s}`, none: "—" },
-  holding: { until: (d: string) => `Until ${d}`, noExpiry: "No expiry" },
+  holding: {
+    until: (d: string) => `Until ${d}`,
+    expired: (d: string) => `Expired on ${d}`,
+    noExpiry: "No expiry",
+  },
   place: {
     titles: { place: "Place device", move: "Move device", return: "Return device" },
     submit: { place: "Place", lend: "Lend", move: "Move", return: "Return to inventory" },

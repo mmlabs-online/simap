@@ -142,6 +142,13 @@ export async function seedDev(client) {
         [u(String(kind), Number(n)), org, name, `${inv}-${o.key}`, owner, seat, role],
       );
     }
+    // An owned device past its expiry (UTC+7 day, D35), so the Overdue UI has a row to show.
+    await client.query(
+      `insert into devices (id, org_id, name, type, inventory_number, owner_id, holding_expires_on)
+       values ($1, $2, 'Tablet E', 'tablet', $3, $4, (now() at time zone 'Asia/Ho_Chi_Minh')::date - 1)
+       on conflict do nothing`,
+      [u("8", 5), org, `INV-5-${o.key}`, members[0].id],
+    );
     await client.query(
       `insert into seat_requests (id, org_id, seat_id, subject_id, created_by_id)
        values ($1, $2, $3, $4, $4) on conflict do nothing`,

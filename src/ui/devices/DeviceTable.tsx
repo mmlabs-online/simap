@@ -39,11 +39,18 @@ function OwnerLabel({ device, clamp = "line-clamp-1" }: { device: DeviceDto; cla
         <span>{device.owner?.displayName ?? devicesCopy.orgInventory}</span>
         {device.mine && <Chip label={devicesCopy.you} />}
         {pending && <Chip label={pending.chip} />}
+        {device.overdue && (
+          <Chip
+            label={devicesCopy.overdueChip}
+            color="var(--error-container)"
+            onColor="var(--on-error-container)"
+          />
+        )}
       </span>
       {pending?.to && <span className="text-xs text-on-surface-variant">{pending.to}</span>}
       {h && (
         <>
-          <span className="text-xs text-on-surface-variant">{expiryText(h)}</span>
+          <span className="text-xs text-on-surface-variant">{expiryText(h, device.overdue)}</span>
           {h.note && (
             <span
               title={h.note}

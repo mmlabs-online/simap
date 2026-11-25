@@ -4,7 +4,13 @@ import { devicesCopy } from "../copy/devices";
 import { shellCopy } from "../copy/shell";
 import type { DevicesResult } from "./devices-api";
 
-export const FILTERS: readonly PlacementFilter[] = ["all", "placed", "inventory", "unowned"];
+export const FILTERS: readonly PlacementFilter[] = [
+  "all",
+  "placed",
+  "inventory",
+  "unowned",
+  "overdue",
+];
 
 export function filterOptions(): ChipOption<PlacementFilter>[] {
   return FILTERS.map((value) => ({ value, label: devicesCopy.filters[value] }));
@@ -23,17 +29,24 @@ export function detailsText(d: DeviceDto): { maker: string | null; serial: strin
   };
 }
 
-/** "Until 2026-12-31" or "No expiry"; the date is shown as given, never through `Date`. */
-export function expiryText(h: { expiresOn: string | null }): string {
-  return h.expiresOn === null
-    ? devicesCopy.holding.noExpiry
+/** "Until 2026-12-31", "Expired on 2026-12-31" (overdue) or "No expiry"; the date is shown as given, never through `Date`. */
+export function expiryText(h: { expiresOn: string | null }, overdue = false): string {
+  if (h.expiresOn === null) return devicesCopy.holding.noExpiry;
+  return overdue
+    ? devicesCopy.holding.expired(h.expiresOn)
     : devicesCopy.holding.until(h.expiresOn);
 }
 
-/** The pending line of a row: a chip, and the recipient for a transfer. An extension has no text until SIM-037.5. */
+/** The pending line of a row: a chip, and a second line (the recipient of a transfer, the requested date of an extension). */
 export function pendingText(d: DeviceDto): { chip: string; to: string | null } | null {
   const p = d.pendingHandoff;
   if (p?.kind === "return") return { chip: devicesCopy.pending.returnChip, to: null };
+  if (p?.kind === "extension") {
+    return {
+      chip: devicesCopy.pending.extensionChip,
+      to: p.newExpiresOn ? devicesCopy.pending.newDate(p.newExpiresOn) : null,
+    };
+  }
   if (p?.kind !== "transfer") return null;
   return {
     chip: devicesCopy.pending.chip,

@@ -13,6 +13,7 @@ export type DeviceRowHandlers = {
   onTransfer?: (device: DeviceDto) => void;
   onCancelHandoff?: (device: DeviceDto) => void;
   onReturn?: (device: DeviceDto) => void;
+  onExtend?: (device: DeviceDto) => void;
   onTakeBack?: (device: DeviceDto) => void;
 };
 
@@ -50,22 +51,34 @@ export function rowActions(
     onTransfer,
     onCancelHandoff,
     onReturn,
+    onExtend,
     onTakeBack,
   } = h;
   const pending = d.pendingHandoff;
   if (
     onCancelHandoff &&
     pending?.canCancel &&
-    (pending.kind === "transfer" || pending.kind === "return")
+    (pending.kind === "transfer" || pending.kind === "return" || pending.kind === "extension")
   ) {
-    const isReturn = pending.kind === "return";
+    const cancel = {
+      transfer: ["cancelTransfer", "cancelTransferAria"],
+      return: ["cancelReturn", "cancelReturnAria"],
+      extension: ["cancelExtension", "cancelExtensionAria"],
+    } as const;
+    const [label, aria] = cancel[pending.kind];
     out.push({
-      key: isReturn ? "cancelReturn" : "cancelTransfer",
-      label: isReturn ? devicesCopy.actions.cancelReturn : devicesCopy.actions.cancelTransfer,
-      ariaLabel: (isReturn
-        ? devicesCopy.actions.cancelReturnAria
-        : devicesCopy.actions.cancelTransferAria)(d.inventoryNumber),
+      key: label,
+      label: devicesCopy.actions[label],
+      ariaLabel: devicesCopy.actions[aria](d.inventoryNumber),
       run: () => onCancelHandoff(d),
+    });
+  }
+  if (onExtend && d.mine && d.overdue && !pending) {
+    out.push({
+      key: "extend",
+      label: devicesCopy.actions.extend,
+      ariaLabel: devicesCopy.actions.extendAria(d.inventoryNumber),
+      run: () => onExtend(d),
     });
   }
   if (onAssign && d.canAssign) {
@@ -141,3 +154,10 @@ export function rowActions(
 
 export const hasAnyAction = (devices: DeviceDto[], h: DeviceRowHandlers): boolean =>
   devices.some((d) => rowActions(d, h).length > 0);
+
+/** The only handlers the owner's overdue banner may show: Extend, Give back, Cancel (pending handoff). */
+export const bannerHandlers = (h: DeviceRowHandlers): DeviceRowHandlers => ({
+  onExtend: h.onExtend,
+  onReturn: h.onReturn,
+  onCancelHandoff: h.onCancelHandoff,
+});

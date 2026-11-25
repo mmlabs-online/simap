@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P2 |
 | Size | S |
 | Areas | api, ui |
@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/99 |
 
 ## Goal
 Devices past their expiry show Overdue, and their owner is reminded in the app to ask for an extension or return the device.

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DeviceDto } from "@/lib/devices/types";
-import { hasAnyAction, rowActions } from "./device-actions";
+import { bannerHandlers, hasAnyAction, rowActions } from "./device-actions";
 
 const d = (over: Partial<DeviceDto> = {}) =>
   ({ id: "d1", inventoryNumber: "INV-7", placement: null, canPlace: true, ...over }) as DeviceDto;
@@ -162,7 +162,7 @@ describe("transfer actions", () => {
     const no = (p: object) =>
       rowActions(d({ canPlace: false, pendingHandoff: pending(p) }), { onCancelHandoff });
     expect(no({ canCancel: false })).toEqual([]);
-    expect(no({ kind: "extension" })).toEqual([]);
+    expect(no({ kind: "extension", canCancel: false })).toEqual([]);
     expect(rowActions(d({ canPlace: false, pendingHandoff: null }), { onCancelHandoff })).toEqual(
       [],
     );
@@ -208,7 +208,7 @@ describe("return and take-back actions", () => {
     a[1].run();
     expect(onReturn).toHaveBeenCalledWith(expect.objectContaining({ id: "d1" }));
   });
-  it("cancelReturn for a pending return with canCancel; cancelTransfer for a transfer; none without canCancel; extension -> none", () => {
+  it("cancelReturn for a pending return with canCancel; cancelTransfer for a transfer; none without canCancel; extension -> cancelExtension", () => {
     const onCancelHandoff = vi.fn();
     const p = (over: object) =>
       owned({
@@ -223,7 +223,27 @@ describe("return and take-back actions", () => {
       "cancelTransfer",
     ]);
     expect(rowActions(p({ kind: "return", canCancel: false }), { onCancelHandoff })).toEqual([]);
-    expect(rowActions(p({ kind: "extension" }), { onCancelHandoff })).toEqual([]);
+    const ext = rowActions(p({ kind: "extension" }), { onCancelHandoff });
+    expect(ext.map((x) => x.key)).toEqual(["cancelExtension"]);
+    expect(ext[0].label).toBe("Cancel extension");
+    expect(ext[0].ariaLabel).toBe("Cancel extension of device INV-7");
+    expect(rowActions(p({ kind: "extension", canCancel: false }), { onCancelHandoff })).toEqual([]);
+  });
+  it("extend: mine && overdue && no pending -> extend; otherwise none; busyId disables it", () => {
+    const onExtend = vi.fn();
+    const row = owned({ canReturn: false, canTakeBack: false, mine: true, overdue: true });
+    const a = rowActions(row, { onExtend });
+    expect(a.map((x) => x.key)).toEqual(["extend"]);
+    expect(a[0].ariaLabel).toBe("Request an extension for device INV-7");
+    a[0].run();
+    expect(onExtend).toHaveBeenCalledWith(expect.objectContaining({ id: "d1" }));
+    expect(rowActions({ ...row, mine: false }, { onExtend })).toEqual([]);
+    expect(rowActions({ ...row, overdue: false }, { onExtend })).toEqual([]);
+    expect(
+      rowActions({ ...row, pendingHandoff: pending({ kind: "extension" }) }, { onExtend }),
+    ).toEqual([]);
+    expect(rowActions(row, {})).toEqual([]);
+    expect(rowActions(row, { onExtend }, "d1")[0].disabled).toBe(true);
   });
   it("takeBack when canTakeBack (danger), also with a pending transfer alongside cancelTransfer; absent when canTakeBack is false", () => {
     const onTakeBack = vi.fn();
@@ -260,5 +280,32 @@ describe("return and take-back actions", () => {
     );
     expect(a.length).toBe(3);
     expect(a.every((x) => x.disabled === true)).toBe(true);
+  });
+});
+
+describe("bannerHandlers", () => {
+  it("keeps only onExtend, onReturn and onCancelHandoff from the full handler set", () => {
+    const fn = vi.fn();
+    const full = {
+      onAssign: fn,
+      onEditHolding: fn,
+      onPlace: fn,
+      onEdit: fn,
+      onDelete: fn,
+      onTransfer: fn,
+      onCancelHandoff: fn,
+      onReturn: fn,
+      onExtend: fn,
+      onTakeBack: fn,
+    };
+    expect(Object.keys(bannerHandlers(full)).sort()).toEqual(
+      ["onCancelHandoff", "onExtend", "onReturn"].sort(),
+    );
+    const row = d({ mine: true, overdue: true, canReturn: true } as Partial<DeviceDto>);
+    const allowed = ["extend", "giveBack", "cancelTransfer", "cancelExtension"];
+    const keys = rowActions(row, bannerHandlers(full)).map((a) => a.key);
+    expect(keys).toContain("extend");
+    expect(keys.every((k) => allowed.includes(k))).toBe(true);
+    expect(rowActions(row, full).length).toBeGreaterThan(keys.length);
   });
 });

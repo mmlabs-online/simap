@@ -163,6 +163,16 @@ export function createDevicesApi(fetcher: ApiFetch) {
         },
         oneHandoff,
       ),
+    startExtension: (id: string, newExpiresOn: string, note: string | null) =>
+      call<HandoffDto>(
+        `${devicePath(id)}/handoffs`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ kind: "extension", newExpiresOn, note }),
+        },
+        oneHandoff,
+      ),
     takeBack: (id: string) =>
       call<DeviceDto>(`${devicePath(id)}/take-back`, { method: "POST" }, oneDevice),
     incomingHandoffs: () => listHandoffs("incoming"),
