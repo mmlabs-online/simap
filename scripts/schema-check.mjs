@@ -85,14 +85,49 @@ try {
       [oldMemberOrg, oldMember],
     )
   ).rows[0].id;
-  await c.query(`insert into rooms (org_id, code, name) values ($1, 'OLD-1', 'Old room')`, [
-    oldRoomOrg,
-  ]);
+  const oldRoom = (
+    await c.query(
+      `insert into rooms (org_id, code, name) values ($1, 'OLD-1', 'Old room') returning id`,
+      [oldRoomOrg],
+    )
+  ).rows[0].id;
+  // placements that exist before the map items migration (SIM-039.1): valid ones, undrawable ones, a legacy fixture
+  const oldSeat = async (/** @type {number} */ seq, /** @type {string} */ key) =>
+    (
+      await c.query(
+        `insert into seats (org_id, room_id, seq, code, tile_x, tile_y, tile_rotation, sprite_key)
+         values ($1, $2, $3, $4, 0, 0, 90, $5) returning id`,
+        [oldRoomOrg, oldRoom, seq, `OLD-1-0${seq}`, key],
+      )
+    ).rows[0].id;
+  const oldSeatOk = await oldSeat(1, "desk.single");
+  const oldSeatGone = await oldSeat(2, "gone.item");
+  const oldFixture = async (/** @type {string} */ key) =>
+    (
+      await c.query(
+        `insert into layout_fixtures (org_id, room_id, kind, tile_x, tile_y, tile_rotation, sprite_key)
+         values ($1, $2, null, 3, 3, 0, $3) returning id`,
+        [oldRoomOrg, oldRoom, key],
+      )
+    ).rows[0].id;
+  const oldFixtureOk = await oldFixture("plant.large");
+  const oldFixtureGone = await oldFixture("gone.item");
+  const oldFixtureLegacy = (
+    await c.query(
+      `insert into layout_fixtures (org_id, room_id, kind, x, y, rotation, w, h)
+       values ($1, $2, 'door', 1, 2, 90, 3, 4) returning id`,
+      [oldRoomOrg, oldRoom],
+    )
+  ).rows[0].id;
 
   const later = await run();
   check(
     "1 later run applies device_types",
     later.some((l) => l.includes("device_types")),
+  );
+  check(
+    "1 later run applies map_items",
+    later.some((l) => l.includes("map_items")),
   );
   const second = await run();
   check("1 second run is up to date", second.length === 1 && second[0] === "up to date");
@@ -136,6 +171,8 @@ try {
           "audit_log",
           "device_types",
           "device_type_catalogs",
+          "map_items",
+          "map_item_catalogs",
         ].map(async (t) => (await rows(`select count(*)::int as n from ${t}`))[0].n),
       )
     ).join(",");
@@ -778,6 +815,199 @@ try {
       const left = await rows(`select 1 from device_handoffs where device_id = $1`, [hDev]);
       if (left.length !== 0) throw new Error("handoff left");
     }, false)) === null,
+  );
+
+  // 11 map items (SIM-039.1)
+  const itemCount = async (/** @type {string} */ org) =>
+    (await rows("select count(*)::int as n from map_items where org_id = $1", [org]))[0].n;
+  const catalogMarker = async (/** @type {string} */ org) =>
+    (await rows("select 1 from map_item_catalogs where org_id = $1", [org])).length;
+  check(
+    "11 orgs existing before the migration get 53 map items",
+    (await itemCount(oldMemberOrg)) === 53 &&
+      (await itemCount(oldRoomOrg)) === 53 &&
+      (await catalogMarker(oldMemberOrg)) === 1 &&
+      (await catalogMarker(oldRoomOrg)) === 1,
+  );
+  const itemOrg = randomUUID();
+  await addMemberTo(itemOrg)();
+  check(
+    "11 org created after the migration gets 53 map items on first member",
+    (await itemCount(itemOrg)) === 53 && (await catalogMarker(itemOrg)) === 1,
+  );
+  await addMemberTo(itemOrg)();
+  check("11 second member adds none", (await itemCount(itemOrg)) === 53);
+  const sizes = (
+    await rows(
+      `select builtin_key, w, h from map_items where org_id = $1
+       and builtin_key in ('door', 'table.meeting', 'desk.single', 'prop.mug')`,
+      [itemOrg],
+    )
+  )
+    .map((r) => `${r.builtin_key} ${r.w}x${r.h}`)
+    .sort()
+    .join(",");
+  check(
+    "11 spot sizes door 1x2, table.meeting 3x2, desk.single 2x1, prop.mug 1x1",
+    sizes === "desk.single 2x1,door 1x2,prop.mug 1x1,table.meeting 3x2",
+  );
+  await c.query(`delete from map_items where org_id = $1 and builtin_key = 'sofa'`, [itemOrg]);
+  await addMemberTo(itemOrg)();
+  check("11 deleted map item stays deleted", (await itemCount(itemOrg)) === 52);
+
+  const placement = async (/** @type {string} */ table, /** @type {string} */ id) =>
+    (await rows(`select * from ${table} where id = $1`, [id]))[0];
+  const keptSeat = await placement("seats", oldSeatOk);
+  const keptFixture = await placement("layout_fixtures", oldFixtureOk);
+  const legacy = await placement("layout_fixtures", oldFixtureLegacy);
+  check(
+    "11 backfill keeps valid placed fixtures and seats",
+    keptSeat?.sprite_key === "desk.single" &&
+      keptSeat.tile_x === 0 &&
+      keptSeat.tile_rotation === 90 &&
+      keptFixture?.sprite_key === "plant.large" &&
+      keptFixture.tile_x === 3 &&
+      legacy?.kind === "door" &&
+      legacy.sprite_key === null,
+  );
+  const goneSeat = await placement("seats", oldSeatGone);
+  check(
+    "11 backfill drops undrawable fixtures and unplaces undrawable seats",
+    (await placement("layout_fixtures", oldFixtureGone)) === undefined &&
+      goneSeat?.tile_x === null &&
+      goneSeat.tile_y === null &&
+      goneSeat.tile_rotation === null &&
+      goneSeat.sprite_key === null,
+  );
+  check(
+    "11 fixture with a key not in the org catalog refused (23503 layout_fixtures_map_item_fkey)",
+    refused(
+      await tx(insFixture("null", seatTile, ", 1, 2, 0, 'gone.item'")),
+      "23503",
+      "layout_fixtures_map_item_fkey",
+    ),
+  );
+  check(
+    "11 seat with a key not in the org catalog refused (23503 seats_map_item_fkey)",
+    refused(await tx(insSeat(seatTile, ", 1, 2, 0, 'gone.item'")), "23503", "seats_map_item_fkey"),
+  );
+  check(
+    "11 map item referenced by a placement cannot be deleted (23503)",
+    refused(
+      await tx(async () => {
+        await insFixture("null", seatTile, ", 1, 2, 0, 'door'")();
+        await c.query(`delete from map_items where org_id = $1 and builtin_key = 'door'`, [A.org]);
+      }),
+      "23503",
+      "layout_fixtures_map_item_fkey",
+    ) &&
+      refused(
+        await tx(async () => {
+          await insSeat(seatTile, ", 1, 2, 0, 'desk.single'")();
+          await c.query(`delete from map_items where org_id = $1 and builtin_key = 'desk.single'`, [
+            A.org,
+          ]);
+        }),
+        "23503",
+        "seats_map_item_fkey",
+      ),
+  );
+  check(
+    "11 cross-org key refused",
+    refused(
+      await tx(async () => {
+        const bare = randomUUID(); // an org with a room but no catalog
+        const room = (
+          await c.query(
+            `insert into rooms (org_id, code, name) values ($1, 'X-1', 'x') returning id`,
+            [bare],
+          )
+        ).rows[0].id;
+        await c.query(
+          `insert into layout_fixtures (org_id, room_id, kind, tile_x, tile_y, tile_rotation, sprite_key)
+           values ($1, $2, null, 1, 1, 0, 'door')`,
+          [bare, room],
+        );
+      }),
+      "23503",
+      "layout_fixtures_map_item_fkey",
+    ),
+  );
+  const insItem = (
+    /** @type {string} */ key,
+    /** @type {string} */ name,
+    /** @type {string} */ group,
+    /** @type {number} */ w,
+    /** @type {number} */ h,
+    extra = "",
+  ) =>
+    q(
+      `insert into map_items (org_id, builtin_key, name, group_name, w, h${extra ? ", " + extra.split("=")[0] : ""})
+       values ($1, $2, $3, $4, $5, $6${extra ? ", " + extra.split("=")[1] : ""})`,
+      [A.org, key, name, group, w, h],
+    );
+  check(
+    "11 size 0 and 5 refused (23514 map_items_size_check)",
+    refused(await tx(insItem("x.size", "Size 0", "prop", 0, 1)), "23514", "map_items_size_check") &&
+      refused(await tx(insItem("x.size", "Size 5", "prop", 1, 5)), "23514", "map_items_size_check"),
+  );
+  check(
+    "11 blank and 61-char name refused (23514 map_items_name_check)",
+    refused(await tx(insItem("x.name", "  ", "prop", 1, 1)), "23514", "map_items_name_check") &&
+      refused(
+        await tx(insItem("x.name", "n".repeat(61), "prop", 1, 1)),
+        "23514",
+        "map_items_name_check",
+      ),
+  );
+  check(
+    "11 blank and 41-char group refused (23514 map_items_group_name_check)",
+    refused(await tx(insItem("x.group", "G", " ", 1, 1)), "23514", "map_items_group_name_check") &&
+      refused(
+        await tx(insItem("x.group", "G", "g".repeat(41), 1, 1)),
+        "23514",
+        "map_items_group_name_check",
+      ),
+  );
+  check(
+    "11 duplicate name refused case- and space-insensitively (23505 map_items_org_name_key)",
+    refused(await tx(insItem("x.dup", "  DOOR ", "prop", 1, 1)), "23505", "map_items_org_name_key"),
+  );
+  check(
+    "11 duplicate key refused (23505 map_items_pkey)",
+    refused(await tx(insItem("door", "Another", "prop", 1, 1)), "23505", "map_items_pkey"),
+  );
+  check(
+    "11 bad key refused (23514 map_items_builtin_key_check)",
+    refused(
+      await tx(insItem("Door x", "Bad key", "prop", 1, 1)),
+      "23514",
+      "map_items_builtin_key_check",
+    ),
+  );
+  check(
+    "11 bad Drive id refused (23514 map_items_art_image_check)",
+    refused(
+      await tx(insItem("x.img", "Img", "prop", 1, 1, "art_w_drive_file_id='short'")),
+      "23514",
+      "map_items_art_image_check",
+    ),
+  );
+  check(
+    "11 negative image version refused (23514 map_items_art_image_version_check)",
+    refused(
+      await tx(insItem("x.ver", "Ver", "prop", 1, 1, "art_e_image_version=-1")),
+      "23514",
+      "map_items_art_image_version_check",
+    ),
+  );
+  check(
+    "11 bad sprite refused (23514 map_items_art_sprite_check)",
+    refused(
+      await tx(insItem("x.spr", "Spr", "prop", 1, 1, "art_n_sprite=' x'")),
+      "23514",
+      "map_items_art_sprite_check",
+    ),
   );
 
   // extras

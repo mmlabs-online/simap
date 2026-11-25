@@ -56,5 +56,13 @@ The app never migrates.
   Rollback note: the migration is forward-only. Rolling the app back to the previous image after unowned devices
   exist is unsafe, because the old code assumes every device has an owner; return or delete the org-inventory
   devices first (or restore from backup). Re-adding `owner_id not null` needs that cleanup first.
+- Map items (SIM-039.1, D66/D67): `map_items` is the per-org catalog of library items, keyed by `(org_id, builtin_key)`
+  (the base sprite key). The name is unique per org through `device_type_key()`; size is `w` x `h` (1-4); art is
+  per direction (`art_n/e/s/w_sprite`, `_drive_file_id`, `_image_version`). `map_item_catalogs` is the seed-once marker;
+  `map_items_seed(org)` and the `members` insert trigger fill an org once (a deleted row stays deleted), and the layout
+  save calls it as a safety net. `layout_fixtures.sprite_key` and `seats.sprite_key` reference `map_items` with
+  `on delete restrict`, so items are never deleted while placed and saved layouts follow renames and image changes.
+  Floors stay keys inside `rooms.floor_zones` (jsonb, no FK). The migration first removes placements the layout read
+  already drops (an undrawable fixture is deleted, an undrawable seat goes back to unplaced), so no room changes.
 - Dev seed: `pnpm seed:dev` loads fake data (fixed UUIDs, `@simap.example` emails, invented names) into a local
   database only; it refuses non-local hosts and `NODE_ENV=production`. Never put real data in the seed.
