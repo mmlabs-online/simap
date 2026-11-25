@@ -1,6 +1,8 @@
 import "server-only";
+import { catalogFootprints } from "@/lib/map-items/footprints";
 import type { LayoutResponse, LayoutSaveValue } from "@/lib/sprites/layout";
-import { LAYOUT_LIMITS } from "@/lib/validate/layout";
+import { resolveLayout } from "@/lib/sprites/resolve-layout";
+import { LAYOUT_LIMITS, checkLayoutRules, type LayoutRuleCode } from "@/lib/validate/layout";
 import { writeAudit } from "@/server/audit/write";
 import { withTx, type TxClient, type TxPool } from "@/server/db/tx";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
@@ -9,7 +11,11 @@ import { readLayoutRows } from "./layout";
 export type SaveRefusal =
   | { ok: false; status: 404; code: "not_found" }
   | { ok: false; status: 409; code: "layout_stale" | "layout_seats_changed" }
-  | { ok: false; status: 422; code: "layout_too_many_seats" };
+  | {
+      ok: false;
+      status: 422;
+      code: LayoutRuleCode | "layout_too_many_seats" | "layout_item_hidden";
+    };
 export type SaveResult = { ok: true; value: LayoutResponse } | SaveRefusal;
 
 /** Thrown inside the transaction to roll it back and answer with a domain refusal. */
@@ -38,7 +44,8 @@ async function inTx(
 
 /**
  * LAY-01/03: replaces a room's grid, floors, seat placement and placed fixtures in one transaction.
- * Lock order: room, then seats ascending. Seats are never created or deleted here.
+ * Lock order: room, then seats ascending, then the catalog rows it places `for key share` in key order.
+ * Seats are never created or deleted here. Size rules run here, at the catalog sizes read under that lock.
  */
 export async function saveRoomLayout(
   pool: TxPool,
@@ -75,6 +82,45 @@ export async function saveRoomLayout(
       c,
       scope,
       "select map_items_seed(o.org_id) from (select $1::uuid as org_id) o where o.org_id = $1::uuid",
+    );
+
+    const keys = [
+      ...new Set([
+        ...value.seats.map((s) => s.sprite),
+        ...value.fixtures.map((f) => f.sprite),
+        ...value.floors.map((z) => z.sprite),
+      ]),
+    ].sort();
+    const { rows: catalog } = await orgQuery<{
+      builtin_key: string;
+      w: number;
+      h: number;
+      hidden: boolean;
+    }>(
+      c,
+      scope,
+      `select builtin_key, w, h, hidden from map_items
+       where org_id = $1 and builtin_key = any($2::text[]) order by builtin_key for key share`,
+      [keys],
+    );
+    // No registry fallback: a key without a catalog row is refused, never an FK error or an unchecked size.
+    const rules = checkLayoutRules(
+      value,
+      catalogFootprints(catalog.map((r) => ({ builtinKey: r.builtin_key, w: r.w, h: r.h }))),
+    );
+    if (!rules.ok) {
+      throw refuse(422, rules.code === "invalid_request" ? "layout_unknown_sprite" : rules.code);
+    }
+    await refuseNewHidden(
+      c,
+      scope,
+      roomId,
+      value,
+      new Set(
+        catalog
+          .filter((r) => r.hidden && r.builtin_key !== "desk.single")
+          .map((r) => r.builtin_key),
+      ),
     );
 
     if (value.seats.length > 0) {
@@ -148,4 +194,64 @@ export async function saveRoomLayout(
     if (!out) throw refuse(404, "not_found");
     return out;
   });
+}
+
+/**
+ * LAY-07: a hidden item may stay in a room but not be added. Fixtures: no more copies of a hidden key than
+ * the room stores. Floors: a hidden floor must already be shown. Desks are exempt (seats are never created here).
+ */
+async function refuseNewHidden(
+  c: TxClient,
+  scope: OrgScope,
+  roomId: string,
+  value: LayoutSaveValue,
+  hidden: ReadonlySet<string>,
+): Promise<void> {
+  if (hidden.size === 0) return;
+
+  const submitted = new Map<string, number>();
+  for (const f of value.fixtures) {
+    if (hidden.has(f.sprite)) submitted.set(f.sprite, (submitted.get(f.sprite) ?? 0) + 1);
+  }
+  if (submitted.size > 0) {
+    const { rows } = await orgQuery<{ sprite_key: string; n: number }>(
+      c,
+      scope,
+      `select sprite_key, count(*)::int as n from layout_fixtures
+       where org_id = $1 and room_id = $2 and sprite_key = any($3::text[]) group by sprite_key`,
+      [roomId, [...submitted.keys()]],
+    );
+    const stored = new Map(rows.map((r) => [r.sprite_key, r.n]));
+    for (const [key, n] of submitted) {
+      if (n > (stored.get(key) ?? 0)) throw refuse(422, "layout_item_hidden");
+    }
+  }
+
+  const floors = new Set(value.floors.map((z) => z.sprite).filter((k) => hidden.has(k)));
+  if (floors.size > 0) {
+    const { rows } = await orgQuery<{
+      grid_w: number | null;
+      grid_h: number | null;
+      floor_zones: unknown;
+    }>(
+      c,
+      scope,
+      `select grid_w, grid_h,
+           case when jsonb_typeof(floor_zones) = 'array'
+                  and jsonb_array_length(floor_zones) <= ${LAYOUT_LIMITS.floors}
+                  and octet_length(floor_zones::text) <= ${LAYOUT_LIMITS.bodyBytes}
+                then floor_zones end as floor_zones
+         from rooms where org_id = $1 and id = $2`,
+      [roomId],
+    );
+    const room = rows[0]!;
+    const kept = new Set(
+      resolveLayout(
+        { gridW: room.grid_w, gridH: room.grid_h, floorZones: room.floor_zones },
+        [],
+        [],
+      ).layout.floors.map((z) => z.sprite),
+    );
+    for (const key of floors) if (!kept.has(key)) throw refuse(422, "layout_item_hidden");
+  }
 }

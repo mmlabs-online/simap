@@ -12,6 +12,7 @@ import {
   waitForLockWait,
 } from "@/test/db/fixtures";
 import type { LayoutSaveValue } from "@/lib/sprites/layout";
+import { resolveLayout } from "@/lib/sprites/resolve-layout";
 import type { TxClient, TxPool } from "@/server/db/tx";
 import { getRoomLayout } from "./layout";
 import { saveRoomLayout } from "./save";
@@ -295,7 +296,7 @@ describe("getRoomLayout (db)", () => {
     expect(texts[0]).toBe("begin");
     expect(texts[1]).toBe("set transaction isolation level repeatable read, read only");
     expect(texts.at(-1)).toBe("commit");
-    expect(texts).toHaveLength(6);
+    expect(texts).toHaveLength(7);
   });
 
   it("concurrent commit between reads is not seen", async () => {
@@ -554,6 +555,260 @@ describe("saveRoomLayout (db)", () => {
     const before = await q();
     expect((await save(o, val(0, [s1, s2]))).ok).toBe(true);
     expect(await q()).toBe(before);
+  });
+});
+
+describe("catalog footprints and hidden items (db)", () => {
+  type O = Awaited<ReturnType<typeof room>>;
+  const save = (o: O, v: LayoutSaveValue, roomId = o.roomId) =>
+    saveRoomLayout(pool as never, o.scope, randomUUID(), roomId, v);
+  const val = (over: Partial<LayoutSaveValue> = {}): LayoutSaveValue => ({
+    baseVersion: 0,
+    w: 12,
+    h: 8,
+    floors: [{ sprite: "floor.wood", x: 0, y: 0, w: 12, h: 8 }],
+    seats: [],
+    fixtures: [],
+    ...over,
+  });
+  const fx = (sprite: string, x: number, y: number, rotation: 0 | 90 | 180 | 270 = 0) => ({
+    sprite,
+    x,
+    y,
+    rotation,
+  });
+  const resize = (o: O, key: string, w: number, h: number) =>
+    run("update map_items set w = $3, h = $4 where org_id = $1 and builtin_key = $2", [
+      o.orgId,
+      key,
+      w,
+      h,
+    ]);
+  const hide = (o: O, key: string) =>
+    run("update map_items set hidden = true where org_id = $1 and builtin_key = $2", [
+      o.orgId,
+      key,
+    ]);
+  const refused = (code: string) => ({ ok: false, status: 422, code });
+
+  it("catalog sizes: plant.large resized to 2x2 by SQL; plants at (0,0) and (1,1) give 422 layout_overlap and change nothing; at (0,0) and (2,2) save", async () => {
+    const o = await room();
+    await resize(o, "plant.large", 2, 2);
+    const before = await snapshotOf(o.orgId);
+    const bad = await save(
+      o,
+      val({ fixtures: [fx("plant.large", 0, 0), fx("plant.large", 1, 1)] }),
+    );
+    expect(bad).toEqual(refused("layout_overlap"));
+    expect(await snapshotOf(o.orgId)).toBe(before);
+    const good = await save(
+      o,
+      val({ fixtures: [fx("plant.large", 0, 0), fx("plant.large", 2, 2)] }),
+    );
+    expect(good.ok).toBe(true);
+  });
+
+  it("catalog sizes: table.meeting 4x1 at 90 degrees with y = h-3 gives layout_out_of_bounds", async () => {
+    const o = await room();
+    await resize(o, "table.meeting", 4, 1);
+    const r = await save(o, val({ fixtures: [fx("table.meeting", 0, 5, 90)] }));
+    expect(r).toEqual(refused("layout_out_of_bounds"));
+    expect((await save(o, val({ fixtures: [fx("table.meeting", 0, 4, 90)] }))).ok).toBe(true);
+  });
+
+  it("catalog sizes: table.meeting shrunk to 1x1 saves in the last column (the registry size would be out of bounds)", async () => {
+    const o = await room();
+    await resize(o, "table.meeting", 1, 1);
+    expect((await save(o, val({ fixtures: [fx("table.meeting", 11, 0)] }))).ok).toBe(true);
+  });
+
+  it("catalog sizes: a fixture that grows onto a desk gives layout_fixture_on_desk", async () => {
+    const o = await room();
+    const s = await addSeat(pool, o.orgId, o.roomId, "C302", 1);
+    await resize(o, "prop.mug", 2, 1);
+    const v = val({
+      seats: [{ id: s, sprite: "desk.single", x: 4, y: 4, rotation: 0 }],
+      fixtures: [fx("prop.mug", 3, 4)],
+    });
+    expect(await save(o, v)).toEqual(refused("layout_fixture_on_desk"));
+  });
+
+  it("catalog sizes: the read drops a stored fixture that overlaps at the catalog size", async () => {
+    const o = await room("C302", { w: 12, h: 8 });
+    await addFixture(o.orgId, o.roomId, "plant.large", 0, 0);
+    await addFixture(o.orgId, o.roomId, "plant.large", 1, 1);
+    expect((await value(o)).layout.fixtures).toHaveLength(2);
+    await resize(o, "plant.large", 2, 2);
+    expect((await value(o)).layout.fixtures).toHaveLength(1);
+  });
+
+  it("a library-size catalog resolves a stored room exactly as the registry does", async () => {
+    const o = await room("C302", { w: 12, h: 8, version: 1 });
+    const a = await addSeat(pool, o.orgId, o.roomId, "C302", 1);
+    const b = await addSeat(pool, o.orgId, o.roomId, "C302", 2);
+    const c = await addSeat(pool, o.orgId, o.roomId, "C302", 3);
+    await place(a, "desk.single", 0, 0, 0);
+    await place(b, "desk.single", 6, 0, 90);
+    await addFixture(o.orgId, o.roomId, "table.meeting", 4, 4);
+    await addFixture(o.orgId, o.roomId, "plant.large", 0, 7);
+    await run(
+      `insert into layout_fixtures (org_id, room_id, kind, tile_x, tile_y, tile_rotation, sprite_key)
+       values ($1, $2, null, 10, 2, 90, 'door')`,
+      [o.orgId, o.roomId],
+    );
+    const seats = (
+      await run(
+        "select id, code, tile_x, tile_y, tile_rotation, sprite_key from seats where room_id = $1 order by seq",
+        [o.roomId],
+      )
+    ).rows;
+    const fixtures = (
+      await run(
+        "select id, tile_x, tile_y, tile_rotation, sprite_key from layout_fixtures where room_id = $1 order by id",
+        [o.roomId],
+      )
+    ).rows;
+    const expected = resolveLayout(
+      {
+        gridW: 12,
+        gridH: 8,
+        floorZones: (await one("select floor_zones from rooms where id = $1", [o.roomId]))
+          .floor_zones,
+      },
+      seats.map((r) => ({
+        id: r.id,
+        code: r.code,
+        placement:
+          r.sprite_key === null
+            ? null
+            : { sprite: r.sprite_key, x: r.tile_x, y: r.tile_y, rotation: r.tile_rotation },
+      })),
+      fixtures.map((r) => ({
+        id: r.id,
+        sprite: r.sprite_key,
+        x: r.tile_x,
+        y: r.tile_y,
+        rotation: r.tile_rotation,
+      })),
+    );
+    const got = await value(o);
+    expect(got.layout).toEqual(expected.layout);
+    expect(got.unplaced).toEqual(expected.unplaced);
+    expect(got.layout.seats.map((s) => s.id).sort()).toEqual([a, b, c].sort());
+  });
+
+  it("read items: placed fixture keys, desk.single, chair.office and floor keys only, sorted, no hidden field; a hidden placed item is included", async () => {
+    const o = await room("C302", { w: 12, h: 8 });
+    const s = await addSeat(pool, o.orgId, o.roomId, "C302", 1);
+    await place(s, "desk.single", 4, 2, 0);
+    await addFixture(o.orgId, o.roomId, "plant.large", 10, 5);
+    await run("update rooms set floor_zones = $2::jsonb where id = $1", [
+      o.roomId,
+      JSON.stringify([{ sprite: "floor.wood", x: 0, y: 0, w: 6, h: 4 }]),
+    ]);
+    await hide(o, "plant.large");
+    await hide(o, "sofa");
+    const keys = (await value(o)).items.map((i) => i.builtinKey);
+    expect(keys).toEqual(["chair.office", "desk.single", "floor.wood", "plant.large"]);
+    const items = (await value(o)).items;
+    expect(items.every((i) => !("hidden" in i))).toBe(true);
+    expect(items.find((i) => i.builtinKey === "plant.large")).toMatchObject({ w: 1, h: 1 });
+  });
+
+  it("hidden items: a hidden plant kept and moved saves; one more copy gives 422 layout_item_hidden and changes nothing; deleting it saves; placing it in another room gives 422", async () => {
+    const o = await room("C302", { w: 12, h: 8, version: 1 });
+    const other = await addRoom(pool, o.orgId, "C303", { seatCounter: 0 });
+    await addFixture(o.orgId, o.roomId, "plant.large", 10, 5);
+    await hide(o, "plant.large");
+    expect((await save(o, val({ baseVersion: 1, fixtures: [fx("plant.large", 3, 3)] }))).ok).toBe(
+      true,
+    );
+    const before = await snapshotOf(o.orgId);
+    const more = await save(
+      o,
+      val({ baseVersion: 2, fixtures: [fx("plant.large", 3, 3), fx("plant.large", 5, 5)] }),
+    );
+    expect(more).toEqual(refused("layout_item_hidden"));
+    expect(await snapshotOf(o.orgId)).toBe(before);
+    expect((await save(o, val({ baseVersion: 2, fixtures: [] }))).ok).toBe(true);
+    expect(await save(o, val({ fixtures: [fx("plant.large", 1, 1)] }), other)).toEqual(
+      refused("layout_item_hidden"),
+    );
+  });
+
+  it("hidden floors: a hidden floor already in the room re-saves; adding it to another saved room gives 422; an unsaved room with hidden floor.wood saves floor.wood", async () => {
+    const o = await room("C302", { w: 12, h: 8, version: 1 });
+    const zone = (sprite: string) => ({ sprite, x: 0, y: 0, w: 12, h: 8 });
+    await run("update rooms set floor_zones = $2::jsonb where id = $1", [
+      o.roomId,
+      JSON.stringify([zone("floor.carpet")]),
+    ]);
+    await hide(o, "floor.carpet");
+    expect((await save(o, val({ baseVersion: 1, floors: [zone("floor.carpet")] }))).ok).toBe(true);
+
+    const second = await addRoom(pool, o.orgId, "C303", { seatCounter: 0 });
+    await run(
+      "update rooms set grid_w = 12, grid_h = 8, layout_version = 1, floor_zones = $2::jsonb where id = $1",
+      [second, JSON.stringify([zone("floor.wood")])],
+    );
+    expect(await save(o, val({ baseVersion: 1, floors: [zone("floor.carpet")] }), second)).toEqual(
+      refused("layout_item_hidden"),
+    );
+
+    const fresh = await room("C304");
+    await hide(fresh, "floor.wood");
+    expect((await save(fresh, val({ floors: [zone("floor.wood")] }))).ok).toBe(true);
+  });
+
+  it("hidden desk.single: a room with seats saves", async () => {
+    const o = await room();
+    const s = await addSeat(pool, o.orgId, o.roomId, "C302", 1);
+    await hide(o, "desk.single");
+    const v = val({ seats: [{ id: s, sprite: "desk.single", x: 2, y: 2, rotation: 0 }] });
+    expect((await save(o, v)).ok).toBe(true);
+  });
+
+  it("org A's resize and hide do not change org B's save or read", async () => {
+    const a = await room("C302", { w: 12, h: 8 });
+    const b = await room("C302", { w: 12, h: 8 });
+    await resize(a, "plant.large", 2, 2);
+    await hide(a, "plant.large");
+    await addFixture(b.orgId, b.roomId, "plant.large", 0, 0);
+    await addFixture(b.orgId, b.roomId, "plant.large", 1, 1);
+    expect((await value(b)).layout.fixtures).toHaveLength(2);
+    const r = await save(
+      b,
+      val({
+        baseVersion: 1,
+        fixtures: [fx("plant.large", 0, 0), fx("plant.large", 1, 1), fx("plant.large", 5, 5)],
+      }),
+    );
+    expect(r.ok).toBe(true);
+  });
+
+  it("a save waits for an uncommitted resize of an item it places, then validates at the new size (422 layout_overlap)", async () => {
+    const o = await room();
+    const holder = await pool.connect();
+    try {
+      await holder.query("begin");
+      await holder.query(
+        "select 1 from map_items where org_id = $1 and builtin_key = 'plant.large' for update",
+        [o.orgId],
+      );
+      await holder.query(
+        "update map_items set w = 2, h = 2 where org_id = $1 and builtin_key = 'plant.large'",
+        [o.orgId],
+      );
+      const pending = save(
+        o,
+        val({ fixtures: [fx("plant.large", 0, 0), fx("plant.large", 1, 1)] }),
+      );
+      expect(await waitForLockWait(pool, 5000)).toBe(true);
+      await holder.query("commit");
+      expect(await pending).toEqual(refused("layout_overlap"));
+    } finally {
+      holder.release();
+    }
   });
 });
 

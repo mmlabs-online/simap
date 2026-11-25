@@ -2,7 +2,9 @@ import {
   LAYOUT_LIMITS,
   checkLayoutRules,
   floorCellsWithinCap,
-  footprintOf,
+  footprintAt,
+  registryFootprints,
+  type FootprintLookup,
 } from "@/lib/validate/layout";
 import { defaultLayout } from "./default-layout";
 import type { FloorZone, LayoutResponse, Placement, Rotation } from "./layout";
@@ -51,6 +53,7 @@ export function resolveLayout(
   room: StoredRoom,
   seatRows: readonly StoredSeat[],
   fixtureRows: readonly StoredFixture[],
+  lookup: FootprintLookup = registryFootprints,
 ): Pick<LayoutResponse, "saved" | "layout" | "unplaced"> {
   const seats = seatRows.slice(0, LAYOUT_LIMITS.seats);
   const fixtures = fixtureRows.slice(0, LAYOUT_LIMITS.fixtures);
@@ -78,10 +81,10 @@ export function resolveLayout(
     }
     const one = [{ sprite: p.sprite, x: p.x, y: p.y, rotation: p.rotation }];
     const rules = kind === "seat" ? { seats: one, fixtures: [] } : { seats: [], fixtures: one };
-    if (!checkLayoutRules({ w, h, floors: [], ...rules }).ok) return false;
+    if (!checkLayoutRules({ w, h, floors: [], ...rules }, lookup).ok) return false;
     const rot = p.rotation as Rotation;
     const key = resolveFrameKey(p.sprite, rot);
-    const fp = footprintOf(p.sprite, rot);
+    const fp = footprintAt(p.sprite, rot, lookup);
     if (key === null || fp === null) return false;
     const cells: number[] = [];
     if (REGISTRY[key].blocks) {

@@ -144,7 +144,7 @@ describe("PUT /api/rooms/{id}/layout", () => {
     expect(svc.saveRoomLayout).not.toHaveBeenCalled();
   });
 
-  it("a fixture on a desk gives 422 layout_fixture_on_desk; service not called", async () => {
+  it("a fixture on a desk passes the pre-check and reaches the service", async () => {
     fakeAuth("simap:admin");
     const onDesk = {
       ...SAVE,
@@ -159,19 +159,21 @@ describe("PUT /api/rooms/{id}/layout", () => {
       ],
       fixtures: [{ sprite: "prop.mug", x: 1, y: 1, rotation: 0 }],
     };
+    svc.saveRoomLayout.mockResolvedValue({ ok: true, value: { version: 1 } });
     const res = await PUT(put(onDesk), route(ID));
-    expect(res.status).toBe(422);
-    expect(await res.json()).toMatchObject({ error: { code: "layout_fixture_on_desk" } });
-    expect(svc.saveRoomLayout).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(svc.saveRoomLayout).toHaveBeenCalledTimes(1);
   });
 
-  it("maps each refusal: 404, 409 stale, 409 seats changed, 422 too many seats", async () => {
+  it("maps each refusal: 404, 409 stale, 409 seats changed, 422 too many seats, overlap, hidden", async () => {
     fakeAuth("simap:admin");
     const cases = [
       [404, "not_found"],
       [409, "layout_stale"],
       [409, "layout_seats_changed"],
       [422, "layout_too_many_seats"],
+      [422, "layout_overlap"],
+      [422, "layout_item_hidden"],
     ] as const;
     for (const [status, code] of cases) {
       svc.saveRoomLayout.mockResolvedValueOnce({ ok: false, status, code });

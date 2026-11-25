@@ -88,6 +88,28 @@ export function footprintOf(sprite: string, rotation: Rotation): [number, number
   return REGISTRY[key].tiles ?? [1, 1];
 }
 
+/**
+ * Size of a base key at rotation 0 in tiles, or null when unknown. Lives here, not in `map-items`,
+ * because `map-items/library.ts` imports this module (a back-import would be a load-order cycle).
+ */
+export type FootprintLookup = (baseKey: string) => readonly [number, number] | null;
+
+/** The registry's sizes (a partial wall without a rotation-0 frame counts as 1x1, like the library seed). */
+export const registryFootprints: FootprintLookup = (k) =>
+  spriteInfo(k) ? (footprintOf(k, 0) ?? [1, 1]) : null;
+
+/** Footprint at a rotation from a lookup: null without a frame for the rotation or a size; 90/270 swap w and h. */
+export function footprintAt(
+  sprite: string,
+  rotation: Rotation,
+  lookup: FootprintLookup,
+): [number, number] | null {
+  if (resolveFrameKey(sprite, rotation) === null) return null;
+  const size = lookup(sprite);
+  if (size === null) return null;
+  return rotation === 90 || rotation === 270 ? [size[1], size[0]] : [size[0], size[1]];
+}
+
 const fail = (code: LayoutRuleCode): LayoutFailure => ({ ok: false, code });
 const bad = (field: string): LayoutFailure => ({ ok: false, code: "invalid_request", field });
 
@@ -105,9 +127,12 @@ const inGrid = (x: number, y: number, w: number, h: number, gw: number, gh: numb
   x >= 0 && y >= 0 && w >= 1 && h >= 1 && x + w <= gw && y + h <= gh;
 
 /** Indices of fixtures whose footprint touches a desk tile (D61). Items that fail the sprite lookup are skipped. */
-export function fixturesOnDesks(layout: LayoutRulesInput): number[] {
+export function fixturesOnDesks(
+  layout: LayoutRulesInput,
+  lookup: FootprintLookup = registryFootprints,
+): number[] {
   const cells = (item: RulesItem): number[] => {
-    const fp = footprintOf(item.sprite, item.rotation as Rotation);
+    const fp = footprintAt(item.sprite, item.rotation as Rotation, lookup);
     if (fp === null) return [];
     const out: number[] = [];
     for (let dy = 0; dy < fp[1]; dy++) {
@@ -123,8 +148,8 @@ export function fixturesOnDesks(layout: LayoutRulesInput): number[] {
   return hits;
 }
 
-/** First failure in a fixed order: grid, sprite, rotation, bounds (items, zones, chairs), overlap, fixture on a desk. */
-export function checkLayoutRules(layout: LayoutRulesInput): { ok: true } | LayoutFailure {
+/** Grid size, sprite names and rotations: the rules that do not depend on item sizes. */
+function checkGridSpritesRotations(layout: LayoutRulesInput): LayoutFailure | null {
   const { grid } = LAYOUT_LIMITS;
   if (!Number.isSafeInteger(layout.w) || layout.w < 1 || layout.w > grid) {
     return fail("layout_out_of_bounds");
@@ -148,6 +173,34 @@ export function checkLayoutRules(layout: LayoutRulesInput): { ok: true } | Layou
       return fail("layout_bad_rotation");
     }
   }
+  return null;
+}
+
+/** The size-independent rules: grid, sprites, rotations, a frame per placed item, zones in bounds. */
+export function checkLayoutBasics(layout: LayoutRulesInput): { ok: true } | LayoutFailure {
+  const early = checkGridSpritesRotations(layout);
+  if (early) return early;
+  for (const item of [...layout.seats, ...layout.fixtures]) {
+    if (resolveFrameKey(item.sprite, item.rotation as Rotation) === null) {
+      return fail("layout_unknown_sprite");
+    }
+  }
+  for (const z of layout.floors) {
+    if (!inGrid(z.x, z.y, z.w, z.h, layout.w, layout.h)) return fail("layout_out_of_bounds");
+  }
+  return { ok: true };
+}
+
+/**
+ * First failure in a fixed order: grid, sprite, rotation, bounds (items, zones, chairs), overlap, fixture on a desk.
+ * Item sizes come from `lookup` (registry by default); blocking, direction and chairs stay on the registry.
+ */
+export function checkLayoutRules(
+  layout: LayoutRulesInput,
+  lookup: FootprintLookup = registryFootprints,
+): { ok: true } | LayoutFailure {
+  const early = checkGridSpritesRotations(layout);
+  if (early) return early;
 
   type Placed = { x: number; y: number; w: number; d: number; blocks: boolean };
   const placed: Placed[] = [];
@@ -158,7 +211,7 @@ export function checkLayoutRules(layout: LayoutRulesInput): { ok: true } | Layou
   ] as const) {
     for (const item of list) {
       const key = resolveFrameKey(item.sprite, item.rotation as Rotation);
-      const fp = footprintOf(item.sprite, item.rotation as Rotation);
+      const fp = footprintAt(item.sprite, item.rotation as Rotation, lookup);
       if (key === null || fp === null) return fail("layout_unknown_sprite");
       if (!inGrid(item.x, item.y, fp[0], fp[1], layout.w, layout.h)) {
         return fail("layout_out_of_bounds");
@@ -194,7 +247,7 @@ export function checkLayoutRules(layout: LayoutRulesInput): { ok: true } | Layou
     if (taken.has(cell) || chairCells.has(cell)) return fail("layout_overlap");
     chairCells.add(cell);
   }
-  if (fixturesOnDesks(layout).length > 0) return fail("layout_fixture_on_desk");
+  if (fixturesOnDesks(layout, lookup).length > 0) return fail("layout_fixture_on_desk");
   return { ok: true };
 }
 
@@ -213,10 +266,8 @@ const hasExactKeys = (o: Record<string, unknown>, keys: readonly string[]) =>
 
 const isInt = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v);
 
-/** Shape (400), then the layout rules (422). Pure: the caller maps the failure to a response. */
-export function validateLayoutSave(
-  body: unknown,
-): { ok: true; value: LayoutSaveValue } | LayoutFailure {
+/** Shape only (400). */
+function parseShape(body: unknown): { ok: true; value: LayoutSaveValue } | LayoutFailure {
   if (
     !isPlainObject(body) ||
     !hasExactKeys(body, ["baseVersion", "w", "h", "floors", "seats", "fixtures"])
@@ -279,8 +330,34 @@ export function validateLayoutSave(
     seats: outSeats,
     fixtures: outFixtures,
   };
-  const rules = checkLayoutRules(value);
-  if (!rules.ok) return rules;
-  if (!floorCellsWithinCap(value.floors, value.w, value.h)) return bad("floors");
   return { ok: true, value };
+}
+
+/** Shape (400), then the layout rules (422). Pure: the caller maps the failure to a response. */
+export function validateLayoutSave(
+  body: unknown,
+  lookup: FootprintLookup = registryFootprints,
+): { ok: true; value: LayoutSaveValue } | LayoutFailure {
+  const parsed = parseShape(body);
+  if (!parsed.ok) return parsed;
+  const rules = checkLayoutRules(parsed.value, lookup);
+  if (!rules.ok) return rules;
+  if (!floorCellsWithinCap(parsed.value.floors, parsed.value.w, parsed.value.h)) {
+    return bad("floors");
+  }
+  return parsed;
+}
+
+/** Shape (400), then the size-independent rules (422) and the floor cap; sizes are checked in the save. */
+export function parseLayoutSave(
+  body: unknown,
+): { ok: true; value: LayoutSaveValue } | LayoutFailure {
+  const parsed = parseShape(body);
+  if (!parsed.ok) return parsed;
+  const rules = checkLayoutBasics(parsed.value);
+  if (!rules.ok) return rules;
+  if (!floorCellsWithinCap(parsed.value.floors, parsed.value.w, parsed.value.h)) {
+    return bad("floors");
+  }
+  return parsed;
 }

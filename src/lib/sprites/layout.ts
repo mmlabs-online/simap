@@ -1,3 +1,4 @@
+import type { MapItemDto } from "@/lib/map-items/types";
 import type { DeviceKind } from "./device-slots";
 
 /** Zoom levels of the room map: whole numbers only (spec LAY "Visual style"). */
@@ -44,6 +45,9 @@ export type SeatDeviceType = {
 /** A device placed at a seat; only its type is public on the map. `deviceType` is null when the type is not in the org catalog. */
 export type SeatDevice = { type: string; deviceType?: SeatDeviceType | null };
 
+/** A catalog item the layout uses, hidden ones included; the hidden flag is never sent here (D67 2). */
+export type LayoutItem = Omit<MapItemDto, "hidden">;
+
 /** GET /api/rooms/{id}/layout (SIM-015.1 contract): one room's layout with derived seat status. */
 export type LayoutResponse = {
   room: { id: string; code: string; name: string };
@@ -55,4 +59,6 @@ export type LayoutResponse = {
   seatDevices: Record<string, SeatDevice[]>;
   unplaced: { id: string; code: string }[];
   truncated: boolean;
+  /** Catalog rows of the keys the layout uses (SIM-039.3), sorted by builtinKey. */
+  items: LayoutItem[];
 };
