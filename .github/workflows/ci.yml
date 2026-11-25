@@ -36,11 +36,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm check:layers
-      - name: diag lsof
-        continue-on-error: true
-        run: |
-          echo "PATH=$PATH"; command -v lsof ps; id
-          node -e "const s=require('net').createServer().listen(0,'127.0.0.1',()=>{const p=s.address().port;const c=require('child_process');for(const a of [['lsof',['-nP','-iTCP:'+p,'-sTCP:LISTEN','-Fp']],['ps',['-A','-o','pid=,pgid=']]]){const t=Date.now();const r=c.spawnSync(a[0],a[1],{encoding:'utf8',timeout:10000});console.log(a[0],'status',r.status,'sig',r.signal,'err',r.error&&r.error.message,'ms',Date.now()-t,'out',JSON.stringify((r.stdout||'').slice(0,300)),'stderr',JSON.stringify((r.stderr||'').slice(0,300)))}console.log('mypid',process.pid);s.close()})"
       - run: pnpm test
       - name: migrate CLI
         shell: bash
