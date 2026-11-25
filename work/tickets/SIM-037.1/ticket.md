@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | REWORK |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, security |
 | Gate | plan-approval |
 | Depends on | — |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-25 |
 | Claimed by | claude@2026-11-25T02:38:50Z |
 | PR | — |
