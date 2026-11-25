@@ -1,4 +1,4 @@
-import type { HandoffDto, PlacementFilter } from "@/lib/devices/types";
+import type { HandoffBox, HandoffCountDto, HandoffDto, PlacementFilter } from "@/lib/devices/types";
 import { apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
 import type { DevicesResult } from "./devices-api";
@@ -16,7 +16,8 @@ export type IncomingOutcome = {
 
 const STALE = ["handoff_not_pending", "handoff_stale", "not_found"];
 
-function failed(code: string): IncomingOutcome {
+/** The outcome of a failed confirm, decline or cancel; shared with the return flow. */
+export function handoffActionFailed(code: string): IncomingOutcome {
   if (STALE.includes(code)) {
     return { refresh: true, notice: { tone: "status", text: devicesCopy.transfer.gone } };
   }
@@ -32,7 +33,7 @@ export function confirmOutcome(
   item: Pick<HandoffDto, "device">,
   filter: PlacementFilter,
 ): IncomingOutcome {
-  if (!result.ok) return failed(result.code);
+  if (!result.ok) return handoffActionFailed(result.code);
   const base = copy.confirmed(item.device.name, item.device.inventoryNumber);
   const hint = filter === "placed" || filter === "unowned" ? ` ${copy.filterHint}` : "";
   return { refresh: true, notice: { tone: "status", text: base + hint } };
@@ -43,20 +44,24 @@ export function declineOutcome(
   result: DevicesResult<HandoffDto>,
   item: Pick<HandoffDto, "device">,
 ): IncomingOutcome {
-  if (!result.ok) return failed(result.code);
+  if (!result.ok) return handoffActionFailed(result.code);
   return {
     refresh: true,
     notice: { tone: "status", text: copy.declined(item.device.name, item.device.inventoryNumber) },
   };
 }
 
-export type FocusTarget = { kind: "confirm"; id: string } | { kind: "section" } | { kind: "page" };
+export type FocusTarget =
+  | { kind: "confirm"; id: string }
+  | { kind: "section"; list: HandoffBox }
+  | { kind: "page" };
 
 /** After an item leaves: the next item's Confirm, else the section heading, else the page heading. */
 export function focusAfter(
   before: HandoffDto[],
   removedId: string,
   after: HandoffDto[],
+  list: HandoffBox,
 ): FocusTarget {
   const at = before.findIndex((h) => h.id === removedId);
   const next = at < 0 ? undefined : before[at + 1];
@@ -64,17 +69,26 @@ export function focusAfter(
     const still = after.find((h) => h.id === next.id);
     if (still?.canConfirm) return { kind: "confirm", id: still.id };
   }
-  return after.length > 0 ? { kind: "section" } : { kind: "page" };
+  return after.length > 0 ? { kind: "section", list } : { kind: "page" };
 }
 
-/** The count result wins; a failed count falls back to the refreshed list length; both failed keeps the badge. */
+/** The count result wins; a failed count falls back to the refreshed list lengths; a failed list keeps the badge. */
 export function badgeCountAfter(
-  count: DevicesResult<{ incoming: number }>,
-  items: HandoffDto[] | null,
-): number | null {
-  if (count.ok) return count.value.incoming;
-  return items === null ? null : items.length;
+  count: DevicesResult<HandoffCountDto>,
+  incoming: HandoffDto[] | null,
+  returns: HandoffDto[] | null,
+): HandoffCountDto | null {
+  if (count.ok) return count.value;
+  return incoming === null || returns === null
+    ? null
+    : { incoming: incoming.length, returns: returns.length };
 }
+
+export const badgeTotal = (c: HandoffCountDto): number => c.incoming + c.returns;
+
+/** The lists the caller may fetch. `box=returns` is Admin only, so a non-Admin never asks for it (it answers 422). */
+export const handoffBoxes = (isAdmin: boolean): HandoffBox[] =>
+  isAdmin ? ["incoming", "returns"] : ["incoming"];
 
 export type IncomingState = {
   status: "loading" | "error" | "ready";

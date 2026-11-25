@@ -4,6 +4,13 @@ import type { Tier } from "@/lib/tier";
 const newDecisions = (n: number) => (n === 1 ? "1 new decision" : `${n} new decisions`);
 const incomingTransfers = (n: number) =>
   n === 1 ? "1 incoming transfer" : `${n} incoming transfers`;
+const pendingReturns = (n: number) => (n === 1 ? "1 pending return" : `${n} pending returns`);
+/** The Devices badge text: incoming transfers and pending returns, zero parts left out. */
+const devicesBreakdown = (incoming: number, returns: number) => {
+  if (returns === 0) return incomingTransfers(incoming);
+  if (incoming === 0) return pendingReturns(returns);
+  return `${incoming + returns} pending items: ${incomingTransfers(incoming)}, ${pendingReturns(returns)}`;
+};
 
 /** English strings for the app shell and the route skeletons (D36). */
 export const shellCopy = {
@@ -43,6 +50,8 @@ export const shellCopy = {
   badge: {
     newDecisions,
     incomingTransfers,
+    pendingReturns,
+    devicesBreakdown,
     /** Screen-reader text per nav entry; an entry not listed falls back to `newDecisions`. */
     byNav: { myRequests: newDecisions, devices: incomingTransfers } as Partial<
       Record<NavId, (n: number) => string>

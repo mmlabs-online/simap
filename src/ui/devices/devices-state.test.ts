@@ -148,10 +148,15 @@ describe("pendingText", () => {
     to: { id: "m", displayName: "Hương" },
     ...over,
   });
-  it("is null without a handoff and for other kinds", () => {
+  it("is null without a handoff and for an extension", () => {
     expect(pendingText(withHandoff(null))).toBeNull();
-    expect(pendingText(withHandoff(handoff({ kind: "return" })))).toBeNull();
     expect(pendingText(withHandoff(handoff({ kind: "extension" })))).toBeNull();
+  });
+  it("a return gives the return chip with no 'to'", () => {
+    expect(pendingText(withHandoff(handoff({ kind: "return", to: null })))).toEqual({
+      chip: devicesCopy.pending.returnChip,
+      to: null,
+    });
   });
   it("a transfer gives the chip and To <name>, keeping diacritics", () => {
     expect(pendingText(withHandoff(handoff()))).toEqual({

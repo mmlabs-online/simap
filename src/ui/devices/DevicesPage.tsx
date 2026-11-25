@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { DeviceDto, HandoffDto, PlacementFilter } from "@/lib/devices/types";
+import type { DeviceDto, HandoffBox, HandoffDto, PlacementFilter } from "@/lib/devices/types";
 import { atLeastTier } from "@/lib/tier";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { createRoomsApi } from "../rooms/rooms-api";
@@ -16,6 +16,10 @@ import { devicesCopy } from "../copy/devices";
 import { DevicesView, type DevicesViewProps } from "./DevicesView";
 import { TransferDeviceDialog } from "./TransferDeviceDialog";
 import { cancelOutcome } from "./transfer-device";
+import { confirmReturnOutcome, takeBackDone } from "./return-device";
+import { PendingReturns } from "./PendingReturns";
+import { ReturnDeviceDialog } from "./ReturnDeviceDialog";
+import { TakeBackDeviceDialog } from "./TakeBackDeviceDialog";
 import type { DeviceRowHandlers } from "./device-actions";
 import { filterAfterCreate } from "./device-form";
 import { createDevicesApi } from "./devices-api";
@@ -26,6 +30,7 @@ import {
   confirmOutcome,
   declineOutcome,
   focusAfter,
+  handoffBoxes,
   type FocusTarget,
   type IncomingCall,
   type IncomingOutcome,
@@ -33,7 +38,7 @@ import {
 } from "./incoming-transfer";
 import { useDevices } from "./useDevices";
 import { useSetHandoffBadge } from "./useHandoffBadge";
-import { useIncomingHandoffs } from "./useIncomingHandoffs";
+import { useHandoffList } from "./useIncomingHandoffs";
 
 /** Devices page: loads the list for the chosen filter. Renders only below `AuthGate`. */
 export function DevicesPage() {
@@ -54,10 +59,14 @@ export function DevicesPage() {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const acting = useRef(false);
   const [notice, setNotice] = useState<DevicesViewProps["notice"]>(null);
-  const incoming = useIncomingHandoffs(api);
+  const incoming = useHandoffList(api, "incoming", true);
+  const returns = useHandoffList(api, "returns", handoffBoxes(isAdmin).includes("returns"));
+  const [returning, setReturning] = useState<DeviceDto | null>(null);
+  const [takingBack, setTakingBack] = useState<DeviceDto | null>(null);
   const setBadge = useSetHandoffBadge();
   const [incomingBusyId, setIncomingBusyId] = useState<string | null>(null);
   const incomingHeadingRef = useRef<HTMLHeadingElement>(null);
+  const returnsHeadingRef = useRef<HTMLHeadingElement>(null);
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
 
   // Applied after the commit, so the node it points at is the new one, not the one the await replaced.
@@ -68,15 +77,24 @@ export function DevicesPage() {
         .querySelector<HTMLElement>(`[data-handoff-confirm="${CSS.escape(focusTarget.id)}"]`)
         ?.focus();
     } else if (focusTarget.kind === "section") {
-      incomingHeadingRef.current?.focus();
+      (focusTarget.list === "returns" ? returnsHeadingRef : incomingHeadingRef).current?.focus();
     } else {
       headingRef.current?.focus();
     }
     setFocusTarget(null);
   }, [focusTarget]);
 
-  /** Confirm or decline: one action at a time; refreshes both lists and the badge, then moves focus. */
+  /** Refreshes the device list, both handoff lists and the nav badge. Resolves to the two lists (null when one failed). */
+  async function refreshAll() {
+    const [inc, ret] = await Promise.all([incoming.refresh(), returns.refresh(), refresh()]);
+    const count = badgeCountAfter(await api.handoffCount(), inc, ret);
+    if (count !== null) setBadge(count);
+    return { inc, ret };
+  }
+
+  /** Confirm, decline or cancel from a list: one action at a time; refreshes everything, then moves focus. */
   async function act(
+    list: HandoffBox,
     item: HandoffDto,
     call: IncomingCall,
     outcomeOf: (r: IncomingResult) => IncomingOutcome,
@@ -85,14 +103,15 @@ export function DevicesPage() {
     acting.current = true;
     setIncomingBusyId(item.id);
     setNotice(null);
-    const before = incoming.items;
+    const before = list === "returns" ? returns.items : incoming.items;
     const outcome = outcomeOf(await call());
     setNotice(outcome.notice);
     if (outcome.refresh) {
-      const [after] = await Promise.all([incoming.refresh(), refresh()]);
-      const n = badgeCountAfter(await api.handoffCount(), after);
-      if (n !== null) setBadge(n);
-      setFocusTarget(focusAfter(before, item.id, after ?? before.filter((h) => h.id !== item.id)));
+      const { inc, ret } = await refreshAll();
+      const after = list === "returns" ? ret : inc;
+      setFocusTarget(
+        focusAfter(before, item.id, after ?? before.filter((h) => h.id !== item.id), list),
+      );
     }
     acting.current = false;
     setIncomingBusyId(null);
@@ -123,21 +142,33 @@ export function DevicesPage() {
         setNotice(null);
         setTransferring(device);
       },
-      onCancelTransfer: async (device) => {
+      onReturn: (device) => {
+        setNotice(null);
+        setReturning(device);
+      },
+      onTakeBack: (device) => {
+        setNotice(null);
+        setTakingBack(device);
+      },
+      onCancelHandoff: async (device) => {
         const pending = device.pendingHandoff;
         if (acting.current || !pending) return;
         acting.current = true;
         setCancellingId(device.id);
         setNotice(null);
-        const outcome = cancelOutcome(await api.cancelHandoff(pending.id), device);
+        const outcome = cancelOutcome(
+          await api.cancelHandoff(pending.id),
+          device,
+          pending.kind === "return" ? "return" : "transfer",
+        );
         setNotice(outcome.notice);
-        if (outcome.refresh) await refresh();
+        if (outcome.refresh) await refreshAll();
         acting.current = false;
         setCancellingId(null);
         headingRef.current?.focus();
       },
     }),
-    [api, refresh],
+    [api, refresh, incoming.refresh, returns.refresh, setBadge],
   );
 
   return (
@@ -156,32 +187,64 @@ export function DevicesPage() {
         busyId={cancellingId}
         notice={notice}
         incoming={
-          <IncomingTransfers
-            items={incoming.items}
-            truncated={incoming.truncated}
-            errorCode={incoming.errorCode}
-            busyId={incomingBusyId}
-            headingRef={incomingHeadingRef}
-            onConfirm={(item) =>
-              void act(
-                item,
-                () => api.confirmHandoff(item.id),
-                (r) => confirmOutcome(r, item, filter),
-              )
-            }
-            onDecline={(item) =>
-              void act(
-                item,
-                () => api.declineHandoff(item.id),
-                (r) => declineOutcome(r, item),
-              )
-            }
-            onRetry={() =>
-              void incoming.refresh().then((items) => {
-                if (items?.length === 0) setFocusTarget({ kind: "page" });
-              })
-            }
-          />
+          <>
+            <IncomingTransfers
+              items={incoming.items}
+              truncated={incoming.truncated}
+              errorCode={incoming.errorCode}
+              busyId={incomingBusyId}
+              headingRef={incomingHeadingRef}
+              onConfirm={(item) =>
+                void act(
+                  "incoming",
+                  item,
+                  () => api.confirmHandoff(item.id),
+                  (r) => confirmOutcome(r, item, filter),
+                )
+              }
+              onDecline={(item) =>
+                void act(
+                  "incoming",
+                  item,
+                  () => api.declineHandoff(item.id),
+                  (r) => declineOutcome(r, item),
+                )
+              }
+              onRetry={() =>
+                void incoming.refresh().then((items) => {
+                  if (items?.length === 0) setFocusTarget({ kind: "page" });
+                })
+              }
+            />
+            <PendingReturns
+              items={returns.items}
+              truncated={returns.truncated}
+              errorCode={returns.errorCode}
+              busyId={incomingBusyId}
+              headingRef={returnsHeadingRef}
+              onConfirm={(item) =>
+                void act(
+                  "returns",
+                  item,
+                  () => api.confirmHandoff(item.id),
+                  (r) => confirmReturnOutcome(r, item, filter),
+                )
+              }
+              onCancel={(item) =>
+                void act(
+                  "returns",
+                  item,
+                  () => api.cancelHandoff(item.id),
+                  (r) => cancelOutcome(r, item.device, "return"),
+                )
+              }
+              onRetry={() =>
+                void returns.refresh().then((items) => {
+                  if (items?.length === 0) setFocusTarget({ kind: "page" });
+                })
+              }
+            />
+          </>
         }
       />
       <TransferDeviceDialog
@@ -197,6 +260,31 @@ export function DevicesPage() {
             text: devicesCopy.transfer.sent(device.name, device.inventoryNumber),
           });
           void refresh().then(() => headingRef.current?.focus());
+        }}
+      />
+      <ReturnDeviceDialog
+        device={returning}
+        devicesApi={api}
+        onClose={() => setReturning(null)}
+        onStale={() => void refreshAll()}
+        onDone={(device) => {
+          setReturning(null);
+          setNotice({
+            tone: "status",
+            text: devicesCopy.giveBack.sent(device.name, device.inventoryNumber),
+          });
+          void refreshAll().then(() => headingRef.current?.focus());
+        }}
+      />
+      <TakeBackDeviceDialog
+        device={takingBack}
+        api={api}
+        onClose={() => setTakingBack(null)}
+        onStale={() => void refreshAll()}
+        onDone={(device) => {
+          setTakingBack(null);
+          setNotice({ tone: "status", text: takeBackDone(device, filter) });
+          void refreshAll().then(() => headingRef.current?.focus());
         }}
       />
       <PlaceDeviceDialog

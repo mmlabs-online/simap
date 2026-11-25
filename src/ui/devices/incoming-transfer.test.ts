@@ -5,9 +5,11 @@ import { devicesCopy } from "../copy/devices";
 import {
   INITIAL_INCOMING,
   badgeCountAfter,
+  badgeTotal,
   confirmOutcome,
   declineOutcome,
   focusAfter,
+  handoffBoxes,
   incomingReducer,
 } from "./incoming-transfer";
 
@@ -106,27 +108,50 @@ describe("declineOutcome", () => {
 describe("focusAfter", () => {
   const [a, b, d] = [item("a"), item("b"), item("d")];
   it("next item's confirm when it is still in the new list", () => {
-    expect(focusAfter([a, b, d], "a", [b, d])).toEqual({ kind: "confirm", id: "b" });
+    expect(focusAfter([a, b, d], "a", [b, d], "incoming")).toEqual({ kind: "confirm", id: "b" });
   });
-  it("removed was last: section when items remain, else page", () => {
-    expect(focusAfter([a, b], "b", [a])).toEqual({ kind: "section" });
-    expect(focusAfter([a], "a", [])).toEqual({ kind: "page" });
+  it("removed was last: section of the acting list when items remain, else page", () => {
+    expect(focusAfter([a, b], "b", [a], "returns")).toEqual({ kind: "section", list: "returns" });
+    expect(focusAfter([a], "a", [], "incoming")).toEqual({ kind: "page" });
   });
   it("next item missing from the new list: section", () => {
-    expect(focusAfter([a, b, d], "a", [d])).toEqual({ kind: "section" });
+    expect(focusAfter([a, b, d], "a", [d], "incoming")).toEqual({
+      kind: "section",
+      list: "incoming",
+    });
   });
   it("next item without canConfirm: section", () => {
-    expect(focusAfter([a, b], "a", [item("b", { canConfirm: false })])).toEqual({
+    expect(focusAfter([a, b], "a", [item("b", { canConfirm: false })], "returns")).toEqual({
       kind: "section",
+      list: "returns",
     });
   });
 });
 
 describe("badgeCountAfter", () => {
-  it("ok count wins; failed count falls back to the list length; both failed keep the badge", () => {
-    expect(badgeCountAfter({ ok: true, value: { incoming: 4 } }, [item("a")])).toBe(4);
-    expect(badgeCountAfter(err("internal"), [item("a"), item("b")])).toBe(2);
-    expect(badgeCountAfter(err("internal"), null)).toBeNull();
+  it("ok count wins; failed count with both lists -> their lengths; one list null -> null", () => {
+    const counts = { incoming: 4, returns: 1 };
+    expect(badgeCountAfter({ ok: true, value: counts }, [item("a")], [])).toEqual(counts);
+    expect(badgeCountAfter(err("internal"), [item("a"), item("b")], [item("c")])).toEqual({
+      incoming: 2,
+      returns: 1,
+    });
+    expect(badgeCountAfter(err("internal"), null, [])).toBeNull();
+    expect(badgeCountAfter(err("internal"), [], null)).toBeNull();
+    expect(badgeCountAfter({ ok: true, value: counts }, null, null)).toEqual(counts);
+  });
+});
+
+describe("badgeTotal", () => {
+  it("sums incoming and returns", () => {
+    expect(badgeTotal({ incoming: 2, returns: 3 })).toBe(5);
+  });
+});
+
+describe("handoffBoxes", () => {
+  it("non-Admin -> ['incoming'] only; Admin -> both", () => {
+    expect(handoffBoxes(false)).toEqual(["incoming"]);
+    expect(handoffBoxes(true)).toEqual(["incoming", "returns"]);
   });
 });
 

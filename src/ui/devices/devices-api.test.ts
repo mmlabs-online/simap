@@ -207,15 +207,52 @@ describe("devices-api transfer", () => {
       });
     }
   });
-  it("handoffCount sends GET /api/handoffs/count; returns { incoming }; a non-number is internal", async () => {
-    const { api, calls } = fake(() => jsonRes({ incoming: 3 }));
-    expect(await api.handoffCount()).toEqual({ ok: true, value: { incoming: 3 } });
+  it("handoffCount returns {incoming, returns}; missing or non-number returns -> 0; missing incoming -> internal", async () => {
+    const { api, calls } = fake(() => jsonRes({ incoming: 3, returns: 2 }));
+    expect(await api.handoffCount()).toEqual({ ok: true, value: { incoming: 3, returns: 2 } });
     expect(calls[0][0]).toBe("/api/handoffs/count");
     expect(calls[0][1]?.method).toBe("GET");
-    expect(await fake(() => jsonRes({ incoming: "3" })).api.handoffCount()).toEqual({
+    for (const b of [{ incoming: 3 }, { incoming: 3, returns: "2" }]) {
+      expect(await fake(() => jsonRes(b)).api.handoffCount()).toEqual({
+        ok: true,
+        value: { incoming: 3, returns: 0 },
+      });
+    }
+    for (const b of [{ incoming: "3", returns: 1 }, { returns: 1 }]) {
+      expect(await fake(() => jsonRes(b)).api.handoffCount()).toEqual({
+        ok: false,
+        code: "internal",
+      });
+    }
+  });
+  it("startReturn posts {kind:'return', note} to /api/devices/:id/handoffs", async () => {
+    const { api, calls } = fake(() => jsonRes({ id: "h1" }, 201));
+    expect(await api.startReturn("d/1", "Trả máy")).toEqual({ ok: true, value: { id: "h1" } });
+    expect(calls[0][0]).toBe("/api/devices/d%2F1/handoffs");
+    expect(calls[0][1]?.method).toBe("POST");
+    expect(JSON.parse(String(calls[0][1]?.body))).toEqual({ kind: "return", note: "Trả máy" });
+  });
+  it("takeBack posts to /api/devices/:id/take-back with no body and reads a DeviceDto", async () => {
+    const { api, calls } = fake(() => jsonRes({ id: "d1" }));
+    expect(await api.takeBack("d 1")).toEqual({ ok: true, value: { id: "d1" } });
+    expect(calls[0][0]).toBe("/api/devices/d%201/take-back");
+    expect(calls[0][1]?.method).toBe("POST");
+    expect(calls[0][1]?.body).toBeUndefined();
+    expect(
+      await fake(() => jsonRes({ error: { code: "handoff_pending" } }, 409)).api.takeBack("d1"),
+    ).toEqual({
       ok: false,
-      code: "internal",
+      code: "handoff_pending",
     });
+  });
+  it("pendingReturns GETs /api/handoffs?box=returns", async () => {
+    const { api, calls } = fake(() => jsonRes({ items: [], truncated: false }));
+    expect(await api.pendingReturns()).toEqual({
+      ok: true,
+      value: { items: [], truncated: false },
+    });
+    expect(calls[0][0]).toBe("/api/handoffs?box=returns");
+    expect(calls[0][1]?.method).toBe("GET");
   });
   it("confirmHandoff / declineHandoff send POST /api/handoffs/<encoded id>/confirm and /decline with no body; codes pass through", async () => {
     const { api, calls } = fake(() => jsonRes({ id: "h 1" }));

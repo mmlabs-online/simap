@@ -58,16 +58,18 @@ export type CancelTransferOutcome = {
 export function cancelOutcome(
   result: DevicesResult<HandoffDto>,
   device: Pick<DeviceDto, "name" | "inventoryNumber">,
+  kind: "transfer" | "return",
 ): CancelTransferOutcome {
+  const c = kind === "return" ? devicesCopy.giveBack : copy;
   if (result.ok) {
     return {
       refresh: true,
-      notice: { tone: "status", text: copy.cancelled(device.name, device.inventoryNumber) },
+      notice: { tone: "status", text: c.cancelled(device.name, device.inventoryNumber) },
     };
   }
   const { code } = result;
   if (code === "handoff_not_pending" || code === "not_found") {
-    return { refresh: true, notice: { tone: "status", text: copy.gone } };
+    return { refresh: true, notice: { tone: "status", text: c.gone } };
   }
   return {
     refresh: !NOTHING_CHANGED.includes(code),

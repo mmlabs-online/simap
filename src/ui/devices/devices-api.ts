@@ -3,6 +3,8 @@ import type {
   AssignValue,
   DeviceDto,
   DevicePatchValue,
+  HandoffBox,
+  HandoffCountDto,
   HandoffDto,
   HandoffStartValue,
   HoldingPatchValue,
@@ -59,6 +61,17 @@ export function createDevicesApi(fetcher: ApiFetch) {
     return isDevice(body) ? { ok: true, value: body as HandoffDto } : fail("internal");
   };
   const devicePath = (id: string) => `/api/devices/${encodeURIComponent(id)}`;
+  const listHandoffs = (box: HandoffBox) =>
+    call<{ items: HandoffDto[]; truncated: boolean }>(
+      `/api/handoffs?box=${box}`,
+      { method: "GET" },
+      async (res) => {
+        const body = (await res.json()) as { items?: unknown; truncated?: unknown };
+        return Array.isArray(body?.items) && typeof body.truncated === "boolean"
+          ? { ok: true, value: { items: body.items as HandoffDto[], truncated: body.truncated } }
+          : fail("internal");
+      },
+    );
 
   return {
     get: (id: string) => call<DeviceDto>(devicePath(id), { method: "GET" }, oneDevice),
@@ -140,22 +153,31 @@ export function createDevicesApi(fetcher: ApiFetch) {
         { method: "POST" },
         oneHandoff,
       ),
-    incomingHandoffs: () =>
-      call<{ items: HandoffDto[]; truncated: boolean }>(
-        "/api/handoffs?box=incoming",
-        { method: "GET" },
-        async (res) => {
-          const body = (await res.json()) as { items?: unknown; truncated?: unknown };
-          return Array.isArray(body?.items) && typeof body.truncated === "boolean"
-            ? { ok: true, value: { items: body.items as HandoffDto[], truncated: body.truncated } }
-            : fail("internal");
+    startReturn: (id: string, note: string | null) =>
+      call<HandoffDto>(
+        `${devicePath(id)}/handoffs`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ kind: "return", note }),
         },
+        oneHandoff,
       ),
+    takeBack: (id: string) =>
+      call<DeviceDto>(`${devicePath(id)}/take-back`, { method: "POST" }, oneDevice),
+    incomingHandoffs: () => listHandoffs("incoming"),
+    pendingReturns: () => listHandoffs("returns"),
     handoffCount: () =>
-      call<{ incoming: number }>("/api/handoffs/count", { method: "GET" }, async (res) => {
-        const body = (await res.json()) as { incoming?: unknown };
+      call<HandoffCountDto>("/api/handoffs/count", { method: "GET" }, async (res) => {
+        const body = (await res.json()) as { incoming?: unknown; returns?: unknown };
         return typeof body?.incoming === "number"
-          ? { ok: true, value: { incoming: body.incoming } }
+          ? {
+              ok: true,
+              value: {
+                incoming: body.incoming,
+                returns: typeof body.returns === "number" ? body.returns : 0,
+              },
+            }
           : fail("internal");
       }),
     remove: (id: string) =>
