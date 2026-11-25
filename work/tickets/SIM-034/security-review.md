@@ -127,3 +127,21 @@ I read the three workflows, `scripts/ci-postgres.sh`, `scripts/ci-docker-config.
 
 ### Follow-ups (out of scope)
 - 🟡 6 from attempt 1 is still open: turn off fork PR workflows, and turn off public repositories on the runner group. These are GitHub settings for Ming, not code; impl-log says they go to `work/ming-todo.md`.
+
+## Attempt 3
+
+SIM-034 attempt 3: short security re-check. No blockers, no should-fix items.
+
+1. **Workflows and CI scripts unchanged.** The auditor had no shell to check this. The orchestrator ran `git diff --stat 04b69b3 HEAD -- .github/ scripts/ci-postgres.sh scripts/ci-docker-config.sh scripts/check-image.sh` on 2026-11-26: empty output, exit 0. The only script changes since attempt 2 are `scripts/dev-process.mjs` (+6/−3) and `scripts/dev-process.test.ts`. The attempt-2 PASS for the workflows therefore still holds.
+
+2. **The parser change cannot make the launcher kill or claim a process it does not own.**
+   - `d:\project\simap-game-ui\scripts\dev-process.mjs:44-52`: `parsePosixListeners` takes PIDs only from lines matching `^p[0-9]+$`. It skips other one-letter field lines (the macOS `f<fd>` lines), returns null for anything else, and returns `[]` for empty output.
+   - `dev-process.mjs:405-413`: the result only feeds `classifyOwner`, which compares listener PIDs with the members of our own child's process group (`pgid === child.pid`).
+   - `dev-process.mjs:93-97`: an empty list gives "unknown", never "owned". Any listener outside our group gives "foreign".
+   - `dev-process.mjs:237`: the stop/kill path still signals `-pid`, our own child's group. The parser never supplies a PID to kill, so it can at most change the owner label, not the kill target.
+   - `dev-process.mjs:243-246`: `run` returns null on a tool error or timeout, and that becomes "unknown". This fails closed, as in attempt 2.
+   - The tests at `d:\project\simap-game-ui\scripts\dev-process.test.ts:41-44` cover the `p`+`f` interleave, empty output and the malformed case.
+
+3. **Note only, not required.** At `dev-process.mjs:49`, a corrupted PID line such as `p12x` now matches the skip regex `^[a-zA-Z]\S*$`. It is dropped instead of making the whole result null. If a foreign listener's PID line were ever malformed while every other listener belonged to our group, the port could be labelled "owned" when it should be "unknown". Real `lsof -Fp` output does not do this. The tighter version would return null for any line that starts with `p` but does not match `^p[0-9]+$`. This only affects the ownership label, never what gets killed.
+
+Follow-ups: none.

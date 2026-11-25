@@ -151,3 +151,82 @@ None open from attempt 1: S1–S3 are fixed as shown above. The orchestrator add
 
 ### Follow-ups (out of scope)
 - Same as attempt 1 and security-review follow-ups (GitHub Environment for release secrets, dedicated runner user, kit changes for risk-tier.yml).
+
+## Attempt 3 — 2026-11-26
+Verdict: PASS
+
+Scope of this attempt: `scripts/dev-process.mjs` (parser fix), `scripts/dev-process.test.ts`, a merge of main with the
+`work/ming-todo.md` renumbering (M-75, M-76), work files. The temporary diagnostic step in ci.yml is gone (net ci.yml
+diff vs attempt 2 empty). Commits after the CI run (0d7f10a, e345bb5) touch only `work/tickets/SIM-034/*`
+(`git diff --stat 19e9179 HEAD`), so run 45668454103 (headSha 19e9179) tests the current code.
+
+### Checks (run by reviewer)
+Local (Windows, Node 22):
+- `pnpm format:check` — exit 0, "All matched files use the correct format." (851 files)
+- `pnpm typecheck` — exit 0
+- `pnpm check:layers` — exit 0, "796 files, no violations"
+- `pnpm test` — exit 0, Test Files 303 passed | 1 skipped (304); Tests 3071 passed | 9 skipped (3080)
+- `pnpm build` — exit 0
+Runner (`gh run view 45668454103 --log`, Runner name 'MacBookPro'):
+- typecheck, check:layers, `pnpm test` (Tests 3073 passed | 7 skipped), migrate CLI, migrate smoke, schema check — success.
+  `scripts/dev-process.test.ts` 21 tests | 3 skipped, all passed, including "owner: owned for the grandchild's port,
+  foreign for a bystander's" and "final port check: clean, remaining listener and undeterminable" (the two that failed in
+  45664740286).
+- `pnpm test:db` — Tests 3 failed | 287 passed (290). The 3 failing names match main run 45664750414 (headBranch main,
+  3426274) exactly, and main has the same count (3 failed | 287 passed):
+  - devices.db.test.ts > devices (db): return flags > canReturn for the owner and a Manager, not another user, not while pending; canTakeBack for an Admin, not while a return is pending
+  - map-items.db.test.ts > map-items (db) > list is ordered by lower(name), then builtin_key
+  - manage.db.test.ts > members manage (db) > deactivate with release: seats cleared, primary demoted, owned placed devices returned, others untouched, requests cancelled, one audit row
+  Pre-existing on main, not caused by this branch.
+- format:check, build, standalone check: skipped (after the test:db failure); `image` job skipped. Open first-run item (see AC2).
+- `stop postgres` ran and printed `removed simap-ci-pg-45668454103-1-ci`.
+- risk-tier run 45669025827 (head e345bb5): success, Runner name 'MacBookPro'; PR #108 has label `risk:high`; PR is MERGEABLE.
+
+### Parser fix (scripts/dev-process.mjs:40-52)
+- Correct: macOS `lsof -Fp` prints `p<pid>` then `f<fd>` per listener; the fix collects `p[0-9]+` lines and skips other
+  letter-led, whitespace-free field lines. Root cause in impl-log matches the runner evidence (owner tests now pass on
+  MacBookPro). Only call site is `owner()` (dev-process.mjs:405); `null` still maps to "unknown", empty output to `[]`.
+- Minimal: 2 logic lines changed plus the doc comment; no change to callers, `parsePosixPs` or the Windows path.
+- Malformed detection kept: digits-only lines, lines with whitespace (e.g. an `lsof: WARNING ...` text) and other
+  non-letter-led lines still return null.
+- Tests meaningful: `p12\nf12\np40\nf9\n` -> [12, 40] is the measured macOS shape and fails against the old code; `12\n`
+  -> null keeps a malformed case. The removed `f3\n` -> null case is right to go (it is valid lsof field output, now `[]`).
+  The real-tree owner tests on the runner are the end-to-end proof.
+
+### Acceptance criteria
+- [x] AC1: unchanged since attempt 2; `scripts/ci-workflows.test.ts` and `release-files.test.ts` pass locally and on the runner.
+- [ ] AC2 (open first-run item, not a blocker of this attempt): on MacBookPro, typecheck, layers, test, migrate CLI/smoke,
+  schema check are green; `pnpm test:db` is red only with the 3 failures that main also has; format, build, standalone
+  check and the `image` job (check-image, compose config) have not run on the runner yet. Local format/typecheck/layers/test/build green.
+  Ming decides how to see the rest (fix the 3 db tests first, or a temporary non-blocking db step) before or after merge.
+- [x] AC3 (static part + run log): `stop postgres` ran and printed the removed `simap-ci-pg-*` name. Host confirmation: Ming verification.
+- [x] AC4: `no sudo…` test passes; the run finished without hanging.
+- [x] AC5: risk-tier run 45669025827 ran on MacBookPro and succeeded; PR #108 carries `risk:high`.
+
+Ming verification after merge (unchanged from the plan): ci on main green on MacBookPro; the first `release/X.Y.Z` run
+on MacBookPro (tag, push, digest, deployment PR) with no `deployment` clone left and `~/.docker/config.json` unchanged;
+after a CI run no `simap-ci=1` containers/networks, no dangling-volume growth, `simap` project and
+`~/.config/simap/simap.env` unchanged; production `/api/readyz` healthy during a run. M-76 (fork settings) open.
+
+### Issues
+None.
+
+### Out-of-plan files
+- `scripts/dev-process.mjs`, `scripts/dev-process.test.ts`: justified. AC2 needs `pnpm test` green on the Mac runner; the
+  failure was a parser bug in SIM-032 code on macOS that no workflow change can fix. Not High paths; minimal; recorded in
+  impl-log Attempt 3. `work/ming-todo.md`: merge-conflict renumbering only (M-75 checked as approved, M-76 open).
+
+### Rules (CLAUDE.md)
+No violations found. R4: out-of-plan change justified (above). R5: checks green locally; the parser change has a test.
+
+### Blockers from review agents
+None (security-review.md has no open 🔴; 🟡 6 is tracked as M-76).
+
+### Nits (do not block)
+- 💭 dev-process.mjs:49: the skip regex `^[a-zA-Z]\S*$` also skips a broken `p` line such as `pabc`; excluding `p` from
+  the skip set (e.g. `^[a-oq-zA-Z]\S*$`) would keep that as malformed. A test for a line with spaces (`lsof: WARNING x`)
+  -> null would pin the remaining malformed path.
+- 💭 Earlier handoff text in ticket.md mentioned M-74/M-75; impl-log notes to read them as M-75/M-76 (e345bb5 updated ticket.md).
+
+### Follow-ups (out of scope)
+- Fix the 3 `pnpm test:db` failures that also fail on main (separate ticket), so the rest of `ci` and the `image` job can run on MacBookPro.
