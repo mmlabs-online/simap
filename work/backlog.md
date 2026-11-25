@@ -113,6 +113,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-038 | Sync the deploy-simap draft with the deployment repo (Drive secrets) | MERGED | P2 | XS | security | — | plan-approval | 0 | 2026-11-25 |
 | SIM-021 | Go-live checklist and first production deploy | BACKLOG | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | none | 0 | 2026-11-20 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
+| BUG-006 | CI `image` job always fails at `compose config` on the self-hosted runner (false positive on /Users/mingming) | BACKLOG | P1 | XS | security | — | none | 0 | 2026-11-26 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.
 
