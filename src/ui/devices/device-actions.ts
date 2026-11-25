@@ -154,3 +154,10 @@ export function rowActions(
 
 export const hasAnyAction = (devices: DeviceDto[], h: DeviceRowHandlers): boolean =>
   devices.some((d) => rowActions(d, h).length > 0);
+
+/** The only handlers the owner's overdue banner may show: Extend, Give back, Cancel (pending handoff). */
+export const bannerHandlers = (h: DeviceRowHandlers): DeviceRowHandlers => ({
+  onExtend: h.onExtend,
+  onReturn: h.onReturn,
+  onCancelHandoff: h.onCancelHandoff,
+});

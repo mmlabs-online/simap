@@ -22,7 +22,7 @@ import { ReturnDeviceDialog } from "./ReturnDeviceDialog";
 import { ExtendDeviceDialog } from "./ExtendDeviceDialog";
 import { OverdueBanner } from "./OverdueBanner";
 import { TakeBackDeviceDialog } from "./TakeBackDeviceDialog";
-import type { DeviceRowHandlers } from "./device-actions";
+import { bannerHandlers, type DeviceRowHandlers } from "./device-actions";
 import { filterAfterCreate } from "./device-form";
 import { createDevicesApi } from "./devices-api";
 import type { PlaceMode } from "./place-device";
@@ -204,7 +204,7 @@ export function DevicesPage() {
             <OverdueBanner
               devices={overdue.items}
               truncated={overdue.truncated}
-              handlers={actions}
+              handlers={bannerHandlers(actions)}
               busyId={cancellingId}
               onShowAll={() => setFilter("overdue")}
             />

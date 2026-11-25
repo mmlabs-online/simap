@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DeviceDto } from "@/lib/devices/types";
-import { hasAnyAction, rowActions } from "./device-actions";
+import { bannerHandlers, hasAnyAction, rowActions } from "./device-actions";
 
 const d = (over: Partial<DeviceDto> = {}) =>
   ({ id: "d1", inventoryNumber: "INV-7", placement: null, canPlace: true, ...over }) as DeviceDto;
@@ -280,5 +280,32 @@ describe("return and take-back actions", () => {
     );
     expect(a.length).toBe(3);
     expect(a.every((x) => x.disabled === true)).toBe(true);
+  });
+});
+
+describe("bannerHandlers", () => {
+  it("keeps only onExtend, onReturn and onCancelHandoff from the full handler set", () => {
+    const fn = vi.fn();
+    const full = {
+      onAssign: fn,
+      onEditHolding: fn,
+      onPlace: fn,
+      onEdit: fn,
+      onDelete: fn,
+      onTransfer: fn,
+      onCancelHandoff: fn,
+      onReturn: fn,
+      onExtend: fn,
+      onTakeBack: fn,
+    };
+    expect(Object.keys(bannerHandlers(full)).sort()).toEqual(
+      ["onCancelHandoff", "onExtend", "onReturn"].sort(),
+    );
+    const row = d({ mine: true, overdue: true, canReturn: true } as Partial<DeviceDto>);
+    const allowed = ["extend", "giveBack", "cancelTransfer", "cancelExtension"];
+    const keys = rowActions(row, bannerHandlers(full)).map((a) => a.key);
+    expect(keys).toContain("extend");
+    expect(keys.every((k) => allowed.includes(k))).toBe(true);
+    expect(rowActions(row, full).length).toBeGreaterThan(keys.length);
   });
 });

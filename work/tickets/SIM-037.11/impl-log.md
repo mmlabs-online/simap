@@ -45,3 +45,22 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No; the banner, dialog and wiring are each required by the plan.
 - Diff size: see `git diff --stat` on the commit.
+
+## Attempt 2 — 2026-11-25 (REWORK)
+
+Fixes review Issue 1 (blocker): the banner got the full row handler set.
+
+### Files touched
+- `src/ui/devices/device-actions.ts` — added `bannerHandlers(h)` returning only onExtend, onReturn, onCancelHandoff. Required because the page wiring must be unit-testable (the banner test passes the subset itself).
+- `src/ui/devices/DevicesPage.tsx` — `handlers={bannerHandlers(actions)}` instead of `actions`. Required by Issue 1.
+- `src/ui/devices/device-actions.test.ts` — new `bannerHandlers` test: only the three keys survive, and with the full set a row would show more actions. Would fail if the page passed the full set through the helper's contract.
+
+### Checks
+- format:check, typecheck, check:layers, test: all exit 0 (format: all matched files use the correct format; layers: 744 files, no violations)
+- build: not run (reviewer ran it in attempt 1)
+
+### Out-of-plan files
+None.
+
+### Scope self-check
+- Smallest diff: one helper, one line in the page, one test.
