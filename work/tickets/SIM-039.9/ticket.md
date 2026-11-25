@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T15:58:20Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -46,5 +46,13 @@ upload or remove a custom image, or go back to the library sprite.
 
 ## Notes / answers from Ming
 - 2026-11-25: split from SIM-039.6 by its planner (ticket too large for one cycle).
+- 2026-11-25 (orchestrator): planner split the ticket. This ticket is slice 2a (art dialog, sprite browser as text, upload/remove with previews for custom images). Atlas previews move to SIM-039.10.
+- Waiting for Ming: plan approval (P1 gate)
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3 (frontend-developer×1 55k, ux-architect×1 53k, planner×1 105k; default models)
+- Done: plan READY (slice 2a, ~480 product lines): API putArt/putImage/deleteImage, pure art helpers and upload precheck with map-item error copy, page-level image cache, art dialog with per-direction panels, inline text sprite browser, row Art button, Customised badge and thumbnail. Split: atlas previews → SIM-039.10 (added to the board).
+- In progress / next: Ming approves A1-A14 (M-74), then implement and review.
+- Gotchas: the image hook and dialog wiring have no unit tests (no DOM in Vitest; jsdom not allowed) — reviewer checks a local run.
