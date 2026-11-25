@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P1 |
 | Size | M |
 | Areas | api, security |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-039.1 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T07:42:54Z |
 | PR | — |
 
 ## Goal
