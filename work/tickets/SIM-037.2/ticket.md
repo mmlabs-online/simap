@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T03:34:32Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -56,3 +56,9 @@ Plan approved (2026-11-25, Ming: "ok") with assumptions A1-A11 and the split: th
 - Done: consult files; plan.md READY for slice 1 (API + data + SIM-037.1 carry-overs), assumptions A1-A11; planner proposes the UI slice as a new ticket SIM-037.7.
 - In progress / next: Ming approves plan + split (M-53); then create SIM-037.7 and IMPLEMENT slice 1.
 - Gotchas: no High path in slice 1 (no migration). Deactivation counts only placed devices (A8 → debt issue). Spec DEV-01 still mentions the "Move to inventory" delete warning (A9).
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 3 since plan approval (implementer×1 ~134k, reviewer×1 ~81k, security auditor via general-purpose×1 ~88k; default models).
+- Done: slice 1 implemented (attempt 1); review PASS (DB tests pending CI); security no 🔴, two 🟡 for Ming (note in audit log; note visible org-wide). Merged origin/main into the branch (rebase + force-push not allowed); local checks green after merge.
+- In progress / next: Ming opens the PR (M-54, prefilled link in chat) and merges after CI `test:db` is green; then SIM-037.7 (UI) and SIM-037.3.
+- Gotchas: A8 debt issue (deactivation ignores unplaced devices) and A9 spec text still to do; no `gh` on this machine.
