@@ -34,6 +34,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-032 | One-command local start on production data | MERGED | P1 | M | security | SIM-031 | none | 4 | 2026-11-22 |
 | SIM-009 | Invite people to an org | MERGED | P1 | M | security, ui, api | SIM-007 | none | 1 | 2026-11-22 |
 | SIM-009.2 | Accept-invitation page | MERGED | P1 | M | security, ui | SIM-009 | none | 1 | 2026-11-22 |
+| BUG-001 | `pnpm test:db` red on main after SIM-037.2 (devices uniqueness, CSV export columns) | DONE | P0 | XS | db | — | none | 1 | 2026-11-25 |
 | SIM-034 | Run simap's GitHub Actions on the Mac self-hosted runner | BACKLOG | P1 | S | security, architecture | — | plan-approval | 0 | 2026-11-23 |
 | SIM-011 | Members page, profile fields and deactivation | MERGED | P1 | M | api, ui, security | SIM-007 | plan-approval | 1 | 2026-11-22 |
 | SIM-024 | Sprite atlas, manifest, placeholder art and map renderer | MERGED | P1 | M | ui, architecture | SIM-003 | none | 1 | 2026-11-21 |
@@ -91,7 +92,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-017.3 | Search page UI | MERGED | P2 | M | ui | SIM-017.2 | none | 0 | 2026-11-24 |
 | SIM-018 | CSV export | MERGED | P2 | S | api, ui | SIM-017 | none | 0 | 2026-11-24 |
 | SIM-027 | Security headers, CSP and apiFetch hardening before go-live | MERGED | P1 | M | security, architecture | SIM-006.2 | plan-approval | 0 | 2026-11-20 |
-| SIM-038 | Sync the deploy-simap draft with the deployment repo (Drive secrets) | PLANNING | P2 | XS | security | — | plan-approval | 0 | 2026-11-25 |
+| SIM-038 | Sync the deploy-simap draft with the deployment repo (Drive secrets) | IN_PROGRESS | P2 | XS | security | — | plan-approval | 0 | 2026-11-25 |
 | SIM-021 | Go-live checklist and first production deploy | BACKLOG | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | none | 0 | 2026-11-20 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
 

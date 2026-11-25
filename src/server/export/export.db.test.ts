@@ -13,6 +13,12 @@ import { exportRows } from "./export";
 
 let pool: pg.Pool;
 
+function colIndex(columns: readonly string[], name: string): number {
+  const i = columns.indexOf(name);
+  if (i < 0) throw new Error(`export column missing: ${name}`);
+  return i;
+}
+
 beforeAll(async () => {
   pool = testPool();
   await assertTestDb(pool);
@@ -48,9 +54,12 @@ describe("exportRows (db)", () => {
 
     const devA = await exportRows(pool, a.scope, "devices");
     expect(devA.rows).toHaveLength(1);
-    expect(devA.rows[0]![5]).toBe("Nguyễn a");
-    expect(devA.rows[0]![7]).toBe("placed");
-    expect(devA.rows[0]![9]).toBe("R-a-01");
+    const dRow = devA.rows[0]!;
+    expect(dRow[colIndex(devA.columns, "Owner name")]).toBe("Nguyễn a");
+    expect(dRow[colIndex(devA.columns, "Owner employee code")]).toBe("E1");
+    expect(dRow[colIndex(devA.columns, "Location")]).toBe("placed");
+    expect(dRow[colIndex(devA.columns, "Room code")]).toBe("R-a");
+    expect(dRow[colIndex(devA.columns, "Seat code")]).toBe("R-a-01");
 
     const memA = await exportRows(pool, a.scope, "members");
     expect(memA.rows.map((r) => r[0])).toEqual(["Nguyễn a"]);
@@ -67,10 +76,11 @@ describe("exportRows (db)", () => {
     await addDevice(pool, a.orgId, null, null, "secondary");
     const r = await exportRows(pool, a.scope, "devices");
     expect(r.rows).toHaveLength(2);
-    const row = r.rows.find((x) => x[7] === "inventory")!;
-    expect(row[5]).toBeNull();
-    expect(row[6]).toBeNull();
-    expect(row[9]).toBeNull();
+    const loc = colIndex(r.columns, "Location");
+    const row = r.rows.find((x) => x[loc] === "inventory")!;
+    expect(row[colIndex(r.columns, "Owner name")]).toBeNull();
+    expect(row[colIndex(r.columns, "Owner employee code")]).toBeNull();
+    expect(row[colIndex(r.columns, "Room code")]).toBeNull();
   });
 
   it("cap: more rows than the cap are cut and flagged", async () => {
