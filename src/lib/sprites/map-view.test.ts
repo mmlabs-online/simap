@@ -195,3 +195,28 @@ describe("toMapView seatDevices", () => {
     expect("deviceType" in list[4]).toBe(false);
   });
 });
+
+describe("toMapView items", () => {
+  it("maps items; a missing or non-array items gives []; a malformed entry is dropped", () => {
+    const art = { sprite: null, hasImage: false, imageVersion: 0 };
+    const item = {
+      builtinKey: "plant.large",
+      name: "Cây",
+      group: "Decor",
+      w: 2,
+      h: 1,
+      kind: "fixture",
+      directional: false,
+      fixedSize: false,
+      art: { n: art, e: art, s: art, w: art },
+    };
+    expect(toMapView(body({ items: [item] }))?.items).toEqual([item]);
+    expect(toMapView(body())?.items).toEqual([]);
+    expect(toMapView(body({ items: "x" }))?.items).toEqual([]);
+    const view = toMapView(
+      body({ items: [item, { ...item, w: 1.5 }, null, { ...item, kind: "x" }] }),
+    );
+    expect(view?.items).toEqual([item]);
+    expect(view?.layout.w).toBe(12);
+  });
+});

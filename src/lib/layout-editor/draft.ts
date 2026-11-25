@@ -4,7 +4,9 @@ import {
   SEAT_SPRITES,
   checkLayoutRules,
   fixturesOnDesks,
+  registryFootprints,
   spriteInfo,
+  type FootprintLookup,
   type LayoutRulesInput,
 } from "@/lib/validate/layout";
 import type { Draft, EditorItem, OpResult } from "./types";
@@ -79,8 +81,11 @@ export function rulesInput(draft: Draft): LayoutRulesInput {
 }
 
 /** Drops fixtures that sit on a desk (older layouts, D61). Other items and keys are kept. */
-export function withoutDeskFixtures(draft: Draft): { draft: Draft; dropped: number } {
-  const hits = new Set(fixturesOnDesks(rulesInput(draft)));
+export function withoutDeskFixtures(
+  draft: Draft,
+  lookup: FootprintLookup = registryFootprints,
+): { draft: Draft; dropped: number } {
+  const hits = new Set(fixturesOnDesks(rulesInput(draft), lookup));
   if (hits.size === 0) return { draft, dropped: 0 };
   let n = -1;
   const items = draft.items.filter((i) => i.kind !== "fixture" || !hits.has(++n));
@@ -88,8 +93,8 @@ export function withoutDeskFixtures(draft: Draft): { draft: Draft; dropped: numb
 }
 
 /** Run the shared layout rules on a candidate; a refusal leaves the caller's draft untouched. */
-function checked(next: Draft): OpResult {
-  const r = checkLayoutRules(rulesInput(next));
+function checked(next: Draft, lookup: FootprintLookup): OpResult {
+  const r = checkLayoutRules(rulesInput(next), lookup);
   if (r.ok) return { ok: true, draft: next };
   // `invalid_request` is a shape error a draft cannot produce.
   return { ok: false, code: r.code === "invalid_request" ? "layout_out_of_bounds" : r.code };
@@ -101,6 +106,7 @@ export function placeItem(
   x: number,
   y: number,
   rotation: Rotation = 0,
+  lookup: FootprintLookup = registryFootprints,
 ): OpResult {
   const seat = SEAT_SPRITES.includes(sprite);
   const k = draft.nextKey;
@@ -114,7 +120,7 @@ export function placeItem(
     seatId: null,
     code: null,
   };
-  return checked({ ...draft, items: [...draft.items, item], nextKey: k + 1 });
+  return checked({ ...draft, items: [...draft.items, item], nextKey: k + 1 }, lookup);
 }
 
 export function placeFromTray(
@@ -123,6 +129,7 @@ export function placeFromTray(
   x: number,
   y: number,
   rotation: Rotation = 0,
+  lookup: FootprintLookup = registryFootprints,
 ): OpResult {
   const ref = draft.tray.find((t) => t.id === seatId);
   if (!ref) return { ok: false, code: "layout_unknown_sprite" };
@@ -136,34 +143,53 @@ export function placeFromTray(
     seatId: ref.id,
     code: ref.code,
   };
-  return checked({
-    ...draft,
-    items: [...draft.items, item],
-    tray: draft.tray.filter((t) => t.id !== seatId),
-  });
+  return checked(
+    {
+      ...draft,
+      items: [...draft.items, item],
+      tray: draft.tray.filter((t) => t.id !== seatId),
+    },
+    lookup,
+  );
 }
 
 /** Move a group by whole tiles, all or nothing. */
-export function moveItems(draft: Draft, keys: readonly string[], dx: number, dy: number): OpResult {
+export function moveItems(
+  draft: Draft,
+  keys: readonly string[],
+  dx: number,
+  dy: number,
+  lookup: FootprintLookup = registryFootprints,
+): OpResult {
   const sel = new Set(keys);
-  return checked({
-    ...draft,
-    items: draft.items.map((i) => (sel.has(i.key) ? { ...i, x: i.x + dx, y: i.y + dy } : i)),
-  });
+  return checked(
+    {
+      ...draft,
+      items: draft.items.map((i) => (sel.has(i.key) ? { ...i, x: i.x + dx, y: i.y + dy } : i)),
+    },
+    lookup,
+  );
 }
 
 /** Turn directional items 90 degrees in place; non-directional items stay at 0. */
-export function rotateItems(draft: Draft, keys: readonly string[]): OpResult {
+export function rotateItems(
+  draft: Draft,
+  keys: readonly string[],
+  lookup: FootprintLookup = registryFootprints,
+): OpResult {
   const sel = new Set(keys);
   const turnable = (i: EditorItem) => sel.has(i.key) && spriteInfo(i.sprite)?.directional === true;
   if (!draft.items.some(turnable)) return { ok: false, code: "layout_bad_rotation" };
-  return checked({
-    ...draft,
-    items: draft.items.map((i) => {
-      if (!sel.has(i.key)) return i;
-      return { ...i, rotation: turnable(i) ? NEXT_ROTATION[i.rotation] : 0 };
-    }),
-  });
+  return checked(
+    {
+      ...draft,
+      items: draft.items.map((i) => {
+        if (!sel.has(i.key)) return i;
+        return { ...i, rotation: turnable(i) ? NEXT_ROTATION[i.rotation] : 0 };
+      }),
+    },
+    lookup,
+  );
 }
 
 /** Fixtures and new desks disappear; existing seats are recorded in `removed` for the save. */
@@ -191,11 +217,16 @@ function resizeFloor(z: FloorZone, draft: Draft, w: number, h: number): FloorZon
 }
 
 /** Full-room floors stretch, other zones are clipped, empty zones are dropped; items never shift. */
-export function resizeRoom(draft: Draft, w: number, h: number): OpResult {
+export function resizeRoom(
+  draft: Draft,
+  w: number,
+  h: number,
+  lookup: FootprintLookup = registryFootprints,
+): OpResult {
   const max = LAYOUT_LIMITS.grid;
   if (!Number.isInteger(w) || !Number.isInteger(h) || w < 1 || h < 1 || w > max || h > max) {
     return { ok: false, code: "layout_out_of_bounds" };
   }
   const floors = draft.floors.flatMap((z) => resizeFloor(z, draft, w, h) ?? []);
-  return checked({ ...draft, w, h, floors });
+  return checked({ ...draft, w, h, floors }, lookup);
 }

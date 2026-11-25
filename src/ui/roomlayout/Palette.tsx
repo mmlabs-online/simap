@@ -17,18 +17,33 @@ type PaletteProps = {
   /** Sprite of the armed fixture tool, or "desk.single" while the desk tool is armed. */
   armed: string | null;
   disabled: boolean;
+  status: "loading" | "ready" | "error";
+  onRetry: () => void;
   onArm: (entry: PaletteEntry) => void;
 };
 
-/** Desks and fixture sprites by group; a pressed entry is the armed tool and a second press disarms it. */
-export function Palette({ groups, armed, disabled, onArm }: PaletteProps) {
+/** The catalog's seat and fixture items by group; a pressed entry is the armed tool and a second press disarms it. */
+export function Palette({ groups, armed, disabled, status, onRetry, onArm }: PaletteProps) {
   return (
     <section className="flex flex-col gap-2 text-sm text-on-surface">
       <h2 className="text-base font-extrabold">{c.heading}</h2>
+      {status === "loading" && <p role="status">{c.loading}</p>}
+      {status === "error" && (
+        <div className="flex flex-col gap-2">
+          <p role="alert" className="text-error">
+            {c.failed}
+          </p>
+          <div>
+            <Button variant="tonal" size="sm" onClick={onRetry}>
+              {c.retry}
+            </Button>
+          </div>
+        </div>
+      )}
       <div className="flex max-h-64 flex-col gap-2 overflow-auto rounded-md border border-outline-variant p-2">
         {groups.map((g) => (
           <div key={g.group}>
-            <h3 className="font-bold">{c.groups[g.group] ?? g.group}</h3>
+            <h3 className="font-bold">{g.group}</h3>
             <ul>
               {g.entries.map((e) => (
                 <li key={e.sprite}>
@@ -39,7 +54,7 @@ export function Palette({ groups, armed, disabled, onArm }: PaletteProps) {
                     onClick={() => onArm(e)}
                     className="w-full cursor-pointer px-2 py-1 text-left text-[13px] hover:bg-surface-high disabled:cursor-not-allowed disabled:opacity-50 aria-pressed:font-extrabold aria-pressed:text-primary"
                   >
-                    {copy.itemName({ kind: e.kind, sprite: e.sprite, code: null })}
+                    {e.name}
                   </button>
                 </li>
               ))}

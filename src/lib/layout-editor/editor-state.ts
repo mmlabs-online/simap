@@ -1,6 +1,14 @@
-import type { LayoutSaveValue, SeatDevice } from "@/lib/sprites/layout";
+import { catalogFootprints } from "@/lib/map-items/footprints";
+import type { MapItemDto } from "@/lib/map-items/types";
+import type { LayoutItem, LayoutSaveValue, SeatDevice } from "@/lib/sprites/layout";
 import type { MapView } from "@/lib/sprites/map-view";
-import { LAYOUT_LIMITS, validateLayoutSave, type LayoutRuleCode } from "@/lib/validate/layout";
+import {
+  LAYOUT_LIMITS,
+  registryFootprints,
+  validateLayoutSave,
+  type FootprintLookup,
+  type LayoutRuleCode,
+} from "@/lib/validate/layout";
 import {
   deleteItems,
   draftFromLayout,
@@ -34,6 +42,12 @@ export type EditorState = {
   readOnly: boolean;
   /** Devices drawn on the desks; never edited or saved. */
   seatDevices: Record<string, SeatDevice[]>;
+  /** Catalog rows the layout references (hidden ones included). */
+  layoutItems: LayoutItem[];
+  /** The palette's catalog rows (not part of the undo history). */
+  palette: MapItemDto[];
+  /** Footprints for every check: layout rows first, then the palette, then the registry. */
+  footprints: FootprintLookup;
   selection: string[];
   /** Selection signature of the running arrow-key run (one undo step), else null. */
   nudge: string | null;
@@ -54,23 +68,36 @@ export type EditorAction =
   | { type: "disarm" }
   | { type: "place"; x: number; y: number }
   | { type: "resize"; w: number; h: number }
+  | { type: "catalog"; items: MapItemDto[] }
   | { type: "undo" }
   | { type: "saveStart" }
   | { type: "saveDone"; view: MapView }
   | { type: "saveFailed"; code: string; detail?: SaveDetail; progress?: SaveProgress | null };
 
-export function initEditor(view: MapView): EditorState {
+/** Layout rows are listed last so they win over the palette rows for the same key. */
+export function editorFootprints(
+  layoutItems: readonly LayoutItem[],
+  palette: readonly MapItemDto[],
+): FootprintLookup {
+  return catalogFootprints([...palette, ...layoutItems], registryFootprints);
+}
+
+export function initEditor(view: MapView, palette: MapItemDto[] = []): EditorState {
+  const footprints = editorFootprints(view.items, palette);
   const loaded = draftFromLayout(view.layout, view.unplaced);
   // Older layouts may hold a fixture on a desk: drop it from the draft (a read-only view keeps what is stored).
   const { draft, dropped } = view.truncated
     ? { draft: loaded, dropped: 0 }
-    : withoutDeskFixtures(loaded);
+    : withoutDeskFixtures(loaded, footprints);
   return {
     history: startHistory(draft),
     baseline: loaded,
     baseVersion: view.version,
     readOnly: view.truncated,
     seatDevices: view.seatDevices,
+    layoutItems: view.items,
+    palette,
+    footprints,
     selection: [],
     nudge: null,
     tool: null,
@@ -96,7 +123,7 @@ export function savePayload(
   if (!plan.ok) return { ok: false, reason: "unplaced" };
   const built = buildSavePayload(withPlaceholderSeatIds(draft), state.baseVersion);
   if (!built.ok) return { ok: false, reason: "invalid", code: built.reason };
-  const checked = validateLayoutSave(built.value);
+  const checked = validateLayoutSave(built.value, state.footprints);
   if (!checked.ok) return { ok: false, reason: "invalid", code: checked.code };
   return { ok: true, value: built.value };
 }
@@ -167,7 +194,7 @@ function reduce(state: EditorState, action: EditorAction): EditorState {
       if (frozen || state.selection.length === 0 || (action.dx === 0 && action.dy === 0)) {
         return state;
       }
-      const r = moveItems(present, state.selection, action.dx, action.dy);
+      const r = moveItems(present, state.selection, action.dx, action.dy, state.footprints);
       if (!r.ok) return { ...state, notice: { kind: "refused", code: r.code } };
       const sig = state.selection.join(",");
       if (state.nudge !== sig) return { ...applyEdit(state, r, "moved"), nudge: sig };
@@ -181,10 +208,14 @@ function reduce(state: EditorState, action: EditorAction): EditorState {
       if (frozen || state.selection.length === 0 || (action.dx === 0 && action.dy === 0)) {
         return state;
       }
-      return applyEdit(state, moveItems(present, state.selection, action.dx, action.dy), "moved");
+      return applyEdit(
+        state,
+        moveItems(present, state.selection, action.dx, action.dy, state.footprints),
+        "moved",
+      );
     case "rotate":
       if (frozen || state.selection.length === 0) return state;
-      return applyEdit(state, rotateItems(present, state.selection), "rotated");
+      return applyEdit(state, rotateItems(present, state.selection, state.footprints), "rotated");
     case "delete": {
       if (frozen || state.selection.length === 0) return state;
       return applyEdit(state, deleteItems(present, state.selection), "deleted", []);
@@ -199,19 +230,25 @@ function reduce(state: EditorState, action: EditorAction): EditorState {
       return state.tool === null ? state : { ...state, tool: null };
     case "place": {
       if (frozen || !state.tool) return state;
-      const r = tryPlace(present, state.tool, action.x, action.y);
+      const r = tryPlace(present, state.tool, action.x, action.y, state.footprints);
       if (!r.ok) return { ...state, notice: { kind: "refused", code: r.code } };
       const next = applyEdit(state, { ok: true, draft: r.draft }, "placed", [r.key]);
       return { ...next, tool: nextTool(state.tool, r.draft) };
     }
     case "resize": {
       if (frozen || (action.w === present.w && action.h === present.h)) return state;
-      const r = resizeRoom(present, action.w, action.h);
+      const r = resizeRoom(present, action.w, action.h, state.footprints);
       if (r.ok) return applyEdit(state, r, "resized");
       const max = LAYOUT_LIMITS.grid;
       const inRange = [action.w, action.h].every((n) => Number.isInteger(n) && n >= 1 && n <= max);
       return { ...state, notice: { kind: "refused", code: inRange ? "resize_cut" : r.code } };
     }
+    case "catalog":
+      return {
+        ...state,
+        palette: action.items,
+        footprints: editorFootprints(state.layoutItems, action.items),
+      };
     case "undo": {
       if (frozen || !canUndo(state.history)) return state;
       const history = undo(state.history);
@@ -227,7 +264,7 @@ function reduce(state: EditorState, action: EditorAction): EditorState {
     case "saveStart":
       return state.save.status === "saving" ? state : { ...state, save: { status: "saving" } };
     case "saveDone":
-      return { ...initEditor(action.view), notice: { kind: "done", what: "saved" } };
+      return { ...initEditor(action.view, state.palette), notice: { kind: "done", what: "saved" } };
     case "saveFailed": {
       const save = { status: "error" as const, code: action.code, detail: action.detail };
       const p = action.progress;

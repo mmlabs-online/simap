@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { REGISTRY } from "@/lib/sprites/registry";
-import { LAYOUT_LIMITS, footprintOf } from "@/lib/validate/layout";
+import {
+  LAYOUT_LIMITS,
+  footprintOf,
+  registryFootprints,
+  type FootprintLookup,
+} from "@/lib/validate/layout";
 import { draftFromLayout } from "./draft";
 import { paletteEntries } from "./palette";
 import {
@@ -190,5 +195,27 @@ describe("place tool on desks (D61)", () => {
       expect(placementPreview(d, mug, { x, y: 2 })?.ok).toBe(false);
     }
     expect(placementPreview(d, mug, { x: 4, y: 2 })?.ok).toBe(true);
+  });
+});
+
+describe("catalog lookup", () => {
+  const wide: FootprintLookup = (k) => (k === unit ? [3, 1] : registryFootprints(k));
+  const mug: Tool = { kind: "fixture", sprite: unit };
+  const d = draftFromLayout(
+    {
+      w: 12,
+      h: 8,
+      floors: [],
+      seats: [],
+      fixtures: [{ id: "", sprite: unit, x: 5, y: 2, rotation: 0 }],
+    },
+    [],
+  );
+
+  it("the ghost has the catalog size and tryPlace refuses an overlap the registry size would allow", () => {
+    expect(placementPreview(d, mug, { x: 3, y: 2 }, wide)).toMatchObject({ w: 3, h: 1, ok: false });
+    expect(placementPreview(d, mug, { x: 3, y: 2 })?.ok).toBe(true);
+    expect(tryPlace(d, mug, 3, 2, wide).ok).toBe(false);
+    expect(tryPlace(d, mug, 3, 2).ok).toBe(true);
   });
 });

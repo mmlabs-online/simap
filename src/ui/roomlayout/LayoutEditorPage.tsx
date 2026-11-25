@@ -3,6 +3,8 @@
 import { useMemo, useRef, useSyncExternalStore } from "react";
 import { roomDetailHref } from "@/lib/nav";
 import type { MapView } from "@/lib/sprites/map-view";
+import { createMapItemsApi } from "../mapItems/map-items-api";
+import { useMapItems } from "../mapItems/useMapItems";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { roomlayoutCopy } from "../copy/roomlayout";
 import { createRoomsApi } from "../rooms/rooms-api";
@@ -47,6 +49,8 @@ function AdminEditor({ roomCode, backHref }: { roomCode: string; backHref: strin
   const apiFetch = useApiFetch();
   const roomsApi = useMemo(() => createRoomsApi(apiFetch), [apiFetch]);
   const seatsApi = useMemo(() => createSeatsApi(apiFetch), [apiFetch]);
+  const mapItemsApi = useMemo(() => createMapItemsApi(apiFetch), [apiFetch]);
+  const palette = useMapItems(mapItemsApi);
   const rooms = useRooms(roomsApi);
   const resolution = resolveRoom(rooms, roomCode);
   const roomId = resolution.kind === "found" ? resolution.room.id : null;
@@ -73,6 +77,7 @@ function AdminEditor({ roomCode, backHref }: { roomCode: string; backHref: strin
         roomId={roomId}
         roomCode={roomCode}
         seatsApi={seatsApi}
+        palette={palette}
         catalogImages={catalogImages}
         onReload={() => void map.reload()}
       />

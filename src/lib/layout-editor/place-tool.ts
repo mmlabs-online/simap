@@ -1,7 +1,9 @@
 import {
   LAYOUT_LIMITS,
   SEAT_SPRITES,
-  footprintOf,
+  footprintAt,
+  registryFootprints,
+  type FootprintLookup,
   type LayoutRuleCode,
 } from "@/lib/validate/layout";
 import { placeFromTray, placeItem } from "./draft";
@@ -26,15 +28,21 @@ export function sameTool(a: Tool | null, b: Tool | null): boolean {
 }
 
 /** Place the tool's item at a tile, rotation 0. A fixture tool never places a seat sprite. */
-export function tryPlace(draft: Draft, tool: Tool, x: number, y: number): PlaceResult {
+export function tryPlace(
+  draft: Draft,
+  tool: Tool,
+  x: number,
+  y: number,
+  lookup: FootprintLookup = registryFootprints,
+): PlaceResult {
   if (tool.kind === "tray") {
-    const r = placeFromTray(draft, tool.seatId, x, y, 0);
+    const r = placeFromTray(draft, tool.seatId, x, y, 0, lookup);
     return r.ok ? { ok: true, draft: r.draft, key: `s:${tool.seatId}` } : r;
   }
   if (tool.kind === "desk") {
     const seats = draft.items.filter((i) => i.kind === "seat").length + draft.tray.length;
     if (seats >= LAYOUT_LIMITS.seats) return { ok: false, code: "seat_limit" };
-    const r = placeItem(draft, "desk.single", x, y, 0);
+    const r = placeItem(draft, "desk.single", x, y, 0, lookup);
     return r.ok ? { ok: true, draft: r.draft, key: `n:${draft.nextKey}` } : r;
   }
   if (SEAT_SPRITES.includes(tool.sprite)) return { ok: false, code: "layout_unknown_sprite" };
@@ -42,7 +50,7 @@ export function tryPlace(draft: Draft, tool: Tool, x: number, y: number): PlaceR
     return { ok: false, code: "fixture_limit" };
   }
   const key = `f:${draft.nextKey}`;
-  const r = placeItem(draft, tool.sprite, x, y, 0);
+  const r = placeItem(draft, tool.sprite, x, y, 0, lookup);
   return r.ok ? { ok: true, draft: r.draft, key } : r;
 }
 
@@ -51,11 +59,12 @@ export function placementPreview(
   draft: Draft,
   tool: Tool | null,
   tile: Point | null,
+  lookup: FootprintLookup = registryFootprints,
 ): { x: number; y: number; w: number; h: number; ok: boolean } | null {
   if (!tool || !tile) return null;
   const sprite = tool.kind === "fixture" ? tool.sprite : "desk.single";
-  const [w, h] = footprintOf(sprite, 0) ?? [1, 1];
-  return { x: tile.x, y: tile.y, w, h, ok: tryPlace(draft, tool, tile.x, tile.y).ok };
+  const [w, h] = footprintAt(sprite, 0, lookup) ?? [1, 1];
+  return { x: tile.x, y: tile.y, w, h, ok: tryPlace(draft, tool, tile.x, tile.y, lookup).ok };
 }
 
 /** After a place: a fixture or desk tool stays, a tray tool moves to the next tray seat or ends. */

@@ -1,6 +1,6 @@
 import type { Zoom } from "@/lib/sprites/layout";
 import { TILE } from "@/lib/sprites/placement";
-import { footprintOf } from "@/lib/validate/layout";
+import { footprintAt, registryFootprints, type FootprintLookup } from "@/lib/validate/layout";
 import type { Draft, EditorItem } from "./types";
 
 export type Point = { x: number; y: number };
@@ -25,9 +25,12 @@ export function dragDelta(start: Point, now: Point, zoom: Zoom): Point {
   };
 }
 
-/** Tiles an item covers, from the registry footprint at its rotation. */
-export function footprintCells(item: EditorItem): Point[] {
-  const [fw, fh] = footprintOf(item.sprite, item.rotation) ?? [1, 1];
+/** Tiles an item covers, from the lookup's footprint at its rotation. */
+export function footprintCells(
+  item: EditorItem,
+  lookup: FootprintLookup = registryFootprints,
+): Point[] {
+  const [fw, fh] = footprintAt(item.sprite, item.rotation, lookup) ?? [1, 1];
   const cells: Point[] = [];
   for (let dy = 0; dy < fh; dy++) {
     for (let dx = 0; dx < fw; dx++) cells.push({ x: item.x + dx, y: item.y + dy });
@@ -36,14 +39,22 @@ export function footprintCells(item: EditorItem): Point[] {
 }
 
 /** Top-left tile and size of an item's footprint. */
-export function footprintBox(item: EditorItem): { x: number; y: number; w: number; h: number } {
-  const [w, h] = footprintOf(item.sprite, item.rotation) ?? [1, 1];
+export function footprintBox(
+  item: EditorItem,
+  lookup: FootprintLookup = registryFootprints,
+): { x: number; y: number; w: number; h: number } {
+  const [w, h] = footprintAt(item.sprite, item.rotation, lookup) ?? [1, 1];
   return { x: item.x, y: item.y, w, h };
 }
 
 /** Topmost item covering a tile: seats first, then fixtures, later items first. */
-export function itemAt(draft: Draft, tx: number, ty: number): EditorItem | null {
-  const covers = (i: EditorItem) => footprintCells(i).some((c) => c.x === tx && c.y === ty);
+export function itemAt(
+  draft: Draft,
+  tx: number,
+  ty: number,
+  lookup: FootprintLookup = registryFootprints,
+): EditorItem | null {
+  const covers = (i: EditorItem) => footprintCells(i, lookup).some((c) => c.x === tx && c.y === ty);
   for (const kind of ["seat", "fixture"] as const) {
     for (let n = draft.items.length - 1; n >= 0; n--) {
       const i = draft.items[n];
@@ -54,12 +65,17 @@ export function itemAt(draft: Draft, tx: number, ty: number): EditorItem | null 
 }
 
 /** Items whose footprint intersects the tile rectangle between two tiles, in either drag direction. */
-export function itemsInRect(draft: Draft, a: Point, b: Point): EditorItem[] {
+export function itemsInRect(
+  draft: Draft,
+  a: Point,
+  b: Point,
+  lookup: FootprintLookup = registryFootprints,
+): EditorItem[] {
   const x0 = Math.min(a.x, b.x);
   const x1 = Math.max(a.x, b.x);
   const y0 = Math.min(a.y, b.y);
   const y1 = Math.max(a.y, b.y);
   return draft.items.filter((i) =>
-    footprintCells(i).some((c) => c.x >= x0 && c.x <= x1 && c.y >= y0 && c.y <= y1),
+    footprintCells(i, lookup).some((c) => c.x >= x0 && c.x <= x1 && c.y >= y0 && c.y <= y1),
   );
 }

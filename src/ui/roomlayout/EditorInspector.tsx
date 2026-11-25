@@ -15,6 +15,8 @@ type Props = {
   selection: readonly string[];
   disabled: boolean;
   tool: Tool | null;
+  /** Catalog names by item key, for fixtures. */
+  names?: ReadonlyMap<string, string>;
   resizeRefused: boolean;
   onArmTray: (seatId: string) => void;
   onResize: (w: number, h: number) => void;
@@ -27,14 +29,13 @@ type Props = {
 const byReadingOrder = (a: EditorItem, b: EditorItem) =>
   a.y - b.y || a.x - b.x || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
 
-const label = (i: EditorItem) => copy.itemAt(copy.itemName(i), i.x, i.y);
-
 /** Selection actions, the room size, the tray and the list of items (the keyboard path to select). */
 export function EditorInspector({
   draft,
   selection,
   disabled,
   tool,
+  names,
   resizeRefused,
   onArmTray,
   onResize,
@@ -43,6 +44,7 @@ export function EditorInspector({
   onRotate,
   onDelete,
 }: Props) {
+  const label = (i: EditorItem) => copy.itemAt(copy.itemName(i, names?.get(i.sprite)), i.x, i.y);
   const selected = draft.items.filter((i) => selection.includes(i.key));
   const none = selected.length === 0;
   const hasSavedSeat = selected.some((i) => i.seatId !== null);
@@ -62,7 +64,9 @@ export function EditorInspector({
         {none && <p className="text-on-surface-variant">{c.none}</p>}
         {selected.length === 1 && (
           <p>
-            <span className="font-semibold">{copy.itemName(selected[0])}</span>
+            <span className="font-semibold">
+              {copy.itemName(selected[0], names?.get(selected[0].sprite))}
+            </span>
             <br />
             {c.position(selected[0].x, selected[0].y, selected[0].rotation)}
           </p>

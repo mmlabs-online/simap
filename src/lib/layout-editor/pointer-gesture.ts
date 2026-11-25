@@ -4,6 +4,7 @@ import type { EditorAction } from "./editor-state";
 import type { Tool } from "./place-tool";
 import { footprintBox, itemAt, itemsInRect, type Point } from "./tiles";
 import type { Draft } from "./types";
+import { registryFootprints, type FootprintLookup } from "@/lib/validate/layout";
 
 /** Pointer travel (screen px) that turns a press into a drag or a marquee; a tile change also does. */
 export const DRAG_THRESHOLD_PX = 4;
@@ -16,6 +17,7 @@ export type GestureCtx = {
   selection: readonly string[];
   tool: Tool | null;
   frozen: boolean;
+  footprints?: FootprintLookup;
 };
 
 export type Gesture =
@@ -53,7 +55,9 @@ export function gestureDown(g: Gesture, s: DownSample, ctx: GestureCtx): Gesture
     id: s.id,
     origin: s.offset,
     cell: s.cell,
-    hit: inRoom(ctx.draft, s.cell) ? (itemAt(ctx.draft, s.cell.x, s.cell.y)?.key ?? null) : null,
+    hit: inRoom(ctx.draft, s.cell)
+      ? (itemAt(ctx.draft, s.cell.x, s.cell.y, ctx.footprints)?.key ?? null)
+      : null,
     shift: s.shift,
     canDrag: !ctx.tool && !ctx.frozen && !touch,
     canMarquee: !ctx.tool && !touch,
@@ -116,7 +120,11 @@ export function gestureUp(g: Gesture, s: PointerSample, ctx: GestureCtx): Gestur
     const dy = end.cell.y - end.cell0.y;
     if (dx !== 0 || dy !== 0) effects.push({ type: "move", dx, dy });
   } else if (end.kind === "marquee") {
-    effects.push({ type: "selectMany", keys: marqueeKeys(ctx.draft, end), additive: end.additive });
+    effects.push({
+      type: "selectMany",
+      keys: marqueeKeys(ctx.draft, end, ctx.footprints),
+      additive: end.additive,
+    });
   }
   return { gesture: IDLE, effects };
 }
@@ -124,7 +132,11 @@ export function gestureUp(g: Gesture, s: PointerSample, ctx: GestureCtx): Gestur
 export const gestureCancel = (): Gesture => IDLE;
 
 /** The drop ghost: one footprint box per dragged item at the target, and whether the drop would commit. */
-export function dragPreview(draft: Draft, g: Gesture): { ok: boolean; boxes: Box[] } | null {
+export function dragPreview(
+  draft: Draft,
+  g: Gesture,
+  lookup: FootprintLookup = registryFootprints,
+): { ok: boolean; boxes: Box[] } | null {
   if (g.kind !== "drag") return null;
   const dx = g.cell.x - g.cell0.x;
   const dy = g.cell.y - g.cell0.y;
@@ -132,10 +144,10 @@ export function dragPreview(draft: Draft, g: Gesture): { ok: boolean; boxes: Box
   const boxes = draft.items
     .filter((i) => g.keys.includes(i.key))
     .map((i) => {
-      const b = footprintBox(i);
+      const b = footprintBox(i, lookup);
       return { ...b, x: b.x + dx, y: b.y + dy };
     });
-  return { ok: moveItems(draft, g.keys, dx, dy).ok, boxes };
+  return { ok: moveItems(draft, g.keys, dx, dy, lookup).ok, boxes };
 }
 
 /** The marquee as a normalised tile rectangle. */
@@ -146,7 +158,11 @@ export function marqueeBox(g: Gesture): Box | null {
   return { x, y, w: Math.abs(g.cell0.x - g.cell.x) + 1, h: Math.abs(g.cell0.y - g.cell.y) + 1 };
 }
 
-export function marqueeKeys(draft: Draft, g: Gesture): string[] {
+export function marqueeKeys(
+  draft: Draft,
+  g: Gesture,
+  lookup: FootprintLookup = registryFootprints,
+): string[] {
   if (g.kind !== "marquee") return [];
-  return itemsInRect(draft, g.cell0, g.cell).map((i) => i.key);
+  return itemsInRect(draft, g.cell0, g.cell, lookup).map((i) => i.key);
 }

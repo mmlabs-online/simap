@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { draftFromLayout } from "./draft";
-import { dragDelta, footprintBox, itemAt, itemsInRect, pointToTile } from "./tiles";
+import { footprintAt, registryFootprints, type FootprintLookup } from "@/lib/validate/layout";
+import { dragDelta, footprintBox, footprintCells, itemAt, itemsInRect, pointToTile } from "./tiles";
 
 const fx = (sprite: string, x: number, y: number) => ({
   id: "",
@@ -80,5 +81,33 @@ describe("hit tests", () => {
     expect(keys({ x: 1, y: 1 }, { x: 3, y: 3 })).toEqual(["f:0", "s:a"]);
     expect(keys({ x: 3, y: 0 }, { x: 3, y: 0 })).toEqual([]);
     expect(keys({ x: 0, y: 0 }, { x: 11, y: 7 })).toHaveLength(3);
+  });
+});
+
+describe("catalog lookup", () => {
+  const wide: FootprintLookup = (k) => (k === "prop.mug" ? [3, 1] : registryFootprints(k));
+  const d = draftFromLayout(
+    { w: 12, h: 8, floors: [], seats: [], fixtures: [fx("prop.mug", 2, 2)] },
+    [],
+  );
+  const item = d.items[0];
+
+  it("footprintCells and footprintBox use the lookup: 3 cells at 0 degrees, 1x3 at 90", () => {
+    expect(footprintCells(item, wide)).toHaveLength(3);
+    expect(footprintBox(item, wide)).toEqual({ x: 2, y: 2, w: 3, h: 1 });
+    expect(footprintBox({ ...item, rotation: 90 }, wide)).toMatchObject({ w: 1, h: 3 });
+  });
+
+  it("itemAt hits the third tile of a widened item and itemsInRect selects it from that tile", () => {
+    expect(itemAt(d, 4, 2, wide)?.key).toBe(item.key);
+    expect(itemAt(d, 4, 2)).toBeNull();
+    expect(itemsInRect(d, { x: 4, y: 2 }, { x: 4, y: 2 }, wide)).toEqual([item]);
+    expect(itemsInRect(d, { x: 4, y: 2 }, { x: 4, y: 2 })).toEqual([]);
+  });
+
+  it("without a lookup the results equal the registry sizes", () => {
+    const [w, h] = footprintAt("prop.mug", 0, registryFootprints) ?? [1, 1];
+    expect(footprintBox(item)).toEqual({ x: 2, y: 2, w, h });
+    expect(footprintCells(item)).toEqual(footprintCells(item, registryFootprints));
   });
 });

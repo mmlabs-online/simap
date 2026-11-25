@@ -2,6 +2,7 @@ import { LAYOUT_LIMITS } from "@/lib/validate/layout";
 import { DEVICE_KINDS } from "@/lib/device-types/types";
 import type { DeviceKind } from "./device-slots";
 import type {
+  LayoutItem,
   Placement,
   RoomLayout,
   SeatDevice,
@@ -17,6 +18,8 @@ export type MapView = {
   seatViews: Record<string, SeatView>;
   /** Devices per placed seat, in draw order. */
   seatDevices: Record<string, SeatDevice[]>;
+  /** The catalog rows the layout references (hidden ones included), for sizes and names. */
+  items: LayoutItem[];
   /** Seats without a placement, in server order. */
   unplaced: { id: string; code: string }[];
   truncated: boolean;
@@ -48,6 +51,20 @@ const validSeat = (s: unknown) =>
 
 const validFloor = (f: unknown) =>
   isObject(f) && isStr(f.sprite) && isInt(f.x) && isInt(f.y) && isInt(f.w) && isInt(f.h);
+
+const KINDS: readonly unknown[] = ["seat", "fixture", "floor", "chair"];
+
+const validItem = (i: unknown): i is LayoutItem =>
+  isObject(i) &&
+  isStr(i.builtinKey) &&
+  isStr(i.name) &&
+  isStr(i.group) &&
+  isInt(i.w) &&
+  isInt(i.h) &&
+  KINDS.includes(i.kind) &&
+  typeof i.directional === "boolean" &&
+  typeof i.fixedSize === "boolean" &&
+  isObject(i.art);
 
 const emptyView = (): SeatView => ({ state: "empty", avatarSeed: null, name: null });
 
@@ -119,6 +136,7 @@ export function toMapView(body: unknown): MapView | null {
     layout,
     seatViews,
     seatDevices,
+    items: Array.isArray(body.items) ? body.items.filter(validItem) : [],
     unplaced: (body.unplaced as { id: string; code: string }[]).map((u) => ({
       id: u.id,
       code: u.code,

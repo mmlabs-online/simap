@@ -1,7 +1,7 @@
 import type { LayoutSaveValue } from "@/lib/sprites/layout";
 import type { MapView } from "@/lib/sprites/map-view";
 import { SEAT_LIMITS } from "@/lib/seats/types";
-import { validateLayoutSave } from "@/lib/validate/layout";
+import { validateLayoutSave, type FootprintLookup } from "@/lib/validate/layout";
 import {
   assignCreatedSeats,
   buildSavePayload,
@@ -36,7 +36,13 @@ export type SaveOutcome =
   | { status: "saved"; view: MapView }
   | { status: "failed"; code: string; detail: SaveDetail; progress: SaveProgress | null };
 
-export type SaveInput = { draft: Draft; baseline: Draft; baseVersion: number; roomId: string };
+export type SaveInput = {
+  draft: Draft;
+  baseline: Draft;
+  baseVersion: number;
+  roomId: string;
+  footprints?: FootprintLookup;
+};
 
 /**
  * The A3 save: DELETE removed seats, POST new desks in chunks, then PUT the layout. It stops at the first
@@ -97,7 +103,7 @@ export async function runSave(input: SaveInput, api: SaveApi): Promise<SaveOutco
     stage = "put";
     const built = buildSavePayload(draft, input.baseVersion);
     if (!built.ok) return fail(built.reason);
-    const checked = validateLayoutSave(built.value);
+    const checked = validateLayoutSave(built.value, input.footprints);
     if (!checked.ok) return fail(checked.code);
     const saved = await api.saveLayout(input.roomId, built.value);
     return saved.ok ? { status: "saved", view: saved.value } : fail(saved.code);
