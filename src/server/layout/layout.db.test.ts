@@ -27,6 +27,8 @@ const subOf = async (memberId: string) =>
 async function room(code = "C302", grid?: { w: number; h: number; version?: number }) {
   const o = newOrg();
   const roomId = await addRoom(pool, o.orgId, code, { seatCounter: 0 });
+  // placements reference the org's catalog (SIM-039.1), and a room without a member has none yet
+  await run("select map_items_seed($1)", [o.orgId]);
   if (grid) {
     await run("update rooms set grid_w = $2, grid_h = $3, layout_version = $4 where id = $1", [
       roomId,
@@ -248,18 +250,24 @@ describe("getRoomLayout (db)", () => {
     }
   });
 
-  it("long or unknown sprite keys never break the read", async () => {
+  it("sprite keys outside the org catalog are refused by the FK", async () => {
     const o = await room("C302", { w: 12, h: 8 });
     const s = await addSeat(pool, o.orgId, o.roomId, "C302", 1);
-    await place(s, "x".repeat(10_000), 0, 0);
-    await addFixture(o.orgId, o.roomId, "y".repeat(10_000), 8, 5);
-    await addFixture(o.orgId, o.roomId, "__proto__", 9, 5);
-    const rec = recording();
-    const res = await value(o, randomUUID(), rec.pool);
-    expect(res.layout.seats).toMatchObject([{ id: s, sprite: "desk.single", x: 0, y: 0 }]);
-    expect(res.layout.fixtures).toEqual([]);
-    const seatSelect = rec.log.find((l) => l.text.includes("from seats"))!;
-    expect(seatSelect.rows[0].sprite_key).toHaveLength(129);
+    const code = (p: Promise<unknown>) =>
+      p.then(
+        () => null,
+        (e) => [e.code, e.constraint],
+      );
+    expect(await code(place(s, "x".repeat(100), 0, 0))).toEqual(["23503", "seats_map_item_fkey"]);
+    expect(await code(addFixture(o.orgId, o.roomId, "__proto__", 9, 5))).toEqual([
+      "23503",
+      "layout_fixtures_map_item_fkey",
+    ]);
+    await run("delete from map_items where org_id = $1 and builtin_key = 'plant.large'", [o.orgId]);
+    expect(await code(addFixture(o.orgId, o.roomId, "plant.large", 1, 1))).toEqual([
+      "23503",
+      "layout_fixtures_map_item_fkey",
+    ]);
   });
 
   it("500 seats not truncated, 501 truncated to the first 500", async () => {
@@ -353,6 +361,19 @@ describe("saveRoomLayout (db)", () => {
       v.seats,
     );
     expect(got.layout.fixtures.map(({ id: _i, ...f }) => f)).toEqual(v.fixtures);
+  });
+
+  it("a save in an org with no member seeds the catalog and stores the fixtures", async () => {
+    const o = newOrg();
+    const roomId = await addRoom(pool, o.orgId, "C302", { seatCounter: 0 });
+    const r = await save({ ...o, roomId }, val(0, []));
+    expect(r.ok).toBe(true);
+    expect(
+      (await one("select count(*)::int as n from map_items where org_id = $1", [o.orgId])).n,
+    ).toBe(53);
+    expect(
+      (await one("select count(*)::int as n from layout_fixtures where org_id = $1", [o.orgId])).n,
+    ).toBe(1);
   });
 
   it("version increments by exactly 1 and writes one room.layout_save audit row with counts only", async () => {

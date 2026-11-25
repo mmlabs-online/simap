@@ -70,6 +70,13 @@ export async function saveRoomLayout(
       throw refuse(409, "layout_seats_changed");
     }
 
+    // FK safety net: an org whose catalog was never seeded must not fail the placements with 23503; a no-op otherwise
+    await orgQuery(
+      c,
+      scope,
+      "select map_items_seed(o.org_id) from (select $1::uuid as org_id) o where o.org_id = $1::uuid",
+    );
+
     if (value.seats.length > 0) {
       await orgQuery(
         c,

@@ -58,6 +58,7 @@ const kinds = (calls: Call[]) =>
     if (/^(begin|commit|rollback)$/.test(t)) return t;
     if (/^select layout_version/.test(t)) return "room lock";
     if (/^select id from seats/.test(t)) return "seat lock";
+    if (/^select map_items_seed/.test(t)) return "catalog seed";
     if (/^update seats/.test(t)) return "seat update";
     if (/^delete from layout_fixtures/.test(t)) return "fixture delete";
     if (/^insert into layout_fixtures/.test(t)) return "fixture insert";
@@ -76,7 +77,7 @@ const run = (f: ReturnType<typeof fake>, v: LayoutSaveValue) => {
 };
 
 describe("saveRoomLayout", () => {
-  it("runs begin, room lock, seat lock, seat update, fixture delete, insert, room update, audit, re-read, commit", async () => {
+  it("runs begin, room lock, seat lock, catalog seed, seat update, fixture delete, insert, room update, audit, re-read, commit", async () => {
     const f = fake({ seatIds: [sid(1), sid(2)] });
     const r = await run(f, value(2));
     expect(r).toEqual({ ok: true, value: { version: 3, seatDevices: {} } });
@@ -84,6 +85,7 @@ describe("saveRoomLayout", () => {
       "begin",
       "room lock",
       "seat lock",
+      "catalog seed",
       "seat update",
       "fixture delete",
       "fixture insert",
