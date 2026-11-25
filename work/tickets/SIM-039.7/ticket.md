@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P2 |
 | Size | S |
 | Areas | db, api, ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T17:49Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -40,4 +40,12 @@ A device type's art can be an uploaded image, a sprite picked from the bundled p
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
 
+- Waiting for Ming: plan approval (High tier: migration). Ming said "duyệt" while the planner was still running; not recorded as approval because the plan was not written yet.
+
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3 (database-optimizer×1 27k, api-platform-engineer×1 40k, planner×1 133k; default models)
+- Done: plan READY, one slice (~280 product lines; fallback split A=data/renderer, B=picker). Migration adds `device_types.sprite_key` (nullable, format CHECK). Stores a device sprite family (e.g. `device.laptop`), resolved per desk facing.
+- In progress / next: Ming approves A1-A11 (M-75), then implement and review (+ security audit: db/ and src/server/ change).
+- Gotchas: S/M boundary; ~25 fixture updates for the new SeatDeviceType field.
