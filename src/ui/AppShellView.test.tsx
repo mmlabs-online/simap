@@ -78,7 +78,7 @@ describe("AppShellView", () => {
     expect(html).not.toContain("child-marker");
   });
 
-  it("admin on /rooms/A1: nav landmark, 10 links, one aria-current", () => {
+  it("admin on /rooms/A1: nav landmark, 9 links, one aria-current", () => {
     const html = render("admin", "/rooms/A1");
     expect(html).toContain(`<nav aria-label="${shellCopy.navLabel}"`);
     expect(hrefs(html)).toEqual([
@@ -89,7 +89,6 @@ describe("AppShellView", () => {
       "/members",
       "/requests",
       "/approvals",
-      "/groups",
       "/audit",
       "/device-types",
     ]);
@@ -133,11 +132,11 @@ describe("AppShellView", () => {
     expect(shell(null, true)).not.toContain("switcher-marker");
   });
 
-  it("user has no approvals or groups link; manager has them", () => {
+  it("user has no approvals link; manager has it; no tier has a groups link (D65)", () => {
     expect(hrefs(render("user"))).not.toContain("/approvals");
     expect(hrefs(render("manager"))).toContain("/approvals");
     expect(hrefs(render("user"))).not.toContain("/groups");
-    expect(hrefs(render("manager"))).toContain("/groups");
+    expect(hrefs(render("manager"))).not.toContain("/groups");
   });
 
   describe("nav badge", () => {
