@@ -48,3 +48,12 @@ I found no blockers. Two should-fix items and the rest pass. I had no Bash tool,
 - /home/user/simap/src/server/request/read-bytes.ts
 - /home/user/simap/src/server/device-types/image.ts
 - /home/user/simap/work/tickets/SIM-039.4/plan.md (line 174: the "abort" wording)
+
+## Attempt 2
+
+Security re-check (commit c81607c). No 🔴.
+- 🟢 Attempt-1 finding 2 (ETag shared across orgs) is fixed: `mapItemEtag` (`src/server/map-items/image.ts:181-184`) returns `"<key>-<dir>-<version>-<12 hex of sha256(orgId)>"` built from the caller's scope before `etagMatches`, so a tag cached under org A cannot match org B and the raw org id is never sent. `Vary: Authorization` (value in `image.ts:178`) is sent on the 200 and the 304 (`route.ts:19-23,78,82-89`). Tests: `map-items-image.db.test.ts:294-305` (org B with org A's tag gets bytes, not 304), `image.test.ts:362-372`, `map-items-image-routes.test.ts:217,237`.
+- 🟡 Attempt-1 finding 1 still stands (code unchanged): if `toDto(rows[0])` returns null after the update (`image.ts:103-106`), the transaction commits and then `:123-124` deletes the new Drive file. Unreachable today (`libraryItem` checked at `:68`). Fix: throw instead of returning null so the transaction rolls back; add a unit test.
+- 🟢 No new issue: R7 (401/403 only from `withAuth`), R6 (tag source select via `orgQuery`), other GET headers unchanged, no org id or secret in headers, logs or tags (R3), R1 imports unchanged.
+- 💭 Not caused by this change: `etagMatches` (`src/server/drive/image-flow.ts:54-60`) treats `If-None-Match: *` as a match (same-org only, shared with device types); possible follow-up to ignore `*` on GET.
+- Follow-ups: catalog UI must fetch via `apiFetch`; merge `discardMapItemFiles` and `discardImageFile` into `image-flow.ts` later.
