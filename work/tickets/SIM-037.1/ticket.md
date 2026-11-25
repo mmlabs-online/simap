@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REWORK |
+| State | REVIEW |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T02:38:50Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -57,3 +57,9 @@ Plan approved (2026-11-25, Ming: "ok") with assumptions A1-A12 as written.
 - Done: consult files (architect, database-optimizer, api-platform-engineer); plan.md READY with assumptions A1-A12.
 - In progress / next: Ming approves plan (M-51), then IMPLEMENT.
 - Gotchas: CHECK `devices_unowned_not_placed_check` is immediate while invariant-3 triggers are deferred: unplace before (or in the same UPDATE as) nulling the owner. AC 4 reworded in plan (A1).
+
+### 2026-11-25 — claude — REVIEW (paused: waiting for CI)
+- Agent calls: 4 since plan approval (implementer×2 ~161k/~34k, reviewer×1 ~107k, security auditor via general-purpose×1 ~91k; default models).
+- Done: attempt 1 implemented; review attempt 1 REWORK (no code defect; DB checks never run; missing SearchView test); security no 🔴, 🟡 rollback note; rework attempt 2 added the SearchView test, the README rollback note, early non-Admin 422 in deleteDevice.
+- In progress / next: Ming opens a draft PR (M-52) so CI runs `pnpm test:db` and migrate on Postgres 17; then re-run review attempt 2 with the CI result (that will be the last allowed rework round).
+- Gotchas: no Docker and no `gh` on this machine; CI runs only on PRs to main. `scripts/dev-process.test.ts` is flaky under full-suite load (passes alone) — follow-up debt issue.
