@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | REWORK |
 | Priority | P1 |
 | Size | M |
 | Areas | api, security |
 | Gate | plan-approval |
 | Depends on | SIM-039.1 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-25 |
 | Claimed by | — |
 | PR | https://github.com/mmlabs-online/simap/pull/98 |
@@ -43,6 +43,7 @@ Admins upload a PNG per direction for any catalog item (walls and windows includ
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
 - 2026-11-25: Plan approved (Ming: "duyệt SIM-039.4"), assumptions A1-A12 as written.
+- 2026-11-25 (Ming): fix the cross-org ETag (security-review.md attempt 1, 🟡 2) in this PR ("sửa ETag luôn trong PR này").
 
 ## Handoff
 
