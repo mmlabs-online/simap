@@ -10,6 +10,8 @@ export type DeviceRowHandlers = {
   onPlace?: (device: DeviceDto, mode: PlaceMode) => void;
   onEdit?: (device: DeviceDto) => void;
   onDelete?: (device: DeviceDto) => void;
+  onTransfer?: (device: DeviceDto) => void;
+  onCancelTransfer?: (device: DeviceDto) => void;
 };
 
 export type RowAction = {
@@ -18,6 +20,7 @@ export type RowAction = {
   ariaLabel: string;
   run: () => void;
   danger?: boolean;
+  disabled?: boolean;
 };
 
 const PLACE_LABELS: Record<PlaceMode, { label: string; aria: (inv: string) => string }> = {
@@ -26,10 +29,25 @@ const PLACE_LABELS: Record<PlaceMode, { label: string; aria: (inv: string) => st
   return: { label: devicesCopy.actions.return, aria: devicesCopy.actions.returnAria },
 };
 
-/** The actions a row offers. The server's `canPlace` flag gates them; no handler means no action. */
-export function rowActions(d: DeviceDto, h: DeviceRowHandlers): RowAction[] {
+/**
+ * The actions a row offers. The server's flags gate them; no handler means no action. While `busyId` is
+ * this row's id, every action of the row is disabled.
+ */
+export function rowActions(
+  d: DeviceDto,
+  h: DeviceRowHandlers,
+  busyId?: string | null,
+): RowAction[] {
   const out: RowAction[] = [];
-  const { onAssign, onEditHolding, onPlace, onEdit, onDelete } = h;
+  const { onAssign, onEditHolding, onPlace, onEdit, onDelete, onTransfer, onCancelTransfer } = h;
+  if (onCancelTransfer && d.pendingHandoff?.kind === "transfer" && d.pendingHandoff.canCancel) {
+    out.push({
+      key: "cancelTransfer",
+      label: devicesCopy.actions.cancelTransfer,
+      ariaLabel: devicesCopy.actions.cancelTransferAria(d.inventoryNumber),
+      run: () => onCancelTransfer(d),
+    });
+  }
   if (onAssign && d.canAssign) {
     out.push({
       key: "assign",
@@ -56,6 +74,14 @@ export function rowActions(d: DeviceDto, h: DeviceRowHandlers): RowAction[] {
       });
     }
   }
+  if (onTransfer && d.canTransfer) {
+    out.push({
+      key: "transfer",
+      label: devicesCopy.actions.transfer,
+      ariaLabel: devicesCopy.actions.transferAria(d.inventoryNumber),
+      run: () => onTransfer(d),
+    });
+  }
   if (onEdit && d.canEdit) {
     out.push({
       key: "edit",
@@ -73,7 +99,7 @@ export function rowActions(d: DeviceDto, h: DeviceRowHandlers): RowAction[] {
       run: () => onDelete(d),
     });
   }
-  return out;
+  return busyId === d.id ? out.map((a) => ({ ...a, disabled: true })) : out;
 }
 
 export const hasAnyAction = (devices: DeviceDto[], h: DeviceRowHandlers): boolean =>

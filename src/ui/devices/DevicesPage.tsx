@@ -12,7 +12,10 @@ import { AssignDeviceDialog } from "./AssignDeviceDialog";
 import { DeleteDeviceDialog } from "./DeleteDeviceDialog";
 import { DeviceFormDialog } from "./DeviceFormDialog";
 import { PlaceDeviceDialog } from "./PlaceDeviceDialog";
-import { DevicesView } from "./DevicesView";
+import { devicesCopy } from "../copy/devices";
+import { DevicesView, type DevicesViewProps } from "./DevicesView";
+import { TransferDeviceDialog } from "./TransferDeviceDialog";
+import { cancelOutcome } from "./transfer-device";
 import type { DeviceRowHandlers } from "./device-actions";
 import { filterAfterCreate } from "./device-form";
 import { createDevicesApi } from "./devices-api";
@@ -34,15 +37,51 @@ export function DevicesPage() {
   const [deleting, setDeleting] = useState<DeviceDto | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const { status, items, truncated, errorCode, reload, refresh } = useDevices(api, filter);
+  const [transferring, setTransferring] = useState<DeviceDto | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const cancelling = useRef(false);
+  const [notice, setNotice] = useState<DevicesViewProps["notice"]>(null);
   const actions = useMemo<DeviceRowHandlers>(
     () => ({
-      onAssign: (device, mode) => setHolding({ device, mode }),
-      onEditHolding: (device, mode) => setHolding({ device, mode }),
-      onPlace: (device, mode) => setPlacing({ device, mode }),
-      onEdit: (device) => setForm({ device }),
-      onDelete: (device) => setDeleting(device),
+      onAssign: (device, mode) => {
+        setNotice(null);
+        setHolding({ device, mode });
+      },
+      onEditHolding: (device, mode) => {
+        setNotice(null);
+        setHolding({ device, mode });
+      },
+      onPlace: (device, mode) => {
+        setNotice(null);
+        setPlacing({ device, mode });
+      },
+      onEdit: (device) => {
+        setNotice(null);
+        setForm({ device });
+      },
+      onDelete: (device) => {
+        setNotice(null);
+        setDeleting(device);
+      },
+      onTransfer: (device) => {
+        setNotice(null);
+        setTransferring(device);
+      },
+      onCancelTransfer: async (device) => {
+        const pending = device.pendingHandoff;
+        if (cancelling.current || !pending) return;
+        cancelling.current = true;
+        setCancellingId(device.id);
+        setNotice(null);
+        const outcome = cancelOutcome(await api.cancelHandoff(pending.id), device);
+        setNotice(outcome.notice);
+        if (outcome.refresh) await refresh();
+        cancelling.current = false;
+        setCancellingId(null);
+        headingRef.current?.focus();
+      },
     }),
-    [],
+    [api, refresh],
   );
 
   return (
@@ -58,6 +97,23 @@ export function DevicesPage() {
         actions={actions}
         onNew={isAdmin ? () => setForm({ device: null }) : undefined}
         headingRef={headingRef}
+        busyId={cancellingId}
+        notice={notice}
+      />
+      <TransferDeviceDialog
+        device={transferring}
+        devicesApi={api}
+        seatsApi={seatsApi}
+        onClose={() => setTransferring(null)}
+        onStale={() => void refresh()}
+        onDone={(device) => {
+          setTransferring(null);
+          setNotice({
+            tone: "status",
+            text: devicesCopy.transfer.sent(device.name, device.inventoryNumber),
+          });
+          void refresh().then(() => headingRef.current?.focus());
+        }}
       />
       <PlaceDeviceDialog
         open={placing !== null}

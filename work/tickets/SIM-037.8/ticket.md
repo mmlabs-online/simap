@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -46,4 +46,18 @@ docs/spec-v1.md §6 DEV-08; D63. UI slice split from SIM-037.3 (its plan.md, app
 ## Notes / answers from Ming
 Split from SIM-037.3 with Ming's approval (2026-11-25, "ok").
 
+Plan approved (2026-11-25, Ming: "ok") with assumptions A1-A12 and the split: the recipient side is SIM-037.9.
+
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 2 (ux-architect×1 ~47k, planner×1; default models). frontend-developer consult reused from SIM-037.3.
+- Done: consult files; plan.md READY for slice 1 (sender side: Transfer dialog, pending chip, Cancel), assumptions A1-A12; recipient side (incoming list, Confirm/Decline, nav badge) proposed as SIM-037.9.
+- In progress / next: Ming approves plan + split (M-59); then create SIM-037.9 and IMPLEMENT slice 1.
+- Gotchas: UI only, no High path. Until SIM-037.9 merges, a started transfer can only be cancelled (A1: no release in between).
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 2 since plan approval (implementer×1 ~109k, reviewer×1 ~67k; default models). No review-trigger agent (UI only).
+- Done: slice 1 (sender side) implemented, attempt 1; review PASS, no issues (nits only). Merged origin/main; checks green (2631 passed).
+- In progress / next: Ming opens the PR (M-60, prefilled link in chat), runs its manual checks, merges; then SIM-037.9 (recipient side; starts after this merges, both touch DevicesPage/DevicesView).
+- Gotchas: no release between SIM-037.8 and SIM-037.9 (A1).

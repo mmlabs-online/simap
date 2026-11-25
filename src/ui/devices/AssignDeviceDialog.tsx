@@ -1,7 +1,7 @@
 "use client";
 
-import { useId, useRef, useState, type ReactNode, type RefObject } from "react";
-import { DEVICE_LIMITS, type DeviceDto } from "@/lib/devices/types";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
+import type { DeviceDto } from "@/lib/devices/types";
 import { devicesCopy } from "../copy/devices";
 import { DialogField, EntityFormDialog } from "../EntityFormDialog";
 import { canLoadMore, selectedMember, type LoadPage } from "../seats/member-picker";
@@ -12,7 +12,6 @@ import {
   emptyAssignForm,
   expiryMin,
   holdingForm,
-  noteLength,
   settleAssign,
   todayNow,
   toAssignBody,
@@ -21,13 +20,13 @@ import {
   type AssignMode,
 } from "./assign-device";
 import type { DevicesApi } from "./devices-api";
+import { NoteField } from "./NoteField";
 
 const copy = devicesCopy.assign;
 const CAPTION =
   "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5";
 const DATE_INPUT = "input[type=date]";
 const HINT = "text-xs text-on-surface-variant px-0.5";
-
 /** Props only: picker (assign mode) or holder line (edit mode), note, and the expiry fieldset. */
 export function AssignDeviceFields({
   mode,
@@ -50,9 +49,6 @@ export function AssignDeviceFields({
   onNoExpiry: (v: boolean) => void;
   onDate: (v: string) => void;
 }) {
-  const noteId = useId();
-  const hintId = useId();
-  const countId = useId();
   return (
     <>
       {mode === "assign" ? (
@@ -63,26 +59,7 @@ export function AssignDeviceFields({
           <span className="text-sm font-medium text-on-surface">{device.owner?.displayName}</span>
         </div>
       )}
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor={noteId} className={CAPTION}>
-          {copy.note}
-        </label>
-        <textarea
-          id={noteId}
-          rows={3}
-          value={form.note}
-          maxLength={DEVICE_LIMITS.note}
-          aria-describedby={`${hintId} ${countId}`}
-          onChange={(e) => onNote(e.target.value)}
-          className="rounded-md3 bg-surface px-3.5 py-2 border border-outline-variant focus:border-primary outline-none text-sm font-medium text-on-surface resize-y"
-        />
-        <span id={hintId} className={HINT}>
-          {copy.noteHint}
-        </span>
-        <span id={countId} className={HINT}>
-          {copy.noteCount(noteLength(form.note), DEVICE_LIMITS.note)}
-        </span>
-      </div>
+      <NoteField value={form.note} onChange={onNote} label={copy.note} hint={copy.noteHint} />
       <fieldset ref={fieldsetRef} className="flex flex-col gap-2 border-0 p-0 m-0 min-w-0">
         <legend className={CAPTION}>{copy.expiry}</legend>
         <label className="flex items-center gap-2 text-sm font-medium text-on-surface">
