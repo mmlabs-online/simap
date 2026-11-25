@@ -11,6 +11,7 @@ export type NavId =
   | "approvals"
   | "groups"
   | "audit"
+  | "deviceTypes"
   | "roomEditor";
 
 export type NavItem = {
@@ -38,6 +39,13 @@ const NAV_ITEMS: readonly NavItem[] = [
   },
   { id: "groups", href: "/groups", icon: "sell", minTier: "manager", placement: "rail" },
   { id: "audit", href: "/audit", icon: "history", minTier: "admin", placement: "rail" },
+  {
+    id: "deviceTypes",
+    href: "/device-types",
+    icon: "category",
+    minTier: "admin",
+    placement: "rail",
+  },
   {
     id: "roomEditor",
     href: "/rooms/[roomCode]/edit",

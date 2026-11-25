@@ -32,13 +32,18 @@ describe("navItemsFor", () => {
     expect(ids("admin")).toContain("groups");
   });
   it("admin sees all items incl. roomEditor", () => {
-    expect(ids("admin")).toHaveLength(10);
+    expect(ids("admin")).toHaveLength(11);
     expect(ids("admin")).toContain("roomEditor");
   });
   it("audit is admin only", () => {
     expect(ids("admin")).toContain("audit");
     expect(ids("manager")).not.toContain("audit");
     expect(ids("user")).not.toContain("audit");
+  });
+  it("deviceTypes is admin only", () => {
+    expect(ids("admin")).toContain("deviceTypes");
+    expect(ids("manager")).not.toContain("deviceTypes");
+    expect(ids("user")).not.toContain("deviceTypes");
   });
   it("rail items keep seatMGT order", () => {
     const items = navItemsFor("admin");
@@ -52,6 +57,7 @@ describe("navItemsFor", () => {
       "approvals",
       "groups",
       "audit",
+      "deviceTypes",
     ]);
     expect(items.find((i) => i.id === "roomEditor")?.placement).toBe("room");
   });
