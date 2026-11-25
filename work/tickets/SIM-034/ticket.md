@@ -11,8 +11,8 @@
 | Needs Ming | M-24 |
 | Attempts | 1 |
 | Created | 2026-11-23 |
-| Claimed by | claude@2026-11-25T17:02:52Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/108 |
 
 ## Goal
 simap's CI, risk-tier and release workflows run on the home server's self-hosted runner instead of GitHub-hosted runners, because the repo is private (D60).
@@ -57,3 +57,9 @@ Plan approved (2026-11-26, Ming: "Duyệt, dùng mặc định" — Q1–Q7 take
 - Done: M-24 confirmed by Ming (org runner MacBookPro shared with simap, labels self-hosted, X64, macOS, macbook-runner). Consult and plan (`Status: READY`, about 300-350 lines, no split). The plan touches High path `.github/workflows/release.yml`.
 - In progress / next: Ming approves the plan (M-74) and answers Q1–Q7, or accepts their defaults; then `/run SIM-034` resumes at IMPLEMENT.
 - Gotchas: today's `ci.yml` compose-config step uses `sudo tee /Users/mingming/.config/simap/simap.env` with project `-p simap`. On the Mac it would overwrite production's env file, so never point the current ci.yml at the self-hosted runner before this ticket lands. `check-image.sh` uses GNU `timeout` (missing on macOS) and `--network host` (means the Docker VM on Mac). `release-files.test.ts` asserts release stays on ubuntu-latest and must change.
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 6 this run, tokens ~331k (in/out split not reported): implementer×2 67k+50k, reviewer×2 86k+51k, security-ai-generated-code-auditor×2 61k+25k; all on default models. Plus 2 calls from the planning run, ~132k.
+- Done: Ming approved the plan with the defaults for Q1–Q7 (M-74). Attempt 1 REWORK: the reviewer found a buildx builder leak, and security found 3 🔴 (keychain auto-detect, git credential helper storing tokens, unguarded docker logout). Attempt 2 PASS from both. Merged main instead of rebasing, because of a ming-todo conflict (another session took M-73), so this ticket's items are now M-74 and M-75. PR #108.
+- In progress / next: the PR's own run on MacBookPro is the real test of AC2 and AC5. Ming checks the host after the run (see the PR body), confirms M-75 and merges.
+- Gotchas: `test:db` in CI still has 3 failures that already exist on main, unrelated to this ticket. Never run the pre-PR ci.yml on the Mac: it uses `sudo tee` on the production env file.
