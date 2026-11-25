@@ -7,7 +7,7 @@
 | Size | S |
 | Areas | db, api, ui |
 | Gate | plan-approval |
-| Depends on | SIM-039.6 |
+| Depends on | SIM-039.9 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
