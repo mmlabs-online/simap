@@ -83,8 +83,16 @@ describe("device-types (db)", () => {
     expect(items.map((t) => t.name)).toEqual(["IP phone", "Laptop", "Monitor", "Other", "PC"]);
     expect(items.find((t) => t.name === "IP phone")!.slot).toBe("phone");
     for (const t of items) {
-      expect(Object.keys(t).sort()).toEqual(["hasImage", "id", "imageVersion", "name", "slot"]);
+      expect(Object.keys(t).sort()).toEqual([
+        "hasImage",
+        "id",
+        "imageVersion",
+        "name",
+        "slot",
+        "sprite",
+      ]);
       expect([t.hasImage, t.imageVersion]).toEqual([false, 0]);
+      expect(t.sprite).toBeNull();
     }
   });
 
@@ -135,6 +143,96 @@ describe("device-types (db)", () => {
       ok: true,
     });
     expect(await auditCount(o.orgId, "device_type.update")).toBe(2);
+  });
+
+  const metaOf = async (orgId: string) =>
+    (
+      await pool.query(
+        "select meta from audit_log where org_id = $1 and action = 'device_type.update' order by created_at, id",
+        [orgId],
+      )
+    ).rows.map((r) => r.meta);
+
+  it("sprite: set, change, clear; one audit row each, none when unchanged", async () => {
+    const o = await seeded();
+    const pc = (await list(o)).find((t) => t.name === "PC")!;
+    const set = (sprite: string | null) => updateDeviceType(pool, o.scope, SUB, pc.id, { sprite });
+    expect(await set("device.laptop")).toMatchObject({
+      ok: true,
+      value: { sprite: "device.laptop" },
+    });
+    expect((await list(o)).find((t) => t.id === pc.id)!.sprite).toBe("device.laptop");
+    expect(await set("device.laptop")).toMatchObject({ ok: true });
+    expect(await set("device.phone")).toMatchObject({
+      ok: true,
+      value: { sprite: "device.phone" },
+    });
+    expect(await set(null)).toMatchObject({ ok: true, value: { sprite: null } });
+    expect(await metaOf(o.orgId)).toEqual([
+      { fields: ["sprite"], sprite: { from: null, to: "device.laptop" } },
+      { fields: ["sprite"], sprite: { from: "device.laptop", to: "device.phone" } },
+      { fields: ["sprite"], sprite: { from: "device.phone", to: null } },
+    ]);
+  });
+
+  it("sprite refused: not allowed -> 422, row and audit unchanged", async () => {
+    const o = await seeded();
+    const pc = (await list(o)).find((t) => t.name === "PC")!;
+    for (const sprite of ["plant.large", "device.laptop.s"]) {
+      expect(await updateDeviceType(pool, o.scope, SUB, pc.id, { name: "Zed", sprite })).toEqual({
+        ok: false,
+        status: 422,
+        code: "sprite_not_allowed",
+      });
+    }
+    expect(await create(o, "Zed")).toMatchObject({ ok: true });
+    expect(
+      await createDeviceType(pool, o.scope, SUB, {
+        name: "Zed2",
+        slot: "pc",
+        sprite: "plant.large",
+      }),
+    ).toMatchObject({ ok: false, status: 422, code: "sprite_not_allowed" });
+    expect(await one("select name, sprite_key from device_types where id = $1", [pc.id])).toEqual({
+      name: "PC",
+      sprite_key: null,
+    });
+    expect(await metaOf(o.orgId)).toEqual([]);
+    expect(await typeCount(o.orgId)).toBe(6);
+  });
+
+  it("sprite patch with another org's id -> 404, row unchanged", async () => {
+    const a = await seeded();
+    const b = await seeded();
+    const pc = (await list(a)).find((t) => t.name === "PC")!;
+    expect(await updateDeviceType(pool, b.scope, SUB, pc.id, { sprite: "device.laptop" })).toEqual({
+      ok: false,
+      status: 404,
+      code: "not_found",
+    });
+    expect(
+      (await one("select sprite_key from device_types where id = $1", [pc.id])).sprite_key,
+    ).toBe(null);
+  });
+
+  it("create with sprite stores it and audits it; slot change keeps sprite", async () => {
+    const o = await seeded();
+    const r = await createDeviceType(pool, o.scope, SUB, {
+      name: "Dock",
+      slot: "other",
+      sprite: "device.monitor",
+    });
+    expect(r).toMatchObject({ ok: true, value: { sprite: "device.monitor" } });
+    const id = (r as { ok: true; value: { id: string } }).value.id;
+    const a = await one(
+      "select meta from audit_log where org_id = $1 and action = 'device_type.create' and entity_id = $2",
+      [o.orgId, id],
+    );
+    expect(a.meta).toEqual({ name: "Dock", slot: "other", sprite: "device.monitor" });
+    expect(await updateDeviceType(pool, o.scope, SUB, id, { slot: "pc" })).toMatchObject({
+      ok: true,
+      value: { slot: "pc", sprite: "device.monitor" },
+    });
   });
 
   it("delete removes the type and leaves devices untouched", async () => {

@@ -356,6 +356,7 @@ describe("catalog device images (SIM-036.4)", () => {
     slot: "phone" as const,
     hasImage: true,
     imageVersion: 2,
+    sprite: null,
     ...over,
   });
   const draw = (devices: SeatDevice[], ready = true, rotation = 0) =>

@@ -1,3 +1,4 @@
+import { deviceFrameKey } from "./device-sprites";
 import type { SeatDevice, SeatDeviceType } from "./layout";
 import type { Direction } from "./types";
 
@@ -65,10 +66,11 @@ export function deviceKind(type: string): DeviceKind {
   return Object.hasOwn(KINDS, norm) ? KINDS[norm] : "other";
 }
 
-/** What is drawn for a device: the built-in sprite of its kind, the square placeholder, or the catalog image (24-100 px, drawn in the 24 px slot box, D68). */
+/** What is drawn for a device: the built-in sprite of its kind, the square placeholder, a picked package sprite family (D66), or the catalog image (24-100 px, drawn in the 24 px slot box, D68). */
 export type DeviceArt =
   | { type: "sprite" }
   | { type: "placeholder" }
+  | { type: "packageSprite"; family: string }
   | { type: "image"; typeId: string; version: number };
 
 /** A device with its slot kind and art resolved. */
@@ -82,7 +84,12 @@ export function resolveDeviceArt(
   const t = device.deviceType;
   if (t === undefined) return { kind: deviceKind(device.type), art: { type: "sprite" } };
   if (t === null) return { kind: "other", art: { type: "placeholder" } };
-  if (!t.hasImage) return { kind: t.slot, art: { type: "sprite" } };
+  if (!t.hasImage) {
+    return {
+      kind: t.slot,
+      art: t.sprite !== null ? { type: "packageSprite", family: t.sprite } : { type: "sprite" },
+    };
+  }
   if (!imageReady(t)) return { kind: t.slot, art: { type: "placeholder" } };
   return { kind: t.slot, art: { type: "image", typeId: t.id, version: t.imageVersion } };
 }
@@ -136,9 +143,8 @@ export function placeDevices(
       key:
         art.type === "placeholder"
           ? DEVICE_SPRITE.other
-          : DIRECTIONAL[kind]
-            ? `${DEVICE_SPRITE[kind]}.${dir}`
-            : DEVICE_SPRITE[kind],
+          : ((art.type === "packageSprite" ? deviceFrameKey(art.family, dir) : null) ??
+            (DIRECTIONAL[kind] ? `${DEVICE_SPRITE[kind]}.${dir}` : DEVICE_SPRITE[kind])),
       x,
       y,
       offset: [

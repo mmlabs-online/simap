@@ -175,7 +175,7 @@ describe("toMapView seatDevices", () => {
   });
 
   it("seatDevices: keeps a valid deviceType and null; a bad shape becomes null; missing stays missing", () => {
-    const good = { id: "t1", slot: "phone", hasImage: true, imageVersion: 2 };
+    const good = { id: "t1", slot: "phone", hasImage: true, imageVersion: 2, sprite: null };
     const view = toMapView(
       body({
         s1: [
@@ -193,6 +193,32 @@ describe("toMapView seatDevices", () => {
     expect(list[2].deviceType).toBeNull();
     expect(list[3].deviceType).toBeNull();
     expect("deviceType" in list[4]).toBe(false);
+  });
+});
+
+describe("toMapView deviceType.sprite", () => {
+  it("keeps a well-formed string; missing, non-string or malformed becomes null", () => {
+    const base = { id: "t1", slot: "phone", hasImage: false, imageVersion: 0 };
+    const sprites = (...vals: unknown[]) =>
+      (
+        toMapView(
+          body({
+            seatDevices: {
+              s1: vals.map((v) => ({
+                type: "A",
+                deviceType: v === undefined ? base : { ...base, sprite: v },
+              })),
+            },
+          }),
+        )?.seatDevices.s1 ?? []
+      ).map((d) => d.deviceType?.sprite);
+    expect(sprites("device.laptop", undefined, 1, " x", "")).toEqual([
+      "device.laptop",
+      null,
+      null,
+      null,
+      null,
+    ]);
   });
 });
 

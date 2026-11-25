@@ -814,11 +814,11 @@ describe("catalog footprints and hidden items (db)", () => {
 
 /** The seeded catalog type of an org as the layout DTO shows it. */
 const catalogType = async (orgId: string, name: string) => {
-  const t = await one("select id, slot from device_types where org_id = $1 and name = $2", [
-    orgId,
-    name,
-  ]);
-  return { id: t.id, slot: t.slot, hasImage: false, imageVersion: 0 };
+  const t = await one(
+    "select id, slot, sprite_key from device_types where org_id = $1 and name = $2",
+    [orgId, name],
+  );
+  return { id: t.id, slot: t.slot, hasImage: false, imageVersion: 0, sprite: t.sprite_key };
 };
 
 describe("getRoomLayout seatDevices (db)", () => {
@@ -922,6 +922,19 @@ describe("getRoomLayout seatDevices (db)", () => {
       { type: "Tablet", deviceType: null },
       { type: " pc ", deviceType: pc },
       { type: "PC", deviceType: pc },
+    ]);
+  });
+
+  it("seat devices carry the type's sprite (null when none)", async () => {
+    const { o, s } = await seatWith(["Monitor", "PC"]);
+    await run(
+      "update device_types set sprite_key = 'device.laptop' where org_id = $1 and name = 'Monitor'",
+      [o.orgId],
+    );
+    const list = (await value(o)).seatDevices[s]!;
+    expect(list.map((d) => [d.type, d.deviceType?.sprite])).toEqual([
+      ["Monitor", "device.laptop"],
+      ["PC", null],
     ]);
   });
 

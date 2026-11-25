@@ -83,6 +83,19 @@ describe("device type image (db)", () => {
     expect(g).toEqual({ ok: true, value: { kind: "not_modified", etag: `"${id}-2"` } });
   });
 
+  it("image set and clear keep sprite_key", async () => {
+    const { org, id } = await typeOf();
+    await pool.query("update device_types set sprite_key = 'device.pc' where id = $1", [id]);
+    const d = fakeDrive();
+    const sprite = async () =>
+      (await pool.query("select sprite_key from device_types where id = $1", [id])).rows[0]
+        .sprite_key;
+    await setDeviceTypeImage(pool, d.getDrive, org.scope, SUB, id, bytes);
+    expect(await sprite()).toBe("device.pc");
+    await removeDeviceTypeImage(pool, d.getDrive, org.scope, SUB, id);
+    expect(await sprite()).toBe("device.pc");
+  });
+
   it("remove: null, version bump, audit; removing again changes nothing", async () => {
     const { org, id } = await typeOf();
     const d = fakeDrive();

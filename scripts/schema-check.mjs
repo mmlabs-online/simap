@@ -126,6 +126,10 @@ try {
     later.some((l) => l.includes("device_types")),
   );
   check(
+    "1 later run applies device_type_sprite",
+    later.some((l) => l.includes("device_type_sprite")),
+  );
+  check(
     "1 later run applies map_items",
     later.some((l) => l.includes("map_items")),
   );
@@ -606,6 +610,29 @@ try {
       "23514",
       "device_types_image_version_check",
     ),
+  );
+
+  check(
+    "9 bad sprite_key refused (23514 device_types_sprite_key_check)",
+    refused(
+      await tx(
+        q(
+          `insert into device_types (org_id, name, slot, sprite_key) values ($1, 'Spr', 'other', ' x')`,
+          [newOrg],
+        ),
+      ),
+      "23514",
+      "device_types_sprite_key_check",
+    ),
+  );
+  check(
+    "9 sprite_key family or null accepted",
+    (await tx(
+      q(
+        `insert into device_types (org_id, name, slot, sprite_key) values ($1, 'Spr1', 'other', 'device.laptop'), ($1, 'Spr2', 'other', null)`,
+        [newOrg],
+      ),
+    )) === null,
   );
 
   // 10 device lifecycle (SIM-037.1)

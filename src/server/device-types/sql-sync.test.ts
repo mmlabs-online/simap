@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { VI_LOWER, VI_UPPER } from "@/lib/device-types/name";
 import { DEVICE_KINDS, DEVICE_TYPE_LIMITS, SEED_DEVICE_TYPES } from "@/lib/device-types/types";
+import { SPRITE_KEY_RE } from "@/lib/validate/map-item";
 import { DRIVE_ID_RE } from "@/server/drive/config";
 
 const sql = readFileSync(
@@ -23,5 +24,16 @@ describe("device_types migration equals the TS constants", () => {
     expect(seed).toEqual(SEED_DEVICE_TYPES);
     expect(sql).toContain(`char_length(name) <= ${DEVICE_TYPE_LIMITS.name}`);
     expect(sql).toContain(`'${DRIVE_ID_RE.source}'`);
+  });
+});
+
+describe("sprite migration", () => {
+  it("uses SPRITE_KEY_RE and names the constraint", () => {
+    const spriteSql = readFileSync(
+      path.resolve(process.cwd(), "db/migrations/20261125230000_device_type_sprite.sql"),
+      "utf8",
+    );
+    expect(spriteSql).toContain(`'${SPRITE_KEY_RE.source}'`);
+    expect(spriteSql).toContain("device_types_sprite_key_check");
   });
 });

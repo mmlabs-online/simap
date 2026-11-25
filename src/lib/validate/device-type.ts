@@ -5,6 +5,7 @@ import {
   type DeviceTypeCreateValue,
   type DeviceTypePatchValue,
 } from "@/lib/device-types/types";
+import { SPRITE_KEY_RE } from "./map-item";
 import type { Validated } from "./room";
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
@@ -25,22 +26,32 @@ const slot = (v: unknown): DeviceKind | null =>
     ? (v as DeviceKind)
     : null;
 
+/** Shape only; which families are allowed is a domain rule (422). Absent is `undefined`, a bad value is `false`. */
+const sprite = (v: unknown): string | null | false =>
+  v === null || (typeof v === "string" && SPRITE_KEY_RE.test(v)) ? v : false;
+
 export function validateDeviceTypeCreate(body: unknown): Validated<DeviceTypeCreateValue> {
   if (!isPlainObject(body)) return { ok: false, field: "body" };
-  const extra = Object.keys(body).find((k) => k !== "name" && k !== "slot");
+  const extra = Object.keys(body).find((k) => k !== "name" && k !== "slot" && k !== "sprite");
   if (extra !== undefined) return { ok: false, field: extra };
   const n = name(body.name);
   if (n === null) return { ok: false, field: "name" };
   const s = slot(body.slot);
   if (s === null) return { ok: false, field: "slot" };
-  return { ok: true, value: { name: n, slot: s } };
+  const value: DeviceTypeCreateValue = { name: n, slot: s };
+  if ("sprite" in body) {
+    const p = sprite(body.sprite);
+    if (p === false) return { ok: false, field: "sprite" };
+    value.sprite = p;
+  }
+  return { ok: true, value };
 }
 
-/** A non-empty partial of name and slot. */
+/** A non-empty partial of name, slot and sprite. */
 export function validateDeviceTypePatch(body: unknown): Validated<DeviceTypePatchValue> {
   if (!isPlainObject(body)) return { ok: false, field: "body" };
   const keys = Object.keys(body);
-  const extra = keys.find((k) => k !== "name" && k !== "slot");
+  const extra = keys.find((k) => k !== "name" && k !== "slot" && k !== "sprite");
   if (extra !== undefined) return { ok: false, field: extra };
   if (keys.length === 0) return { ok: false, field: "body" };
   const value: DeviceTypePatchValue = {};
@@ -53,6 +64,11 @@ export function validateDeviceTypePatch(body: unknown): Validated<DeviceTypePatc
     const s = slot(body.slot);
     if (s === null) return { ok: false, field: "slot" };
     value.slot = s;
+  }
+  if ("sprite" in body) {
+    const p = sprite(body.sprite);
+    if (p === false) return { ok: false, field: "sprite" };
+    value.sprite = p;
   }
   return { ok: true, value };
 }

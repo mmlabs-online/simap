@@ -23,10 +23,12 @@ export type DeviceTypeDto = {
   slot: DeviceKind;
   hasImage: boolean;
   imageVersion: number;
+  /** Picked package sprite family (D66); null = the slot's built-in sprite. */
+  sprite: string | null;
 };
 
 export type DeviceTypeListResponse = { items: DeviceTypeDto[] };
 
-export type DeviceTypeCreateValue = { name: string; slot: DeviceKind };
+export type DeviceTypeCreateValue = { name: string; slot: DeviceKind; sprite?: string | null };
 
 export type DeviceTypePatchValue = Partial<DeviceTypeCreateValue>;

@@ -130,11 +130,13 @@ export async function readLayoutRows(
       slot: DeviceKind | null;
       has_image: boolean | null;
       image_version: number | null;
+      sprite_key: string | null;
     }>(
       c,
       scope,
       `select d.seat_id, left(d.type, 61) as type, t.id as type_id, t.slot,
-              (t.image_drive_file_id is not null) as has_image, t.image_version
+              (t.image_drive_file_id is not null) as has_image, t.image_version,
+              t.sprite_key
          from (
            select seat_id, type, row_number() over (
                     partition by seat_id order by (role = 'primary') desc, created_at, id) as n
@@ -156,6 +158,7 @@ export async function readLayoutRows(
               slot: d.slot!,
               hasImage: d.has_image!,
               imageVersion: d.image_version!,
+              sprite: d.sprite_key,
             }
           : null,
       });

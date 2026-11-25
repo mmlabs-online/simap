@@ -22,7 +22,14 @@ const render = (p: Partial<DeviceTypesViewProps> = {}) =>
     />,
   );
 
-const type = { id: "t1", name: "Máy in", slot: "pc", hasImage: false, imageVersion: 0 } as const;
+const type = {
+  id: "t1",
+  name: "Máy in",
+  slot: "pc",
+  hasImage: false,
+  imageVersion: 0,
+  sprite: null,
+} as const;
 
 describe("DeviceTypesView", () => {
   it("forbidden shows the title and a no-access alert, no New button", () => {

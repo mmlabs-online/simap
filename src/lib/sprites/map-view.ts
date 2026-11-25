@@ -1,4 +1,5 @@
 import { LAYOUT_LIMITS } from "@/lib/validate/layout";
+import { SPRITE_KEY_RE } from "@/lib/validate/map-item";
 import { DEVICE_KINDS } from "@/lib/device-types/types";
 import type { DeviceKind } from "./device-slots";
 import type {
@@ -77,6 +78,7 @@ function toDeviceType(raw: unknown): SeatDeviceType | null {
     slot: raw.slot as DeviceKind,
     hasImage: raw.hasImage,
     imageVersion: raw.imageVersion,
+    sprite: typeof raw.sprite === "string" && SPRITE_KEY_RE.test(raw.sprite) ? raw.sprite : null,
   };
 }
 

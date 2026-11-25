@@ -13,7 +13,7 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> =>
 
 const CONTROL_OR_FORMAT = /[\p{Cc}\p{Cf}]/u;
 const KEY = /^[a-z0-9]+(\.[a-z0-9]+)*$/;
-const SPRITE = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,119}$/;
+export const SPRITE_KEY_RE = /^[A-Za-z0-9][A-Za-z0-9._/-]{0,119}$/;
 
 /** A `builtinKey` path segment (same rule as the DB check). */
 export const isMapItemKey = (s: string): boolean => s.length <= 100 && KEY.test(s);
@@ -75,7 +75,7 @@ export function validateMapItemArt(body: unknown): Validated<MapItemArtValue> {
   if (extra !== undefined) return { ok: false, field: extra };
   const s = body.sprite;
   if (s === null) return { ok: true, value: { sprite: null } };
-  if (typeof s !== "string" || !SPRITE.test(s) || !isFrameKey(s)) {
+  if (typeof s !== "string" || !SPRITE_KEY_RE.test(s) || !isFrameKey(s)) {
     return { ok: false, field: "sprite" };
   }
   return { ok: true, value: { sprite: s } };

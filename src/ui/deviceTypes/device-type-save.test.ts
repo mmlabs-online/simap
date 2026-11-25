@@ -12,6 +12,7 @@ const dto = (over: Partial<DeviceTypeDto> = {}): DeviceTypeDto => ({
   slot: "pc",
   hasImage: false,
   imageVersion: 0,
+  sprite: null,
   ...over,
 });
 const ok = <T>(value: T): DeviceTypesResult<T> => ({ ok: true, value });
@@ -30,7 +31,7 @@ function fakeApi(over: Partial<Record<string, unknown>> = {}) {
 const keep: ImageDraft = { kind: "keep" };
 const replace: ImageDraft = { kind: "replace", bytes: new Uint8Array([1]), url: "blob:x" };
 const remove: ImageDraft = { kind: "remove" };
-const form = { name: "Printer", slot: "pc" } as const;
+const form = { name: "Printer", slot: "pc", sprite: null } as const;
 
 describe("saveDeviceType", () => {
   it("create + keep: POST only, done", async () => {
@@ -118,7 +119,7 @@ describe("saveDeviceType", () => {
     const r = await saveDeviceType({
       api,
       current: null,
-      form: { name: "", slot: "pc" },
+      form: { name: "", slot: "pc", sprite: null },
       draft: replace,
     });
     expect(r.kind).toBe("invalid");

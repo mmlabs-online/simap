@@ -40,6 +40,8 @@ export type SeatDeviceType = {
   slot: DeviceKind;
   hasImage: boolean;
   imageVersion: number;
+  /** Picked package sprite family (D66), null = the slot's built-in sprite. */
+  sprite: string | null;
 };
 
 /** A device placed at a seat; only its type is public on the map. `deviceType` is null when the type is not in the org catalog. */

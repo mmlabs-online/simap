@@ -7,6 +7,7 @@ import {
   type DeviceTypeListResponse,
   type DeviceTypePatchValue,
 } from "@/lib/device-types/types";
+import { deviceSpriteAllowed } from "@/lib/sprites/device-sprites";
 import { writeAudit } from "@/server/audit/write";
 import { withTx, type TxClient, type TxPool } from "@/server/db/tx";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
@@ -17,10 +18,15 @@ export type Db = TxPool & Query;
 
 export type Refusal = {
   ok: false;
-  status: 404 | 409;
-  code: "not_found" | "type_limit" | DeviceTypeConflictCode;
+  status: 404 | 409 | 422;
+  code: "not_found" | "type_limit" | "sprite_not_allowed" | DeviceTypeConflictCode;
 };
 export type Result<T> = { ok: true; value: T } | Refusal;
+
+const spriteRefused = (sprite: string | null | undefined): Refusal | null =>
+  typeof sprite === "string" && !deviceSpriteAllowed(sprite)
+    ? { ok: false, status: 422, code: "sprite_not_allowed" }
+    : null;
 
 const notFound: Refusal = { ok: false, status: 404, code: "not_found" };
 
@@ -48,9 +54,11 @@ export type Row = {
   slot: DeviceKind;
   has_image: boolean;
   image_version: number;
+  sprite_key: string | null;
 };
 
-export const COLS = "id, name, slot, (image_drive_file_id is not null) as has_image, image_version";
+export const COLS =
+  "id, name, slot, (image_drive_file_id is not null) as has_image, image_version, sprite_key";
 
 export const toDto = (r: Row): DeviceTypeDto => ({
   id: r.id,
@@ -58,6 +66,7 @@ export const toDto = (r: Row): DeviceTypeDto => ({
   slot: r.slot,
   hasImage: r.has_image,
   imageVersion: r.image_version,
+  sprite: r.sprite_key,
 });
 
 /** D61: any member lists the org's catalog. */
@@ -81,6 +90,8 @@ export function createDeviceType(
   actorSub: string,
   v: DeviceTypeCreateValue,
 ): Promise<Result<DeviceTypeDto>> {
+  const refused = spriteRefused(v.sprite);
+  if (refused) return Promise.resolve(refused);
   return inTx(db, async (c) => {
     // safety net for an org without a marker; a no-op otherwise
     await orgQuery(
@@ -104,11 +115,11 @@ export function createDeviceType(
     const { rows } = await orgQuery<Row>(
       c,
       scope,
-      `insert into device_types (org_id, name, slot)
-       select o.org_id, $2::text, $3::text
+      `insert into device_types (org_id, name, slot, sprite_key)
+       select o.org_id, $2::text, $3::text, $4::text
        from (select $1::uuid as org_id) o where o.org_id = $1::uuid
        returning ${COLS}`,
-      [v.name, v.slot],
+      [v.name, v.slot, v.sprite ?? null],
     );
     const dto = toDto(rows[0]!);
     await writeAudit(c, scope, {
@@ -116,13 +127,13 @@ export function createDeviceType(
       action: "device_type.create",
       entity: "device_type",
       entityId: dto.id,
-      meta: { name: dto.name, slot: dto.slot },
+      meta: { name: dto.name, slot: dto.slot, ...(dto.sprite ? { sprite: dto.sprite } : {}) },
     });
     return dto;
   });
 }
 
-/** Admin renames a type and/or changes its slot. Devices are never touched (D61). */
+/** Admin renames a type and/or changes its slot or sprite pick. Devices are never touched (D61). */
 export function updateDeviceType(
   db: Db,
   scope: OrgScope,
@@ -130,6 +141,8 @@ export function updateDeviceType(
   id: string,
   patch: DeviceTypePatchValue,
 ): Promise<Result<DeviceTypeDto>> {
+  const refused = spriteRefused(patch.sprite);
+  if (refused) return Promise.resolve(refused);
   return inTx(db, async (c) => {
     const { rows } = await orgQuery<Row>(
       c,
@@ -141,13 +154,19 @@ export function updateDeviceType(
     if (!cur) throw new Abort(notFound);
     const nameChanged = patch.name !== undefined && patch.name !== cur.name;
     const slotChanged = patch.slot !== undefined && patch.slot !== cur.slot;
-    if (!nameChanged && !slotChanged) return toDto(cur);
+    const spriteChanged = patch.sprite !== undefined && patch.sprite !== cur.sprite_key;
+    if (!nameChanged && !slotChanged && !spriteChanged) return toDto(cur);
     const { rows: upd } = await orgQuery<Row>(
       c,
       scope,
-      `update device_types set name = $3, slot = $4, updated_at = now()
+      `update device_types set name = $3, slot = $4, sprite_key = $5, updated_at = now()
        where org_id = $1 and id = $2 returning ${COLS}`,
-      [id, nameChanged ? patch.name : cur.name, slotChanged ? patch.slot : cur.slot],
+      [
+        id,
+        nameChanged ? patch.name : cur.name,
+        slotChanged ? patch.slot : cur.slot,
+        spriteChanged ? patch.sprite : cur.sprite_key,
+      ],
     );
     await writeAudit(c, scope, {
       actorSub,
@@ -155,8 +174,13 @@ export function updateDeviceType(
       entity: "device_type",
       entityId: id,
       meta: {
-        fields: [...(nameChanged ? ["name"] : []), ...(slotChanged ? ["slot"] : [])],
+        fields: [
+          ...(nameChanged ? ["name"] : []),
+          ...(slotChanged ? ["slot"] : []),
+          ...(spriteChanged ? ["sprite"] : []),
+        ],
         ...(nameChanged ? { from: cur.name, to: patch.name } : {}),
+        ...(spriteChanged ? { sprite: { from: cur.sprite_key, to: patch.sprite } } : {}),
       },
     });
     return toDto(upd[0]!);

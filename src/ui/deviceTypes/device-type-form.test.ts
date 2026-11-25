@@ -9,23 +9,29 @@ const type: DeviceTypeDto = {
   slot: "other",
   hasImage: false,
   imageVersion: 0,
+  sprite: null,
 };
 const msg = deviceTypesCopy.fieldErrors;
 
 describe("toCreateBody", () => {
   it("trims, collapses spaces and keeps diacritics", () => {
-    expect(toCreateBody({ name: "Máy  in ", slot: "pc" })).toEqual({
+    expect(toCreateBody({ name: "Máy  in ", slot: "pc", sprite: null })).toEqual({
       kind: "ok",
-      body: { name: "Máy in", slot: "pc" },
+      body: { name: "Máy in", slot: "pc", sprite: null },
     });
   });
   it("empty, whitespace, too long and control names are invalid", () => {
     for (const name of ["", "   ", "a".repeat(61), "a\u0007b"]) {
-      expect(toCreateBody({ name, slot: "pc" })).toEqual({ kind: "invalid", message: msg.name });
+      expect(toCreateBody({ name, slot: "pc", sprite: null })).toEqual({
+        kind: "invalid",
+        message: msg.name,
+      });
     }
   });
   it("a slot outside the list is invalid", () => {
-    const form = { name: "x", slot: "desk" } as unknown as ReturnType<typeof emptyForm>;
+    const form = { name: "x", slot: "desk", sprite: null } as unknown as ReturnType<
+      typeof emptyForm
+    >;
     expect(toCreateBody(form)).toEqual({ kind: "invalid", message: msg.slot });
   });
   it("the empty form uses slot other", () => {
@@ -35,25 +41,27 @@ describe("toCreateBody", () => {
 
 describe("toPatchBody", () => {
   it("same name (spaces) and same slot is unchanged", () => {
-    expect(toPatchBody({ name: " Máy  in ", slot: "other" }, type)).toEqual({ kind: "unchanged" });
+    expect(toPatchBody({ name: " Máy  in ", slot: "other", sprite: null }, type)).toEqual({
+      kind: "unchanged",
+    });
     expect(toPatchBody(formFromType(type), type)).toEqual({ kind: "unchanged" });
   });
   it("sends only the changed field", () => {
-    expect(toPatchBody({ name: "Scanner", slot: "other" }, type)).toEqual({
+    expect(toPatchBody({ name: "Scanner", slot: "other", sprite: null }, type)).toEqual({
       kind: "ok",
       body: { name: "Scanner" },
     });
-    expect(toPatchBody({ name: "Máy in", slot: "pc" }, type)).toEqual({
+    expect(toPatchBody({ name: "Máy in", slot: "pc", sprite: null }, type)).toEqual({
       kind: "ok",
       body: { slot: "pc" },
     });
   });
   it("a case-only rename is sent; an invalid name is refused", () => {
-    expect(toPatchBody({ name: "máy in", slot: "other" }, type)).toEqual({
+    expect(toPatchBody({ name: "máy in", slot: "other", sprite: null }, type)).toEqual({
       kind: "ok",
       body: { name: "máy in" },
     });
-    expect(toPatchBody({ name: " ", slot: "other" }, type)).toEqual({
+    expect(toPatchBody({ name: " ", slot: "other", sprite: null }, type)).toEqual({
       kind: "invalid",
       message: msg.name,
     });

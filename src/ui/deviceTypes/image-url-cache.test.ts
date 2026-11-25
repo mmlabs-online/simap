@@ -8,6 +8,7 @@ const t = (id: string, version = 1, hasImage = true): DeviceTypeDto => ({
   slot: "pc",
   hasImage,
   imageVersion: version,
+  sprite: null,
 });
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
