@@ -10,6 +10,7 @@ import {
   expiryText,
   filterOptions,
   listSummary,
+  pendingText,
   placementText,
 } from "./devices-state";
 
@@ -135,5 +136,33 @@ describe("detailsText and expiryText", () => {
   it("expiryText shows the date as given or No expiry", () => {
     expect(expiryText({ expiresOn: "2026-12-31" })).toBe("Until 2026-12-31");
     expect(expiryText({ expiresOn: null })).toBe("No expiry");
+  });
+});
+
+describe("pendingText", () => {
+  const withHandoff = (p: object | null) =>
+    ({ id: "d1", pendingHandoff: p }) as unknown as DeviceDto;
+  const handoff = (over: object = {}) => ({
+    id: "h1",
+    kind: "transfer",
+    to: { id: "m", displayName: "Hương" },
+    ...over,
+  });
+  it("is null without a handoff and for other kinds", () => {
+    expect(pendingText(withHandoff(null))).toBeNull();
+    expect(pendingText(withHandoff(handoff({ kind: "return" })))).toBeNull();
+    expect(pendingText(withHandoff(handoff({ kind: "extension" })))).toBeNull();
+  });
+  it("a transfer gives the chip and To <name>, keeping diacritics", () => {
+    expect(pendingText(withHandoff(handoff()))).toEqual({
+      chip: devicesCopy.pending.chip,
+      to: "To Hương",
+    });
+  });
+  it("a transfer without a recipient has the chip only", () => {
+    expect(pendingText(withHandoff(handoff({ to: null })))).toEqual({
+      chip: devicesCopy.pending.chip,
+      to: null,
+    });
   });
 });

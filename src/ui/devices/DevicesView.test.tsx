@@ -251,3 +251,52 @@ describe("DevicesView details and holding", () => {
     expect(none).not.toContain("Note / expiry");
   });
 });
+
+describe("DevicesView pending transfer", () => {
+  const pendingDevice: DeviceDto = {
+    ...base,
+    id: "d10",
+    pendingHandoff: {
+      id: "h1",
+      kind: "transfer",
+      to: { id: "m1", displayName: "Hương" },
+      requestedBy: { id: "u1", displayName: "Nguyễn Thị Hà" },
+      createdAt: "2026-11-25T00:00:00Z",
+      canCancel: true,
+    },
+  };
+  const actions = { onTransfer: noop, onCancelTransfer: noop };
+
+  it("shows the chip and 'To Hương' in the table and the card, and keeps the owner", () => {
+    const html = render({ devices: [pendingDevice], actions });
+    expect(html.match(new RegExp(devicesCopy.pending.chip, "g"))).toHaveLength(2);
+    expect(html.match(/To Hương/g)).toHaveLength(2);
+    expect(html).toContain("Nguyễn Thị Hà");
+  });
+  it("Cancel transfer button with its aria-label when canCancel; none when false", () => {
+    const html = render({ devices: [pendingDevice], actions });
+    expect(html.match(/aria-label="Cancel transfer of device INV-1"/g)).toHaveLength(2);
+    expect(html).not.toContain("Transfer device INV-1");
+    const off = {
+      ...pendingDevice,
+      pendingHandoff: { ...pendingDevice.pendingHandoff!, canCancel: false },
+    };
+    expect(render({ devices: [off], actions })).not.toContain("Cancel transfer of device");
+  });
+  it("a Transfer button follows canTransfer", () => {
+    const html = render({ devices: [{ ...base, canTransfer: true }], actions });
+    expect(html.match(/aria-label="Transfer device INV-1"/g)).toHaveLength(2);
+  });
+  it("busyId disables the buttons of that row", () => {
+    const html = render({ devices: [pendingDevice], actions, busyId: "d10" });
+    expect(html.match(/<button[^>]*Cancel transfer of device[^>]*disabled=""/g)).toHaveLength(2);
+  });
+  it("notice region is always mounted; error tone has role=alert", () => {
+    const none = render();
+    expect(none).toContain('<div aria-live="polite"></div>');
+    const status = render({ notice: { tone: "status", text: "Done ✓" } });
+    expect(status).toMatch(/<p role="status"[^>]*>Done ✓<\/p>/);
+    const err = render({ notice: { tone: "error", text: "Nope" } });
+    expect(err).toMatch(/<p role="alert"[^>]*>Nope<\/p>/);
+  });
+});

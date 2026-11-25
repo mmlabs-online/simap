@@ -30,6 +30,16 @@ export function expiryText(h: { expiresOn: string | null }): string {
     : devicesCopy.holding.until(h.expiresOn);
 }
 
+/** The pending line of a row: a chip and the recipient. Only transfers have text until SIM-037.4 / 037.5. */
+export function pendingText(d: DeviceDto): { chip: string; to: string | null } | null {
+  const p = d.pendingHandoff;
+  if (p?.kind !== "transfer") return null;
+  return {
+    chip: devicesCopy.pending.chip,
+    to: p.to === null ? null : devicesCopy.pending.to(p.to.displayName),
+  };
+}
+
 export function emptyText(filter: PlacementFilter): string {
   return filter === "all" ? shellCopy.pages.devices.empty : devicesCopy.empty[filter];
 }

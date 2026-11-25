@@ -116,3 +116,63 @@ describe("assign and holding actions", () => {
     );
   });
 });
+
+describe("transfer actions", () => {
+  const pending = (over: object = {}) => ({
+    id: "h1",
+    kind: "transfer" as const,
+    to: { id: "m", displayName: "Hương" },
+    requestedBy: { id: "u", displayName: "Hà" },
+    createdAt: "2026-11-25T00:00:00Z",
+    canCancel: true,
+    ...over,
+  });
+  it("transfer is shown only with canTransfer and onTransfer, after place and before edit", () => {
+    const onTransfer = vi.fn();
+    const row = d({
+      canTransfer: true,
+      canEdit: true,
+      canDelete: true,
+      placement: placedDevice.placement,
+    });
+    expect(rowActions(row, {})).toEqual([]);
+    expect(rowActions(d({ canTransfer: false }), { onTransfer })).toEqual([]);
+    const a = rowActions(row, { onPlace: vi.fn(), onTransfer, onEdit: vi.fn(), onDelete: vi.fn() });
+    expect(a.map((x) => x.key)).toEqual(["move", "return", "transfer", "edit", "delete"]);
+    const t = a.find((x) => x.key === "transfer")!;
+    expect(t.ariaLabel).toBe("Transfer device INV-7");
+    t.run();
+    expect(onTransfer).toHaveBeenCalledWith(expect.objectContaining({ id: "d1" }));
+  });
+  it("an org-inventory row (owner null, canTransfer false) has no transfer", () => {
+    expect(
+      rowActions(d({ owner: null, canTransfer: false, canPlace: false }), { onTransfer: vi.fn() }),
+    ).toEqual([]);
+  });
+  it("cancelTransfer is first, gated by a transfer pendingHandoff with canCancel", () => {
+    const onCancelTransfer = vi.fn();
+    const row = d({ canPlace: true, pendingHandoff: pending() });
+    const a = rowActions(row, { onPlace: vi.fn(), onCancelTransfer });
+    expect(a.map((x) => x.key)).toEqual(["cancelTransfer", "place"]);
+    expect(a[0].ariaLabel).toBe("Cancel transfer of device INV-7");
+    expect(a[0].danger).toBeUndefined();
+    a[0].run();
+    expect(onCancelTransfer).toHaveBeenCalledWith(expect.objectContaining({ id: "d1" }));
+    const no = (p: object) =>
+      rowActions(d({ canPlace: false, pendingHandoff: pending(p) }), { onCancelTransfer });
+    expect(no({ canCancel: false })).toEqual([]);
+    expect(no({ kind: "return" })).toEqual([]);
+    expect(rowActions(d({ canPlace: false, pendingHandoff: null }), { onCancelTransfer })).toEqual(
+      [],
+    );
+    expect(rowActions(d({ canPlace: false, pendingHandoff: pending() }), {})).toEqual([]);
+  });
+  it("busyId disables every action of that row only", () => {
+    const h = { onPlace: vi.fn(), onCancelTransfer: vi.fn() };
+    const row = d({ pendingHandoff: pending() });
+    expect(rowActions(row, h, "d1").every((x) => x.disabled === true)).toBe(true);
+    expect(rowActions(row, h, "d1").length).toBe(2);
+    expect(rowActions(row, h, "other").some((x) => x.disabled)).toBe(false);
+    expect(rowActions(row, h).some((x) => x.disabled)).toBe(false);
+  });
+});

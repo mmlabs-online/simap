@@ -7,7 +7,7 @@ import { CLIP } from "../clip";
 import { devicesCopy } from "../copy/devices";
 import { hasAnyAction, type DeviceRowHandlers } from "./device-actions";
 import { DeviceRowActions } from "./DeviceRowActions";
-import { detailsText, expiryText, placementText } from "./devices-state";
+import { detailsText, expiryText, pendingText, placementText } from "./devices-state";
 
 const CELL = "px-3 py-2 align-top text-sm text-on-surface";
 const HEAD = "px-3 py-2 text-left text-[11px] font-extrabold uppercase text-on-surface-variant";
@@ -32,12 +32,15 @@ function PlacementLabel({ device }: { device: DeviceDto }) {
 
 function OwnerLabel({ device, clamp = "line-clamp-1" }: { device: DeviceDto; clamp?: string }) {
   const h = device.holding;
+  const pending = pendingText(device);
   return (
     <span className="flex flex-col gap-0.5">
       <span className="inline-flex flex-wrap items-center gap-1.5">
         <span>{device.owner?.displayName ?? devicesCopy.orgInventory}</span>
         {device.mine && <Chip label={devicesCopy.you} />}
+        {pending && <Chip label={pending.chip} />}
       </span>
+      {pending?.to && <span className="text-xs text-on-surface-variant">{pending.to}</span>}
       {h && (
         <>
           <span className="text-xs text-on-surface-variant">{expiryText(h)}</span>
@@ -84,9 +87,11 @@ const COLUMNS = [
 export function DeviceTable({
   devices,
   actions = {},
+  busyId = null,
 }: {
   devices: DeviceDto[];
   actions?: DeviceRowHandlers;
+  busyId?: string | null;
 }) {
   const showActions = hasAnyAction(devices, actions);
   return (
@@ -129,7 +134,7 @@ export function DeviceTable({
                   </td>
                   {showActions && (
                     <td className={CELL}>
-                      <DeviceRowActions device={d} handlers={actions} />
+                      <DeviceRowActions device={d} handlers={actions} busyId={busyId} />
                     </td>
                   )}
                 </tr>
@@ -150,7 +155,7 @@ export function DeviceTable({
               <PlacementLabel device={d} />
               <Mac mac={d.mac} />
               <Details device={d} />
-              <DeviceRowActions device={d} handlers={actions} />
+              <DeviceRowActions device={d} handlers={actions} busyId={busyId} />
             </Card>
           </li>
         ))}

@@ -20,6 +20,8 @@ export type DevicesViewProps = {
   actions?: DeviceRowHandlers;
   onNew?: () => void;
   headingRef?: React.Ref<HTMLHeadingElement>;
+  busyId?: string | null;
+  notice?: { tone: "status" | "error"; text: string } | null;
 };
 
 /** The Devices page body. Pure: data and handlers come from props. */
@@ -34,6 +36,8 @@ export function DevicesView({
   actions,
   onNew,
   headingRef,
+  busyId,
+  notice,
 }: DevicesViewProps) {
   return (
     <div className="p-4 lg:p-6 flex flex-col gap-4">
@@ -50,6 +54,19 @@ export function DevicesView({
             {devicesCopy.newDevice}
           </Button>
         )}
+      </div>
+
+      <div aria-live="polite">
+        {notice &&
+          (notice.tone === "error" ? (
+            <p role="alert" className="text-sm font-semibold text-error">
+              {notice.text}
+            </p>
+          ) : (
+            <p role="status" className="text-sm font-semibold text-on-surface">
+              {notice.text}
+            </p>
+          ))}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -103,7 +120,7 @@ export function DevicesView({
       )}
 
       {status === "ready" && devices.length > 0 && (
-        <DeviceTable devices={devices} actions={actions} />
+        <DeviceTable devices={devices} actions={actions} busyId={busyId} />
       )}
     </div>
   );
