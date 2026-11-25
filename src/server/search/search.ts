@@ -31,8 +31,8 @@ type DeviceRow = {
   name: string;
   inventory_number: string;
   mac: string | null;
-  owner_id: string;
-  owner_name: string;
+  owner_id: string | null;
+  owner_name: string | null;
   role: "primary" | "secondary";
   seat_id: string | null;
   seat_code: string | null;
@@ -116,7 +116,7 @@ const devices = (c: Query, scope: OrgScope, f: SearchFilter) => {
     select: `select d.id, d.name, d.inventory_number, d.mac, d.owner_id, m.display_name as owner_name,
         d.role, d.seat_id, s.code as seat_code, s.room_id, r.code as room_code, lower(d.name) as sort_key
       from devices d
-        join members m on m.org_id = d.org_id and m.id = d.owner_id
+        left join members m on m.org_id = d.org_id and m.id = d.owner_id
         left join seats s on s.org_id = d.org_id and s.id = d.seat_id
         left join rooms r on r.org_id = s.org_id and r.id = s.room_id
       where d.org_id = $1`,
@@ -127,6 +127,9 @@ const devices = (c: Query, scope: OrgScope, f: SearchFilter) => {
         like("d.name", p),
         like("d.inventory_number", p),
         like("d.mac", p),
+        like("d.serial", p),
+        like("d.manufacturer", p),
+        like("d.brand", p),
         like("m.display_name", p),
       ];
       if (mac !== null) alts.push(`replace(d.mac, ':', '') like ${bind(`%${mac}%`)}`);
@@ -137,7 +140,7 @@ const devices = (c: Query, scope: OrgScope, f: SearchFilter) => {
       name: r.name,
       inventoryNumber: r.inventory_number,
       mac: r.mac,
-      owner: { id: r.owner_id, displayName: r.owner_name },
+      owner: r.owner_id === null ? null : { id: r.owner_id, displayName: r.owner_name! },
       placement: r.seat_id
         ? {
             seatId: r.seat_id,

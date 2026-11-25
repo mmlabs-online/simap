@@ -116,6 +116,19 @@ describe("SearchView", () => {
     expect(bare).toContain(copy.inInventory);
   });
 
+  it("unowned hit shows Org inventory", () => {
+    const html = render({
+      state: ready({
+        devices: {
+          ...INITIAL_SEARCH.devices,
+          items: [{ ...device, owner: null, placement: null }],
+        },
+      }),
+    });
+    expect(html).toContain("Org inventory");
+    expect(html).not.toContain("Nguyễn Văn An</span><span");
+  });
+
   it("member row links to /members; employee code when present; deactivated chip only for status deactivated", () => {
     const html = render();
     expect(html).toContain('href="/members"');

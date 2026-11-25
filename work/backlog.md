@@ -65,9 +65,17 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-035 | Draw a seat's devices on its desk and keep other items off desks | MERGED | P1 | M | ui, api, security | SIM-015.8, SIM-013 | plan-approval | 0 | 2026-11-24 |
 | SIM-036.1 | Google Drive image storage client (tudocuatui pattern) | MERGED | P2 | M | architecture, security | — | plan-approval | 0 | 2026-11-24 |
 | SIM-036.2 | Device type catalog: schema and API | MERGED | P2 | M | db, api, security | SIM-035, SIM-036.1 | plan-approval | 0 | 2026-11-24 |
-| SIM-036.5 | Device type image upload, remove and serve | IN_PROGRESS | P2 | M | api, security | SIM-036.2, SIM-036.1 | plan-approval | 0 | 2026-11-25 |
-| SIM-036.3 | Device types admin page | BACKLOG | P2 | M | ui, ux | SIM-036.2, SIM-036.5 | none | 0 | 2026-11-24 |
-| SIM-036.4 | Draw catalog device images and slots on the map | BACKLOG | P2 | S | ui | SIM-036.2, SIM-036.5 | none | 0 | 2026-11-24 |
+| SIM-036.5 | Device type image upload, remove and serve | MERGED | P2 | M | api, security | SIM-036.2, SIM-036.1 | plan-approval | 1 | 2026-11-25 |
+| SIM-036.3 | Device types admin page | MERGED | P2 | M | ui, ux | SIM-036.2, SIM-036.5 | none | 0 | 2026-11-25 |
+| SIM-036.6 | Device type images in the admin page | MERGED | P2 | M | ui, ux | SIM-036.3 | none | 0 | 2026-11-25 |
+| SIM-036.4 | Draw catalog device images and slots on the map | DONE | P2 | S | ui | SIM-036.2, SIM-036.5 | none | 0 | 2026-11-25 |
+| SIM-037.1 | Device lifecycle schema and unowned devices | MERGED | P1 | M | db, api, security | — | plan-approval | 1 | 2026-11-25 |
+| SIM-037.2 | Assign from org inventory and new device fields | MERGED | P1 | M | api, ui | SIM-037.1 | plan-approval | 0 | 2026-11-25 |
+| SIM-037.7 | Devices UI: assign dialog, note/expiry edit and new device fields | BLOCKED | P1 | M | ui, ux | SIM-037.2 | plan-approval | 0 | 2026-11-25 |
+| SIM-037.3 | Transfer a device with recipient confirmation | BACKLOG | P1 | M | api, ui, security | SIM-037.2 | plan-approval | 0 | 2026-11-25 |
+| SIM-037.4 | Return a device to the org inventory with Admin confirmation | BACKLOG | P1 | M | api, ui, security | SIM-037.3 | plan-approval | 0 | 2026-11-25 |
+| SIM-037.5 | Overdue badge, reminder and extension request | BACKLOG | P2 | S | api, ui | SIM-037.2, SIM-037.3 | none | 0 | 2026-11-25 |
+| SIM-037.6 | Device detail page with history | BACKLOG | P2 | M | ui, api, ux | SIM-037.4, SIM-037.5 | none | 0 | 2026-11-25 |
 | SIM-014 | Seat requests: state machine and write API | MERGED | P1 | M | api | SIM-012 | plan-approval | 1 | 2026-11-24 |
 | SIM-014.1 | Requests read API and decided badge | MERGED | P1 | S | api | SIM-014 | plan-approval | 0 | 2026-11-24 |
 | SIM-014.2 | Approvals page UI | MERGED | P1 | M | ui, ux | SIM-014.1 | plan-approval | 0 | 2026-11-24 |
@@ -83,7 +91,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-017.3 | Search page UI | MERGED | P2 | M | ui | SIM-017.2 | none | 0 | 2026-11-24 |
 | SIM-018 | CSV export | MERGED | P2 | S | api, ui | SIM-017 | none | 0 | 2026-11-24 |
 | SIM-027 | Security headers, CSP and apiFetch hardening before go-live | MERGED | P1 | M | security, architecture | SIM-006.2 | plan-approval | 0 | 2026-11-20 |
+| SIM-038 | Sync the deploy-simap draft with the deployment repo (Drive secrets) | BACKLOG | P2 | XS | security | — | plan-approval | 0 | 2026-11-25 |
 | SIM-021 | Go-live checklist and first production deploy | BACKLOG | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | none | 0 | 2026-11-20 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
 
-D47 is lifted for the room map tickets (D58). SIM-033 waits for Ming item M-10.
+D47 is lifted for the room map tickets (D58). SIM-033 needs re-scoping to D64 (per-item art chosen by Admins) before it runs.

@@ -61,7 +61,7 @@ refused. Role keys registered in org-admin-api (D14):
 |---|---|---|---|
 | Admin | `simap:admin` | Super Admin, admin portal | Everything a Manager can do, plus create/edit/delete rooms and seats and edit layouts. Manages any device in the org. |
 | Manager | `simap:manager` | Invitation (admin) or admin portal | Approves or rejects seat requests. Assigns and removes occupants directly. Manages members, groups/projects and seat tags. Sees the Approvals page. Places, moves and returns any device of the org (D19). |
-| User | `simap:user` | Invitation (admin, manager) or admin portal | Views all rooms, seats, members and devices of the org. Requests an empty seat. Manages own devices. |
+| User | `simap:user` | Invitation (admin, manager) or admin portal | Views all rooms, seats, members and devices of the org. Requests an empty seat. Places, edits, transfers and returns own devices (D63). |
 
 - Roles are per org; there are no per-room roles (seatMGT decision, kept).
 - A token without `org`, or with no simap role in `org_roles`, cannot read or write org data (403). Such a token is
@@ -125,7 +125,8 @@ needs to show.
 | Room | org, code (unique, e.g. `C302`), name, description, floor | Layout fixtures belong to the room (LAY-03). |
 | Seat | org, code (unique, `<room code>-NN`), sequence no. (unique within the room), room, occupant (member, optional), group tag, project tag, layout geometry (x, y, rotation, width, height) | Status is **not stored** (invariant 6). |
 | Member | org, Identity `sub` (unique in the org, required), email (from the token), display name, employee code (unique, optional), group (optional) | Profile of one org account (D12). |
-| Device | org, name, type, inventory number (unique), MAC (unique, optional), owner (member, required), seat (optional; empty = in inventory), role at the seat (primary / secondary) | |
+| Device | org, name, type, inventory number (unique), MAC (unique, optional), serial number (unique, optional), manufacturer, brand, owner (member, optional; empty = org inventory, D63), expiry date and note of the current holding, seat (optional; empty = not placed), role at the seat (primary / secondary) | Owner changes only through assign, transfer and return (DEV-07 to DEV-09). |
+| DeviceHandoff | org, device, kind (transfer / return / extension), from member, to member (transfer), requested by, note, new expiry (extension), status (pending / confirmed / declined / cancelled), decided by, decided at | At most one pending per device (DEV-08 to DEV-10). Device history (DEV-11) is read from these rows and the audit log. |
 | SeatRequest | org, seat, subject member (who will sit there), created by, status (pending / approved / rejected / cancelled), note, decided by, decided at | |
 | DeviceType | org, name (unique, case- and space-insensitive), desk slot, optional image | Org catalog (D61); devices match it by name, no reference. |
 | Group | org, name (unique), colour | Label only. |
@@ -141,7 +142,7 @@ too.
 2. One person may occupy several seats.
 3. A seat has at most one primary device, and it must be owned by the seat's current occupant.
 4. A seat may hold any number of secondary ("borrowed") devices, owned by anyone.
-5. A device may be unassigned, in inventory.
+5. A device may be unassigned, in inventory. A device with no owner (org inventory, D63) is never at a seat.
 6. Seat status (empty / occupied) is *derived* from the occupant and never stored.
 7. Seat codes are generated from room code + port sequence (e.g. `C302-01`) and never typed in by hand.
 8. When an occupant leaves a seat, the primary device on that seat becomes secondary.
@@ -257,6 +258,11 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 
 ### DEV — Device
 
+Device lifecycle (D63, Ming 2026-11-25; replaces seatMGT's fixed owner). Two places a device can be when it is not
+at a seat: the **org inventory** (no owner; Admins hold it) and a **member's inventory** (owned by that member, not
+placed). "Return to inventory" from a seat (DEV-05, REG-03) moves a device into its owner's inventory; only DEV-09
+gives it back to the org inventory.
+
 **DEV-01 Manage devices**
 - [ ] A device type is picked from the org's device type catalog or typed freely (D37, D61). Each org starts with PC,
   Laptop, Monitor, IP phone and Other.
@@ -264,34 +270,78 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
   space-insensitive, at most 60 characters, at most 100 types; an optional 24 × 24 px PNG image, SIM-036.5). A device's
   type matches a catalog type by name; renaming or deleting a type never changes devices, which then draw as the
   placeholder until their type matches again.
-- [ ] A device has type, inventory number (unique), MAC (unique if set; format checked), name and owner (exactly one
-  member).
-- [ ] A User or Manager creates devices only for their own member and edits or deletes only their own devices. An
-  Admin can do this for any member. Editing or deleting a device: its owner or an Admin only (D19).
-- [ ] New devices start in inventory. Editing a device cannot change its owner (seatMGT).
-- [ ] Deleting a device that is placed at a seat is blocked: a warning says it must go back to inventory first and
-  offers "Move to inventory"; delete is allowed once it is in inventory (D31).
+- [ ] A device has name, type, inventory number (unique), and optional MAC (unique if set; format checked), serial
+  number (unique if set, trimmed, at most 100 characters), manufacturer and brand (free text, at most 100 characters
+  each). Owner is optional: empty means the device is in the org inventory.
+- [ ] Only an Admin creates devices (OQ-41); a new device has no owner and is in the org inventory. An Admin edits any
+  device's fields; the owner edits their own device's fields. Editing never changes the owner: only DEV-07 to DEV-09
+  do.
+- [ ] Only an Admin deletes a device, and only while it is in the org inventory with no pending handoff. Deleting a
+  device that is placed at a seat is blocked: a warning says it must go back to inventory first and offers "Move to
+  inventory" (D31).
 
-**DEV-02 Placement status**
-- [ ] Every device list and device detail shows "at seat X" or "in inventory". The Devices page filters by
-  all / placed / inventory.
+**DEV-02 Placement and custody status**
+- [ ] Every device list and device detail shows where the device is ("at seat X", "in <member>'s inventory" or "in org
+  inventory") and any pending transfer or return. The Devices page filters by all / placed / not placed / org
+  inventory / overdue.
 
 **DEV-03 Role at seat**
+- [ ] A device in the org inventory (no owner) is never placed at a seat; the app and the DB refuse it.
 - [ ] Placing a device as primary is refused unless the seat has an occupant, that occupant owns the device, and the
   seat has no primary yet (invariant 3). The check runs in the app and again in the DB.
-- [ ] Secondary placement has no ownership check.
+- [ ] Secondary placement has no ownership check beyond the device having an owner.
 
 **DEV-04 Lend a device to another seat**
 - [ ] The device's owner places it as secondary on any seat. A borrowed device is never primary.
-- [ ] A Manager+ may do this for any device of the org (D19).
+- [ ] A Manager+ may do this for any owned device of the org (D19).
 
 **DEV-05 Move device**
-- [ ] A device moves seat to seat (it takes the chosen role; the DEV-03 rules apply) or back to inventory.
-- [ ] The owner moves their own devices; a Manager+ moves any device of the org (D19).
+- [ ] A device moves seat to seat (it takes the chosen role; the DEV-03 rules apply) or back to its owner's inventory.
+- [ ] The owner moves their own devices; a Manager+ moves any owned device of the org (D19).
 
 **DEV-06 Auto-demote when the occupant leaves**
 - [ ] Every path that removes or replaces an occupant turns the seat's primary device into secondary, in the same
   transaction. Those paths are unassign, reassign, approving a request and a forced room delete.
+
+**DEV-07 Assign from the org inventory**
+- [ ] An Admin or Manager assigns a device in the org inventory to an active member, with an optional note (at most
+  500 characters) and an optional expiry date (empty = no expiry; a calendar date, not in the past). The device then
+  belongs to that member and is in their inventory, not placed; the member places it themselves. No confirmation by
+  the member is needed. An owned device cannot be assigned (it must be transferred or returned first).
+- [ ] An Admin or Manager edits the current assignment's note and expiry date (this is also how an extension is
+  granted, DEV-10).
+
+**DEV-08 Transfer to another member**
+- [ ] Any owner (every role) starts a transfer of their own device to another active member of the org, with an
+  optional note. A Manager+ may start one for any owned device. A device has at most one pending handoff (transfer,
+  return or extension).
+- [ ] Until the recipient confirms, nothing changes: the device stays with the sender and keeps its seat. The sender
+  (or a Manager+) can cancel; the recipient can decline.
+- [ ] When the recipient confirms receipt, in one transaction the device leaves its seat (if placed) and lands in the
+  recipient's inventory, not placed; the recipient places it themselves. The expiry date carries over (OQ-43).
+- [ ] The recipient sees pending transfers to them (badge in the nav, list on the Devices page).
+
+**DEV-09 Return to the org inventory**
+- [ ] The owner (or a Manager+) starts a return of an owned device to the org inventory, with an optional note.
+- [ ] Until an Admin confirms the device was received, nothing changes; the owner (or a Manager+) can cancel.
+- [ ] When an Admin confirms, in one transaction the device leaves its seat (if placed), loses its owner and is in the
+  org inventory. Admins see pending returns (badge in the nav, list on the Devices page).
+- [ ] An Admin can also take a device back directly, without a request (e.g. the owner was deactivated or removed,
+  OQ-44); the history records it as an Admin return.
+
+**DEV-10 Overdue and reminder**
+- [ ] A device whose expiry date has passed (UTC+7 calendar day, D35) shows **Overdue** wherever it is listed.
+  Overdue is computed when read, never stored.
+- [ ] Its owner sees an in-app reminder (nav badge and a banner on the Devices page) to ask for an extension or
+  return it; no email in v1. The owner can request an extension (new date, optional note); an Admin or Manager
+  approves (sets the new expiry) or rejects it (OQ-42).
+
+**DEV-11 Device detail and history**
+- [ ] Every member can open a device detail page: all fields, where it is, the current holder (since, note, expiry,
+  overdue), any pending handoff, and its history.
+- [ ] The history lists, newest first, every create, assign, transfer (started, cancelled, declined, confirmed),
+  return (started, cancelled, confirmed, Admin return), extension and expiry change: who did it, from and to member,
+  when, note, expiry date, and who confirmed. History is kept when members are deactivated or removed.
 
 ### MEM — Member
 
@@ -580,12 +630,26 @@ Owner: Ming for all of them. Each blocks the tickets named after it. IDs are sta
 - **OQ-15** — D26. **OQ-16** — D27. **OQ-17** — D28. **OQ-18** — D29. **OQ-19** — D30. **OQ-21** — D31.
   **OQ-26** — D32. **OQ-29** — D33. **OQ-30** — D34. **OQ-8** — D25.
 
-All v1 open questions are answered as of 2026-11-20. New questions get the next free number (OQ-40).
+**Device lifecycle (D63, 2026-11-25).** Each has a default the tickets follow until Ming answers (reversible).
+- **OQ-41 Who creates devices.** Ming: "khi admin thêm device". Default: Admin only; Users and Managers no longer
+  create devices (supersedes D19 for create). *Blocks: SIM-037.1.*
+- **OQ-42 Extension.** Default: the owner requests a new date, an Admin or Manager approves or rejects; an Admin or
+  Manager can also edit the expiry directly. *Blocks: SIM-037.5.*
+- **OQ-43 Expiry on transfer.** Default: the expiry date carries over to the recipient; an Admin or Manager can change
+  it. *Blocks: SIM-037.3.*
+- **OQ-44 Owner deactivated or removed.** Default: the device stays assigned (deactivation already returns placed
+  devices to the owner's inventory, D34), pending handoffs to or from that member are cancelled, and an Admin can take
+  the device back directly (DEV-09). *Blocks: SIM-037.4.*
+- **OQ-45 Existing devices.** simap is not live, so only dev/test data exists. Default: the migration keeps each
+  device's owner with no expiry; no backfill. *Blocks: SIM-037.1.*
+
+New questions get the next free number (OQ-46).
 
 ## 12. Change log
 
 | Date | Change |
 |---|---|
+| 2026-11-25 | D63: device lifecycle. Devices start unowned in the org inventory (Admin creates); Admin/Manager assigns with note and optional expiry; owners transfer to a member who confirms (device lands unplaced in their inventory); owners return to the org inventory and an Admin confirms; unowned devices are never placed; overdue, in-app reminder and extension request; optional serial, manufacturer, brand; device detail page with history (DEV-01 to DEV-03, DEV-07 to DEV-11; OQ-41 to OQ-45). |
 | 2026-11-24 | SIM-036.2 (D61): per-org device type catalog (name, desk slot, optional image) replaces the fixed suggested list; devices match a type by name; unknown types draw as a placeholder. |
 | 2026-11-20 | First draft from Ming's `/idea` brief: seatMGT rebuild on Next.js + mmlabs Identity + shared Postgres, deployed like tudocuatui. |
 | 2026-11-20 | v0.8 (D45–D51): asset rules; style 2 + UI A; seats managed without the map, logic/API first; 32 px tiles; per-room map in v1, floor map v2; name tags on hover/focus; 32 px layered avatars. |

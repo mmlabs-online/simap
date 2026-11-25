@@ -76,13 +76,23 @@ describe("exportRows", () => {
 
     const d = await exportRows(
       fake([
-        { name: "L", seat_id: null, role: "secondary" },
+        {
+          name: "L",
+          mac: "aa:bb:cc:dd:ee:ff",
+          serial: "SN-1",
+          manufacturer: "Dell",
+          brand: null,
+          seat_id: null,
+          role: "secondary",
+        },
         { name: "P", seat_id: "s1", seat_code: "A1-01", room_code: "A1", role: "primary" },
       ]).pool,
       scope,
       "devices",
     );
-    expect(d.rows.map((r) => r[7])).toEqual(["inventory", "placed"]);
+    expect(d.columns.slice(3, 7)).toEqual(["MAC", "Serial", "Manufacturer", "Brand"]);
+    expect(d.rows[0]!.slice(3, 7)).toEqual(["aa:bb:cc:dd:ee:ff", "SN-1", "Dell", null]);
+    expect(d.rows.map((r) => r[10])).toEqual(["inventory", "placed"]);
     expect(d.rows[1]).toHaveLength(d.columns.length);
   });
 

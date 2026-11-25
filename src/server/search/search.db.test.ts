@@ -120,6 +120,34 @@ describe("search (db)", () => {
     expect(Object.keys((await find(o, q("emp-9"))).members!.items[0]!)).not.toContain("email");
   });
 
+  it("an unowned device is found by name and inventory number, owner null", async () => {
+    const o = newOrg();
+    await member(o.orgId, "Lê Bình");
+    const dev = await addDevice(pool, o.orgId, null, null, "secondary");
+    await run("update devices set name = 'Bộ sạc', inventory_number = 'INV-9001' where id = $1", [
+      dev,
+    ]);
+    for (const s of ["bo sac", "inv-9001"]) {
+      const r = await find(o, q(s));
+      expect(r.devices!.items.map((i) => i.id)).toEqual([dev]);
+      expect(r.devices!.items[0]!.owner).toBeNull();
+    }
+  });
+
+  it("finds a device by serial, manufacturer and brand (case and diacritics folded)", async () => {
+    const o = newOrg();
+    const dev = await addDevice(pool, o.orgId, null, null, "secondary");
+    await run(
+      "update devices set serial = 'SN-0042', manufacturer = 'Nguyễn Corp', brand = 'Đặng' where id = $1",
+      [dev],
+    );
+    for (const s of ["sn-00", "nguyen", "dang"]) {
+      const r = await find(o, q(s));
+      expect(r.devices!.items.map((i) => i.id)).toEqual([dev]);
+    }
+    expect((await find(o, q("sn-9999"))).devices!.items).toEqual([]);
+  });
+
   it("literal % and _ match only themselves", async () => {
     const o = newOrg();
     const a = await member(o.orgId, "Trần 50%_x");

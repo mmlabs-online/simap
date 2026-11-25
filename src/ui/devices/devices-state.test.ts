@@ -32,20 +32,22 @@ describe("devices-state helpers", () => {
     expect(emptyText("all")).toBe(shellCopy.pages.devices.empty);
     expect(emptyText("placed")).toBe(devicesCopy.empty.placed);
     expect(emptyText("inventory")).toBe(devicesCopy.empty.inventory);
+    expect(emptyText("unowned")).toBe(devicesCopy.empty.unowned);
   });
 
-  it("filterOptions: order all, placed, inventory with copy labels", () => {
+  it("filterOptions: order all, placed, inventory, unowned (Org inventory) with copy labels", () => {
     expect(filterOptions()).toEqual([
       { value: "all", label: "All" },
       { value: "placed", label: "Placed" },
-      { value: "inventory", label: "Inventory" },
+      { value: "inventory", label: "Not placed" },
+      { value: "unowned", label: "Org inventory" },
     ]);
   });
 
   it("listSummary: 0 / 1 / 12 devices with the filter label", () => {
     expect(listSummary(0, "all")).toBe("0 devices · All");
     expect(listSummary(1, "placed")).toBe("1 device · Placed");
-    expect(listSummary(12, "inventory")).toBe("12 devices · Inventory");
+    expect(listSummary(12, "inventory")).toBe("12 devices · Not placed");
   });
 });
 

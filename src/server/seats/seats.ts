@@ -119,9 +119,10 @@ async function seatRows(
        (select coalesce(json_agg(t.j order by t.rn), '[]'::json) from (
           select json_build_object('id', d.id, 'name', d.name, 'type', d.type,
                    'inventoryNumber', d.inventory_number, 'role', d.role,
-                   'owner', json_build_object('id', m.id, 'displayName', m.display_name)) as j,
+                   'owner', case when m.id is null then null
+                            else json_build_object('id', m.id, 'displayName', m.display_name) end) as j,
                  row_number() over (order by (d.role = 'primary') desc, lower(d.name), d.id) as rn
-          from devices d join members m on m.org_id = d.org_id and m.id = d.owner_id
+          from devices d left join members m on m.org_id = d.org_id and m.id = d.owner_id
           where d.org_id = s.org_id and d.seat_id = s.id
           order by rn limit ${deviceLimit}) t) as devices
      from seats s

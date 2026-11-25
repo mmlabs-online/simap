@@ -133,6 +133,7 @@ export async function seedDev(client) {
       ["8", 1, "Laptop A", "INV-1", members[0].id, u("6", 11), "primary"],
       ["8", 2, "Monitor B", "INV-2", members[1].id, u("6", 11), "secondary"],
       ["8", 3, "Máy in C", "INV-3", members[1].id, null, "secondary"],
+      ["8", 4, "Bộ sạc D", "INV-4", null, null, "secondary"], // org inventory (D63): no owner
     ];
     for (const [kind, n, name, inv, owner, seat, role] of devices) {
       await client.query(
