@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T15:31:21Z |
 | PR | — |
 
 ## Goal
@@ -44,7 +44,7 @@ split proposal and Q2-Q4 defaults in `work/tickets/SIM-039.5/plan.md` (§ Split 
 
 ## Notes / answers from Ming
 - 2026-11-25: split from SIM-039.5 by its planner (ticket too large for one cycle).
-- Waiting for Ming: plan approval (P1 gate)
+- 2026-11-25: Plan approved (Ming: "duyệt SIM-039.8"), assumptions A1-A10 as written (A1: decoded image sizes, no fixed reserve).
 
 ## Handoff
 
