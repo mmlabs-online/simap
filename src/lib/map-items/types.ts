@@ -9,6 +9,10 @@ export const MAP_ITEM_LIMITS = {
   sizeMax: 4,
   list: 200,
   bodyBytes: 1024,
+  /** D66 7: custom image, at most 64 KB, 32 px per tile, up to 32 px of upward overhang. */
+  imageBytes: 65536,
+  tilePx: 32,
+  overhangPx: 32,
 } as const;
 
 /** Derived from the library, never stored. "Add items" palette = kind seat|fixture and !hidden. */

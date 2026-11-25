@@ -1,6 +1,7 @@
 import { REGISTRY, isFrameKey } from "@/lib/sprites/registry";
 import type { Direction } from "@/lib/sprites/types";
 import { LIBRARY_ITEMS, type LibraryItem } from "./library";
+import { MAP_ITEM_LIMITS } from "./types";
 
 /** Frame groups a catalog item may wear: the groups of the library items (never avatar, device or state frames). */
 const ALLOWED_GROUPS: ReadonlySet<string> = new Set(LIBRARY_ITEMS.map((i) => i.group));
@@ -29,4 +30,23 @@ export function spriteFits(frameKey: string, dir: Direction, w: number, h: numbe
   const [fw, fh] = frameTiles(frameKey);
   const [iw, ih] = sizeFor(dir, w, h);
   return fw <= iw && fh <= ih;
+}
+
+/**
+ * D66 7: a custom image is 32 px per tile of the item's size for that direction in width, and 32 px per tile up to
+ * 32 px taller (upward overhang) in height. Floors are exactly 32 x 32.
+ */
+export function mapItemImageFits(
+  item: Pick<LibraryItem, "kind">,
+  dir: Direction,
+  w: number,
+  h: number,
+  px: { width: number; height: number },
+): boolean {
+  const { tilePx, overhangPx } = MAP_ITEM_LIMITS;
+  if (item.kind === "floor") return px.width === tilePx && px.height === tilePx;
+  const [tw, th] = sizeFor(dir, w, h);
+  return (
+    px.width === tilePx * tw && px.height >= tilePx * th && px.height <= tilePx * th + overhangPx
+  );
 }

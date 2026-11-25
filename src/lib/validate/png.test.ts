@@ -1,6 +1,6 @@
 import { deflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
-import { IMAGE_LIMITS, validatePng } from "./png";
+import { IMAGE_LIMITS, parsePng, validatePng } from "./png";
 
 const SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
@@ -130,5 +130,37 @@ describe("validatePng", () => {
     ] as const) {
       expect(validatePng(png({ w, h }))).toEqual(bad);
     }
+  });
+});
+
+describe("parsePng", () => {
+  it("returns width and height of a valid PNG (64 x 32)", () => {
+    expect(parsePng(png({ w: 64, h: 32 }))).toEqual({ ok: true, width: 64, height: 32 });
+  });
+
+  it("every structural failure is image_not_png (bad signature, CRC, IHDR not first, no IDAT, acTL, data after IEND)", () => {
+    const good = png();
+    const sigOff = good.slice();
+    sigOff[7] = 0x0b;
+    const cases: Record<string, Uint8Array> = {
+      sigOff,
+      badCrc: png({ extra: [chunk("tEXt", text("a\0b"), { badCrc: true })] }),
+      firstNotIhdr: join(
+        new Uint8Array(SIG),
+        idat(),
+        chunk("IHDR", ihdr(24, 24)),
+        chunk("IEND", new Uint8Array(0)),
+      ),
+      noIdat: png({ noIdat: true }),
+      apng: png({ extra: [chunk("acTL", new Uint8Array(8))] }),
+      trailing: join(good, new Uint8Array([0])),
+    };
+    for (const [name, bytes] of Object.entries(cases)) {
+      expect({ name, r: parsePng(bytes) }).toEqual({ name, r: notPng });
+    }
+  });
+
+  it("does not apply IMAGE_LIMITS (a 128 x 160 PNG is ok)", () => {
+    expect(parsePng(png({ w: 128, h: 160 }))).toEqual({ ok: true, width: 128, height: 160 });
   });
 });

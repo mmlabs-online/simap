@@ -4,52 +4,32 @@ import type { DeviceTypeDto } from "@/lib/device-types/types";
 import { validatePng } from "@/lib/validate/png";
 import { writeAudit } from "@/server/audit/write";
 import { withTx } from "@/server/db/tx";
-import { DriveError } from "@/server/drive/client";
-import { DriveConfigError } from "@/server/drive/config";
-import type { OrgDrive } from "@/server/drive/drive";
+import {
+  IMAGE_DRIVE_ERROR,
+  IMAGE_NOT_FOUND,
+  etagMatches,
+  mapDriveFailure,
+  useDrive,
+  type DriveGetter,
+  type ImageGet,
+  type ImageRefusal,
+  type ImageResult,
+} from "@/server/drive/image-flow";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
 import { COLS, toDto, type Db, type Row } from "./device-types";
 
-/** The drive is read lazily (a getter) so the org-scoped row lookup, and its 404, come before any Drive config. */
-export type DriveGetter = () => OrgDrive | null;
-
-export type ImageRefusal = {
-  ok: false;
-  status: 404 | 409 | 502 | 503;
-  code: "not_found" | "image_changed" | "drive_error" | "images_unavailable";
-};
-export type ImageResult<T> = { ok: true; value: T } | ImageRefusal;
-
-const notFound: ImageRefusal = { ok: false, status: 404, code: "not_found" };
-const unavailable: ImageRefusal = { ok: false, status: 503, code: "images_unavailable" };
-const driveError: ImageRefusal = { ok: false, status: 502, code: "drive_error" };
+export type { DriveGetter, ImageGet, ImageRefusal, ImageResult };
+export { etagMatches };
 
 const log = (entry: Record<string, unknown>) => console.error(JSON.stringify(entry));
 const orphan = (typeId: string) => log({ event: "drive_orphan", typeId });
 
-/**
- * The only path from a Drive failure to a response. The DriveCode is logged and never sent; no Drive failure
- * becomes 401/403 (R7). Anything that is not a Drive or Drive config error is rethrown (500 from the wrapper).
- */
-export function driveFailure(err: unknown, op: string): ImageRefusal {
-  if (err instanceof DriveConfigError) {
-    log({ event: "device_type_image_drive", op, code: "drive_config" });
-    return unavailable;
-  }
-  if (err instanceof DriveError) {
-    log({ event: "device_type_image_drive", op, code: err.code });
-    return err.code === "drive_rate_limited" || err.code === "drive_unavailable"
-      ? unavailable
-      : driveError;
-  }
-  throw err;
-}
+/** The device-type event name for `mapDriveFailure`; the log shape is unchanged. */
+export const driveFailure = (err: unknown, op: string): ImageRefusal =>
+  mapDriveFailure(err, op, "device_type_image_drive");
 
-function useDrive(drive: DriveGetter): OrgDrive {
-  const d = drive();
-  if (!d) throw new DriveConfigError("drive is off");
-  return d;
-}
+const notFound = IMAGE_NOT_FOUND;
+const driveError = IMAGE_DRIVE_ERROR;
 
 /** Best-effort delete of a Drive file after the DB decided. Never throws; a failure leaves an orphan (logged). */
 export async function discardImageFile(
@@ -63,15 +43,6 @@ export async function discardImageFile(
   } catch {
     orphan(typeId);
   }
-}
-
-/** True when an If-None-Match header lists `etag` (weak prefix ignored) or `*`. */
-export function etagMatches(header: string | null, etag: string): boolean {
-  if (header === null) return false;
-  return header.split(",").some((t) => {
-    const v = t.trim().replace(/^W\//, "");
-    return v === "*" || v === etag;
-  });
 }
 
 const selectFile = (db: { query: Db["query"] }, scope: OrgScope, id: string) =>
@@ -190,10 +161,6 @@ export async function removeDeviceTypeImage(
   await discardImageFile(drive, out.old, id);
   return { ok: true, value: null };
 }
-
-export type ImageGet =
-  | { kind: "not_modified"; etag: string }
-  | { kind: "bytes"; bytes: Uint8Array; etag: string };
 
 /** Any member loads the image. A matching If-None-Match answers before any Drive call. Never writes. */
 export async function getDeviceTypeImage(
