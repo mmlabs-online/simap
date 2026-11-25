@@ -3,15 +3,15 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import type { HandoffBox, HandoffDto } from "@/lib/devices/types";
 import type { DevicesApi } from "./devices-api";
-import { INITIAL_INCOMING, incomingReducer } from "./incoming-transfer";
+import { INITIAL_INCOMING, fetcherFor, incomingReducer } from "./incoming-transfer";
 
 /**
  * Loads one handoff list once. Stale answers are dropped. With `enabled` false nothing is fetched: the
- * state is `ready` with no items and `refresh` resolves to `[]` (a non-Admin never asks for `box=returns`).
+ * state is `ready` with no items and `refresh` resolves to `[]` (a non-Admin never asks for `box=returns`, a non-Manager never for `box=extensions`).
  */
 export function useHandoffList(api: DevicesApi, box: HandoffBox, enabled: boolean) {
   const [state, dispatch] = useReducer(incomingReducer, INITIAL_INCOMING);
-  const fetchList = box === "returns" ? api.pendingReturns : api.incomingHandoffs;
+  const fetchList = fetcherFor(api, box);
   const counter = useRef(0);
   const mounted = useRef(true);
 

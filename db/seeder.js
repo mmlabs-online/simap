@@ -149,6 +149,14 @@ export async function seedDev(client) {
        on conflict do nothing`,
       [u("8", 5), org, `INV-5-${o.key}`, members[0].id],
     );
+    // A pending extension request for it, so the Manager list has a row to show.
+    await client.query(
+      `insert into device_handoffs (id, org_id, device_id, kind, from_member_id, requested_by_id, note, new_expires_on)
+       values ($1, $2, $3, 'extension', $4, $4, 'Need it for the project until the end of the month',
+         (now() at time zone 'Asia/Ho_Chi_Minh')::date + 30)
+       on conflict do nothing`,
+      [u("c", 1), org, u("8", 5), members[0].id],
+    );
     await client.query(
       `insert into seat_requests (id, org_id, seat_id, subject_id, created_by_id)
        values ($1, $2, $3, $4, $4) on conflict do nothing`,
