@@ -32,6 +32,8 @@ const base: DeviceDto = {
   canAssign: false,
   canEditHolding: false,
   canTransfer: false,
+  canReturn: false,
+  canTakeBack: false,
   pendingHandoff: null,
 };
 const secondary: DeviceDto = {

@@ -2,10 +2,13 @@ import "server-only";
 import type { Tier } from "@/lib/auth/tier";
 import {
   decideHandoffAction,
+  decideReturnStart,
   decideTransferStart,
   handoffFlags,
 } from "@/lib/devices/handoff-rules";
 import type {
+  DeviceDto,
+  HandoffBox,
   HandoffCountDto,
   HandoffDto,
   HandoffKind,
@@ -15,6 +18,7 @@ import type {
 } from "@/lib/devices/types";
 import { writeAudit } from "@/server/audit/write";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
+import { reload } from "./devices";
 import {
   Abort,
   actorMemberId,
@@ -106,6 +110,7 @@ async function handoffRows(
     createdAt: r.created_at,
     decidedAt: r.decided_at,
     ...handoffFlags({
+      kind: r.kind,
       tier,
       actorMemberId: me,
       fromId: r.from_id,
@@ -133,7 +138,7 @@ export function startTransfer(
   actorSub: string,
   tier: Tier,
   deviceId: string,
-  v: HandoffStartValue,
+  v: Extract<HandoffStartValue, { kind: "transfer" }>,
 ): Promise<Result<HandoffDto>> {
   return inTx(db, async (c) => {
     const me = await actorMemberId(c, scope, actorSub);
@@ -191,10 +196,70 @@ export function startTransfer(
   });
 }
 
-type Lite = { status: HandoffStatus; from_member_id: string; to_member_id: string | null };
+/** DEV-09: the owner, or a Manager+, starts a return. Lock order device, then handoff, as startTransfer. */
+export function startReturn(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  tier: Tier,
+  deviceId: string,
+  v: Extract<HandoffStartValue, { kind: "return" }>,
+): Promise<Result<HandoffDto>> {
+  return inTx(db, async (c) => {
+    const me = await actorMemberId(c, scope, actorSub);
+    const { rows: dev } = await orgQuery<{ owner_id: string | null; inventory_number: string }>(
+      c,
+      scope,
+      "select owner_id, inventory_number from devices where org_id = $1 and id = $2 for update",
+      [deviceId],
+    );
+    if (!dev[0]) throw new Abort(notFound);
+    const { rows: pending } = await orgQuery(
+      c,
+      scope,
+      "select 1 from device_handoffs where org_id = $1 and device_id = $2 and status = 'pending'",
+      [deviceId],
+    );
+    const decision = decideReturnStart({
+      tier,
+      actorMemberId: me,
+      ownerId: dev[0].owner_id,
+      pending: pending.length > 0,
+    });
+    if (decision.kind === "refuse") throw refuse(decision.status, decision.code);
+    const { rows: ins } = await orgQuery<{ id: string }>(
+      c,
+      scope,
+      `insert into device_handoffs (org_id, device_id, kind, from_member_id, to_member_id, requested_by_id, note)
+       values ($1, $2, 'return', $3, null, $4, $5) returning id`,
+      [deviceId, dev[0].owner_id, me, v.note],
+    );
+    const id = ins[0]!.id;
+    await writeAudit(c, scope, {
+      actorSub,
+      action: "device.return_start",
+      entity: "device",
+      entityId: deviceId,
+      meta: {
+        handoffId: id,
+        fromMemberId: dev[0].owner_id,
+        inventoryNumber: dev[0].inventory_number,
+        note: v.note,
+      },
+    });
+    return loadOne(c, scope, tier, me, id);
+  });
+}
+
+type Lite = {
+  kind: HandoffKind;
+  status: HandoffStatus;
+  from_member_id: string;
+  to_member_id: string | null;
+};
 
 const LITE =
-  "select status, from_member_id, to_member_id from device_handoffs where org_id = $1 and id = $2";
+  "select kind, status, from_member_id, to_member_id from device_handoffs where org_id = $1 and id = $2";
 
 /** Cancel (sender or Manager+) or decline (recipient). Only the handoff row is locked. */
 function closeHandoff(action: "cancel" | "decline") {
@@ -209,6 +274,7 @@ function closeHandoff(action: "cancel" | "decline") {
       const me = await actorMemberId(c, scope, actorSub);
       const decide = (h: Lite) =>
         decideHandoffAction({
+          kind: h.kind,
           action,
           tier,
           actorMemberId: me,
@@ -234,7 +300,7 @@ function closeHandoff(action: "cancel" | "decline") {
       const dto = await loadOne(c, scope, tier, me, id);
       await writeAudit(c, scope, {
         actorSub,
-        action: `device.transfer_${action}`,
+        action: `device.${h.kind}_${action}`,
         entity: "device",
         entityId: dto.device.id,
         meta: {
@@ -252,37 +318,105 @@ function closeHandoff(action: "cancel" | "decline") {
 export const cancelHandoff = closeHandoff("cancel");
 export const declineHandoff = closeHandoff("decline");
 
+type PlacementLock = {
+  seat0: string | null;
+  seatCode: string | null;
+  d: {
+    owner_id: string | null;
+    seat_id: string | null;
+    role: string;
+    expires_on: string | null;
+    inventory_number: string;
+  };
+};
+
 /**
- * DEV-08: the recipient confirms; the device leaves its seat and lands in their inventory. Lock order
- * member (share) -> room (share) -> seat -> device -> handoff, as deactivateMember and placeDevice.
+ * Lock a device's placement: unlocked seat read, then room (share), seat and device (update). With the callers'
+ * earlier locks the order is member -> room -> seat -> device -> handoff, as deactivateMember and placeDevice.
  */
-function confirmOnce(
+async function lockPlacement(c: Query, scope: OrgScope, deviceId: string): Promise<PlacementLock> {
+  const { rows: dev0 } = await orgQuery<{ seat_id: string | null }>(
+    c,
+    scope,
+    "select seat_id from devices where org_id = $1 and id = $2",
+    [deviceId],
+  );
+  if (!dev0[0]) throw new Abort(notFound);
+  let seatCode: string | null = null;
+  if (dev0[0].seat_id !== null) {
+    const { rows: seat } = await orgQuery<{ room_id: string }>(
+      c,
+      scope,
+      "select room_id from seats where org_id = $1 and id = $2",
+      [dev0[0].seat_id],
+    );
+    if (seat[0]) {
+      await orgQuery(c, scope, "select id from rooms where org_id = $1 and id = $2 for share", [
+        seat[0].room_id,
+      ]);
+      const { rows: lockedSeat } = await orgQuery<{ code: string }>(
+        c,
+        scope,
+        "select code from seats where org_id = $1 and id = $2 for update",
+        [dev0[0].seat_id],
+      );
+      seatCode = lockedSeat[0]?.code ?? null;
+    }
+  }
+  const { rows: dev } = await orgQuery<PlacementLock["d"]>(
+    c,
+    scope,
+    `select owner_id, seat_id, role, to_char(holding_expires_on, 'YYYY-MM-DD') as expires_on,
+       inventory_number
+     from devices where org_id = $1 and id = $2 for update`,
+    [deviceId],
+  );
+  if (!dev[0]) throw new Abort(notFound);
+  return { seat0: dev0[0].seat_id, seatCode, d: dev[0] };
+}
+
+/** One UPDATE: the unowned checks are immediate, so owner, seat, note and expiry clear together. */
+const clearDevice = (c: Query, scope: OrgScope, deviceId: string) =>
+  orgQuery(
+    c,
+    scope,
+    `update devices set owner_id = null, seat_id = null, role = 'secondary', holding_note = null,
+       holding_expires_on = null, updated_at = now()
+     where org_id = $1 and id = $2`,
+    [deviceId],
+  );
+
+const placementMeta = (p: PlacementLock) => ({
+  inventoryNumber: p.d.inventory_number,
+  expiresOn: p.d.expires_on,
+  fromSeatId: p.d.seat_id,
+  fromCode: p.seatCode,
+  demoted: p.d.seat_id !== null && p.d.role === "primary",
+});
+
+const setConfirmed = (c: Query, scope: OrgScope, id: string, me: string | null) =>
+  orgQuery(
+    c,
+    scope,
+    `update device_handoffs set status = 'confirmed', decided_by_id = $3, decided_at = now(),
+       updated_at = now()
+     where org_id = $1 and id = $2`,
+    [id, me],
+  );
+
+type LiteDevice = Lite & { device_id: string };
+
+/** DEV-08: the recipient confirms; the device leaves its seat and lands in their inventory. */
+function confirmTransferOnce(
   db: Db,
   scope: OrgScope,
   actorSub: string,
   tier: Tier,
   id: string,
+  h0: LiteDevice,
+  me: string | null,
 ): Promise<Result<HandoffDto>> {
   return inTx(db, async (c) => {
-    const me = await actorMemberId(c, scope, actorSub);
-    const { rows: first } = await orgQuery<Lite & { device_id: string }>(
-      c,
-      scope,
-      `select status, from_member_id, to_member_id, device_id from device_handoffs
-       where org_id = $1 and id = $2`,
-      [id],
-    );
-    const h0 = first[0];
-    if (!h0) throw new Abort(notFound);
-    const early = decideHandoffAction({
-      action: "confirm",
-      tier,
-      actorMemberId: me,
-      fromId: h0.from_member_id,
-      toId: h0.to_member_id,
-      status: h0.status,
-    });
-    if (early.kind === "refuse") throw refuse(early.status, early.code);
     const toId = h0.to_member_id!;
     const { rows: rec } = await orgQuery<{ status: string }>(
       c,
@@ -290,56 +424,13 @@ function confirmOnce(
       "select status from members where org_id = $1 and id = $2 for share",
       [toId],
     );
-    const { rows: dev0 } = await orgQuery<{ seat_id: string | null }>(
-      c,
-      scope,
-      "select seat_id from devices where org_id = $1 and id = $2",
-      [h0.device_id],
-    );
-    if (!dev0[0]) throw new Abort(notFound);
-    let seatCode: string | null = null;
-    if (dev0[0].seat_id !== null) {
-      const { rows: seat } = await orgQuery<{ room_id: string }>(
-        c,
-        scope,
-        "select room_id from seats where org_id = $1 and id = $2",
-        [dev0[0].seat_id],
-      );
-      if (seat[0]) {
-        await orgQuery(c, scope, "select id from rooms where org_id = $1 and id = $2 for share", [
-          seat[0].room_id,
-        ]);
-        const { rows: lockedSeat } = await orgQuery<{ code: string }>(
-          c,
-          scope,
-          "select code from seats where org_id = $1 and id = $2 for update",
-          [dev0[0].seat_id],
-        );
-        seatCode = lockedSeat[0]?.code ?? null;
-      }
-    }
-    const { rows: dev } = await orgQuery<{
-      owner_id: string | null;
-      seat_id: string | null;
-      role: string;
-      expires_on: string | null;
-      inventory_number: string;
-    }>(
-      c,
-      scope,
-      `select owner_id, seat_id, role, to_char(holding_expires_on, 'YYYY-MM-DD') as expires_on,
-         inventory_number
-       from devices where org_id = $1 and id = $2 for update`,
-      [h0.device_id],
-    );
-    const d = dev[0];
-    if (!d) throw new Abort(notFound);
+    const p = await lockPlacement(c, scope, h0.device_id);
     const { rows: locked } = await orgQuery<Lite>(c, scope, `${LITE} for update`, [id]);
     const h = locked[0]!;
     if (h.status !== "pending") throw refuse(409, "handoff_not_pending");
-    if (d.owner_id !== h.from_member_id) throw refuse(409, "handoff_stale");
+    if (p.d.owner_id !== h.from_member_id) throw refuse(409, "handoff_stale");
     if (rec[0]?.status !== "active") throw refuse(422, "member_not_assignable");
-    if (d.seat_id !== dev0[0].seat_id) throw refuse(409, "placement_changed");
+    if (p.d.seat_id !== p.seat0) throw refuse(409, "placement_changed");
     await orgQuery(
       c,
       scope,
@@ -347,14 +438,7 @@ function confirmOnce(
        where org_id = $1 and id = $2`,
       [h0.device_id, toId],
     );
-    await orgQuery(
-      c,
-      scope,
-      `update device_handoffs set status = 'confirmed', decided_by_id = $3, decided_at = now(),
-         updated_at = now()
-       where org_id = $1 and id = $2`,
-      [id, me],
-    );
+    await setConfirmed(c, scope, id, me);
     await writeAudit(c, scope, {
       actorSub,
       action: "device.transfer_confirm",
@@ -364,17 +448,44 @@ function confirmOnce(
         handoffId: id,
         fromMemberId: h.from_member_id,
         toMemberId: toId,
-        inventoryNumber: d.inventory_number,
-        expiresOn: d.expires_on,
-        fromSeatId: d.seat_id,
-        fromCode: seatCode,
-        demoted: d.seat_id !== null && d.role === "primary",
+        ...placementMeta(p),
       },
     });
     return loadOne(c, scope, tier, me, id);
   });
 }
 
+/** DEV-09: an Admin confirms; the device leaves its seat and owner and is in the org inventory. */
+function confirmReturnOnce(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  tier: Tier,
+  id: string,
+  h0: LiteDevice,
+  me: string | null,
+): Promise<Result<HandoffDto>> {
+  return inTx(db, async (c) => {
+    const p = await lockPlacement(c, scope, h0.device_id);
+    const { rows: locked } = await orgQuery<Lite>(c, scope, `${LITE} for update`, [id]);
+    const h = locked[0]!;
+    if (h.status !== "pending") throw refuse(409, "handoff_not_pending");
+    if (p.d.owner_id !== h.from_member_id) throw refuse(409, "handoff_stale");
+    if (p.d.seat_id !== p.seat0) throw refuse(409, "placement_changed");
+    await clearDevice(c, scope, h0.device_id);
+    await setConfirmed(c, scope, id, me);
+    await writeAudit(c, scope, {
+      actorSub,
+      action: "device.return_confirm",
+      entity: "device",
+      entityId: h0.device_id,
+      meta: { handoffId: id, fromMemberId: h.from_member_id, ...placementMeta(p) },
+    });
+    return loadOne(c, scope, tier, me, id);
+  });
+}
+
+/** Confirm: the recipient of a transfer, or an Admin for a return. Permission is checked before any lock (R7). */
 export async function confirmHandoff(
   db: Db,
   scope: OrgScope,
@@ -382,30 +493,146 @@ export async function confirmHandoff(
   tier: Tier,
   id: string,
 ): Promise<Result<HandoffDto>> {
-  const r = await confirmOnce(db, scope, actorSub, tier, id);
+  const me = await actorMemberId(db, scope, actorSub);
+  const { rows: first } = await orgQuery<LiteDevice>(
+    db,
+    scope,
+    `select kind, status, from_member_id, to_member_id, device_id from device_handoffs
+     where org_id = $1 and id = $2`,
+    [id],
+  );
+  const h0 = first[0];
+  if (!h0) return notFound;
+  const early = decideHandoffAction({
+    kind: h0.kind,
+    action: "confirm",
+    tier,
+    actorMemberId: me,
+    fromId: h0.from_member_id,
+    toId: h0.to_member_id,
+    status: h0.status,
+  });
+  if (early.kind === "refuse") return { ok: false, status: early.status, code: early.code };
+  const once = h0.kind === "return" ? confirmReturnOnce : confirmTransferOnce;
+  const r = await once(db, scope, actorSub, tier, id, h0, me);
   // the device moved between the first read and the lock: look again once (A12)
-  if (!r.ok && r.code === "placement_changed") return confirmOnce(db, scope, actorSub, tier, id);
+  if (!r.ok && r.code === "placement_changed") return once(db, scope, actorSub, tier, id, h0, me);
   return r;
 }
 
-/** DEV-08: pending transfers addressed to the caller, newest first. */
+/** DEV-09: an Admin takes an owned device back without a request; a pending transfer is cancelled. */
+function takeBackOnce(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  tier: Tier,
+  deviceId: string,
+  me: string,
+): Promise<Result<DeviceDto>> {
+  return inTx(db, async (c) => {
+    const p = await lockPlacement(c, scope, deviceId);
+    if (p.d.owner_id === null) throw refuse(422, "device_unowned");
+    const { rows: pend } = await orgQuery<{
+      id: string;
+      kind: HandoffKind;
+      to_member_id: string | null;
+    }>(
+      c,
+      scope,
+      `select id, kind, to_member_id from device_handoffs
+       where org_id = $1 and device_id = $2 and status = 'pending' for update`,
+      [deviceId],
+    );
+    const h = pend[0];
+    if (h?.kind === "return") throw refuse(409, "handoff_pending");
+    if (p.d.seat_id !== p.seat0) throw refuse(409, "placement_changed");
+    if (h) {
+      await orgQuery(
+        c,
+        scope,
+        `update device_handoffs set status = 'cancelled', decided_by_id = $3, decided_at = now(),
+           updated_at = now()
+         where org_id = $1 and id = $2`,
+        [h.id, me],
+      );
+      await writeAudit(c, scope, {
+        actorSub,
+        action: `device.${h.kind}_cancel`,
+        entity: "device",
+        entityId: deviceId,
+        meta: {
+          handoffId: h.id,
+          fromMemberId: p.d.owner_id,
+          toMemberId: h.to_member_id,
+          inventoryNumber: p.d.inventory_number,
+          byTakeBack: true,
+        },
+      });
+    }
+    await clearDevice(c, scope, deviceId);
+    await writeAudit(c, scope, {
+      actorSub,
+      action: "device.return_take_back",
+      entity: "device",
+      entityId: deviceId,
+      meta: {
+        fromMemberId: p.d.owner_id,
+        ...placementMeta(p),
+        byAdmin: true,
+        cancelledHandoffId: h?.id ?? null,
+      },
+    });
+    return reload(c, scope, actorSub, tier, deviceId);
+  });
+}
+
+export async function takeBack(
+  db: Db,
+  scope: OrgScope,
+  actorSub: string,
+  tier: Tier,
+  deviceId: string,
+): Promise<Result<DeviceDto>> {
+  const me = await actorMemberId(db, scope, actorSub);
+  if (tier !== "admin" || me === null) return { ok: false, status: 422, code: "not_allowed" };
+  const r = await takeBackOnce(db, scope, actorSub, tier, deviceId, me);
+  if (!r.ok && r.code === "placement_changed") {
+    return takeBackOnce(db, scope, actorSub, tier, deviceId, me);
+  }
+  return r;
+}
+
+/** DEV-08: pending transfers addressed to the caller. DEV-09: org-wide pending returns (Admin). Newest first. */
 export async function listHandoffs(
   db: Query,
   scope: OrgScope,
   actorSub: string,
   tier: Tier,
+  box: HandoffBox,
 ): Promise<Result<HandoffListResponse>> {
+  if (box === "returns" && tier !== "admin") return { ok: false, status: 422, code: "not_allowed" };
   const me = await actorMemberId(db, scope, actorSub);
   if (me === null) return { ok: true, value: { items: [], truncated: false } };
-  const items = await handoffRows(
-    db,
-    scope,
-    tier,
-    me,
-    "h.to_member_id = $2 and h.status = 'pending'",
-    [me],
-    INBOX_LIMIT + 1,
-  );
+  const items =
+    box === "returns"
+      ? await handoffRows(
+          db,
+          scope,
+          tier,
+          me,
+          "h.kind = 'return' and h.status = 'pending'",
+          [],
+          INBOX_LIMIT + 1,
+        )
+      : await handoffRows(
+          db,
+          scope,
+          tier,
+          me,
+          "h.to_member_id = $2 and h.status = 'pending'",
+          [me],
+          INBOX_LIMIT + 1,
+        );
   return {
     ok: true,
     value: { items: items.slice(0, INBOX_LIMIT), truncated: items.length > INBOX_LIMIT },
@@ -416,15 +643,18 @@ export async function countHandoffs(
   db: Query,
   scope: OrgScope,
   actorSub: string,
+  tier: Tier,
 ): Promise<Result<HandoffCountDto>> {
   const me = await actorMemberId(db, scope, actorSub);
-  if (me === null) return { ok: true, value: { incoming: 0 } };
-  const { rows } = await orgQuery<{ n: number }>(
+  if (me === null) return { ok: true, value: { incoming: 0, returns: 0 } };
+  const { rows } = await orgQuery<{ incoming: number; returns: number }>(
     db,
     scope,
-    `select count(*)::int as n from device_handoffs
-     where org_id = $1 and to_member_id = $2 and status = 'pending'`,
-    [me],
+    `select count(*) filter (where to_member_id = $2)::int as incoming,
+       count(*) filter (where kind = 'return' and $3::boolean)::int as returns
+     from device_handoffs
+     where org_id = $1 and status = 'pending'`,
+    [me, tier === "admin"],
   );
-  return { ok: true, value: { incoming: rows[0]!.n } };
+  return { ok: true, value: { incoming: rows[0]!.incoming, returns: rows[0]!.returns } };
 }

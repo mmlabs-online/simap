@@ -75,6 +75,10 @@ export type DeviceDto = {
   canEditHolding: boolean;
   /** Owned, no pending handoff, and the caller is the owner or a Manager+ (DEV-08). */
   canTransfer: boolean;
+  /** Owned, no pending handoff, and the caller is the owner or a Manager+ (DEV-09). */
+  canReturn: boolean;
+  /** Admin, owned, and no pending return; a pending transfer is cancelled by take-back (DEV-09). */
+  canTakeBack: boolean;
   /** The one pending handoff, visible org-wide (DEV-02); the note is not included. */
   pendingHandoff: PendingHandoffDto | null;
 };
@@ -82,8 +86,12 @@ export type DeviceDto = {
 export type HandoffKind = "transfer" | "return" | "extension";
 export type HandoffStatus = "pending" | "confirmed" | "declined" | "cancelled";
 
-/** DEV-08 start body. Only `transfer` is accepted until SIM-037.4 / SIM-037.5 add the other kinds. */
-export type HandoffStartValue = { kind: "transfer"; toMemberId: string; note: string | null };
+/** DEV-08 / DEV-09 start body. `extension` is added by SIM-037.5. */
+export type HandoffStartValue =
+  | { kind: "transfer"; toMemberId: string; note: string | null }
+  | { kind: "return"; note: string | null };
+
+export type HandoffBox = "incoming" | "returns";
 
 export type MemberRef = { id: string; displayName: string };
 
@@ -122,6 +130,6 @@ export type PendingHandoffDto = {
 };
 
 export type HandoffListResponse = { items: HandoffDto[]; truncated: boolean };
-export type HandoffCountDto = { incoming: number };
+export type HandoffCountDto = { incoming: number; returns: number };
 
 export type DeviceListResponse = { items: DeviceDto[]; truncated: boolean };

@@ -867,3 +867,29 @@ describe("devices (db): pending transfer", () => {
     expect(await count("select count(*)::int as n from devices where id = $1", [d])).toBe(1);
   });
 });
+
+describe("devices (db): return flags", () => {
+  it("canReturn for the owner and a Manager, not another user, not while pending; canTakeBack for an Admin, not while a return is pending", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const as = async (m: string, tier: "user" | "manager" | "admin") => {
+      const r = await getDevice(pool, w.scope, await subOf(m), tier, d);
+      return r.ok && r.value;
+    };
+    expect(await as(w.x, "user")).toMatchObject({ canReturn: true, canTakeBack: false });
+    expect(await as(w.z, "user")).toMatchObject({ canReturn: false, canTakeBack: false });
+    expect(await as(w.z, "manager")).toMatchObject({ canReturn: true, canTakeBack: false });
+    expect(await as(w.z, "admin")).toMatchObject({ canReturn: true, canTakeBack: true });
+    const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
+    expect(await as(w.z, "admin")).toMatchObject({ canReturn: false, canTakeBack: true });
+    await pool.query(
+      "update device_handoffs set status = 'cancelled', decided_by_id = $2 where id = $1",
+      [h, w.z],
+    );
+    await addHandoff(pool, w.orgId, d, w.x, "pending");
+    expect(await as(w.z, "admin")).toMatchObject({ canReturn: false, canTakeBack: false });
+    const free = await addDevice(pool, w.orgId, null, null, "secondary");
+    const r = await getDevice(pool, w.scope, await subOf(w.z), "admin", free);
+    expect(r.ok && r.value).toMatchObject({ canReturn: false, canTakeBack: false });
+  });
+});

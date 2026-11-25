@@ -10,7 +10,11 @@ const svc = vi.hoisted(() => ({
   assignDevice: vi.fn(),
   updateHolding: vi.fn(),
 }));
-const hsvc = vi.hoisted(() => ({ startTransfer: vi.fn() }));
+const hsvc = vi.hoisted(() => ({
+  startTransfer: vi.fn(),
+  startReturn: vi.fn(),
+  takeBack: vi.fn(),
+}));
 vi.mock("@/server/devices/devices", () => svc);
 vi.mock("@/server/devices/handoffs", () => hsvc);
 vi.mock("@/server/db/pool", () => ({ getPool: () => ({}) }));
@@ -21,6 +25,7 @@ import { PUT } from "./[id]/placement/route";
 import { POST as ASSIGN } from "./[id]/assignment/route";
 import { PATCH as HOLDING } from "./[id]/holding/route";
 import { POST as TRANSFER } from "./[id]/handoffs/route";
+import { POST as TAKE_BACK } from "./[id]/take-back/route";
 
 const ISSUER = "https://api.mmlabs.online";
 const ID = "33333333-3333-4333-8333-333333333333";
@@ -55,7 +60,7 @@ const okPut = { seatId: SEAT, role: "primary", expectedSeatId: null };
 
 beforeEach(() => {
   for (const f of Object.values(svc)) f.mockReset();
-  hsvc.startTransfer.mockReset();
+  for (const f of Object.values(hsvc)) f.mockReset();
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -278,7 +283,13 @@ describe("POST /api/devices/:id/handoffs", () => {
   });
   it("400 on a bad body, 404 on a bad id, no service call", async () => {
     fakeAuth(["simap:user"]);
-    expect((await TRANSFER(req("POST", undefined, { kind: "return" }), idRoute)).status).toBe(400);
+    expect((await TRANSFER(req("POST", undefined, { kind: "extension" }), idRoute)).status).toBe(
+      400,
+    );
+    expect(
+      (await TRANSFER(req("POST", undefined, { kind: "return", toMemberId: MEMBER }), idRoute))
+        .status,
+    ).toBe(400);
     const bad = { params: Promise.resolve({ id: "nope" }) };
     expect((await TRANSFER(req("POST", undefined, ok), bad)).status).toBe(404);
     expect(hsvc.startTransfer).not.toHaveBeenCalled();
@@ -289,5 +300,41 @@ describe("POST /api/devices/:id/handoffs", () => {
     const r = await TRANSFER(req("POST", undefined, ok), idRoute);
     expect(r.status).toBe(409);
     expect(await r.json()).toEqual({ error: { code: "handoff_pending" } });
+  });
+});
+
+describe("POST /api/devices/:id/handoffs with kind return", () => {
+  it("201 and calls startReturn, not startTransfer", async () => {
+    fakeAuth(["simap:user"]);
+    hsvc.startReturn.mockResolvedValue({ ok: true, value: { id: "h1" } });
+    const body = { kind: "return", note: "x" };
+    const r = await TRANSFER(req("POST", undefined, body), idRoute);
+    expect(r.status).toBe(201);
+    expect(hsvc.startReturn.mock.calls[0]!.slice(2)).toEqual(["s1", "user", ID, body]);
+    expect(hsvc.startTransfer).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/devices/:id/take-back", () => {
+  it("200 no-store for an Admin with the caller's context", async () => {
+    fakeAuth(["simap:admin"]);
+    hsvc.takeBack.mockResolvedValue({ ok: true, value: { id: ID } });
+    const r = await TAKE_BACK(req("POST"), idRoute);
+    expect(r.status).toBe(200);
+    expect(r.headers.get("Cache-Control")).toBe("no-store");
+    expect(hsvc.takeBack.mock.calls[0]!.slice(2)).toEqual(["s1", "admin", ID]);
+  });
+  it("403 from the wrapper for a Manager, before the service runs", async () => {
+    fakeAuth(["simap:manager"]);
+    expect((await TAKE_BACK(req("POST"), idRoute)).status).toBe(403);
+    expect(hsvc.takeBack).not.toHaveBeenCalled();
+  });
+  it("bad uuid -> 404; refusals map to their status", async () => {
+    fakeAuth(["simap:admin"]);
+    const bad = { params: Promise.resolve({ id: "nope" }) };
+    expect((await TAKE_BACK(req("POST"), bad)).status).toBe(404);
+    hsvc.takeBack.mockResolvedValue({ ok: false, status: 409, code: "handoff_pending" });
+    const r = await TAKE_BACK(req("POST"), idRoute);
+    expect([r.status, await r.json()]).toEqual([409, { error: { code: "handoff_pending" } }]);
   });
 });

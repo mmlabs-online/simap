@@ -33,6 +33,8 @@ const device = (over: Partial<DeviceDto> = {}): DeviceDto => ({
   canAssign: false,
   canEditHolding: false,
   canTransfer: false,
+  canReturn: false,
+  canTakeBack: false,
   pendingHandoff: null,
   ...over,
 });
