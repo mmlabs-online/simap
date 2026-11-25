@@ -52,6 +52,19 @@ describe("workflows on the self-hosted runner", () => {
     expect(ci).not.toContain("--network host");
     expect(ci).not.toMatch(/docker system prune|image prune|rmi postgres/);
   });
+  it("compose copy safety check matches the production env path, not the runner home", () => {
+    // BUG-006: RUNNER_TEMP lives under /Users/mingming on the runner, so a home-wide pattern always fires.
+    const s = step(ci, "compose config");
+    const check = s.match(/^\s*if grep (?:-\w+ )?("?[^"\s]+"?) "\$d\/compose\.yml"; then$/m);
+    expect(check).not.toBeNull();
+    const prod = s.match(/^\s*prod=(\S+)$/m)?.[1];
+    const raw = check![1].replace(/^"|"$/g, "");
+    const pattern = raw === "$prod" ? prod : raw;
+    expect(pattern).toBe("/Users/mingming/.config/simap");
+    const runnerCopy = "/Users/mingming/actions-runner/_work/_temp/compose-ci/simap.env";
+    expect(runnerCopy.includes(pattern!)).toBe(false);
+    expect("env_file: /Users/mingming/.config/simap/simap.env".includes(pattern!)).toBe(true);
+  });
   it("Postgres start/stop pairs with if: always()", () => {
     const jobs = ci.split(/^ {2}image:$/m);
     expect(jobs).toHaveLength(2);
