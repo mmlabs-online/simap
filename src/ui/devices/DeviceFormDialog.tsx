@@ -8,6 +8,7 @@ import { DialogField, EntityFormDialog } from "../EntityFormDialog";
 import { canLoadMore, type LoadPage, type PickerMember } from "../seats/member-picker";
 import { MemberPickerFields } from "../seats/MemberPickerDialog";
 import { useMemberPicker } from "../seats/useMemberPicker";
+import { useTypeSuggestions } from "../deviceTypes/useTypeSuggestions";
 import {
   deviceErrorMessage,
   emptyForm,
@@ -59,6 +60,7 @@ function DeviceFormInner({
   const [form, setForm] = useState<DeviceForm>(device ? formFromDevice(device) : emptyForm());
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const suggestions = useTypeSuggestions();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -99,6 +101,7 @@ function DeviceFormInner({
         isAdmin={isAdmin}
         form={form}
         ownerName={device?.owner.displayName ?? null}
+        suggestions={suggestions}
         loadPage={loadPage}
         onField={(key, value) => setForm((f) => ({ ...f, [key]: value }))}
         onOwner={(owner) => setForm((f) => ({ ...f, owner }))}
@@ -113,6 +116,7 @@ export function DeviceFormFields({
   isAdmin,
   form,
   ownerName,
+  suggestions,
   loadPage,
   onField,
   onOwner,
@@ -121,6 +125,7 @@ export function DeviceFormFields({
   isAdmin: boolean;
   form: DeviceForm;
   ownerName: string | null;
+  suggestions: readonly string[];
   loadPage: LoadPage;
   onField: (key: "name" | "type" | "inventoryNumber" | "mac", value: string) => void;
   onOwner: (owner: DeviceOwner) => void;
@@ -149,7 +154,7 @@ export function DeviceFormFields({
         required
       />
       <datalist id={listId}>
-        {devicesCopy.typeSuggestions.map((t) => (
+        {suggestions.map((t) => (
           <option key={t} value={t} />
         ))}
       </datalist>

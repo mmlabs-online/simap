@@ -19,6 +19,7 @@ const render = (p: Props = {}) =>
       isAdmin={false}
       form={emptyForm()}
       ownerName={null}
+      suggestions={devicesCopy.typeSuggestions}
       loadPage={loadPage}
       onField={noop}
       onOwner={noop}
@@ -45,6 +46,14 @@ describe("DeviceFormFields", () => {
     expect(html).toContain(`list="${id}"`);
     expect(html).toContain('maxLength="120"');
     expect(html.match(/maxLength="60"/g)).toHaveLength(2);
+  });
+  it("datalist lists the given suggestions; type input stays free text", () => {
+    const html = render({ suggestions: ["Scanner", "Máy in"] });
+    expect(html.match(/<option /g)).toHaveLength(2);
+    expect(html).toContain('value="Máy in"');
+    const type = html.match(/<input[^>]*list="[^"]*"[^>]*>/)?.[0] ?? "";
+    expect(type).not.toContain("pattern");
+    expect(type).toContain('maxLength="60"');
   });
   it("non-Admin create has no owner UI", () => {
     const html = render();
