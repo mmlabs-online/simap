@@ -31,6 +31,8 @@ const device: DeviceDto = {
   holding: null,
   canAssign: false,
   canEditHolding: false,
+  canTransfer: false,
+  pendingHandoff: null,
 };
 const placedDevice: DeviceDto = {
   ...device,

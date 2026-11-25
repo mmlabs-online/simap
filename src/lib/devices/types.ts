@@ -67,12 +67,61 @@ export type DeviceDto = {
   canEdit: boolean;
   /** Owner or Manager+ (D19); false for an unowned device (invariant 5). */
   canPlace: boolean;
-  /** Admin and the device is in the org inventory (DEV-01). A pending handoff is checked by the server only. */
+  /** Admin, the device is in the org inventory and has no pending handoff (DEV-01). */
   canDelete: boolean;
-  /** Manager+ and the device is in the org inventory (DEV-07). */
+  /** Manager+, the device is in the org inventory and has no pending handoff (DEV-07). */
   canAssign: boolean;
   /** Manager+ and the device is owned: edits the note and expiry (DEV-07). */
   canEditHolding: boolean;
+  /** Owned, no pending handoff, and the caller is the owner or a Manager+ (DEV-08). */
+  canTransfer: boolean;
+  /** The one pending handoff, visible org-wide (DEV-02); the note is not included. */
+  pendingHandoff: PendingHandoffDto | null;
 };
+
+export type HandoffKind = "transfer" | "return" | "extension";
+export type HandoffStatus = "pending" | "confirmed" | "declined" | "cancelled";
+
+/** DEV-08 start body. Only `transfer` is accepted until SIM-037.4 / SIM-037.5 add the other kinds. */
+export type HandoffStartValue = { kind: "transfer"; toMemberId: string; note: string | null };
+
+export type MemberRef = { id: string; displayName: string };
+
+export type HandoffDto = {
+  id: string;
+  kind: HandoffKind;
+  status: HandoffStatus;
+  device: {
+    id: string;
+    name: string;
+    type: string;
+    inventoryNumber: string;
+    expiresOn: string | null;
+  };
+  from: MemberRef;
+  to: MemberRef | null;
+  requestedBy: MemberRef;
+  decidedBy: MemberRef | null;
+  note: string | null;
+  newExpiresOn: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+  /** For the caller; all three are false unless the handoff is pending. */
+  canCancel: boolean;
+  canConfirm: boolean;
+  canDecline: boolean;
+};
+
+export type PendingHandoffDto = {
+  id: string;
+  kind: HandoffKind;
+  to: MemberRef | null;
+  requestedBy: MemberRef;
+  createdAt: string;
+  canCancel: boolean;
+};
+
+export type HandoffListResponse = { items: HandoffDto[]; truncated: boolean };
+export type HandoffCountDto = { incoming: number };
 
 export type DeviceListResponse = { items: DeviceDto[]; truncated: boolean };

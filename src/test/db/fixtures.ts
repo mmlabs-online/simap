@@ -87,9 +87,27 @@ export async function addHandoff(
   status: "pending" | "confirmed" | "declined" | "cancelled",
 ): Promise<string> {
   const { rows } = await db.query(
-    `insert into device_handoffs (org_id, device_id, kind, from_member_id, requested_by_id, status, decided_at)
-     values ($1, $2, 'return', $3, $3, $4, case when $4 = 'pending' then null else now() end) returning id`,
+    `insert into device_handoffs (org_id, device_id, kind, from_member_id, requested_by_id, status, decided_at,
+       decided_by_id)
+     values ($1, $2, 'return', $3, $3, $4, case when $4 = 'pending' then null else now() end,
+       case when $4 = 'pending' then null else $3::uuid end) returning id`,
     [orgId, deviceId, fromId, status],
+  );
+  return rows[0].id;
+}
+
+/** A pending transfer from `fromId` (the owner) to `toId`, requested by the sender. */
+export async function addTransfer(
+  db: Q,
+  orgId: string,
+  deviceId: string,
+  fromId: string,
+  toId: string,
+): Promise<string> {
+  const { rows } = await db.query(
+    `insert into device_handoffs (org_id, device_id, kind, from_member_id, to_member_id, requested_by_id)
+     values ($1, $2, 'transfer', $3, $4, $3) returning id`,
+    [orgId, deviceId, fromId, toId],
   );
   return rows[0].id;
 }

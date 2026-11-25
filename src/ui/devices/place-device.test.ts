@@ -32,6 +32,8 @@ const device = (over: Partial<DeviceDto> = {}): DeviceDto => ({
   holding: null,
   canAssign: false,
   canEditHolding: false,
+  canTransfer: false,
+  pendingHandoff: null,
   ...over,
 });
 const placed = (seatId = "s0", role: "primary" | "secondary" = "secondary") =>

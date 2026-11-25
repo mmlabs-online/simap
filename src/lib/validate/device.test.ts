@@ -5,6 +5,8 @@ import {
   validateDeviceCreate,
   validateAssign,
   validateDevicePatch,
+  validateHandoffBox,
+  validateHandoffStart,
   validateHoldingPatch,
   validatePlacementPut,
 } from "./device";
@@ -297,5 +299,46 @@ describe("validateHoldingPatch", () => {
       ok: true,
       value: { note: null, expiresOn: "2026-12-01" },
     });
+  });
+});
+
+describe("validateHandoffStart", () => {
+  const ok = (o: object) => validateHandoffStart({ kind: "transfer", toMemberId: A, ...o });
+  it("accepts a transfer with and without a note", () => {
+    expect(ok({})).toEqual({
+      ok: true,
+      value: { kind: "transfer", toMemberId: A, note: null },
+    });
+    expect(ok({ note: " hi " })).toMatchObject({ ok: true, value: { note: "hi" } });
+  });
+  it("refuses a non-object, extra keys, other kinds and bad ids", () => {
+    expect(validateHandoffStart("x")).toEqual({ ok: false, field: "body" });
+    expect(ok({ extra: 1 })).toEqual({ ok: false, field: "extra" });
+    expect(ok({ kind: "return" })).toEqual({ ok: false, field: "kind" });
+    expect(ok({ toMemberId: A.toUpperCase() })).toEqual({ ok: false, field: "toMemberId" });
+    expect(validateHandoffStart({ kind: "transfer" })).toEqual({
+      ok: false,
+      field: "toMemberId",
+    });
+  });
+  it("limits the note to 500 characters", () => {
+    expect(ok({ note: "x".repeat(500) }).ok).toBe(true);
+    expect(ok({ note: "x".repeat(501) })).toEqual({ ok: false, field: "note" });
+  });
+  it("normalises a Vietnamese note to NFC and treats blank as null", () => {
+    const decomposed = "Chuyển máy cho Hương".normalize("NFD");
+    const r = ok({ note: decomposed });
+    expect(r.ok && r.value.note).toBe(decomposed.normalize("NFC"));
+    expect(ok({ note: "   " })).toMatchObject({ ok: true, value: { note: null } });
+  });
+});
+
+describe("validateHandoffBox", () => {
+  const box = (s: string) => validateHandoffBox(new URLSearchParams(s));
+  it("accepts only one box=incoming", () => {
+    expect(box("box=incoming")).toEqual({ ok: true, value: "incoming" });
+    expect(box("")).toEqual({ ok: false, field: "box" });
+    expect(box("box=outgoing")).toEqual({ ok: false, field: "box" });
+    expect(box("box=incoming&box=incoming")).toEqual({ ok: false, field: "box" });
   });
 });

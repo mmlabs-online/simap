@@ -1,0 +1,78 @@
+import { atLeast, type Tier } from "@/lib/auth/tier";
+import type { HandoffStatus } from "./types";
+
+/** DEV-08: the owner, or a Manager+, starts a transfer. */
+export const canStartTransfer = (tier: Tier, isOwner: boolean): boolean =>
+  isOwner || atLeast(tier, "manager");
+
+/** DEV-08: the sender (the `from` member), or a Manager+, cancels a pending handoff. */
+export const canCancelHandoff = (tier: Tier, isFrom: boolean): boolean =>
+  isFrom || atLeast(tier, "manager");
+
+export type TransferStartRefusalCode =
+  | "not_allowed"
+  | "device_unowned"
+  | "invalid_recipient"
+  | "member_not_assignable"
+  | "handoff_pending";
+
+export type TransferStartDecision =
+  | { kind: "ok" }
+  | { kind: "refuse"; status: 409 | 422; code: TransferStartRefusalCode };
+
+/** DEV-08 start. Permission first (R7 order), then the device, the recipient, the pending check. */
+export function decideTransferStart(a: {
+  tier: Tier;
+  actorMemberId: string | null;
+  ownerId: string | null;
+  toMemberId: string;
+  recipientActive: boolean;
+  pending: boolean;
+}): TransferStartDecision {
+  const isOwner = a.ownerId !== null && a.actorMemberId === a.ownerId;
+  if (a.actorMemberId === null || !canStartTransfer(a.tier, isOwner)) {
+    return { kind: "refuse", status: 422, code: "not_allowed" };
+  }
+  if (a.ownerId === null) return { kind: "refuse", status: 422, code: "device_unowned" };
+  if (a.toMemberId === a.ownerId) return { kind: "refuse", status: 422, code: "invalid_recipient" };
+  if (!a.recipientActive) return { kind: "refuse", status: 422, code: "member_not_assignable" };
+  if (a.pending) return { kind: "refuse", status: 409, code: "handoff_pending" };
+  return { kind: "ok" };
+}
+
+export type HandoffAction = "confirm" | "decline" | "cancel";
+
+export type HandoffActionDecision =
+  | { kind: "ok" }
+  | { kind: "refuse"; status: 409 | 422; code: "not_allowed" | "handoff_not_pending" };
+
+/** Confirm and decline: the recipient only. Cancel: the sender or a Manager+. Permission before status. */
+export function decideHandoffAction(a: {
+  action: HandoffAction;
+  tier: Tier;
+  actorMemberId: string | null;
+  fromId: string;
+  toId: string | null;
+  status: HandoffStatus;
+}): HandoffActionDecision {
+  const allowed =
+    a.actorMemberId !== null &&
+    (a.action === "cancel"
+      ? canCancelHandoff(a.tier, a.actorMemberId === a.fromId)
+      : a.toId !== null && a.actorMemberId === a.toId);
+  if (!allowed) return { kind: "refuse", status: 422, code: "not_allowed" };
+  if (a.status !== "pending") return { kind: "refuse", status: 409, code: "handoff_not_pending" };
+  return { kind: "ok" };
+}
+
+/** What the caller may do with a handoff; all false unless it is pending. */
+export function handoffFlags(a: {
+  tier: Tier;
+  actorMemberId: string | null;
+  fromId: string;
+  toId: string | null;
+  status: HandoffStatus;
+}): { canCancel: boolean; canConfirm: boolean; canDecline: boolean } {
+  const ok = (action: HandoffAction) => decideHandoffAction({ ...a, action }).kind === "ok";
+  return { canCancel: ok("cancel"), canConfirm: ok("confirm"), canDecline: ok("decline") };
+}
