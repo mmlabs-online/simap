@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | #111 |
 
 ## Goal
 A device type's art can be an uploaded image, a sprite picked from the bundled package, or the slot's built-in sprite (DEV-01, D66 point 7).
