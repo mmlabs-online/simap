@@ -145,3 +145,75 @@ export type HandoffCountDto = {
 };
 
 export type DeviceListResponse = { items: DeviceDto[]; truncated: boolean };
+
+export type DeviceHistoryKind =
+  | "create"
+  | "assign"
+  | "holding_update"
+  | "transfer_start"
+  | "transfer_cancel"
+  | "transfer_decline"
+  | "transfer_confirm"
+  | "return_start"
+  | "return_cancel"
+  | "return_confirm"
+  | "return_take_back"
+  | "extension_start"
+  | "extension_cancel"
+  | "extension_decline"
+  | "extension_confirm";
+
+export const DEVICE_HISTORY_KINDS: readonly DeviceHistoryKind[] = [
+  "create",
+  "assign",
+  "holding_update",
+  "transfer_start",
+  "transfer_cancel",
+  "transfer_decline",
+  "transfer_confirm",
+  "return_start",
+  "return_cancel",
+  "return_confirm",
+  "return_take_back",
+  "extension_start",
+  "extension_cancel",
+  "extension_decline",
+  "extension_confirm",
+];
+
+/** The audit actions read as device history: `device.<kind>`. Exact match; `device.return` is a placement move, not a return. */
+export const DEVICE_HISTORY_ACTIONS: readonly string[] = DEVICE_HISTORY_KINDS.map(
+  (k) => `device.${k}`,
+);
+
+export const DEVICE_HISTORY_LIMITS = { defaultLimit: 50, maxLimit: 100 } as const;
+
+export type DeviceHistoryEntryDto = {
+  /** audit_log.id */
+  id: string;
+  kind: DeviceHistoryKind;
+  /** UTC instant with microseconds: YYYY-MM-DDTHH:MM:SS.ffffffZ */
+  at: string;
+  /** Null when there is no member row for the audit actor. */
+  actor: MemberRef | null;
+  /** Null = org inventory, or no member row. */
+  from: MemberRef | null;
+  /** Null = org inventory, or no member row. */
+  to: MemberRef | null;
+  note: string | null;
+  /** YYYY-MM-DD */
+  expiresOn: string | null;
+  /** YYYY-MM-DD, the date before an expiry change. */
+  fromExpiresOn: string | null;
+  /** The actor of a confirm or an Admin take-back. */
+  confirmedBy: MemberRef | null;
+  /** Why a cancel or decline happened, from the audit meta flags. */
+  cause: "manager" | "take_back" | "deactivation" | null;
+};
+
+export type DeviceHistoryPage = {
+  items: DeviceHistoryEntryDto[];
+  nextCursor: string | null;
+  /** UTC instant of the latest assign or transfer confirm; null when the device is unowned. */
+  holderSince: string | null;
+};

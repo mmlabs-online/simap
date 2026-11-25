@@ -1,84 +1,12 @@
-import Link from "next/link";
 import type { DeviceDto } from "@/lib/devices/types";
-import { roomDetailHref } from "@/lib/nav";
 import { Card } from "../Card";
-import { Chip } from "../Chip";
-import { CLIP } from "../clip";
 import { devicesCopy } from "../copy/devices";
 import { hasAnyAction, type DeviceRowHandlers } from "./device-actions";
+import { DeviceNameLink, Details, Mac, OwnerLabel, PlacementLabel } from "./device-labels";
 import { DeviceRowActions } from "./DeviceRowActions";
-import { detailsText, expiryText, pendingText, placementText } from "./devices-state";
 
 const CELL = "px-3 py-2 align-top text-sm text-on-surface";
 const HEAD = "px-3 py-2 text-left text-[11px] font-extrabold uppercase text-on-surface-variant";
-
-function PlacementLabel({ device }: { device: DeviceDto }) {
-  const p = device.placement;
-  if (!p) return <span className="text-on-surface-variant">{devicesCopy.inInventory}</span>;
-  const href = roomDetailHref(p.roomCode);
-  return (
-    <span className="inline-flex flex-wrap items-center gap-1.5">
-      {href ? (
-        <Link href={href} className="font-semibold text-primary underline">
-          {placementText(p)}
-        </Link>
-      ) : (
-        <span>{placementText(p)}</span>
-      )}
-      <Chip label={devicesCopy.roles[p.role]} />
-    </span>
-  );
-}
-
-function OwnerLabel({ device, clamp = "line-clamp-1" }: { device: DeviceDto; clamp?: string }) {
-  const h = device.holding;
-  const pending = pendingText(device);
-  return (
-    <span className="flex flex-col gap-0.5">
-      <span className="inline-flex flex-wrap items-center gap-1.5">
-        <span>{device.owner?.displayName ?? devicesCopy.orgInventory}</span>
-        {device.mine && <Chip label={devicesCopy.you} />}
-        {pending && <Chip label={pending.chip} />}
-        {device.overdue && (
-          <Chip
-            label={devicesCopy.overdueChip}
-            color="var(--error-container)"
-            onColor="var(--on-error-container)"
-          />
-        )}
-      </span>
-      {pending?.to && <span className="text-xs text-on-surface-variant">{pending.to}</span>}
-      {h && (
-        <>
-          <span className="text-xs text-on-surface-variant">{expiryText(h, device.overdue)}</span>
-          {h.note && (
-            <span
-              title={h.note}
-              className={`text-xs text-on-surface-variant whitespace-pre-line ${clamp} ${CLIP}`}
-            >
-              {h.note}
-            </span>
-          )}
-        </>
-      )}
-    </span>
-  );
-}
-
-function Details({ device }: { device: DeviceDto }) {
-  const { maker, serial } = detailsText(device);
-  if (maker === null && serial === null) return <span>{devicesCopy.details.none}</span>;
-  return (
-    <span className="flex flex-col gap-0.5">
-      {maker && <span className="break-all">{maker}</span>}
-      {serial && <span className="break-all text-xs text-on-surface-variant">{serial}</span>}
-    </span>
-  );
-}
-
-function Mac({ mac }: { mac: string | null }) {
-  return mac ? <span className="font-mono">{mac}</span> : <span>{devicesCopy.noMac}</span>;
-}
 
 const COLUMNS = [
   "name",
@@ -124,7 +52,9 @@ export function DeviceTable({
             <tbody>
               {devices.map((d) => (
                 <tr key={d.id} className="border-t border-outline-variant">
-                  <td className={`${CELL} font-semibold`}>{d.name}</td>
+                  <td className={`${CELL} font-semibold`}>
+                    <DeviceNameLink device={d} />
+                  </td>
                   <td className={CELL}>{d.type}</td>
                   <td className={CELL}>{d.inventoryNumber}</td>
                   <td className={CELL}>
@@ -154,7 +84,9 @@ export function DeviceTable({
         {devices.map((d) => (
           <li key={d.id}>
             <Card className="flex flex-col gap-1 p-3 text-sm text-on-surface">
-              <span className="font-bold">{d.name}</span>
+              <span className="font-bold">
+                <DeviceNameLink device={d} />
+              </span>
               <span className="text-on-surface-variant">
                 {devicesCopy.typeLine(d.type, d.inventoryNumber)}
               </span>

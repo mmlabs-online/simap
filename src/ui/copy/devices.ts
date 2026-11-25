@@ -1,4 +1,4 @@
-import { DEVICE_LIMITS } from "@/lib/devices/types";
+import { DEVICE_LIMITS, type DeviceHistoryKind } from "@/lib/devices/types";
 
 /** English strings of the Devices page (D36). API error messages come from `apiErrorMessage`. */
 export const devicesCopy = {
@@ -258,4 +258,62 @@ export const devicesCopy = {
   summary: (n: number, label: string) => `${n} ${n === 1 ? "device" : "devices"} · ${label}`,
   typeLine: (type: string, inventoryNumber: string) => `${type} · ${inventoryNumber}`,
   truncated: (n: number) => `Showing the first ${n} devices.`,
+  detail: {
+    back: "Back to devices",
+    holderSince: (when: string) => `Holder since ${when}`,
+    requestedBy: (name: string) => `Requested by ${name}`,
+    requestedAt: (when: string) => `Requested ${when}`,
+    sections: {
+      fields: "Details",
+      where: "Where it is",
+      holder: "Holder",
+      pending: "Pending handoff",
+    },
+    labels: {
+      type: "Type",
+      inventoryNumber: "Inventory no.",
+      mac: "MAC",
+      serial: "Serial",
+      manufacturer: "Manufacturer",
+      brand: "Brand",
+    },
+    none: "—",
+    notFoundTitle: "Device not found",
+    notFoundBody: "This device does not exist, or it was deleted.",
+  },
+  history: {
+    title: "History",
+    empty: "No history yet.",
+    loadMore: "Load more",
+    loadMoreFailed: "Could not load more history.",
+    unknownMember: "Unknown member",
+    confirmedBy: (name: string) => `Confirmed by ${name}`,
+    byActor: (name: string) => `by ${name}`,
+    expiry: (date: string) => `Expires ${date}`,
+    expiryChange: (from: string, to: string) => `Expiry ${from} → ${to}`,
+    noExpiry: "no expiry",
+    fromTo: (from: string, to: string) => `${from} → ${to}`,
+    kinds: {
+      create: "Created",
+      assign: "Assigned",
+      holding_update: "Note or expiry edited",
+      transfer_start: "Transfer requested",
+      transfer_cancel: "Transfer cancelled",
+      transfer_decline: "Transfer declined",
+      transfer_confirm: "Transfer confirmed",
+      return_start: "Return requested",
+      return_cancel: "Return cancelled",
+      return_confirm: "Return confirmed",
+      return_take_back: "Taken back by an Admin",
+      extension_start: "Extension requested",
+      extension_cancel: "Extension cancelled",
+      extension_decline: "Extension declined",
+      extension_confirm: "Extension approved",
+    } satisfies Record<DeviceHistoryKind, string>,
+    causes: {
+      manager: "by an Admin or Manager",
+      take_back: "by an Admin take-back",
+      deactivation: "because a member was deactivated",
+    },
+  },
 };
