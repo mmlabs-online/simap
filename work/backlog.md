@@ -59,8 +59,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-039.1 | Map item catalog: schema, per-org seed and read API | MERGED | P1 | M | db, api, security | — | plan-approval | 0 | 2026-11-25 |
 | SIM-039.2 | Map item catalog admin API | MERGED | P1 | M | api, security | SIM-039.1 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.3 | Catalog footprints in the layout validator, resolver and save | MERGED | P1 | M | api, architecture | SIM-039.1 | plan-approval | 0 | 2026-11-25 |
-| SIM-039.4 | Custom map item images per direction: upload, remove, serve | DONE | P1 | M | api, security | SIM-039.1 | plan-approval | 1 | 2026-11-25 |
-| SIM-039.5 | Editor palette and map rendering from the catalog | BACKLOG | P1 | M | ui | SIM-039.3, SIM-039.4 | none | 0 | 2026-11-25 |
+| SIM-039.4 | Custom map item images per direction: upload, remove, serve | MERGED | P1 | M | api, security | SIM-039.1 | plan-approval | 1 | 2026-11-25 |
+| SIM-039.5 | Editor palette and map rendering from the catalog | PLANNING | P1 | M | ui | SIM-039.3, SIM-039.4 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.6 | "Map items" admin page | BACKLOG | P1 | M | ui, ux | SIM-039.2, SIM-039.4 | none | 0 | 2026-11-25 |
 | SIM-039.7 | Device types: pick a bundled package sprite | BACKLOG | P2 | S | db, api, ui | SIM-039.6 | plan-approval | 0 | 2026-11-25 |
 | SIM-040 | Show the release version in the UI and allow device type images up to 100 × 100 px | MERGED | P2 | M | ui, api, architecture | — | plan-approval | 1 | 2026-11-25 |
