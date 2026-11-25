@@ -13,6 +13,7 @@ const svc = vi.hoisted(() => ({
 const hsvc = vi.hoisted(() => ({
   startTransfer: vi.fn(),
   startReturn: vi.fn(),
+  startExtension: vi.fn(),
   takeBack: vi.fn(),
 }));
 vi.mock("@/server/devices/devices", () => svc);
@@ -92,10 +93,16 @@ describe("devices routes", () => {
       expect(r.status).toBe(200);
       expect(r.headers.get("Cache-Control")).toBe("no-store");
     }
-    const [, scopeArg, sub, tier, filter] = svc.listDevices.mock.calls[0]!;
+    const [, scopeArg, sub, tier, filter, day] = svc.listDevices.mock.calls[0]!;
     expect([sub, tier, filter]).toEqual(["s1", "manager", "placed"]);
+    expect(day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(scopeArg).toBeTruthy();
-    expect(svc.getDevice.mock.calls[0]!.slice(2)).toEqual(["s1", "manager", ID]);
+    expect(svc.getDevice.mock.calls[0]!.slice(2)).toEqual([
+      "s1",
+      "manager",
+      ID,
+      expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+    ]);
     expect(svc.placeDevice.mock.calls[0]!.slice(2)).toEqual(["s1", "manager", ID, okPut]);
   });
 
@@ -283,9 +290,7 @@ describe("POST /api/devices/:id/handoffs", () => {
   });
   it("400 on a bad body, 404 on a bad id, no service call", async () => {
     fakeAuth(["simap:user"]);
-    expect((await TRANSFER(req("POST", undefined, { kind: "extension" }), idRoute)).status).toBe(
-      400,
-    );
+    expect((await TRANSFER(req("POST", undefined, { kind: "swap" }), idRoute)).status).toBe(400);
     expect(
       (await TRANSFER(req("POST", undefined, { kind: "return", toMemberId: MEMBER }), idRoute))
         .status,
@@ -312,6 +317,46 @@ describe("POST /api/devices/:id/handoffs with kind return", () => {
     expect(r.status).toBe(201);
     expect(hsvc.startReturn.mock.calls[0]!.slice(2)).toEqual(["s1", "user", ID, body]);
     expect(hsvc.startTransfer).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/devices?placement=overdue", () => {
+  it("is accepted and passes the filter and today (UTC+7) to the service", async () => {
+    fakeAuth(["simap:user"]);
+    svc.listDevices.mockResolvedValue({ ok: true, value: { items: [], truncated: false } });
+    const r = await listGET(req("GET", "http://x/api/devices?placement=overdue"), noParams);
+    expect(r.status).toBe(200);
+    expect(svc.listDevices.mock.calls[0]!.slice(4)).toEqual([
+      "overdue",
+      expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+    ]);
+  });
+});
+
+describe("POST /api/devices/:id/handoffs with kind extension", () => {
+  const body = { kind: "extension", newExpiresOn: "2100-01-01", note: "x" };
+  it("201 and calls startExtension only", async () => {
+    fakeAuth(["simap:user"]);
+    hsvc.startExtension.mockResolvedValue({ ok: true, value: { id: "h1" } });
+    const r = await TRANSFER(req("POST", undefined, body), idRoute);
+    expect(r.status).toBe(201);
+    expect(hsvc.startExtension.mock.calls[0]!.slice(2)).toEqual(["s1", "user", ID, body]);
+    expect(hsvc.startTransfer).not.toHaveBeenCalled();
+    expect(hsvc.startReturn).not.toHaveBeenCalled();
+  });
+  it("400 for a date not after today or a missing date, no service call", async () => {
+    fakeAuth(["simap:user"]);
+    for (const newExpiresOn of ["2000-01-01", undefined]) {
+      const r = await TRANSFER(req("POST", undefined, { ...body, newExpiresOn }), idRoute);
+      expect(r.status).toBe(400);
+    }
+    expect(hsvc.startExtension).not.toHaveBeenCalled();
+  });
+  it("maps a refusal to its status and code", async () => {
+    fakeAuth(["simap:user"]);
+    hsvc.startExtension.mockResolvedValue({ ok: false, status: 409, code: "handoff_pending" });
+    const r = await TRANSFER(req("POST", undefined, body), idRoute);
+    expect([r.status, await r.json()]).toEqual([409, { error: { code: "handoff_pending" } }]);
   });
 });
 

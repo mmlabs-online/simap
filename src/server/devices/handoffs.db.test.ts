@@ -11,17 +11,21 @@ import {
   newOrg,
   testPool,
 } from "@/test/db/fixtures";
-import { placeDevice } from "./devices";
+import { getDevice, listDevices, placeDevice } from "./devices";
 import {
   cancelHandoff,
   confirmHandoff,
   countHandoffs,
   declineHandoff,
   listHandoffs,
+  startExtension,
   startReturn,
   startTransfer,
   takeBack,
 } from "./handoffs";
+
+/** The pinned clock for reads: a UTC+7 calendar day. */
+const TODAY = "2026-11-25";
 
 let pool: pg.Pool;
 
@@ -233,7 +237,7 @@ describe("handoffs (db): confirm", () => {
     );
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
     const before = await dev(d);
-    const r = await confirmHandoff(pool, w.scope, w.sy, "user", h);
+    const r = await confirmHandoff(pool, w.scope, w.sy, "user", h, TODAY);
     expect(r.ok && r.value).toMatchObject({ status: "confirmed", decidedBy: { id: w.y } });
     const after = await dev(d);
     expect(after).toMatchObject({ owner_id: w.y, seat_id: null, role: "secondary" });
@@ -259,7 +263,7 @@ describe("handoffs (db): confirm", () => {
     const w = await world();
     const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
-    expect((await confirmHandoff(pool, w.scope, w.sy, "user", h)).ok).toBe(true);
+    expect((await confirmHandoff(pool, w.scope, w.sy, "user", h, TODAY)).ok).toBe(true);
     expect(await dev(d)).toMatchObject({ owner_id: w.y, seat_id: null });
     expect((await auditRows(w.orgId, "device.transfer_confirm"))[0].meta).toMatchObject({
       fromSeatId: null,
@@ -271,7 +275,7 @@ describe("handoffs (db): confirm", () => {
     const w = await world();
     const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
-    expect(await confirmHandoff(pool, w.scope, w.sz, "admin", h)).toEqual(
+    expect(await confirmHandoff(pool, w.scope, w.sz, "admin", h, TODAY)).toEqual(
       refusal(422, "not_allowed"),
     );
     expect(await dev(d)).toMatchObject({ owner_id: w.x });
@@ -283,13 +287,13 @@ describe("handoffs (db): confirm", () => {
     const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
     await cancelHandoff(pool, w.scope, w.sx, "user", h);
-    expect(await confirmHandoff(pool, w.scope, w.sy, "user", h)).toEqual(
+    expect(await confirmHandoff(pool, w.scope, w.sy, "user", h, TODAY)).toEqual(
       refusal(409, "handoff_not_pending"),
     );
     const d2 = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const h2 = await addTransfer(pool, w.orgId, d2, w.x, w.y);
-    expect((await confirmHandoff(pool, w.scope, w.sy, "user", h2)).ok).toBe(true);
-    expect(await confirmHandoff(pool, w.scope, w.sy, "user", h2)).toEqual(
+    expect((await confirmHandoff(pool, w.scope, w.sy, "user", h2, TODAY)).ok).toBe(true);
+    expect(await confirmHandoff(pool, w.scope, w.sy, "user", h2, TODAY)).toEqual(
       refusal(409, "handoff_not_pending"),
     );
   });
@@ -299,7 +303,7 @@ describe("handoffs (db): confirm", () => {
     const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
     await pool.query("update devices set owner_id = $2 where id = $1", [d, w.z]);
-    expect(await confirmHandoff(pool, w.scope, w.sy, "user", h)).toEqual(
+    expect(await confirmHandoff(pool, w.scope, w.sy, "user", h, TODAY)).toEqual(
       refusal(409, "handoff_stale"),
     );
     expect((await handoff(h)).status).toBe("pending");
@@ -310,7 +314,7 @@ describe("handoffs (db): confirm", () => {
     const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
     await pool.query("update members set status = 'deactivated' where id = $1", [w.y]);
-    expect(await confirmHandoff(pool, w.scope, w.sy, "user", h)).toEqual(
+    expect(await confirmHandoff(pool, w.scope, w.sy, "user", h, TODAY)).toEqual(
       refusal(422, "member_not_assignable"),
     );
   });
@@ -320,7 +324,7 @@ describe("handoffs (db): confirm", () => {
     const d = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
     const rs = await Promise.all([
-      confirmHandoff(pool, w.scope, w.sy, "user", h),
+      confirmHandoff(pool, w.scope, w.sy, "user", h, TODAY),
       cancelHandoff(pool, w.scope, w.sx, "user", h),
     ]);
     expect(rs.filter((r) => r.ok)).toHaveLength(1);
@@ -332,7 +336,7 @@ describe("handoffs (db): confirm", () => {
     const d = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
     const [c, p] = await Promise.all([
-      confirmHandoff(pool, w.scope, w.sy, "user", h),
+      confirmHandoff(pool, w.scope, w.sy, "user", h, TODAY),
       placeDevice(pool, w.scope, w.sx, "user", d, {
         seatId: w.a2,
         role: "secondary",
@@ -371,19 +375,19 @@ describe("handoffs (db): list and count", () => {
       canCancel: false,
     });
     expect(r.ok && r.value.truncated).toBe(false);
-    expect(await countHandoffs(pool, w.scope, w.sy, "user")).toEqual({
+    expect(await countHandoffs(pool, w.scope, w.sy, "user", TODAY)).toEqual({
       ok: true,
-      value: { incoming: 2, returns: 0 },
+      value: { incoming: 2, returns: 0, extensions: 0, overdue: 0 },
     });
-    expect(await countHandoffs(pool, w.scope, w.sz, "user")).toEqual({
+    expect(await countHandoffs(pool, w.scope, w.sz, "user", TODAY)).toEqual({
       ok: true,
-      value: { incoming: 0, returns: 0 },
+      value: { incoming: 0, returns: 0, extensions: 0, overdue: 0 },
     });
     expect(
-      await countHandoffs(pool, w.scope, "00000000-0000-4000-8000-000000000000", "user"),
+      await countHandoffs(pool, w.scope, "00000000-0000-4000-8000-000000000000", "user", TODAY),
     ).toEqual({
       ok: true,
-      value: { incoming: 0, returns: 0 },
+      value: { incoming: 0, returns: 0, extensions: 0, overdue: 0 },
     });
   });
 });
@@ -471,13 +475,13 @@ describe("handoffs (db): return", () => {
       [d],
     );
     const h = await addHandoff(pool, w.orgId, d, w.x, "pending");
-    expect(await confirmHandoff(pool, w.scope, w.sz, "manager", h)).toEqual(
+    expect(await confirmHandoff(pool, w.scope, w.sz, "manager", h, TODAY)).toEqual(
       refusal(422, "not_allowed"),
     );
-    expect(await confirmHandoff(pool, w.scope, w.sx, "user", h)).toEqual(
+    expect(await confirmHandoff(pool, w.scope, w.sx, "user", h, TODAY)).toEqual(
       refusal(422, "not_allowed"),
     );
-    const r = await confirmHandoff(pool, w.scope, w.sy, "admin", h);
+    const r = await confirmHandoff(pool, w.scope, w.sy, "admin", h, TODAY);
     expect(r.ok && r.value).toMatchObject({ status: "confirmed", decidedBy: { id: w.y } });
     expect(await dev(d)).toMatchObject({
       owner_id: null,
@@ -489,7 +493,7 @@ describe("handoffs (db): return", () => {
     const rows = await auditRows(w.orgId, "device.return_confirm");
     expect(rows[0].meta).toMatchObject({ fromCode: "A-01", demoted: true, fromMemberId: w.x });
     expect(rows[0].meta.expiresOn).not.toBeNull();
-    expect(await confirmHandoff(pool, w.scope, w.sy, "admin", h)).toEqual(
+    expect(await confirmHandoff(pool, w.scope, w.sy, "admin", h, TODAY)).toEqual(
       refusal(409, "handoff_not_pending"),
     );
   });
@@ -498,12 +502,12 @@ describe("handoffs (db): return", () => {
     const w = await world();
     const d = await addDevice(pool, w.orgId, w.y, null, "secondary");
     const h = await addHandoff(pool, w.orgId, d, w.y, "pending");
-    expect((await confirmHandoff(pool, w.scope, w.sy, "admin", h)).ok).toBe(true);
+    expect((await confirmHandoff(pool, w.scope, w.sy, "admin", h, TODAY)).ok).toBe(true);
     expect(await dev(d)).toMatchObject({ owner_id: null });
     const d2 = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const h2 = await addHandoff(pool, w.orgId, d2, w.x, "pending");
     await pool.query("update devices set owner_id = $2 where id = $1", [d2, w.z]);
-    expect(await confirmHandoff(pool, w.scope, w.sy, "admin", h2)).toEqual(
+    expect(await confirmHandoff(pool, w.scope, w.sy, "admin", h2, TODAY)).toEqual(
       refusal(409, "handoff_stale"),
     );
   });
@@ -513,7 +517,7 @@ describe("handoffs (db): return", () => {
     const d = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
     const h = await addHandoff(pool, w.orgId, d, w.x, "pending");
     const [a, b] = await Promise.all([
-      confirmHandoff(pool, w.scope, w.sy, "admin", h),
+      confirmHandoff(pool, w.scope, w.sy, "admin", h, TODAY),
       cancelHandoff(pool, w.scope, w.sx, "user", h),
     ]);
     expect([a.ok, b.ok].filter(Boolean)).toHaveLength(1);
@@ -568,7 +572,7 @@ describe("handoffs (db): take-back", () => {
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
     const [a, b] = await Promise.all([
       takeBack(pool, w.scope, w.sz, "admin", d),
-      confirmHandoff(pool, w.scope, w.sy, "user", h),
+      confirmHandoff(pool, w.scope, w.sy, "user", h, TODAY),
     ]);
     expect(a.ok || b.ok).toBe(true);
     for (const r of [a, b]) if (!r.ok) expect([409, 422]).toContain(r.status);
@@ -597,17 +601,220 @@ describe("handoffs (db): returns list and count", () => {
     expect(await listHandoffs(pool, w.scope, w.sz, "manager", "returns")).toEqual(
       refusal(422, "not_allowed"),
     );
-    expect(await countHandoffs(pool, w.scope, w.sz, "admin")).toEqual({
+    expect(await countHandoffs(pool, w.scope, w.sz, "admin", TODAY)).toEqual({
       ok: true,
-      value: { incoming: 0, returns: 2 },
+      value: { incoming: 0, returns: 2, extensions: 0, overdue: 0 },
     });
-    expect(await countHandoffs(pool, w.scope, w.sz, "manager")).toEqual({
+    expect(await countHandoffs(pool, w.scope, w.sz, "manager", TODAY)).toEqual({
       ok: true,
-      value: { incoming: 0, returns: 0 },
+      value: { incoming: 0, returns: 0, extensions: 0, overdue: 0 },
     });
-    expect(await countHandoffs(pool, w.scope, w.sy, "user")).toEqual({
+    expect(await countHandoffs(pool, w.scope, w.sy, "user", TODAY)).toEqual({
       ok: true,
-      value: { incoming: 1, returns: 0 },
+      value: { incoming: 1, returns: 0, extensions: 0, overdue: 0 },
     });
+  });
+});
+
+const setExpiry = (d: string, day: string | null) =>
+  pool.query("update devices set holding_expires_on = $2 where id = $1", [d, day]);
+const ext = (day: string, note: string | null = null) => ({
+  kind: "extension" as const,
+  newExpiresOn: day,
+  note,
+});
+
+describe("handoffs (db): extension", () => {
+  it("owner starts: pending, device unchanged, audit, DTO and pendingHandoff carry the new date", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await setExpiry(d, "2026-11-20");
+    const r = await startExtension(pool, w.scope, w.sx, "user", d, ext("2026-12-31", "need it"));
+    expect(r.ok && r.value).toMatchObject({
+      kind: "extension",
+      status: "pending",
+      from: { id: w.x },
+      to: null,
+      newExpiresOn: "2026-12-31",
+      note: "need it",
+      canCancel: true,
+      canConfirm: false,
+      canDecline: false,
+    });
+    const g = await getDevice(pool, w.scope, w.sx, "user", d, TODAY);
+    expect(g.ok && g.value.holding?.expiresOn).toBe("2026-11-20");
+    expect(g.ok && g.value.pendingHandoff).toMatchObject({
+      kind: "extension",
+      newExpiresOn: "2026-12-31",
+      to: null,
+    });
+    const rows = await auditRows(w.orgId, "device.extension_start");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].meta).toMatchObject({ newExpiresOn: "2026-12-31", note: "need it" });
+  });
+
+  it("refusals: another user and a Manager 422, unowned 422, second pending 409, transfer pending 409; no rows", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    expect(await startExtension(pool, w.scope, w.sy, "user", d, ext("2026-12-31"))).toEqual(
+      refusal(422, "not_allowed"),
+    );
+    expect(await startExtension(pool, w.scope, w.sz, "manager", d, ext("2026-12-31"))).toEqual(
+      refusal(422, "not_allowed"),
+    );
+    const free = await addDevice(pool, w.orgId, null, null, "secondary");
+    expect(await startExtension(pool, w.scope, w.sx, "user", free, ext("2026-12-31"))).toEqual(
+      refusal(422, "device_unowned"),
+    );
+    expect(
+      await count("select count(*)::int as n from device_handoffs where org_id = $1", [w.orgId]),
+    ).toBe(0);
+    expect((await startExtension(pool, w.scope, w.sx, "user", d, ext("2026-12-31"))).ok).toBe(true);
+    expect(await startExtension(pool, w.scope, w.sx, "user", d, ext("2027-01-31"))).toEqual(
+      refusal(409, "handoff_pending"),
+    );
+    const t = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await addTransfer(pool, w.orgId, t, w.x, w.y);
+    expect(await startExtension(pool, w.scope, w.sx, "user", t, ext("2026-12-31"))).toEqual(
+      refusal(409, "handoff_pending"),
+    );
+  });
+
+  it("approve (Manager) sets holding_expires_on, records decided_by and audits from/to", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await setExpiry(d, "2026-11-20");
+    const s = await startExtension(pool, w.scope, w.sx, "user", d, ext("2026-12-31"));
+    const h = s.ok ? s.value.id : "";
+    const r = await confirmHandoff(pool, w.scope, w.sz, "manager", h, TODAY);
+    expect(r.ok && r.value).toMatchObject({ status: "confirmed", decidedBy: { id: w.z } });
+    const g = await getDevice(pool, w.scope, w.sx, "user", d, TODAY);
+    expect(g.ok && g.value.holding?.expiresOn).toBe("2026-12-31");
+    expect(g.ok && g.value.overdue).toBe(false);
+    const rows = await auditRows(w.orgId, "device.extension_confirm");
+    expect(rows).toHaveLength(1);
+    expect(rows[0].meta).toMatchObject({ fromExpiresOn: "2026-11-20", toExpiresOn: "2026-12-31" });
+  });
+
+  it("approve or reject by the owner or another user: 422, nothing written", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await setExpiry(d, "2026-11-20");
+    const s = await startExtension(pool, w.scope, w.sx, "user", d, ext("2026-12-31"));
+    const h = s.ok ? s.value.id : "";
+    for (const sub of [w.sx, w.sy]) {
+      expect(await confirmHandoff(pool, w.scope, sub, "user", h, TODAY)).toEqual(
+        refusal(422, "not_allowed"),
+      );
+      expect(await declineHandoff(pool, w.scope, sub, "user", h)).toEqual(
+        refusal(422, "not_allowed"),
+      );
+    }
+    expect((await handoff(h)).status).toBe("pending");
+    expect(await auditRows(w.orgId, "device.extension_confirm")).toHaveLength(0);
+  });
+
+  it("approve with a date no longer after today -> 409 handoff_stale; the owner changing -> 409 too", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const s = await startExtension(pool, w.scope, w.sx, "user", d, ext("2026-12-01"));
+    const h = s.ok ? s.value.id : "";
+    expect(await confirmHandoff(pool, w.scope, w.sz, "manager", h, "2026-12-01")).toEqual(
+      refusal(409, "handoff_stale"),
+    );
+    await pool.query("update devices set owner_id = $2 where id = $1", [d, w.y]);
+    expect(await confirmHandoff(pool, w.scope, w.sz, "manager", h, TODAY)).toEqual(
+      refusal(409, "handoff_stale"),
+    );
+    expect((await handoff(h)).status).toBe("pending");
+  });
+
+  it("reject leaves the expiry; a second decision is 409 handoff_not_pending", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await setExpiry(d, "2026-11-20");
+    const s = await startExtension(pool, w.scope, w.sx, "user", d, ext("2026-12-31"));
+    const h = s.ok ? s.value.id : "";
+    const r = await declineHandoff(pool, w.scope, w.sz, "manager", h);
+    expect(r.ok && r.value.status).toBe("declined");
+    const g = await getDevice(pool, w.scope, w.sx, "user", d, TODAY);
+    expect(g.ok && g.value.holding?.expiresOn).toBe("2026-11-20");
+    expect(await auditRows(w.orgId, "device.extension_decline")).toHaveLength(1);
+    expect(await confirmHandoff(pool, w.scope, w.sz, "manager", h, TODAY)).toEqual(
+      refusal(409, "handoff_not_pending"),
+    );
+  });
+
+  it("the owner cancels; take-back cancels a pending extension", async () => {
+    const w = await world();
+    const d1 = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const d2 = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const a = await startExtension(pool, w.scope, w.sx, "user", d1, ext("2026-12-31"));
+    const b = await startExtension(pool, w.scope, w.sx, "user", d2, ext("2026-12-31"));
+    const ha = a.ok ? a.value.id : "";
+    const hb = b.ok ? b.value.id : "";
+    const c = await cancelHandoff(pool, w.scope, w.sx, "user", ha);
+    expect(c.ok && c.value.status).toBe("cancelled");
+    expect((await takeBack(pool, w.scope, w.sz, "admin", d2)).ok).toBe(true);
+    expect((await handoff(hb)).status).toBe("cancelled");
+  });
+
+  it("listHandoffs extensions: Manager+ sees org-wide pending extensions, a User gets 422", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const t = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await addTransfer(pool, w.orgId, t, w.x, w.y);
+    const s = await startExtension(pool, w.scope, w.sx, "user", d, ext("2026-12-31"));
+    const h = s.ok ? s.value.id : "";
+    const r = await listHandoffs(pool, w.scope, w.sz, "manager", "extensions");
+    expect(r.ok && r.value.items.map((i) => i.id)).toEqual([h]);
+    expect(r.ok && r.value.items[0]).toMatchObject({ canConfirm: true, canDecline: true });
+    expect(await listHandoffs(pool, w.scope, w.sx, "user", "extensions")).toEqual(
+      refusal(422, "not_allowed"),
+    );
+  });
+
+  it("count: overdue counts only my owned devices past expiry, extensions only for Manager+", async () => {
+    const w = await world();
+    const past = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const todayD = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const theirs = await addDevice(pool, w.orgId, w.y, null, "secondary");
+    await setExpiry(past, "2026-11-24");
+    await setExpiry(todayD, TODAY);
+    await setExpiry(theirs, "2026-01-01");
+    await startExtension(pool, w.scope, w.sx, "user", past, ext("2026-12-31"));
+    expect(await countHandoffs(pool, w.scope, w.sx, "user", TODAY)).toEqual({
+      ok: true,
+      value: { incoming: 0, returns: 0, extensions: 0, overdue: 1 },
+    });
+    expect(await countHandoffs(pool, w.scope, w.sz, "manager", TODAY)).toEqual({
+      ok: true,
+      value: { incoming: 0, returns: 0, extensions: 1, overdue: 0 },
+    });
+  });
+
+  it("device DTO overdue: yesterday true; today, no expiry and unowned false; the overdue filter lists only the first", async () => {
+    const w = await world();
+    const mk = async (owner: string | null, day: string | null) => {
+      const d = await addDevice(pool, w.orgId, owner, null, "secondary");
+      await setExpiry(d, day);
+      return d;
+    };
+    const yesterday = await mk(w.x, "2026-11-24");
+    const today = await mk(w.x, TODAY);
+    const none = await mk(w.x, null);
+    const free = await mk(null, null);
+    const flag = async (d: string) => {
+      const g = await getDevice(pool, w.scope, w.sx, "admin", d, TODAY);
+      return g.ok && g.value.overdue;
+    };
+    expect([await flag(yesterday), await flag(today), await flag(none), await flag(free)]).toEqual([
+      true,
+      false,
+      false,
+      false,
+    ]);
+    const l = await listDevices(pool, w.scope, w.sx, "user", "overdue", TODAY);
+    expect(l.ok && l.value.items.map((i) => i.id)).toEqual([yesterday]);
   });
 });

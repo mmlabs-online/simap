@@ -1,4 +1,5 @@
 import type { DeviceDto, HandoffDto, HandoffStartValue } from "@/lib/devices/types";
+import { todayUtc7 } from "@/lib/devices/holding";
 import { validateHandoffStart } from "@/lib/validate/device";
 import { apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
@@ -24,7 +25,10 @@ export type TransferBodyResult =
 /** The server's own validator (NFC, trim, blank to null, 500 limit), so the client and server agree. */
 export function toTransferBody(form: TransferForm, memberId: string | null): TransferBodyResult {
   if (memberId === null) return { kind: "invalid", message: seatsCopy.actions.pickerNone };
-  const v = validateHandoffStart({ kind: "transfer", toMemberId: memberId, note: form.note });
+  const v = validateHandoffStart(
+    { kind: "transfer", toMemberId: memberId, note: form.note },
+    todayUtc7(new Date()),
+  );
   return v.ok ? { kind: "ok", body: v.value } : { kind: "invalid", message: fieldMessage(v.field) };
 }
 

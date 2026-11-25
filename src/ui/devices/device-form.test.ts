@@ -45,6 +45,7 @@ const device: DeviceDto = {
   canTransfer: false,
   canReturn: false,
   canTakeBack: false,
+  overdue: false,
   pendingHandoff: null,
 };
 const body = (r: ReturnType<typeof toCreateBody>) => {

@@ -72,6 +72,25 @@ export function decideReturnStart(a: {
   return { kind: "ok" };
 }
 
+export type ExtensionStartRefusalCode = "not_allowed" | "device_unowned" | "handoff_pending";
+
+export type ExtensionStartDecision =
+  | { kind: "ok" }
+  | { kind: "refuse"; status: 409 | 422; code: ExtensionStartRefusalCode };
+
+/** DEV-10 start: the owner only. Permission first (R7 order), then the device, then the pending check. */
+export function decideExtensionStart(a: {
+  actorMemberId: string | null;
+  ownerId: string | null;
+  pending: boolean;
+}): ExtensionStartDecision {
+  if (a.actorMemberId === null) return { kind: "refuse", status: 422, code: "not_allowed" };
+  if (a.ownerId === null) return { kind: "refuse", status: 422, code: "device_unowned" };
+  if (a.actorMemberId !== a.ownerId) return { kind: "refuse", status: 422, code: "not_allowed" };
+  if (a.pending) return { kind: "refuse", status: 409, code: "handoff_pending" };
+  return { kind: "ok" };
+}
+
 export type HandoffAction = "confirm" | "decline" | "cancel";
 
 export type HandoffActionDecision =
@@ -80,7 +99,8 @@ export type HandoffActionDecision =
 
 /**
  * Transfer: confirm and decline by the recipient only. Return: confirm by an Admin only, never declined.
- * Cancel (every kind): the sender or a Manager+. Extension is refused until SIM-037.5.
+ * Extension: confirm (approve) and decline (reject) by a Manager+ only.
+ * Cancel (every kind): the sender or a Manager+.
  * Permission before status.
  */
 export function decideHandoffAction(a: {
@@ -93,8 +113,9 @@ export function decideHandoffAction(a: {
   status: HandoffStatus;
 }): HandoffActionDecision {
   const decide = (): boolean => {
-    if (a.actorMemberId === null || a.kind === "extension") return false;
+    if (a.actorMemberId === null) return false;
     if (a.action === "cancel") return canCancelHandoff(a.tier, a.actorMemberId === a.fromId);
+    if (a.kind === "extension") return atLeast(a.tier, "manager");
     if (a.kind === "return") return a.action === "confirm" && a.tier === "admin";
     return a.toId !== null && a.actorMemberId === a.toId;
   };

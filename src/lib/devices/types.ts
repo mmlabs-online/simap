@@ -36,7 +36,7 @@ export type HoldingPatchValue = Partial<{ note: string | null; expiresOn: string
 
 export type DeviceRole = "primary" | "secondary";
 
-export type PlacementFilter = "all" | "placed" | "inventory" | "unowned";
+export type PlacementFilter = "all" | "placed" | "inventory" | "unowned" | "overdue";
 
 export type DevicePlacementDto = {
   seatId: string;
@@ -79,6 +79,8 @@ export type DeviceDto = {
   canReturn: boolean;
   /** Admin, owned, and no pending return; a pending transfer is cancelled by take-back (DEV-09). */
   canTakeBack: boolean;
+  /** Owned and the expiry day is before today (UTC+7); computed on read, never stored (DEV-10). */
+  overdue: boolean;
   /** The one pending handoff, visible org-wide (DEV-02); the note is not included. */
   pendingHandoff: PendingHandoffDto | null;
 };
@@ -86,12 +88,13 @@ export type DeviceDto = {
 export type HandoffKind = "transfer" | "return" | "extension";
 export type HandoffStatus = "pending" | "confirmed" | "declined" | "cancelled";
 
-/** DEV-08 / DEV-09 start body. `extension` is added by SIM-037.5. */
+/** DEV-08 / DEV-09 start body. `extension` is the owner's request for a new expiry (DEV-10). */
 export type HandoffStartValue =
   | { kind: "transfer"; toMemberId: string; note: string | null }
-  | { kind: "return"; note: string | null };
+  | { kind: "return"; note: string | null }
+  | { kind: "extension"; newExpiresOn: string; note: string | null };
 
-export type HandoffBox = "incoming" | "returns";
+export type HandoffBox = "incoming" | "returns" | "extensions";
 
 export type MemberRef = { id: string; displayName: string };
 
@@ -125,11 +128,20 @@ export type PendingHandoffDto = {
   kind: HandoffKind;
   to: MemberRef | null;
   requestedBy: MemberRef;
+  /** Set for kind extension. */
+  newExpiresOn: string | null;
   createdAt: string;
   canCancel: boolean;
 };
 
 export type HandoffListResponse = { items: HandoffDto[]; truncated: boolean };
-export type HandoffCountDto = { incoming: number; returns: number };
+export type HandoffCountDto = {
+  incoming: number;
+  returns: number;
+  /** Pending extension requests; 0 below Manager. */
+  extensions: number;
+  /** The caller's own owned devices past expiry. */
+  overdue: number;
+};
 
 export type DeviceListResponse = { items: DeviceDto[]; truncated: boolean };

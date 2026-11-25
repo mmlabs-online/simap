@@ -199,8 +199,8 @@ describe("org scoping (R6)", () => {
       DEV,
       put({ seatId: null, role: "secondary", expectedSeatId: null }),
     );
-    await listDevices(t.db, scope, ACTOR, "user", "placed");
-    await getDevice(t.db, scope, ACTOR, "user", DEV);
+    await listDevices(t.db, scope, ACTOR, "user", "placed", "2026-11-25");
+    await getDevice(t.db, scope, ACTOR, "user", DEV, "2026-11-25");
     const data = t.calls.filter(([s]) => !/^(begin|commit|rollback)$/.test(s));
     expect(data.length).toBeGreaterThan(10);
     for (const [sql, values] of data) {

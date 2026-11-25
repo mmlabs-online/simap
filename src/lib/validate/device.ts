@@ -20,7 +20,7 @@ export type PlacementPutValue = {
   expectedSeatId: string | null;
 };
 
-const FILTERS: readonly string[] = ["all", "placed", "inventory", "unowned"];
+const FILTERS: readonly string[] = ["all", "placed", "inventory", "unowned", "overdue"];
 
 /** `?placement=`: absent or blank = all; repeated or unknown = invalid. Other keys are ignored. */
 export function parseDeviceQuery(params: URLSearchParams): DeviceQueryResult {
@@ -198,28 +198,41 @@ export function validateAssign(body: unknown, today: string): Validated<AssignVa
   return { ok: true, value: { memberId: body.memberId, note, expiresOn } };
 }
 
-/** DEV-08 / DEV-09 start body: `transfer` or `return`. `extension` comes with SIM-037.5. */
-export function validateHandoffStart(body: unknown): Validated<HandoffStartValue> {
+/** DEV-08 / DEV-09 / DEV-10 start body: `transfer`, `return` or `extension`. `today` is a UTC+7 day. */
+export function validateHandoffStart(body: unknown, today: string): Validated<HandoffStartValue> {
   if (!isPlainObject(body)) return { ok: false, field: "body" };
-  const isReturn = body.kind === "return";
-  const allowed = isReturn ? ["kind", "note"] : ["kind", "toMemberId", "note"];
+  const kind = body.kind;
+  const allowed =
+    kind === "return"
+      ? ["kind", "note"]
+      : kind === "extension"
+        ? ["kind", "newExpiresOn", "note"]
+        : ["kind", "toMemberId", "note"];
   const extra = Object.keys(body).find((k) => !allowed.includes(k));
   if (extra !== undefined) return { ok: false, field: extra };
-  if (body.kind !== "transfer" && !isReturn) return { ok: false, field: "kind" };
+  if (kind !== "transfer" && kind !== "return" && kind !== "extension") {
+    return { ok: false, field: "kind" };
+  }
   const note = body.note === undefined ? null : noteText(body.note, DEVICE_LIMITS.note);
   if (note === undefined) return { ok: false, field: "note" };
-  if (isReturn) return { ok: true, value: { kind: "return", note } };
+  if (kind === "return") return { ok: true, value: { kind: "return", note } };
+  if (kind === "extension") {
+    const day = parseCalendarDay(body.newExpiresOn);
+    if (day === null || day <= today) return { ok: false, field: "newExpiresOn" };
+    return { ok: true, value: { kind: "extension", newExpiresOn: day, note } };
+  }
   if (!isCanonicalUuid(body.toMemberId)) return { ok: false, field: "toMemberId" };
   return { ok: true, value: { kind: "transfer", toMemberId: body.toMemberId, note } };
 }
 
-/** `GET /api/handoffs?box=`: exactly one `box`, `incoming` or `returns`. */
+/** `GET /api/handoffs?box=`: exactly one `box`, `incoming`, `returns` or `extensions`. */
 export function validateHandoffBox(params: URLSearchParams): Validated<HandoffBox> {
   const all = params.getAll("box");
-  if (all.length !== 1 || (all[0] !== "incoming" && all[0] !== "returns")) {
+  const v = all[0];
+  if (all.length !== 1 || (v !== "incoming" && v !== "returns" && v !== "extensions")) {
     return { ok: false, field: "box" };
   }
-  return { ok: true, value: all[0] };
+  return { ok: true, value: v };
 }
 
 /** DEV-07 holding edit: a non-empty partial; only the keys sent are checked (an overdue note stays editable). */

@@ -169,13 +169,21 @@ export function createDevicesApi(fetcher: ApiFetch) {
     pendingReturns: () => listHandoffs("returns"),
     handoffCount: () =>
       call<HandoffCountDto>("/api/handoffs/count", { method: "GET" }, async (res) => {
-        const body = (await res.json()) as { incoming?: unknown; returns?: unknown };
+        const body = (await res.json()) as {
+          incoming?: unknown;
+          returns?: unknown;
+          extensions?: unknown;
+          overdue?: unknown;
+        };
+        const n = (v: unknown) => (typeof v === "number" ? v : 0);
         return typeof body?.incoming === "number"
           ? {
               ok: true,
               value: {
                 incoming: body.incoming,
-                returns: typeof body.returns === "number" ? body.returns : 0,
+                returns: n(body.returns),
+                extensions: n(body.extensions),
+                overdue: n(body.overdue),
               },
             }
           : fail("internal");
