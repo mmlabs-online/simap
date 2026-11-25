@@ -326,10 +326,8 @@ describe("updateDevice", () => {
 });
 
 describe("deleteDevice", () => {
-  it("not_allowed is decided first; then device_owned, device_placed, handoff_pending; refusals write nothing", async () => {
+  it("an Admin is refused device_owned, device_placed, handoff_pending in that order; device_placed, handoff_pending; refusals write nothing", async () => {
     const cases: [Script, "user" | "manager" | "admin", number, string][] = [
-      [writes({ owner: ME, seat: SEAT_A, pending: true }), "user", 422, "not_allowed"],
-      [writes({ owner: ME, seat: SEAT_A, pending: true }), "manager", 422, "not_allowed"],
       [writes({ owner: ME, seat: SEAT_A, pending: true }), "admin", 409, "device_owned"],
       [writes({ owner: null, seat: SEAT_A, pending: true }), "admin", 409, "device_placed"],
       [writes({ owner: null, pending: true }), "admin", 409, "handoff_pending"],
@@ -343,6 +341,18 @@ describe("deleteDevice", () => {
       });
       expect(writeSql(t.sqls())).toEqual([]);
       expect(t.sqls()).toContain("rollback");
+    }
+  });
+
+  it("a non-Admin is refused 422 not_allowed before any query or transaction", async () => {
+    for (const tier of ["user", "manager"] as const) {
+      const t = fakeDb(writes({ owner: null }));
+      expect(await deleteDevice(t.db, scope, ACTOR, tier, DEV)).toEqual({
+        ok: false,
+        status: 422,
+        code: "not_allowed",
+      });
+      expect(t.sqls()).toEqual([]);
     }
   });
 

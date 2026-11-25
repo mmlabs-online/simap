@@ -404,6 +404,7 @@ export function deleteDevice(
   tier: Tier,
   id: string,
 ): Promise<Result<null>> {
+  if (tier !== "admin") return Promise.resolve(refuse(422, "not_allowed").refusal);
   return inTx(db, async (c) => {
     // the device lock serialises this against placeDevice, which locks the device row too
     const { rows } = await orgQuery<{

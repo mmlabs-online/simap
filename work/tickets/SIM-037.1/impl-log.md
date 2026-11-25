@@ -50,3 +50,22 @@
 ### Scope self-check
 - Could the diff be smaller? No. Source diff is ~330 changed non-test lines plus schema-check section 10.
 - Diff size: +709 / -448 tracked lines (tests included), plus the new migration (~75 lines).
+
+## Attempt 3 (REWORK 2)
+
+### Files touched
+- src/ui/search/SearchView.test.tsx: added test "unowned hit shows Org inventory" (review issue 2).
+- src/server/devices/devices.ts: `deleteDevice` returns 422 `not_allowed` for a non-Admin before `inTx` (review optional point); no query runs.
+- src/server/devices/devices.test.ts: new test for the early refusal (user, manager: no SQL at all); removed the user/manager rows from the matrix test, which expects a rollback.
+- db/migrations/README.md: rollback/downgrade note in the schema section (security review point); the plan's Downgrade note was not edited.
+
+### Checks
+- format:check ok; typecheck exit 0; check:layers no violations; build exit 0.
+- test: 2376 passed; one failure in scripts/dev-process.test.ts (flaky under full-suite load, as before); in isolation 21/21 pass.
+- DB checks (`pnpm migrate`, `schema:check`, `test:db`): NOT RUN. Docker/Postgres is not available here; they await CI on the PR (review issue 1).
+
+### Out-of-plan files
+- db/migrations/README.md (documentation requested by the security review).
+
+### Scope self-check
+- Only the listed review items were changed.

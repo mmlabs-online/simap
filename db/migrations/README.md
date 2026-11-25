@@ -53,5 +53,8 @@ The app never migrates.
   org inventory must clear owner, seat and holding data in one UPDATE. `device_handoffs` (transfer / return /
   extension; at most one pending per device) cascades from `devices`; the service refuses a device delete while one is
   pending.
+  Rollback note: the migration is forward-only. Rolling the app back to the previous image after unowned devices
+  exist is unsafe, because the old code assumes every device has an owner; return or delete the org-inventory
+  devices first (or restore from backup). Re-adding `owner_id not null` needs that cleanup first.
 - Dev seed: `pnpm seed:dev` loads fake data (fixed UUIDs, `@simap.example` emails, invented names) into a local
   database only; it refuses non-local hosts and `NODE_ENV=production`. Never put real data in the seed.
