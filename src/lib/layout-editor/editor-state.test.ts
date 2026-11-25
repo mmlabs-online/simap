@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { MapItemDto } from "@/lib/map-items/types";
+import type { LayoutItem } from "@/lib/sprites/layout";
 import type { MapView } from "@/lib/sprites/map-view";
 import { LAYOUT_LIMITS, validateLayoutSave } from "@/lib/validate/layout";
 import {
@@ -10,6 +11,7 @@ import {
   savePayload,
   type EditorAction,
   type EditorState,
+  editorItems,
 } from "./editor-state";
 import { paletteEntries } from "./palette";
 import type { Tool } from "./place-tool";
@@ -621,5 +623,20 @@ describe("catalog sizes", () => {
     const wider = { ...s, footprints: editorFootprints([], [dto(unit, 4, 1)]) };
     expect(savePayload(wider).ok).toBe(false);
     expect(run(s, { type: "saveDone", view: view() }).palette).toBe(items);
+  });
+});
+
+describe("editorItems", () => {
+  const row = (builtinKey: string, name: string) =>
+    ({ builtinKey, name, hidden: false }) as unknown as MapItemDto;
+  it("layout rows win over palette rows per key; palette-only keys are included", () => {
+    const out = editorItems([row("a", "layout a")] as unknown as LayoutItem[], [
+      row("a", "palette a"),
+      row("b", "palette b"),
+    ]);
+    expect(out.map((i) => [i.builtinKey, i.name]).sort()).toEqual([
+      ["a", "layout a"],
+      ["b", "palette b"],
+    ]);
   });
 });

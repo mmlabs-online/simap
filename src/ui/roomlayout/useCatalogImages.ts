@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { parseItemImageId, type ItemArtEntry } from "@/lib/sprites/item-art";
 import type { SeatDevice } from "@/lib/sprites/layout";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { createDeviceTypesApi } from "../deviceTypes/device-types-api";
+import { createMapItemsApi } from "../mapItems/map-items-api";
 import { createCatalogImages, type CatalogImages } from "./catalog-images";
 
 function decodeImage(url: string): Promise<CanvasImageSource | null> {
@@ -12,12 +14,14 @@ function decodeImage(url: string): Promise<CanvasImageSource | null> {
   return img.decode().then(() => img);
 }
 
-/** Catalog images of the devices on a page: fetched once per type and version, revoked on unmount. Call it once per page. */
+/** Catalog images of the devices and map items on a page: fetched once per id and version, revoked on unmount. Call it once per page. */
 export function useCatalogImages(
   seatDevices: Readonly<Record<string, readonly SeatDevice[]>> | undefined,
+  items?: readonly ItemArtEntry[],
 ): CatalogImages {
   const apiFetch = useApiFetch();
   const api = useMemo(() => createDeviceTypesApi(apiFetch), [apiFetch]);
+  const itemsApi = useMemo(() => createMapItemsApi(apiFetch), [apiFetch]);
   const [version, setVersion] = useState(0);
   const [images, setImages] = useState<ReturnType<typeof createCatalogImages> | null>(null);
   const ref = useRef(images);
@@ -25,7 +29,12 @@ export function useCatalogImages(
 
   useEffect(() => {
     const c = createCatalogImages({
-      load: (id) => api.getImage(id).then((r) => (r.ok ? r.value : null)),
+      load: (id) => {
+        const item = parseItemImageId(id);
+        return (item ? itemsApi.getArtImage(item.key, item.dir) : api.getImage(id)).then((r) =>
+          r.ok ? r.value : null,
+        );
+      },
       create: (b) => URL.createObjectURL(b),
       revoke: (u) => URL.revokeObjectURL(u),
       decode: decodeImage,
@@ -36,17 +45,18 @@ export function useCatalogImages(
       c.dispose();
       setImages(null);
     };
-  }, [api]);
+  }, [api, itemsApi]);
 
   useEffect(() => {
-    if (images && seatDevices) images.sync(seatDevices);
-  }, [images, seatDevices]);
+    if (images && (seatDevices || items)) images.sync(seatDevices ?? {}, items ?? []);
+  }, [images, seatDevices, items]);
 
   return useMemo(
     () => ({
       version,
       ready: (t) => ref.current?.ready(t) ?? false,
       source: (id, v) => ref.current?.source(id, v) ?? null,
+      itemSize: (key, dir, v) => ref.current?.itemSize(key, dir, v) ?? null,
     }),
     [version],
   );

@@ -1,6 +1,5 @@
-import type { DeviceTypeDto } from "@/lib/device-types/types";
-
-type Typed = Pick<DeviceTypeDto, "id" | "hasImage" | "imageVersion">;
+/** Anything with a cached image: a device type (id = type id) or a map item direction (id = `itemImageId`). */
+export type ImageEntry = { id: string; hasImage: boolean; imageVersion: number };
 
 type Entry =
   | { version: number; state: "loading" }
@@ -15,7 +14,7 @@ type Options = {
   onChange?: () => void;
 };
 
-/** Blob URLs of device type images, one entry per id, keyed by `{id, imageVersion}`. No React, no globals. */
+/** Blob URLs of catalog images, one entry per id, keyed by `{id, imageVersion}`. No React, no globals. */
 export function createImageUrlCache({ load, create, revoke, limit = 4, onChange }: Options) {
   const entries = new Map<string, Entry>();
   const queue: { id: string; version: number }[] = [];
@@ -55,7 +54,7 @@ export function createImageUrlCache({ load, create, revoke, limit = 4, onChange 
   }
 
   return {
-    sync(types: readonly Typed[]) {
+    sync(types: readonly ImageEntry[]) {
       if (disposed) return;
       const ids = new Set(types.map((t) => t.id));
       for (const id of [...entries.keys()]) if (!ids.has(id)) drop(id);
@@ -72,7 +71,7 @@ export function createImageUrlCache({ load, create, revoke, limit = 4, onChange 
       }
       pump();
     },
-    url(t: Typed): string | null {
+    url(t: ImageEntry): string | null {
       if (!t.hasImage) return null;
       const e = entries.get(t.id);
       return e && e.version === t.imageVersion && e.state === "ready" ? e.url : null;

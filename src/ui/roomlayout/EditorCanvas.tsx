@@ -21,7 +21,7 @@ import {
 import { footprintBox, type Point } from "@/lib/layout-editor/tiles";
 import type { Draft } from "@/lib/layout-editor/types";
 import type { FootprintLookup } from "@/lib/validate/layout";
-import { ZOOM_LEVELS, type SeatDevice, type Zoom } from "@/lib/sprites/layout";
+import { ZOOM_LEVELS, type LayoutItem, type SeatDevice, type Zoom } from "@/lib/sprites/layout";
 import { buildDrawList, TILE } from "@/lib/sprites/placement";
 import { allowedZooms, clampZoom } from "@/lib/sprites/zoom";
 import { roomlayoutCopy } from "../copy/roomlayout";
@@ -45,6 +45,8 @@ type Props = {
   onAction: (effect: GestureEffect) => void;
   /** Catalog device images from `useCatalogImages`. */
   catalogImages?: CatalogImages;
+  /** Catalog rows for the art (layout rows merged with the palette); without them items draw built-in frames. */
+  items?: readonly LayoutItem[];
   /** Catalog sizes for the ghost, outlines and hit areas (default: the registry). */
   footprints?: FootprintLookup;
 };
@@ -63,6 +65,7 @@ export function EditorCanvas({
   frozen,
   onAction,
   catalogImages,
+  items,
   footprints,
 }: Props) {
   const { atlas, failed, setFailed } = useAtlas();
@@ -87,9 +90,10 @@ export function EditorCanvas({
             atlas.manifest,
             seatDevices,
             catalogImages?.ready,
+            { items, image: catalogImages?.itemSize },
           )
         : null,
-    [atlas, draft, seatDevices, catalogImages?.version],
+    [atlas, draft, seatDevices, items, catalogImages?.version],
   );
   const allowed = useMemo(() => (list ? allowedZooms(list.bounds) : []), [list]);
   const effective = clampZoom(zoom, allowed);
@@ -132,7 +136,7 @@ export function EditorCanvas({
     if (!paintRoom(canvas, atlas, list, effective, undefined, catalogImages?.source)) {
       setFailed(true);
     }
-  }, [atlas, list, effective, setFailed]);
+  }, [atlas, list, effective, setFailed, catalogImages]);
 
   // A running gesture is stale once the draft or the zoom changes under it (undo, zoom control).
   useEffect(() => cancel(), [draft, effective, cancel]);

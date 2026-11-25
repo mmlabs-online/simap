@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { LIBRARY_ITEMS, libraryItem } from "@/lib/map-items/library";
 import {
   ZOOM_LEVELS,
+  type LayoutItem,
   type Placement,
   type RoomLayout,
   type SeatDevice,
@@ -366,7 +368,7 @@ describe("catalog device images (SIM-036.4)", () => {
       const builtin = draw([{ type: "IP phone" }], true, rotation);
       const [img] = imgs(withImage.ops);
       const f = builtin.ops.find((o) => o.type === "frame" && o.key === "device.phone");
-      expect(img, String(rotation)).toMatchObject({ typeId: "t1", version: 2, w: 24, h: 24 });
+      expect(img, String(rotation)).toMatchObject({ src: "t1", version: 2, w: 24, h: 24 });
       expect(img.x).toBe((f?.x ?? 0) + Math.floor(((f?.w ?? 0) - 24) / 2));
       expect(img.y).toBe((f?.y ?? 0) + Math.floor(((f?.h ?? 0) - 24) / 2));
       expect(frames(withImage.ops)).not.toContain("device.phone");
@@ -408,5 +410,158 @@ describe("catalog device images (SIM-036.4)", () => {
     const xs = imgs(list.ops).map((o) => o.x);
     expect(xs).toHaveLength(4);
     expect(xs[3] - xs[2]).toBe(3);
+  });
+});
+
+describe("catalog art per direction (SIM-039.8)", () => {
+  const blank = { sprite: null, hasImage: false, imageVersion: 0 };
+  const rowOf = (key: string, over: Partial<LayoutItem> = {}): LayoutItem => {
+    const lib = libraryItem(key)!;
+    return {
+      builtinKey: key,
+      name: lib.name,
+      group: lib.group,
+      w: lib.w,
+      h: lib.h,
+      kind: lib.kind,
+      directional: lib.directional,
+      fixedSize: lib.fixedSize,
+      art: { n: blank, e: blank, s: blank, w: blank },
+      ...over,
+    };
+  };
+  const withArt = (key: string, art: Partial<LayoutItem["art"]>, over: Partial<LayoutItem> = {}) =>
+    rowOf(key, { art: { n: blank, e: blank, s: blank, w: blank, ...art }, ...over });
+  const png = (version = 1) => ({ sprite: null, hasImage: true, imageVersion: version });
+  const sized = (w: number, h: number) => () => ({ w, h });
+  const desk = (rotation = 0) => ({ ...place("s1", "desk.single", 2, 2, rotation), code: "A1" });
+  const imgs = (ops: DrawOp[]) => ops.flatMap((o) => (o.type === "image" ? [o] : []));
+  const sprites = (ops: DrawOp[]) => ops.filter((o) => o.type === "frame");
+
+  it("seed catalog rows change nothing", () => {
+    const seed = LIBRARY_ITEMS.map((i) => rowOf(i.builtinKey));
+    const fixtures: Placement[] = [];
+    const seats: (Placement & { code: string })[] = [];
+    const floors: RoomLayout["floors"] = [];
+    LIBRARY_ITEMS.forEach((item, n) => {
+      const x = (n % 10) * 6;
+      const y = Math.floor(n / 10) * 6;
+      const rotations = item.directional ? [0, 90, 180, 270] : [0];
+      if (item.kind === "floor") floors.push({ sprite: item.builtinKey, x, y, w: 2, h: 2 });
+      rotations.forEach((r, k) => {
+        const p = place(`${item.builtinKey}:${r}`, item.builtinKey, x + k, y + 3, r);
+        if (item.kind === "seat") seats.push({ ...p, code: `S${n}${r}` });
+        else if (item.kind === "fixture") fixtures.push(p);
+      });
+    });
+    const layout = room({ w: 70, h: 70, floors, seats, fixtures });
+    const devices = Object.fromEntries(seats.map((s) => [s.id, [{ type: "PC" }]]));
+    const plain = buildDrawList(layout, {}, manifest, devices);
+    expect(plain.ops.length).toBeGreaterThan(100);
+    expect(buildDrawList(layout, {}, manifest, devices, undefined, { items: seed })).toEqual(plain);
+  });
+
+  it("custom image op sits at the box bottom, overhangs upward and grows the bounds", () => {
+    const layout = room({ fixtures: [place("f", "plant.large", 3, 0)] });
+    const items = [withArt("plant.large", { s: png(4) })];
+    const list = buildDrawList(layout, {}, manifest, {}, undefined, {
+      items,
+      image: sized(32, 64),
+    });
+    expect(imgs(list.ops)).toEqual([
+      {
+        type: "image",
+        layer: "furniture",
+        src: "item:plant.large|s",
+        version: 4,
+        x: 96,
+        y: -32,
+        w: 32,
+        h: 64,
+      },
+    ]);
+    expect(sprites(list.ops)).toHaveLength(0);
+    expect(list.ops.some((o) => o.type === "shadow")).toBe(false);
+    expect(list.bounds.y).toBe(-32);
+  });
+
+  it("fallback when the image is not ready: same list as with no image", () => {
+    const layout = room({ fixtures: [place("f", "plant.large", 3, 1)], seats: [desk()] });
+    const items = [withArt("plant.large", { s: png() }), withArt("desk.single", { s: png() })];
+    const plain = buildDrawList(layout, {}, manifest);
+    expect(buildDrawList(layout, {}, manifest, {}, undefined, { items })).toEqual(plain);
+    expect(
+      buildDrawList(layout, {}, manifest, {}, undefined, { items, image: sized(32, 200) }),
+    ).toEqual(plain);
+  });
+
+  it("package sprite smaller than the box is bottom-left aligned at 0/90/180/270", () => {
+    const sprite = { sprite: "plant.small", hasImage: false, imageVersion: 0 };
+    const items = [
+      withArt("cabinet.filing", { n: sprite, e: sprite, s: sprite, w: sprite }, { w: 3, h: 2 }),
+    ];
+    for (const rotation of [0, 90, 180, 270]) {
+      const layout = room({ fixtures: [place("f", "cabinet.filing", 2, 2, rotation)] });
+      const list = buildDrawList(layout, {}, manifest, {}, undefined, { items });
+      const boxH = rotation === 90 || rotation === 270 ? 3 : 2;
+      const f = sprites(list.ops).find((o) => o.key === "plant.small");
+      expect(f, String(rotation)).toMatchObject({ x: 64, y: (1 + boxH) * 32 - 16 });
+      const shadow = list.ops.find((o) => o.type === "shadow");
+      expect(shadow).toMatchObject({ x: 66, y: (2 + boxH) * 32 - 1, w: 28 });
+    }
+  });
+
+  it("resized item with the library frame is bottom-left aligned; unresized is not moved", () => {
+    const layout = room({ fixtures: [place("f", "plant.large", 2, 2)] });
+    const plain = buildDrawList(layout, {}, manifest);
+    const big = buildDrawList(layout, {}, manifest, {}, undefined, {
+      items: [rowOf("plant.large", { w: 2, h: 2 })],
+    });
+    const at = (l: typeof plain) => sprites(l.ops).find((o) => o.key === "plant.large");
+    expect(at(big)?.x).toBe(at(plain)?.x);
+    expect(at(big)?.y).toBe((at(plain)?.y ?? 0) + 32);
+  });
+
+  it("placeholder op covers the catalog box with the library layer", () => {
+    const m = clone();
+    delete m.frames["plant.large"];
+    const layout = room({ fixtures: [place("f", "plant.large", 2, 2)] });
+    const list = buildDrawList(layout, {}, m, {}, undefined, {
+      items: [rowOf("plant.large", { w: 2, h: 1 })],
+    });
+    expect(list.ops).toEqual([
+      { type: "placeholder", layer: "furniture", x: 64, y: 64, w: 64, h: 32 },
+    ]);
+    expect(list.unknown).toEqual(["plant.large"]);
+  });
+
+  it("desk custom image keeps the seat box, chair and device slots; chair and floor images work", () => {
+    const layout = room({
+      seats: [desk()],
+      floors: [{ sprite: "floor.wood", x: 5, y: 5, w: 2, h: 1 }],
+    });
+    const devices = { s1: [{ type: "PC" }] };
+    const plain = buildDrawList(layout, {}, manifest, devices);
+    const items = [
+      withArt("desk.single", { s: png() }),
+      withArt("chair.office", { n: png() }),
+      withArt("floor.wood", { s: png() }),
+    ];
+    const image = (key: string) =>
+      key === "desk.single"
+        ? { w: 64, h: 48 }
+        : key === "chair.office"
+          ? { w: 32, h: 48 }
+          : { w: 32, h: 32 };
+    const list = buildDrawList(layout, {}, manifest, devices, undefined, { items, image });
+    expect(list.seats).toEqual(plain.seats);
+    const found = imgs(list.ops).map((o) => [o.src, o.x, o.y, o.w, o.h]);
+    expect(found).toContainEqual(["item:desk.single|s", 64, 64 + 32 - 48, 64, 48]);
+    expect(found).toContainEqual(["item:chair.office|n", 64, 96 + 32 - 48, 32, 48]);
+    expect(found).toContainEqual(["item:floor.wood|s", 160, 160, 32, 32]);
+    expect(found).toContainEqual(["item:floor.wood|s", 192, 160, 32, 32]);
+    expect(frames(list.ops).filter((k) => k.startsWith("device."))).toEqual(
+      frames(plain.ops).filter((k) => k.startsWith("device.")),
+    );
   });
 });
