@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T11:41:43Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/98 |
 
 ## Goal
 Admins upload a PNG per direction for any catalog item (walls and windows included), stored in Google Drive like device type images.
@@ -51,3 +51,9 @@ Admins upload a PNG per direction for any catalog item (walls and windows includ
 - Done: plan READY (`plan.md`): sibling route `/api/map-items/[key]/art/[dir]/image` (PUT/DELETE Admin, GET member), parsePng + mapItemImageFits (32 px per tile, up to 32 px taller, floors 32×32, 64 KB), per-direction compare-and-set on file id, version, w, h; shared Drive helpers in `src/server/drive/image-flow.ts` with device-type behaviour unchanged. No High path, no migration.
 - In progress / next: Ming approves A1-A12 (M-70), then implement and review.
 - Gotchas: wrong-size 422 needs one read-only select first (departs from AC 1 text); handoffs.db.test.ts failures on main still need a bug ticket.
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 5 (api-platform-engineer×1 50k, planner×1 96k, implementer×1 101k, reviewer×1 71k, security-ai-generated-code-auditor×1 48k; default models; ~366k total)
+- Done: map item image route (PUT/DELETE Admin, GET member), size rule per item and direction, per-direction compare-and-set, shared Drive helpers with device-type behaviour unchanged. Review PASS on attempt 1, security no 🔴 (two 🟡); PR https://github.com/mmlabs-online/simap/pull/98.
+- In progress / next: Ming decides where to fix the cross-org ETag 🟡 (here or 039.5/039.6); bug ticket for the 9 pre-existing test:db failures.
+- Gotchas: test:db on main has 9 failures (handoffs ×7, devices ×1, members ×1); 039.6 needs map-item image error copy.
