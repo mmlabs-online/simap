@@ -2,11 +2,7 @@
 
 | Field | Value |
 |---|---|
-<<<<<<< HEAD
-| State | DONE |
-=======
 | State | MERGED |
->>>>>>> origin/main
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
