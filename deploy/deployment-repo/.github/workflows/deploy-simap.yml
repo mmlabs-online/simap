@@ -4,7 +4,9 @@ name: deploy-simap
 # vX.Y.Z image pattern and the env file content differ; simap always has a `migrate` service.
 # A merge to main that touches apps/simap/ deploys simap, and only it, on the home server's self-hosted runner:
 #   1. check release.env pins one mingming21400/simap:vX.Y.Z@sha256:<digest> (no release.env yet: skip)
-#   2. write the host env file (DATABASE_URL from postgres/secrets/apps/simap.password)
+#   2. write the host env file: DATABASE_URL (from postgres/secrets/apps/simap.password) and, when all four
+#      SIMAP_* Google Drive secrets are set, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN and
+#      DRIVE_FOLDER_ID
 #   3. pull the image
 #   4. dump the databases now (the pg-backup sidecar's /backup.sh), so a bad migration can be undone
 #   5. run the migrations (one-shot `migrate` service). If they fail, nothing is replaced.
@@ -14,8 +16,11 @@ name: deploy-simap
 # previous release's image (expand first, contract later).
 # workflow_dispatch from main redeploys what main pins and rewrites the env file.
 #
-# No repository secret is used: the only secret value (the Postgres password) is the file committed in
-# postgres/secrets/ (see README) and is written only to the host env file, never printed.
+# Secrets: the Postgres password is the file committed in postgres/secrets/ (see README). The four Google Drive
+# values come from repository secrets SIMAP_GOOGLE_CLIENT_ID, SIMAP_GOOGLE_CLIENT_SECRET,
+# SIMAP_GOOGLE_REFRESH_TOKEN and SIMAP_DRIVE_FOLDER_ID (the job runs only on main via its `if:`), all-or-none,
+# as in deploy-tudocuatui.yml. All are written only to the host env file, never printed. After changing any of
+# them, run deploy-simap with workflow_dispatch from main: a manual run (or a changed env file) recreates the app.
 
 on:
   push:
@@ -80,6 +85,11 @@ jobs:
       - name: envfile
         id: envfile
         if: steps.release.outputs.skip != 'true'
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.SIMAP_GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.SIMAP_GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.SIMAP_GOOGLE_REFRESH_TOKEN }}
+          DRIVE_FOLDER_ID: ${{ secrets.SIMAP_DRIVE_FOLDER_ID }}
         run: |
           umask 077
           [[ "$ENV_FILE" == "$HOME/"* ]] || { echo "::error::ENV_FILE $ENV_FILE is not under $HOME. Nothing was started."; exit 1; }
@@ -89,11 +99,40 @@ jobs:
             exit 1
           fi
           read -r pw < "$pwfile"
+          # Google Drive (photos): all four or none. Only secret NAMES are ever printed.
+          set_count=0
+          missing=""
+          for n in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_REFRESH_TOKEN DRIVE_FOLDER_ID; do
+            if [ -n "${!n}" ]; then set_count=$((set_count + 1)); else missing="$missing SIMAP_$n"; fi
+          done
+          if [ "$set_count" -ne 0 ] && [ "$set_count" -ne 4 ]; then
+            echo "::error::Google Drive secrets are all-or-none; missing:$missing. Nothing was started; $ENV_FILE was not changed."
+            exit 1
+          fi
+          if [ "$set_count" -eq 4 ]; then
+            re_id='^[A-Za-z0-9._-]+\.apps\.googleusercontent\.com$'
+            re_secret='^[A-Za-z0-9._-]+$'
+            re_token='^[A-Za-z0-9._/-]+$'
+            re_folder='^[A-Za-z0-9_-]{10,200}$' # same as simap src/server/drive/config.ts
+            bad=""
+            [[ "$GOOGLE_CLIENT_ID" =~ $re_id ]] || bad="$bad SIMAP_GOOGLE_CLIENT_ID"
+            [[ "$GOOGLE_CLIENT_SECRET" =~ $re_secret ]] || bad="$bad SIMAP_GOOGLE_CLIENT_SECRET"
+            [[ "$GOOGLE_REFRESH_TOKEN" =~ $re_token ]] || bad="$bad SIMAP_GOOGLE_REFRESH_TOKEN"
+            [[ "$DRIVE_FOLDER_ID" =~ $re_folder ]] || bad="$bad SIMAP_DRIVE_FOLDER_ID"
+            if [ -n "$bad" ]; then
+              echo "::error::Malformed Google Drive secret(s):$bad. Nothing was started; $ENV_FILE was not changed."
+              exit 1
+            fi
+          fi
           dir="$(dirname "$ENV_FILE")"
           install -d -m 700 "$dir"
           tmp="$(mktemp "$dir/.env.XXXXXX")"
           trap 'rm -f "$tmp"' EXIT
           printf 'DATABASE_URL=postgres://%s:%s@postgres:5432/%s\n' "$DB_APP" "$pw" "$DB_APP" > "$tmp"
+          if [ "$set_count" -eq 4 ]; then
+            printf 'GOOGLE_CLIENT_ID=%s\nGOOGLE_CLIENT_SECRET=%s\nGOOGLE_REFRESH_TOKEN=%s\nDRIVE_FOLDER_ID=%s\n' \
+              "$GOOGLE_CLIENT_ID" "$GOOGLE_CLIENT_SECRET" "$GOOGLE_REFRESH_TOKEN" "$DRIVE_FOLDER_ID" >> "$tmp"
+          fi
           chmod 600 "$tmp"
           if cmp -s "$tmp" "$ENV_FILE"; then changed=false; else changed=true; fi
           mv -f "$tmp" "$ENV_FILE"
