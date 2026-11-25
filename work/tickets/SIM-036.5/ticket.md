@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | M-46 (go-live only) |
 | Attempts | 0 |
 | Created | 2026-11-24 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T01:03:01Z |
 | PR | — |
 
 ## Goal
@@ -65,6 +65,7 @@ Google Drive (D61).
 - 2026-11-24: Ming ran `/run SIM-036.5`; M-46 is go-live only ("code and tests do not need it"), so it does not block this run.
 
 Waiting for Ming: plan approval (ticket Gate)
+- 2026-11-25 Plan approved (Ming: "1ok"; A1 no row lock across the Drive upload, compare-and-set with 409 `image_changed`, and the Q2–Q6 defaults). M-50.
 
 ## Handoff
 
