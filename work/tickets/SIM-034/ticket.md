@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P1 |
 | Size | S |
 | Areas | security, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | M-24 |
 | Attempts | 0 |
 | Created | 2026-11-23 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T15:57:26Z |
 | PR | — |
 
 ## Goal
