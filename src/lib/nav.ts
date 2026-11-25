@@ -76,3 +76,7 @@ export function roomDetailHref(code: string): string | null {
   if (code === "." || code === "..") return null;
   return `/rooms/${encodeURIComponent(code)}`;
 }
+
+export function deviceDetailHref(id: string): string {
+  return `/devices/${encodeURIComponent(id)}`;
+}

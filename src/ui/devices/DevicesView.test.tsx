@@ -90,7 +90,7 @@ describe("DevicesView rows", () => {
     expect(html).toContain('href="/rooms/C302"');
     const inv = render({ devices: [stored] });
     expect(inv).toContain(devicesCopy.inInventory);
-    expect(inv).not.toContain("href=");
+    expect(inv).not.toContain('href="/rooms/');
     expect(inv).not.toContain(devicesCopy.roles.primary);
   });
 
@@ -327,5 +327,12 @@ describe("DevicesView pending transfer", () => {
     expect(status).toMatch(/<p role="status"[^>]*>Done ✓<\/p>/);
     const err = render({ notice: { tone: "error", text: "Nope" } });
     expect(err).toMatch(/<p role="alert"[^>]*>Nope<\/p>/);
+  });
+});
+
+describe("DevicesView name link", () => {
+  it("device name links to /devices/<id> (table and mobile card)", () => {
+    const html = render({ devices: [base] });
+    expect(html.split('href="/devices/d1"').length - 1).toBe(2);
   });
 });

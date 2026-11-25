@@ -78,6 +78,7 @@ export const shellCopy = {
     dashboard: { title: "Dashboard", empty: "No data yet." },
     rooms: { title: "Rooms", empty: "No rooms yet." },
     roomDetail: { title: "Room details", empty: "No data yet." },
+    deviceDetail: { title: "Device details", empty: "No data yet." },
     roomEditor: { title: "Edit room layout", empty: "No data yet." },
     members: { title: "Members", empty: "No members yet." },
     devices: { title: "Devices", empty: "No devices yet." },

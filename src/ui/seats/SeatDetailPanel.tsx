@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import Link from "next/link";
+import { deviceDetailHref } from "@/lib/nav";
 import type { SeatDeviceDto, SeatDto } from "@/lib/seats/types";
 import { apiErrorMessage } from "../copy/api";
 import { seatsCopy } from "../copy/seats";
@@ -23,7 +25,9 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function Device({ device }: { device: SeatDeviceDto }) {
   return (
     <li className={`max-h-24 ${CLIP}`}>
-      <span className="font-bold">{device.name}</span>
+      <Link href={deviceDetailHref(device.id)} className="font-bold text-primary underline">
+        {device.name}
+      </Link>
       <span className="text-on-surface-variant">
         {` · ${device.type} · ${device.inventoryNumber}`}
       </span>

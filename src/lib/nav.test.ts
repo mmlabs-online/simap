@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isActive, navItemsFor, roomDetailHref, roomEditorHref } from "./nav";
+import { deviceDetailHref, isActive, navItemsFor, roomDetailHref, roomEditorHref } from "./nav";
 
 const ids = (tier: Parameters<typeof navItemsFor>[0]) => navItemsFor(tier).map((i) => i.id);
 
@@ -106,5 +106,14 @@ describe("roomDetailHref", () => {
     expect(roomDetailHref(".")).toBeNull();
     expect(roomDetailHref("..")).toBeNull();
     expect(roomDetailHref("A..B")).toBe("/rooms/A..B");
+  });
+});
+
+describe("deviceDetailHref", () => {
+  it("deviceDetailHref encodes the id; isActive marks Devices on /devices/<id>", () => {
+    expect(deviceDetailHref("abc")).toBe("/devices/abc");
+    expect(deviceDetailHref("a/b c")).toBe("/devices/a%2Fb%20c");
+    const devices = navItemsFor("user").find((i) => i.id === "devices")!;
+    expect(isActive(devices, "/devices/abc")).toBe(true);
   });
 });
