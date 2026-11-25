@@ -15,8 +15,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T04:07:23Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/85 |
 
 ## Report
 Ming 2026-11-25: "CI lỗi khi cắt release https://github.com/mmlabs-online/simap/actions/runs/45543569345" — then "tạo bug và fix ngay tại đây". The `ci` job fails at step `db integration tests` on main; the release workflow for `release/0.1.8` itself was green and opened the deployment PR `release/simap-v0.1.8` (hold it until this is fixed).
@@ -62,3 +62,10 @@ Ming 2026-11-25: "CI lỗi khi cắt release https://github.com/mmlabs-online/si
 - 2026-11-25: create the bug and fix it in this session.
 
 ## Handoff
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 4, ~121k tokens (planner×1 sonnet 28.7k, implementer×1 opus 26.8k, reviewer×1 sonnet 30.7k, security-ai-generated-code-auditor×1 opus 35.0k; per-call in/out split not reported). Fast lane (XS, Gate none): no consult.
+- Done: recorded and fixed in one attempt (tests only); before-fix failure reproduced by the implementer and independently by the reviewer; all checks green incl. local `pnpm test:db` 190/190; security no 🔴/🟡. PR https://github.com/mmlabs-online/simap/pull/85.
+- In progress / next: Ming merges PR #85, confirms `ci` on main is green, then cuts `release/0.1.9` (also loads the Drive secrets, M-51) instead of the held `release/simap-v0.1.8`.
+- Gotchas: SIM-037.x sessions must run `pnpm test:db` locally (Postgres) or wait for a green `ci` before merge.
+
