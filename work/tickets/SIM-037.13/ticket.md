@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T18:11:25Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/113 |
 
 ## Goal
 A viewer can act on a device from its detail page (transfer, return, assign, and the other actions their flags allow) without going back to the list.
@@ -44,3 +44,9 @@ docs/spec-v1.md §6 DEV-11; slice 2 split from SIM-037.6 (its plan.md `## Split 
 Split from SIM-037.6 by the planner (2026-11-25); added by the orchestrator, Ming to confirm.
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 5, tokens ~285k total (in/out split not reported): frontend-developer×1 37k, ux-architect×1 44k, planner×1 77k, implementer×1 76k, reviewer×1 51k, all on default models.
+- Done: added viewer actions to the detail page, with a silent refresh, a notice and focus back to the h1. The dialog wiring is copied (A1); `DevicesPage` is unchanged. Attempt 1 PASS, no security trigger (UI only). PR #113.
+- In progress / next: Ming confirms A1–A7 and merges #113. Follow-up: extract a shared dialogs host.
+- Gotchas: the consultants disagreed on extract vs copy; the planner chose to copy. The CI `image` job fails on every branch because of SIM-034's `/Users/mingming` check (BUG-006 to file).
