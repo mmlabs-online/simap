@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T07:52:38Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/93 |
 
 ## Goal
 Admins rename, regroup, reorder, hide/show, reset, pick a package sprite per direction, and resize catalog items.
@@ -50,3 +50,9 @@ Admins rename, regroup, reorder, hide/show, reset, pick a package sprite per dir
 - Done: plan READY (`plan.md`): admin routes PATCH /api/map-items/[key], PUT .../art/[dir], POST .../reset; new codes item_in_use (with rooms), item_fixed_size, item_name_taken, sprite_not_allowed; lock rules; audited writes; Drive cleanup after a resize or reset. No migration, no High path.
 - In progress / next: Ming approves A1-A9 (M-64), then implement and review.
 - Gotchas: audit entity_id is a uuid, so the key goes in meta.key; apiError (High path) left alone, routes build the item_in_use body; sibling notes for 039.3 (for key share), 039.4 (compare w/h), 039.6, 039.7.
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 5 (api-platform-engineer×1 47k, planner×1 119k, implementer×1 93k, reviewer×1 72k, security-ai-generated-code-auditor×1 55k; default models; ~386k total)
+- Done: admin routes PATCH /api/map-items/[key], PUT .../art/[dir], POST .../reset with item_in_use / item_fixed_size / item_name_taken / sprite_not_allowed, audited writes, Drive cleanup after commit. Review PASS on attempt 1, security no 🔴; PR https://github.com/mmlabs-online/simap/pull/93.
+- In progress / next: SIM-039.3 (needs plan approval) and SIM-039.4 after merge.
+- Gotchas: security 🟡 on the lock for fixed-size items with a drifted stored size; pre-existing handoffs test:db failures on main still need a bug ticket.
