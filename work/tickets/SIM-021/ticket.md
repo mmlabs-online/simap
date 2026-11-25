@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | S |
 | Areas | architecture, security |
@@ -11,7 +11,7 @@
 | Needs Ming | M-1, M-2, M-3 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | claude@2026-11-25T18:45Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -42,5 +42,12 @@ spec "v1 done means"; D6, D8.
 
 ## Notes / answers from Ming
 - 2026-11-25: M-1, M-2, M-3 done (Ming). Gate set to plan-approval (P1 policy `high-paths+P1`).
+- Waiting for Ming: plan approval (P1 gate), M-78. On approval the orchestrator creates SIM-021.1 (flow run + bugs).
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 2 (software-architect×1 70k, planner×1; default models)
+- Done: plan READY. This PR ships `docs/go-live.md` (items 0-14, owners, checks, rollback), `flow-run.md` template (~60 rows from spec IDs) and ming-todo M-77; ACs 2-3 (flow run, bugs) move to new SIM-021.1 after the first release.
+- In progress / next: Ming approves A1-A10 and the 7 gate questions (M-78); then create SIM-021.1, implement, review (+ security area).
+- Gotchas: Turnstile comment in `src/lib/identity/config.ts` is High path — separate ticket if Ming wants simap's own widget.
