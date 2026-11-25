@@ -56,8 +56,12 @@ export const API_ERROR_CODES = [
   "image_changed",
   "images_unavailable",
   "drive_error",
+  "item_in_use",
+  "item_fixed_size",
+  "item_name_taken",
+  "sprite_not_allowed",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
-export type ApiErrorBody = { error: { code: ApiErrorCode } };
+export type ApiErrorBody = { error: { code: ApiErrorCode; rooms?: number } };

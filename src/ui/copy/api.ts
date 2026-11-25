@@ -63,6 +63,11 @@ export const apiCopy = {
     image_changed: "This image was changed by someone else. Reload and try again.",
     images_unavailable: "Images are not available right now. Try again in a moment.",
     drive_error: "The image could not be loaded or saved. Try again later.",
+    item_in_use:
+      "This item is placed in one or more rooms. Remove it from every room before changing its size.",
+    item_fixed_size: "This item's size can't be changed.",
+    item_name_taken: "Another map item already has this name.",
+    sprite_not_allowed: "This sprite can't be used for this item or doesn't fit its size.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 
