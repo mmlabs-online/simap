@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { artDirAllowed, sizeFor, spriteAllowedFor, spriteFits } from "./art";
+import { artDirAllowed, mapItemImageFits, sizeFor, spriteAllowedFor, spriteFits } from "./art";
 import { libraryItem } from "./library";
 
 const item = (k: string) => libraryItem(k)!;
@@ -39,5 +39,61 @@ describe("map item art rules", () => {
     expect(spriteAllowedFor(item("plant.large"), "device.laptop.e")).toBe(false);
     expect(spriteAllowedFor(item("door"), "avatar.body.back")).toBe(false);
     expect(spriteAllowedFor(item("plant.large"), "no.such.frame")).toBe(false);
+  });
+});
+
+describe("mapItemImageFits", () => {
+  const px = (width: number, height: number) => ({ width, height });
+  const floor = { kind: "floor" } as const;
+  const fixture = { kind: "fixture" } as const;
+
+  it("floor 32x32 ok; floor 32x64, 64x64, 32x31 refused", () => {
+    expect(mapItemImageFits(floor, "s", 1, 1, px(32, 32))).toBe(true);
+    for (const [w, h] of [
+      [32, 64],
+      [64, 64],
+      [32, 31],
+    ] as const) {
+      expect(mapItemImageFits(floor, "s", 1, 1, px(w, h))).toBe(false);
+    }
+  });
+
+  it("1x1 fixture: 32x32 and 32x64 ok; 32x65, 32x31, 33x32 refused", () => {
+    expect(mapItemImageFits(fixture, "s", 1, 1, px(32, 32))).toBe(true);
+    expect(mapItemImageFits(fixture, "s", 1, 1, px(32, 64))).toBe(true);
+    expect(mapItemImageFits(fixture, "s", 1, 1, px(32, 65))).toBe(false);
+    expect(mapItemImageFits(fixture, "s", 1, 1, px(32, 31))).toBe(false);
+    expect(mapItemImageFits(fixture, "s", 1, 1, px(33, 32))).toBe(false);
+  });
+
+  it("2x1 item: s/n 64x32 and 64x64 ok, 64x65 refused, 32x32 refused (width)", () => {
+    for (const d of ["s", "n"] as const) {
+      expect(mapItemImageFits(fixture, d, 2, 1, px(64, 32))).toBe(true);
+      expect(mapItemImageFits(fixture, d, 2, 1, px(64, 64))).toBe(true);
+      expect(mapItemImageFits(fixture, d, 2, 1, px(64, 65))).toBe(false);
+      expect(mapItemImageFits(fixture, d, 2, 1, px(32, 32))).toBe(false);
+    }
+  });
+
+  it("2x1 item e/w uses swapped tiles: 32x64 and 32x96 ok, 64x32 refused", () => {
+    for (const d of ["e", "w"] as const) {
+      expect(mapItemImageFits(fixture, d, 2, 1, px(32, 64))).toBe(true);
+      expect(mapItemImageFits(fixture, d, 2, 1, px(32, 96))).toBe(true);
+      expect(mapItemImageFits(fixture, d, 2, 1, px(64, 32))).toBe(false);
+    }
+  });
+
+  it("4x4 item: 128x128 and 128x160 ok, 128x161 refused", () => {
+    expect(mapItemImageFits(fixture, "s", 4, 4, px(128, 128))).toBe(true);
+    expect(mapItemImageFits(fixture, "s", 4, 4, px(128, 160))).toBe(true);
+    expect(mapItemImageFits(fixture, "s", 4, 4, px(128, 161))).toBe(false);
+  });
+
+  it("desk (seat) and chair follow the fixture rule (overhang allowed)", () => {
+    for (const k of ["desk.single", "chair.office"]) {
+      const it = item(k);
+      expect(mapItemImageFits(it, "s", it.w, it.h, px(32 * it.w, 32 * it.h + 32))).toBe(true);
+      expect(mapItemImageFits(it, "s", it.w, it.h, px(32 * it.w, 32 * it.h + 33))).toBe(false);
+    }
   });
 });
