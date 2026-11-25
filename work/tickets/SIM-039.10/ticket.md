@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | #109 |
 
 ## Goal
 Slice 2b of SIM-039.6: on the Map items page, package sprites and library art are previewed from the sprite atlas,
