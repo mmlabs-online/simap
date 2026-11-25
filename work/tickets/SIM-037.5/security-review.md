@@ -93,3 +93,25 @@ Agent: security-ai-generated-code-auditor (run through general-purpose with the 
 - Land the SIM-037.4 `lockMember` lock-mode fix, which covers the three new paths above.
 - Add a DB test for member deactivation cancelling a pending extension. The impl-log notes the OQ-44 test covers transfer and return only. The code path has no kind filter (manage.ts:424-426).
 - Slice 2 (SIM-037.11): the UI must use `canConfirm`/`canDecline` from `HandoffDto` and not re-derive them, and must show the stale-owner and stale-date 409s.
+
+## Attempt 2
+
+Agent: security-ai-generated-code-auditor. Scope: the attempt 2 commit `50aa88f` ("coalesce overdue to boolean (rework 2)"), which changes only `src/server/devices/devices.ts`: 2 lines, +2/−2. Static reading only. No checks or DB tests were run.
+
+**Verdict: no 🔴 blockers. Attempt 2 adds no new findings.**
+
+### Delta checked
+- **`src/server/devices/devices.ts:144`** (the `deviceRows` select): `overdue` is now `coalesce(d.owner_id is not null and d.holding_expires_on < $3::date, false)`.
+  - Before this change, an owned device with a null `holding_expires_on` produced SQL `NULL`. Now it is always a boolean, which matches `DeviceDto.overdue: boolean` (`:73`, `:112`).
+  - No new data is exposed. It is still computed from columns that were already visible org-wide.
+- **`src/server/devices/devices.ts:170`** (`FILTER_SQL.overdue`): the same `coalesce` is used. In a WHERE clause, NULL and false both drop the row, so the filter returns the same rows as before. This is a fixed string literal with no user input in it, so there is no injection risk.
+- **Parameters:** `$3` is still the injected `today`, bound by `deviceRows`. The `$3`/`$4` positions are unchanged, so the parameter shift checked in attempt 1 still holds.
+- **R6 and R7:** org scoping is untouched (`d.org_id = $1` and the joins are unchanged). No status codes changed.
+
+### Attempt 1 findings
+None of them changed. The delta does not touch any of the code involved:
+- 🟡 **The deactivation lock cycle is still open.** `lockMember` still uses `for update` (`src/server/members/manage.ts:228`), and the three extension paths in `src/server/devices/handoffs.ts` are unchanged.
+- 💭 **The four notes still apply:** `reload` uses the real clock (`devices.ts` `reload`), a Manager can approve their own extension, a direct holding edit does not cancel a pending extension, and a stale extension is left behind after the owner changes.
+
+### Follow-ups
+None new.

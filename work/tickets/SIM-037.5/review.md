@@ -47,3 +47,45 @@ None. `security-review.md` Attempt 1 has no 🔴 (one 🟡: the SIM-037.4 deacti
 ### Follow-ups (out of scope)
 - A DB test for member deactivation (OQ-44) cancelling a pending extension. The code path has no kind filter, so it works today (noted in impl-log).
 - SIM-037.11: `badgeTotal` must include `extensions` / `overdue`. The Overdue chip goes into `FILTERS`, and `pendingText` needs the extension kind. The owner's banner should explain that Return is blocked while an extension is pending (one-pending rule).
+
+## Attempt 2 — 2026-11-25
+Verdict: PASS
+
+Scope judged: slice 1 only. This attempt checks the rework of Attempt 1 Issue 1 and re-runs every check.
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format."
+- `pnpm typecheck`: exit 0.
+- `pnpm check:layers`: exit 0, "728 files, no violations".
+- `pnpm test`: 1 failed, 2799 passed, 14 skipped (2814). The one failure is the known flaky `scripts/dev-process.test.ts › real tree › root exits first; the orphan grandchild is still stopped`. Re-run alone: 21 passed, exit 0.
+- `pnpm build`: exit 0, "Compiled successfully".
+- `pnpm test:db`: not run (no local Postgres; CI runs it). I read the SQL by hand (see below).
+- These results match impl-log Attempt 2.
+
+### Issue 1 (Attempt 1): resolved
+- `src/server/devices/devices.ts:144` is now `coalesce(d.owner_id is not null and d.holding_expires_on < $3::date, false) as overdue`. An owned device with a NULL expiry now gives `false`, not NULL, so `handoffs.db.test.ts:811` (`[true, false, false, false]`) should pass in CI.
+- `src/server/devices/devices.ts:170` `FILTER_SQL.overdue` uses the same predicate text, so the select and the filter match. The implementer did not add the optional shared constant. That is fine.
+- No other overdue expression can return NULL. `src/server/devices/handoffs.ts:786-787` is a `count(*)::int` subquery, which always returns an integer.
+
+### Acceptance criteria
+- [x] 1. Overdue when the expiry is before today (UTC+7). No expiry never shows Overdue. The Attempt 1 evidence still stands, and the NULL case is now fixed (above). The DB assertion runs in CI only.
+- [x] 2. (API half) Unchanged since Attempt 1. Evidence as listed there.
+- [x] 3. Unchanged since Attempt 1. Evidence as listed there.
+- [x] 4. Unchanged since Attempt 1. Evidence as listed there.
+
+Ming verification after merge: none for slice 1 (per plan).
+
+### Scope
+Attempt 2 changes only `src/server/devices/devices.ts` (2 lines) and the impl-log. Both are in the plan. There are no out-of-plan files.
+
+### Rules (CLAUDE.md)
+No new violations. The Attempt 1 rule review still applies. R5 is satisfied locally. CI `test:db` must be green before merge.
+
+### Blockers from review agents
+None new.
+
+### Nits (do not block)
+- The Attempt 1 nits still apply (clock read inside `reload`, interpolated `h.kind`, stale `validateHandoffBox` test name).
+
+### Follow-ups (out of scope)
+- Same as Attempt 1.
