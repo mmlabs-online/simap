@@ -97,7 +97,9 @@ export function AppShellView({
                     {shellCopy.nav[item.id]}
                   </span>
                   {text !== null && (
-                    <span className="sr-only">{shellCopy.badge.newDecisions(count)}</span>
+                    <span className="sr-only">
+                      {(shellCopy.badge.byNav[item.id] ?? shellCopy.badge.newDecisions)(count)}
+                    </span>
                   )}
                 </Link>
               );

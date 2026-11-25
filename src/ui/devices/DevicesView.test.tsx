@@ -63,6 +63,20 @@ const render = (p: Partial<DevicesViewProps> = {}) =>
     />,
   );
 
+describe("DevicesView incoming slot", () => {
+  it("incoming slot renders between the notice and the filter chips", () => {
+    const html = render({
+      notice: { tone: "status", text: "NOTICE-MARK" },
+      incoming: <p>INCOMING-MARK</p>,
+    });
+    const at = (s: string) => html.indexOf(s);
+    expect(at("NOTICE-MARK")).toBeGreaterThan(-1);
+    expect(at("INCOMING-MARK")).toBeGreaterThan(at("NOTICE-MARK"));
+    expect(at("radiogroup")).toBeGreaterThan(at("INCOMING-MARK"));
+    expect(render()).not.toContain("INCOMING-MARK");
+  });
+});
+
 describe("DevicesView rows", () => {
   it("shows placement, role tag and room link, or 'In inventory' without a link", () => {
     const html = render({ devices: [base, secondary] });
