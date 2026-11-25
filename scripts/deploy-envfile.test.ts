@@ -43,6 +43,15 @@ function runBlock(name: string): string {
 const FAKE_PW = "fakepassword0123456789";
 const DB_LINE = `DATABASE_URL=postgres://simap:${FAKE_PW}@postgres:5432/simap\n`;
 
+const DRIVE = {
+  GOOGLE_CLIENT_ID: "fake-client-0001.apps.googleusercontent.com",
+  GOOGLE_CLIENT_SECRET: "fakeSecret_0001",
+  GOOGLE_REFRESH_TOKEN: "1//fake-refresh_token-0001",
+  DRIVE_FOLDER_ID: "fakeFolderId_0001",
+};
+const DRIVE_NAMES = Object.keys(DRIVE) as (keyof typeof DRIVE)[];
+const DRIVE_LINES = DRIVE_NAMES.map((n) => `${n}=${DRIVE[n]}\n`).join("");
+
 const dirs: string[] = [];
 afterEach(() => {
   for (const x of dirs.splice(0)) fs.rmSync(x, { recursive: true, force: true });
@@ -62,7 +71,7 @@ function setup(pwfile: string | null = FAKE_PW + "\n") {
   const envFile = path.join(home, ".config/simap/simap.env");
   const output = path.join(root, "output");
   fs.writeFileSync(output, "");
-  function exec(envFileOverride?: string) {
+  function exec(envFileOverride?: string, extra: Record<string, string> = {}) {
     const r = spawnSync("bash", ["-e", script], {
       cwd,
       encoding: "utf8",
@@ -73,6 +82,7 @@ function setup(pwfile: string | null = FAKE_PW + "\n") {
         ENV_FILE: envFileOverride ?? envFile,
         DB_APP: "simap",
         GITHUB_OUTPUT: output,
+        ...extra,
       },
     });
     return { ...r, output: fs.readFileSync(output, "utf8") };
@@ -101,6 +111,80 @@ d("envfile step (real run block)", () => {
     expect(t.dirFiles()).toEqual(["simap.env"]);
   });
 
+  it("all four Drive secrets empty strings: writes only DATABASE_URL", () => {
+    const t = setup();
+    const r = t.exec(undefined, {
+      GOOGLE_CLIENT_ID: "",
+      GOOGLE_CLIENT_SECRET: "",
+      GOOGLE_REFRESH_TOKEN: "",
+      DRIVE_FOLDER_ID: "",
+    });
+    expect(r.status).toBe(0);
+    expect(fs.readFileSync(t.envFile, "utf8")).toBe(DB_LINE);
+  });
+
+  it("all four Drive secrets set: five lines in order, mode 600, values never printed", () => {
+    const t = setup();
+    const r = t.exec(undefined, DRIVE);
+    expect(r.status).toBe(0);
+    expect(fs.readFileSync(t.envFile, "utf8")).toBe(DB_LINE + DRIVE_LINES);
+    expect(fs.statSync(t.envFile).mode & 0o777).toBe(0o600);
+    expect(r.output).toContain("changed=true");
+    const out = r.stdout + r.stderr;
+    for (const v of [...Object.values(DRIVE), FAKE_PW]) expect(out).not.toContain(v);
+    expect(t.dirFiles()).toEqual(["simap.env"]);
+  });
+
+  it("one, two or three Drive secrets set: exit 1, names the missing SIMAP_* secrets, old file unchanged", () => {
+    for (let mask = 1; mask < 15; mask++) {
+      const picked = DRIVE_NAMES.filter((_, i) => mask & (1 << i));
+      if (picked.length === 4) continue;
+      const t = setup();
+      t.seed("OLD=1\n");
+      const r = t.exec(undefined, Object.fromEntries(picked.map((n) => [n, DRIVE[n]])));
+      const out = r.stdout + r.stderr;
+      expect(r.status).toBe(1);
+      expect(out).toContain("all-or-none");
+      for (const n of DRIVE_NAMES.filter((x) => !picked.includes(x)))
+        expect(out).toContain(`SIMAP_${n}`);
+      for (const v of Object.values(DRIVE)) expect(out).not.toContain(v);
+      expect(fs.readFileSync(t.envFile, "utf8")).toBe("OLD=1\n");
+      expect(t.dirFiles()).toEqual(["simap.env"]);
+    }
+  });
+
+  it("a malformed Drive secret: exit 1, names only that SIMAP_* secret, old file unchanged", () => {
+    const bad: [keyof typeof DRIVE, string][] = [
+      ["GOOGLE_CLIENT_ID", "fake-client-0001.example.com"],
+      ["GOOGLE_CLIENT_SECRET", "fake secret"],
+      ["GOOGLE_REFRESH_TOKEN", "1//fake!token"],
+      ["DRIVE_FOLDER_ID", "fake12345"],
+      ["DRIVE_FOLDER_ID", "a".repeat(201)],
+    ];
+    for (const [name, value] of bad) {
+      const t = setup();
+      t.seed("OLD=1\n");
+      const r = t.exec(undefined, { ...DRIVE, [name]: value });
+      const out = r.stdout + r.stderr;
+      expect(r.status).toBe(1);
+      expect(out).toContain(`SIMAP_${name}`);
+      for (const n of DRIVE_NAMES.filter((x) => x !== name))
+        expect(out).not.toContain(`SIMAP_${n}`);
+      expect(out).not.toContain(value);
+      expect(fs.readFileSync(t.envFile, "utf8")).toBe("OLD=1\n");
+      expect(t.dirFiles()).toEqual(["simap.env"]);
+    }
+  });
+
+  it("changing one Drive value after a run gives changed=true", () => {
+    const t = setup();
+    expect(t.exec(undefined, DRIVE).output).toContain("changed=true");
+    expect(t.exec(undefined, DRIVE).output).toContain("changed=false");
+    const r = t.exec(undefined, { ...DRIVE, DRIVE_FOLDER_ID: "otherFolderId_0002" });
+    expect(r.status).toBe(0);
+    expect(r.output.trim().split("\n").pop()).toBe("changed=true");
+  });
+
   it("malformed or missing password file: exit 1, old file unchanged, no temp left, password not printed", () => {
     for (const pw of ["short\n", "bad pw with spaces 0123456789\n", null]) {
       const t = setup(pw);
@@ -124,10 +208,21 @@ d("envfile step (real run block)", () => {
 });
 
 describe("deploy-simap.yml static checks", () => {
-  it("job deploy runs only on main, has no environment key and no secrets.* reference", () => {
+  it("job deploy runs only on main, has no environment key; the only secrets are the four SIMAP_* in the envfile env block", () => {
     expect(yml).toMatch(/^ {2}deploy:\n {4}if: github\.ref == 'refs\/heads\/main'\n {4}runs-on:/m);
     expect(yml).not.toMatch(/^\s*environment:/m);
-    expect(yml).not.toMatch(/\$\{\{\s*secrets\./);
+    const used = [...yml.matchAll(/\$\{\{\s*secrets\.([A-Za-z0-9_]+)\s*\}\}/g)].map((m) => m[1]);
+    expect([...used].sort()).toEqual([
+      "SIMAP_DRIVE_FOLDER_ID",
+      "SIMAP_GOOGLE_CLIENT_ID",
+      "SIMAP_GOOGLE_CLIENT_SECRET",
+      "SIMAP_GOOGLE_REFRESH_TOKEN",
+    ]);
+    const s = stepLines("envfile");
+    const runAt = s.findIndex((l) => l === "        run: |");
+    const envPart = s.slice(0, runAt).join("\n");
+    for (const n of DRIVE_NAMES)
+      expect(envPart).toContain(`          ${n}: \${{ secrets.SIMAP_${n} }}`);
   });
   it("no run block contains ${{", () => {
     for (const name of [

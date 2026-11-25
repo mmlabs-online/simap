@@ -28,6 +28,14 @@ HTTPS). `DATABASE_URL` exists only in the host env file (`/Users/mingming/.confi
 the deploy from the deployment repo's `postgres/secrets/apps/simap.password`; it is never in the simap repo or
 the image. After a password rotation, run `deploy-simap` with `workflow_dispatch` from `main` to rewrite it.
 
+Google Drive (device-type images, D61): deploy-simap also writes `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+`GOOGLE_REFRESH_TOKEN` and `DRIVE_FOLDER_ID` to the same host env file, from the deployment repository secrets
+`SIMAP_GOOGLE_CLIENT_ID`, `SIMAP_GOOGLE_CLIENT_SECRET`, `SIMAP_GOOGLE_REFRESH_TOKEN` and `SIMAP_DRIVE_FOLDER_ID`.
+They are all-or-none: none set means images off; all four set means images on; one to three set (or a malformed
+value) fails the run and the old env file stays. Values are never printed. After adding, changing or removing any of
+them, run `deploy-simap` with `workflow_dispatch` from `main`: a manual run rewrites the env file and recreates the
+container.
+
 Migrations must be expand-then-contract: a rollback restores the previous image but never un-migrates. Never run
 `docker compose down -v` or remove volumes: all data is in the shared `pgdata`.
 
