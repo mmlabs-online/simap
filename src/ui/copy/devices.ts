@@ -300,13 +300,11 @@ export const devicesCopy = {
     notFoundBody: "This device does not exist, or it was deleted.",
     done: {
       assigned: (name: string, inv: string) => `${name} (${inv}) assigned.`,
-      holdingSaved: (name: string, inv: string) => `Note and expiry of ${name} (${inv}) saved.`,
-      placed: (name: string, inv: string) => `${name} (${inv}) placed at a seat.`,
-      moved: (name: string, inv: string) => `${name} (${inv}) moved.`,
-      returnedToInventory: (name: string, inv: string) => `${name} (${inv}) returned to inventory.`,
-      handoffGone: "This request is no longer pending. The page has been refreshed.",
-      refreshFailed: "The page could not be updated. Reload to see the latest data.",
+      holdingSaved: (name: string, inv: string) => `Holding of ${name} (${inv}) saved.`,
+      placement: (name: string, inv: string) => `Placement of ${name} (${inv}) updated.`,
     },
+    refreshFailed:
+      "The change was saved, but the page could not be refreshed. Reload the page to see the latest state.",
   },
   history: {
     title: "History",

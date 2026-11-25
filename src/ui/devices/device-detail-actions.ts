@@ -1,92 +1,77 @@
-import type { DeviceDto, HandoffDto } from "@/lib/devices/types";
+import type { DeviceDto } from "@/lib/devices/types";
 import { devicesCopy } from "../copy/devices";
 import type { AssignMode } from "./assign-device";
 import type { DeviceRowHandlers } from "./device-actions";
-import type { DevicesResult } from "./devices-api";
 import type { PlaceMode } from "./place-device";
 import { takeBackDone } from "./return-device";
-import { cancelOutcome } from "./transfer-device";
+import type { RefreshResult } from "./useDeviceDetail";
 
-const done = devicesCopy.detail.done;
+export type Notice = { tone: "status" | "error"; text: string };
 
-/** The one open dialog of the detail page; the device is a snapshot taken when it opened. */
 export type DetailDialog =
-  | { kind: "transfer" | "return" | "extend" | "takeBack"; device: DeviceDto }
-  | { kind: "assign"; device: DeviceDto; mode: AssignMode }
-  | { kind: "place"; device: DeviceDto; mode: PlaceMode };
+  | { kind: "transfer"; device: DeviceDto }
+  | { kind: "return"; device: DeviceDto }
+  | { kind: "extend"; device: DeviceDto }
+  | { kind: "takeBack"; device: DeviceDto }
+  | { kind: "place"; device: DeviceDto; mode: PlaceMode }
+  | { kind: "assign"; device: DeviceDto; mode: AssignMode };
 
-/** What a dialog reports when it finishes: the dialog it was and the device it acted on. */
-export type DetailDone = DetailDialog;
+/** The handlers the detail page offers: everything but Edit and Delete, which stay on the list. */
+export function detailHandlers(
+  open: (d: DetailDialog) => void,
+  cancel: (device: DeviceDto) => void,
+): DeviceRowHandlers {
+  return {
+    onTransfer: (device) => open({ kind: "transfer", device }),
+    onReturn: (device) => open({ kind: "return", device }),
+    onExtend: (device) => open({ kind: "extend", device }),
+    onTakeBack: (device) => open({ kind: "takeBack", device }),
+    onPlace: (device, mode) => open({ kind: "place", device, mode }),
+    onAssign: (device, mode) => open({ kind: "assign", device, mode }),
+    onEditHolding: (device, mode) => open({ kind: "assign", device, mode }),
+    onCancelHandoff: cancel,
+  };
+}
 
-export type DeviceNotice = { tone: "status" | "error"; text: string };
-
-/** The row handlers of the detail page: no Edit, no Delete. */
-export const detailHandlers = (
-  open: (dialog: DetailDialog) => void,
-  onCancel: (device: DeviceDto) => void,
-): DeviceRowHandlers => ({
-  onAssign: (device, mode) => open({ kind: "assign", device, mode }),
-  onEditHolding: (device, mode) => open({ kind: "assign", device, mode }),
-  onPlace: (device, mode) => open({ kind: "place", device, mode }),
-  onTransfer: (device) => open({ kind: "transfer", device }),
-  onReturn: (device) => open({ kind: "return", device }),
-  onExtend: (device) => open({ kind: "extend", device }),
-  onTakeBack: (device) => open({ kind: "takeBack", device }),
-  onCancelHandoff: onCancel,
-});
-
-/** The slot's device for a dialog of this kind, else null (that dialog stays closed). */
-export const dialogFor = (dialog: DetailDialog | null, kind: DetailDialog["kind"]) =>
-  dialog?.kind === kind ? dialog.device : null;
-
-/** The notice after a dialog finished. */
-export function doneNotice(d: DetailDone): DeviceNotice {
+/** The success notice after a dialog finished. */
+export function doneNotice(d: DetailDialog): Notice {
   const { name, inventoryNumber: inv } = d.device;
-  const text = (() => {
-    switch (d.kind) {
-      case "transfer":
-        return devicesCopy.transfer.sent(name, inv);
-      case "return":
-        return devicesCopy.giveBack.sent(name, inv);
-      case "extend":
-        return devicesCopy.extend.sent(name, inv);
-      case "takeBack":
-        return takeBackDone(d.device, "all");
-      case "assign":
-        return d.mode === "assign" ? done.assigned(name, inv) : done.holdingSaved(name, inv);
-      case "place":
-        return d.mode === "place"
-          ? done.placed(name, inv)
-          : d.mode === "move"
-            ? done.moved(name, inv)
-            : done.returnedToInventory(name, inv);
-    }
-  })();
+  const done = devicesCopy.detail.done;
+  const text =
+    d.kind === "transfer"
+      ? devicesCopy.transfer.sent(name, inv)
+      : d.kind === "return"
+        ? devicesCopy.giveBack.sent(name, inv)
+        : d.kind === "extend"
+          ? devicesCopy.extend.sent(name, inv)
+          : d.kind === "takeBack"
+            ? takeBackDone(d.device, "all")
+            : d.kind === "place"
+              ? done.placement(name, inv)
+              : d.mode === "assign"
+                ? done.assigned(name, inv)
+                : done.holdingSaved(name, inv);
   return { tone: "status", text };
 }
 
-/** `cancelOutcome`, with the detail page's own wording when the request is already gone. */
-export function detailCancelOutcome(
-  result: DevicesResult<HandoffDto>,
-  device: Pick<DeviceDto, "name" | "inventoryNumber">,
-  kind: "transfer" | "return" | "extension",
-) {
-  const outcome = cancelOutcome(result, device, kind);
-  if (!result.ok && (result.code === "handoff_not_pending" || result.code === "not_found")) {
-    return { ...outcome, notice: { tone: "status" as const, text: done.handoffGone } };
+/**
+ * Shows the notice first, then refreshes, then asks for focus. A 404 on refresh clears the notice (the device is gone);
+ * any other refresh failure replaces it with an error.
+ */
+export async function finishAction(deps: {
+  notice: Notice | null;
+  refresh: (() => Promise<RefreshResult>) | null;
+  setNotice: (n: Notice | null) => void;
+  requestFocus: () => void;
+}): Promise<void> {
+  deps.setNotice(deps.notice);
+  if (deps.refresh) {
+    const r = await deps.refresh();
+    if (!r.ok) {
+      deps.setNotice(
+        r.code === "not_found" ? null : { tone: "error", text: devicesCopy.detail.refreshFailed },
+      );
+    }
   }
-  return outcome;
-}
-
-/** A refresh worked when both answers are ok; a deleted device (404) is shown as not found, not as a failure. */
-export function refreshOk(detail: DevicesResult<unknown>, history: DevicesResult<unknown>) {
-  if (!detail.ok && detail.code === "not_found") return true;
-  return detail.ok && history.ok;
-}
-
-/** A failed refresh turns the notice into an error that also says the page is out of date. */
-export function afterRefresh(notice: DeviceNotice | null, ok: boolean): DeviceNotice | null {
-  if (ok) return notice;
-  const text = notice ? `${notice.text} ${done.refreshFailed}` : done.refreshFailed;
-  return { tone: "error", text };
+  deps.requestFocus();
 }

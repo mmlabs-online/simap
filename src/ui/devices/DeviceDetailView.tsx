@@ -6,7 +6,6 @@ import { Card } from "../Card";
 import { Chip } from "../Chip";
 import { apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
-import type { DeviceNotice } from "./device-detail-actions";
 import { Mac, OwnerLabel, PlacementLabel } from "./device-labels";
 import { pendingText } from "./devices-state";
 
@@ -22,10 +21,10 @@ export type DeviceDetailViewProps = {
   headingRef?: React.Ref<HTMLHeadingElement>;
   /** The history card, rendered below the sections. */
   history?: React.ReactNode;
-  /** The action bar, shown next to the heading when ready. */
+  /** Result of the last action; the region is always mounted so a screen reader announces changes. */
+  notice?: { tone: "status" | "error"; text: string } | null;
+  /** The action buttons, rendered under the heading when the device is shown. */
   actions?: React.ReactNode;
-  /** The result of the last action; its live region is always mounted. */
-  notice?: DeviceNotice | null;
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -74,8 +73,8 @@ export function DeviceDetailView({
   onRetry,
   headingRef,
   history,
-  actions,
   notice,
+  actions,
 }: DeviceDetailViewProps) {
   const heading = (text: string) => (
     <h1
@@ -135,10 +134,8 @@ export function DeviceDetailView({
 
       {status === "ready" && device && (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            {heading(device.name)}
-            {actions}
-          </div>
+          {heading(device.name)}
+          {actions}
           <Section title={copy.sections.fields}>
             <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label={copy.labels.type}>{device.type}</Field>

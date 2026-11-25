@@ -3,223 +3,172 @@ Status: READY
 # Plan — SIM-037.13: Device detail page: viewer actions
 
 ## Scope summary
-- Ticket goal: "A viewer can act on a device from its detail page (transfer, return, assign, and the other actions
-  their flags allow) without going back to the list."
-- Ticket scope:
-  > Render `DeviceRowActions` on the detail page with `onTransfer`, `onReturn`, `onAssign`, plus `onExtend`,
-  > `onCancelHandoff`, `onTakeBack`, `onEditHolding`, `onPlace`.
-  > Mount the existing dialogs (Transfer, Return, Assign, Extend, TakeBack, Place).
-  > On done: refresh the device and the first history page, show the existing `devicesCopy.*.sent` notices in an
-  > `aria-live` region, focus the `h1`.
-  > Decide whether to extract a shared `useDeviceDialogs` from `DevicesPage`.
-- Out of scope (ticket): "Edit / Delete (stay on the list page)."
-- `docs/spec-v1.md` §6 **DEV-11** (lines 342-344): "Every member can open a device detail page: all fields, where it is,
-  the current holder (since, note, expiry, overdue), any pending handoff, and its history." The actions themselves are
-  the existing DEV-07..DEV-10 flows; this ticket only exposes them on the detail page. No server or API change.
-- SIM-037.6 plan.md `## Split proposal` (slice 2) is the origin of this ticket.
-- `work/decisions.md` **D36**: "all user-facing text lives in copy files".
+- `docs/spec-v1.md` §6 **DEV-11 Device detail and history** (line 342-344):
+  > Every member can open a device detail page: all fields, where it is, the current holder (since, note, expiry,
+  > overdue), any pending handoff, and its history.
+- `work/tickets/SIM-037.6/plan.md` `## Split proposal` (lines 287-291), slice 2:
+  > Render `DeviceRowActions` on the detail page with `onTransfer`, `onReturn`, `onAssign` (ticket scope), plus `onExtend`, `onCancelHandoff`, `onTakeBack`, `onEditHolding`, `onPlace`, which come free with `rowActions`.
+  > Mount the existing dialogs (`TransferDeviceDialog`, `ReturnDeviceDialog`, `AssignDeviceDialog`, `ExtendDeviceDialog`, `TakeBackDeviceDialog`, `PlaceDeviceDialog`).
+  > On `onDone`, refresh the device and the first history page, show the existing `devicesCopy.*.sent` notices in an `aria-live` region, then focus the `h1`.
+  > Decide there whether to extract a shared `useDeviceDialogs` from `DevicesPage` (frontend consult §4). Edit/Delete stay on the list page.
+- Ticket: "Out of scope: Edit / Delete (stay on the list page)."
+- CLAUDE.md D36: "UI copy: English, in `src/ui/copy/<feature>.ts`."
+
+The handoff start bug from the ticket's technical notes (SIM-037.6 PR #102) was fixed by BUG-002 (PR #104, merged), so
+starting a transfer, return or extension works on `main`. Nothing in this plan depends on more than that.
 
 ## Acceptance criteria → verification
 | # | Criterion | How the reviewer verifies it |
 |---|---|---|
-| 1 | The detail page shows exactly the actions the device's server flags allow, and each opens the same dialog as on the list. | `device-detail-actions.test.ts › detailHandlers: has the 8 handlers and no onEdit/onDelete`; `› rowActions(device, detailHandlers) on a device with every flag true lists no Edit/Delete`; `› each handler opens its dialog kind with the device (and mode for assign/edit-holding/place)`; `› dialogFor picks the device only for the matching kind`. `DeviceDetailView.test.tsx › ready: holder with canTransfer/canReturn shows Transfer and Give back; plain viewer shows no action bar`; `› canEdit/canDelete true never render Edit or Delete`; `› actions are not rendered in loading, error or notFound`. `DeviceDetailDialogs.tsx` mounts the same six dialog components the list uses (code read). Manual check M1-M4. |
-| 2 | After an action the page shows the updated device and history, a notice, and focus returns to the heading. | Refresh: `device-detail-state.test.ts › detail refresh keeps ready+device while in flight, replaces on ok, notFound on not_found, keeps data on other errors, drops stale`; `› history refresh keeps items while in flight, replaces with page 1 on ok, keeps items on error, drops a late loadMore`; `device-detail-actions.test.ts › refreshOk`. Notice: `› doneNotice per kind` and `› afterRefresh`. Region: `DeviceDetailView.test.tsx › live region is always mounted (ready, notFound, loading, error) and empty without a notice; status notice → role=status, error → role=alert`. Focus and the call order (close → notice → refresh → focus) live in `DeviceDetailPage.tsx`, which needs a DOM to run: checked by code read and manual checks M1-M6. |
-| 3 | All new strings live in `src/ui/copy/*` (D36). | `src/ui/copy/devices.ts` diff adds `devicesCopy.detail.done.*`; grep of the new/changed `.tsx`/`.ts` files shows no string literal shown to users; `device-detail-actions.test.ts` asserts the notices come from `devicesCopy`. |
-
-**Test plan wording (flag for Ming):** the ticket says "Component: action gating, dialog open, refresh + notice + focus
-after done". Vitest runs in node with no DOM and jsdom is not allowed, so this becomes: "Pure helpers
-(`device-detail-actions.ts`, reducer events) + `renderToStaticMarkup` of `DeviceDetailView` for gating, dialog choice,
-notice and live region; the container's focus and call order are checked by code read and the manual walk." The
-implementer updates the ticket's `## Test plan` line to this wording and notes it in `## Handoff`.
+| 1 | The detail page shows exactly the actions the device's server flags allow, and each opens the same dialog as on the list. | `device-detail-actions.test.ts › detailHandlers: flag table` (each flag alone gives exactly its button key; `canEdit`/`canDelete` true never gives `edit`/`delete`; pending `canCancel` gives the cancel key and hides Extend; `mine && overdue && !pending` gives Extend). `device-detail-actions.test.ts › detailHandlers opens the matching dialog` (each handler calls `open` with the right `kind`/`mode`). `DeviceDetailView.test.tsx › actions render after the h1 only when ready`. Code check: `useDeviceDetailActions.tsx` mounts the same six dialog components the list uses (`TransferDeviceDialog`, `ReturnDeviceDialog`, `ExtendDeviceDialog`, `TakeBackDeviceDialog`, `PlaceDeviceDialog`, `AssignDeviceDialog`), with no Edit/Delete dialog. Local run: `/devices/<id>` as owner, Admin and plain member shows the same buttons as that device's row on `/devices`. |
+| 2 | After an action the page shows the updated device and history, a notice, and focus returns to the heading. | `device-detail-state.test.ts › refresh keeps the shown device until the answer; refreshed replaces it; stale answer dropped; 404 gives notFound; other failure keeps the device` and `› history refresh replaces items with the first page and resets the cursor; failure keeps the old items`. `device-detail-actions.test.ts › finishAction: sets the notice before awaiting refresh, then requests focus`, `› refresh failure replaces the notice with refreshFailed (role alert)`, `› refresh not_found clears the notice`, `› doneNotice per action`. `DeviceDetailView.test.tsx › notice region is always mounted (loading, error, notFound, ready); status tone → role=status, error tone → role=alert`. Local run: start a transfer on the detail page → no skeleton flash, Pending section and a `transfer_start` history row appear, the notice is read, focus is on the `h1`. |
+| 3 | All new strings live in `src/ui/copy/*` (D36). | Diff check: the only new user-visible strings are under `devicesCopy.detail` in `src/ui/copy/devices.ts`; no string literals in JSX of the new/changed components. |
 
 ## Ming verification after merge
-- With a screen reader (VoiceOver or NVDA) on the deployed app: after Transfer on `/devices/<id>`, the notice is
-  announced and focus lands on the device name heading. (The reviewer cannot run a screen reader.)
+- Optional: screen reader check (NVDA / VoiceOver) that the notice is announced after Transfer / Give back on the
+  detail page. Everything else is verifiable in a local run.
 
 ## Files to create / modify
 | File | Change | Required because | High path? |
 |---|---|---|---|
-| `src/ui/devices/device-detail-state.ts` | Add `refresh` / `refreshed` events to `DetailEvent` (lines 18-20) and `HistoryEvent` (lines 55-59); handle them in `detailReducer` (line 23) and `historyReducer` (line 62). Existing `load`/`loaded`/`loadMore`/`moreLoaded` unchanged. | Silent refresh without a skeleton (both consults: `load` resets to `INITIAL_*`, which unmounts the h1, dialogs and live region). | No |
-| `src/ui/devices/device-detail-state.test.ts` | New cases for the refresh events. | R5. | No |
-| `src/ui/devices/useDeviceDetail.ts` | Add `refresh(): Promise<boolean>` (after `loadMore`, line 50) and `refreshDevice(): Promise<void>` (detail only, for `onStale`); return them (line 57). | Container data. | No |
-| `src/ui/devices/device-detail-actions.ts` (new, pure) | Types `DetailDialog`, `DetailDone`, `DeviceNotice`; `detailHandlers(open, onCancel)`; `dialogFor(dialog, kind)`; `doneNotice(done)`; `detailCancelOutcome(result, device, kind)`; `refreshOk(detail, history)`; `afterRefresh(notice, ok)`. | Rule 6 pure logic first; testable without a DOM. | No |
-| `src/ui/devices/device-detail-actions.test.ts` (new) | Unit tests of the helpers. | R5, AC1-AC3. | No |
-| `src/ui/devices/DeviceDetailDialogs.tsx` (new) | Renders the six existing dialogs from one `DetailDialog` slot; maps each dialog's `onDone` to `onDone(done: DetailDone)`. | Keeps `DeviceDetailPage` small; mounts "the same dialog as on the list". | No |
-| `src/ui/devices/DeviceDetailPage.tsx` | Wire the dialog slot, handlers, cancel-handoff, notice state, busy state, focus request; pass `actions` and `notice` to the view; render `DeviceDetailDialogs`. Keep the first-load focus effect (lines 18-23) as is. | AC1, AC2. | No |
-| `src/ui/devices/DeviceDetailView.tsx` | Add props `actions?: React.ReactNode` and `notice?: DeviceNotice \| null` (type at lines 15-24). Always-mounted `<div aria-live="polite">` right after the back link (line 86), outside the status branches, with the same `p role="status"`/`role="alert"` markup as `DevicesView.tsx:62-73`. In the `ready` branch, wrap `heading(device.name)` (line 118) and `actions` in `flex flex-wrap items-center justify-between gap-3`. | AC1, AC2. | No |
-| `src/ui/devices/DeviceDetailView.test.tsx` | New cases for actions and the live region. | AC1, AC2. | No |
-| `src/ui/copy/devices.ts` | Add `devicesCopy.detail.done` after `notFoundBody` (line 300): `assigned(name, inv)`, `holdingSaved(name, inv)`, `placed(name, inv)`, `moved(name, inv)`, `returnedToInventory(name, inv)`, `handoffGone`, `refreshFailed`. | D36; Assumptions 3, 4, 5. | No |
-| `work/tickets/SIM-037.13/ticket.md` | Reword the `## Test plan` line (see above). | Flagged wording change. | No |
+| `src/ui/devices/device-detail-state.ts` | Add `{type:"refresh",id}` and `{type:"refreshed",id,result}` to `DetailEvent` and `HistoryEvent`; handle them in `detailReducer` (lines 18-31) and `historyReducer` (lines 55-89). | Silent refresh: `load` resets to `INITIAL_*` (line 24, 63), which unmounts the h1, the actions and loses focus. | No |
+| `src/ui/devices/device-detail-state.test.ts` | Reducer tests for the new events. | R5. | No |
+| `src/ui/devices/useDeviceDetail.ts` | Add `refresh(): Promise<RefreshResult>` (lines 29-57 pattern) that dispatches `refresh` then `refreshed` for detail and history in parallel. | AC2. | No |
+| `src/ui/devices/device-detail-actions.ts` (new) | Pure: `DetailDialog` union, `detailHandlers(open, cancel)`, `doneNotice(...)`, `finishAction(deps)`. | Pure logic first (planner rule 6); testable without a DOM. | No |
+| `src/ui/devices/device-detail-actions.test.ts` (new) | Unit tests for the pure module. | R5, AC1, AC2. | No |
+| `src/ui/devices/useDeviceDetailActions.tsx` (new, `"use client"`) | Hook owning the dialog state, notice, busy id, cancel flow; returns `{ handlers, busyId, notice, dialogs }`. | Dialog host for the detail page (duplicate of the list wiring, see Approach step 4). | No |
+| `src/ui/devices/DeviceDetailView.tsx` | Add props `notice` and `actions?: React.ReactNode`; always-mounted `aria-live` region; actions under the h1 in the ready branch. | AC1, AC2. | No |
+| `src/ui/devices/DeviceDetailView.test.tsx` | New cases for notice region and actions placement; existing cases unchanged. | R5. | No |
+| `src/ui/devices/DeviceDetailPage.tsx` | Create `roomsApi`/`seatsApi`, call `useDeviceDetailActions`, pass `notice`/`actions`, render `dialogs`, add the post-action focus effect. | Wiring. | No |
+| `src/ui/copy/devices.ts` | New strings under `detail` (lines 279-301): `done.assigned`, `done.holdingSaved`, `done.placement`, `refreshFailed`. | D36, AC2 (a notice after every action). | No |
 
-**No High path. No server, API or migration change. `DevicesPage.tsx` is not touched** (Assumption 1). The security
-reviewer is not triggered (no `src/server/` path).
+`DevicesPage.tsx`, `DeviceRowActions.tsx`, `device-actions.ts` and every dialog file are **not** changed.
+**No High path is touched** (no migration, no server, no config, no build/deploy file).
 
 ## Data model / migration
 None.
 
 ## API contract
-None. The page uses the existing `api.get`, `api.history`, `api.cancelHandoff` and the dialogs' existing calls.
+None (uses the existing `api.get`, `api.history`, `api.cancelHandoff`, `api.handoffCount` and the dialogs' own calls).
 
 ## Tests to write
 | Test (file › name) | Covers |
 |---|---|
-| `src/ui/devices/device-detail-state.test.ts › detail refresh: keeps status ready and the device while in flight; ok replaces the device; not_found → notFound (device null); other error keeps status and device; a stale refreshed is dropped` | AC2 silent refresh |
-| `… › detail: a load (Retry) after a refresh drops the late refreshed answer` | race |
-| `… › history refresh: keeps items while in flight and clears loadingMore; ok replaces items, nextCursor, holderSince with page 1; error keeps items, status and nextCursor; stale dropped` | AC2, pagination reset |
-| `… › history: a moreLoaded that started before a refresh is dropped` | race with "Load more" |
-| `src/ui/devices/device-detail-actions.test.ts › detailHandlers: exposes onAssign, onEditHolding, onPlace, onTransfer, onReturn, onExtend, onTakeBack, onCancelHandoff; no onEdit/onDelete` | AC1 |
-| `… › rowActions(device with every can* flag true, mine+overdue, no pending, detailHandlers) has no edit/delete key; plain viewer (all false, not mine) has none` | AC1 gating |
-| `… › each handler calls open with its kind and the device; onAssign → {assign, mode "assign"}, onEditHolding → {assign, mode "edit"}, onPlace(move) → {place, mode "move"}; onCancelHandoff calls onCancel, not open` | AC1 "opens the same dialog" |
-| `… › dialogFor returns the device only for the matching kind, null otherwise and for a null slot` | dialog mounting |
-| `… › doneNotice: transfer/return/extend use devicesCopy.transfer/giveBack/extend.sent; takeBack = takeBackDone(device, "all") with no filter hint; assign → detail.done.assigned, edit → holdingSaved; place/move/return → placed/moved/returnedToInventory; all tone status; Vietnamese name kept (Máy trạm)` | AC2 notice, AC3 |
-| `… › detailCancelOutcome: ok = cancelOutcome text; handoff_not_pending and not_found → detail.done.handoffGone, refresh true; other codes pass cancelOutcome through (refresh false for nothing-changed codes)` | cancel notice on detail |
-| `… › refreshOk: detail ok + history ok → true; detail not_found → true whatever history; detail error → false; history error → false` | refresh failure rule |
-| `… › afterRefresh: ok keeps the notice; failed + status notice → error tone, "<text> <refreshFailed>"; failed + error notice → error tone with both texts; failed + null → refreshFailed alone` | Assumption 5 |
-| `src/ui/devices/DeviceDetailView.test.tsx › ready renders the actions node next to the heading; actions are not rendered in loading, error or notFound` | AC1 |
-| `… › with DeviceRowActions + detailHandlers: holder with canTransfer and canReturn shows Transfer and Give back; plain viewer renders no button; canEdit/canDelete true never render Edit or Delete` | AC1 gating in markup |
-| `… › live region aria-live=polite is present and empty without a notice in ready, loading, error and notFound` | AC2 always-mounted region |
-| `… › status notice renders role=status, error notice role=alert; notFound still shows the notice` | AC2 |
+| `device-detail-state.test.ts › detail refresh keeps status/device and only bumps latest` | No skeleton on refresh. |
+| `device-detail-state.test.ts › detail refreshed ok replaces the device in place` | AC2 updated device. |
+| `device-detail-state.test.ts › detail refreshed for an older id is dropped` | Stale-answer guard. |
+| `device-detail-state.test.ts › detail refreshed not_found → notFound, device null` | Device deleted meanwhile. |
+| `device-detail-state.test.ts › detail refreshed other error keeps status ready and the old device` | Failed refresh does not blank the page. |
+| `device-detail-state.test.ts › history refresh keeps items, clears loadingMore/moreError, bumps latest; refreshed ok replaces items with page 1 and its nextCursor/holderSince; failure keeps old items; a loadMore answer for an older id after refresh is dropped` | AC2 first history page; loadMore race. |
+| `device-detail-actions.test.ts › detailHandlers: flag table` | AC1 gating via real `rowActions` with the detail handler set: `canTransfer`→`transfer`; `canReturn`→`giveBack`; `canAssign`→`assign`; `canEditHolding`→`editHolding`; `canTakeBack`→`takeBack`; `placeModes` → `place`/`move`/`return`; `mine && overdue && !pending`→`extend`; pending `transfer`/`return`/`extension` with `canCancel` → the matching cancel key and no `extend`; `canEdit && canDelete` with all else false → `[]`; all flags false → `[]`. |
+| `device-detail-actions.test.ts › detailHandlers opens the matching dialog` | Each handler calls `open({kind, device, mode?})` with the right kind (`transfer`, `return`, `extend`, `takeBack`, `place`+mode, `assign`+`"assign"`, `assign`+`"edit"`), and `onCancelHandoff` calls `cancel(device)`; no `onEdit`/`onDelete` keys. |
+| `device-detail-actions.test.ts › doneNotice per action` | transfer/return/extend → `devicesCopy.{transfer,giveBack,extend}.sent(name, inv)`; takeBack → `takeBackDone(device, "all")` (no filter hint); assign `assign` → `detail.done.assigned`; assign `edit` → `detail.done.holdingSaved`; place (any mode) → `detail.done.placement`. Names with Vietnamese diacritics (`Máy trạm`) pass through unchanged. |
+| `device-detail-actions.test.ts › finishAction order` | Fakes record calls: `setNotice(notice)` happens before `refresh()` resolves, `requestFocus()` after it resolves. |
+| `device-detail-actions.test.ts › finishAction refresh failure` | Refresh `{ok:false, code:"unavailable"}` → final notice `{tone:"error", text: detail.refreshFailed}`, focus still requested. |
+| `device-detail-actions.test.ts › finishAction refresh not_found` | Notice cleared (`null`), focus requested (the notFound h1). |
+| `device-detail-actions.test.ts › finishAction with a null notice (cancel result with refresh false)` | Cancel error that changed nothing: notice kept, no refresh call, focus requested. |
+| `DeviceDetailView.test.tsx › notice region is always mounted` | `<div aria-live="polite">` present in loading, error, notFound and ready markup. |
+| `DeviceDetailView.test.tsx › notice tones` | `tone:"status"` → `role="status"` with text; `tone:"error"` → `role="alert"`. |
+| `DeviceDetailView.test.tsx › actions render after the h1 only when ready` | `actions={<p>ACTIONS-MARK</p>}`: present after `</h1>` and before the Details section when ready; absent in loading, error, notFound. |
+
+Tests use `renderToStaticMarkup` and plain fakes, as the existing tests do (there is no DOM test library in the repo;
+do not add one).
 
 ## Approach
-1. **Reducers** (`device-detail-state.ts`). Tests first.
-   - `DetailEvent` adds `{ type: "refresh"; id }` → `{ ...state, latest: id }` (no reset), and
-     `{ type: "refreshed"; id; result }` → stale id: unchanged; ok: `ready` + new device; `not_found`: `notFound`,
-     device null; any other code: `state` unchanged.
-   - `HistoryEvent` adds `refresh` → `{ ...state, latest: id, loadingMore: false, moreError: false }`, and
-     `refreshed` → stale: unchanged; ok: same object as `loaded` ok (page 1); error: `{ ...state }` unchanged.
-     A `moreLoaded` in flight is dropped by the existing `event.id !== state.latest` check.
-2. **Hook** (`useDeviceDetail.ts`). `refresh` bumps both counters, dispatches both `refresh` events, awaits
-   `Promise.all([api.get(deviceId), api.history(deviceId)])`, dispatches both `refreshed` when `mounted`, returns
-   `refreshOk(d, h)`. `refreshDevice` does the same for the detail only (used by `onStale`; history does not change
-   on a refused action).
-3. **Pure helpers** (`device-detail-actions.ts`), imports `@/lib/devices/types`, `../copy/devices`,
-   `./transfer-device` (`cancelOutcome`), `./return-device` (`takeBackDone`), `./devices-api` (types only), ui → ui/lib only (R1).
-   - `type DetailDialog = { kind: "transfer" | "return" | "extend" | "takeBack"; device } | { kind: "assign"; device; mode: AssignMode } | { kind: "place"; device; mode: PlaceMode }`.
-   - `type DetailDone = DetailDialog` (the done event carries the dialog's kind, mode and the device: the dialog's
-     returned device for transfer/return/extend/takeBack, the slot snapshot for assign/place).
-   - `detailHandlers(open: (d: DetailDialog) => void, onCancel: (d: DeviceDto) => void): DeviceRowHandlers` with
-     exactly the 8 handlers.
-   - `dialogFor(slot, kind)`, `doneNotice(done)`, `detailCancelOutcome(...)`, `refreshOk(...)`, `afterRefresh(...)` as in the test table.
-4. **Dialogs** (`DeviceDetailDialogs.tsx`, no `"use client"` needed beyond the page's). Props: `dialog`, `api`,
-   `seatsApi`, `roomsApi`, `onClose`, `onStale`, `onDone(done)`. Renders `TransferDeviceDialog`, `ReturnDeviceDialog`,
-   `ExtendDeviceDialog`, `TakeBackDeviceDialog` with `device={dialogFor(dialog, kind)}`, and `PlaceDeviceDialog` /
-   `AssignDeviceDialog` with `open={dialog?.kind === kind}`, `device`, `mode` (same prop shapes as
-   `DevicesPage.tsx:323-405`). The dialog's device comes from the slot (a snapshot set on open), never from
-   `detail.device`, so a refresh does not swap it mid-dialog.
-5. **Container** (`DeviceDetailPage.tsx`):
-   - `roomsApi`/`seatsApi` via `createRoomsApi`/`createSeatsApi` (as `DevicesPage.tsx:51-52`).
-   - State: `dialog: DetailDialog | null`, `notice: DeviceNotice | null`, `busy: boolean`, `focusRequest: number`;
-     ref `acting`.
-   - `open(d)`: `setNotice(null); setDialog(d)`.
-   - `finish(notice)`: `acting.current = true; setBusy(true); setNotice(notice); const ok = await refresh();
-     setNotice(afterRefresh(notice, ok)); setBusy(false); acting.current = false; setFocusRequest(n => n + 1)`.
-   - `onDone(done)`: `setDialog(null); void finish(doneNotice(done))`.
-   - `onCancel(device)`: guard `acting.current || !device.pendingHandoff`; `setBusy(true); setNotice(null)`;
-     `outcome = detailCancelOutcome(await api.cancelHandoff(p.id), device, p.kind)`; if `outcome.refresh` →
-     `finish(outcome.notice)`, else set the notice, clear busy, request focus.
-   - `onStale`: `void refreshDevice()` (no notice change, no focus move; the dialog shows its own stale error).
-   - Focus: `useEffect(() => { if (focusRequest > 0) headingRef.current?.focus(); }, [focusRequest])`, applied after
-     commit so it hits the heading of the new branch (`ready` or `notFound`), as `DevicesPage.tsx:84-101` does.
-   - `handlers = useMemo(() => detailHandlers(open, onCancel), [api, refresh])`.
-   - View props: `actions={detail.device && <DeviceRowActions device={detail.device} handlers={handlers} busyId={busy ? detail.device.id : null} />}`, `notice={notice}`.
-6. **View** (`DeviceDetailView.tsx`): the two new props and markup as in the file table. The live region sits after the
-   back link and before the status branches, so it stays mounted when a refresh turns `ready` into `notFound`.
-7. **Copy**: add `devicesCopy.detail.done` (English, `(name, inv)` style of `transfer.sent`):
-   `assigned: (n, i) => \`${n} (${i}) assigned.\``, `holdingSaved: (n, i) => \`Note and expiry of ${n} (${i}) saved.\``,
-   `placed: (n, i) => \`${n} (${i}) placed at a seat.\``, `moved: (n, i) => \`${n} (${i}) moved.\``,
-   `returnedToInventory: (n, i) => \`${n} (${i}) returned to inventory.\``,
-   `handoffGone: "This request is no longer pending. The page has been refreshed."`,
-   `refreshFailed: "The page could not be updated. Reload to see the latest data."`.
-8. Update the ticket `## Test plan` line. Run the checks: `pnpm format:check`, `pnpm typecheck && pnpm check:layers`,
-   `pnpm test`, `pnpm build`.
+1. **Reducers** (`device-detail-state.ts`).
+   - `detailReducer`: `refresh` → `{ ...state, latest: id }`. `refreshed` (id must equal `latest`): ok → same as
+     `loaded` ok; `not_found` → `{status:"notFound", device:null, errorCode:"not_found"}`; other error → `state`
+     unchanged except `latest` (keep the old device).
+   - `historyReducer`: `refresh` → `{ ...state, latest: id, loadingMore: false, moreError: false }`. `refreshed` ok →
+     same as `loaded` ok (page 1 replaces items); failure → `state` unchanged.
+   - Keep `load`/`loaded`/`loadMore`/`moreLoaded` as they are.
+2. **Hook** (`useDeviceDetail.ts`): `refresh = useCallback(async () => { const dId = ++detailCounter.current;
+   const hId = ++historyCounter.current; dispatch refresh for both; const [d, h] = await Promise.all([api.get(deviceId),
+   api.history(deviceId)]); if mounted dispatch refreshed for both; return d.ok ? {ok:true} : {ok:false, code:d.code} })`.
+   Export `type RefreshResult = { ok: true } | { ok: false; code: string }`. Return it from the hook. A history failure
+   alone does not change the result (the history card keeps its old items).
+3. **Pure module** (`device-detail-actions.ts`, imports only `@/lib/...`, `../copy/devices`, `./device-actions` types,
+   `./return-device` for `takeBackDone`, `./assign-device`/`./place-device` types):
+   - `export type DetailDialog = { kind: "transfer" | "return" | "extend" | "takeBack"; device: DeviceDto } | { kind: "place"; device: DeviceDto; mode: PlaceMode } | { kind: "assign"; device: DeviceDto; mode: AssignMode }`.
+   - `detailHandlers(open: (d: DetailDialog) => void, cancel: (device: DeviceDto) => void): DeviceRowHandlers` — the
+     eight handlers, never `onEdit`/`onDelete`. `onAssign` and `onEditHolding` both map to `kind:"assign"` with their mode, as the list does.
+   - `doneNotice(d: DetailDialog): Notice` per the table above (`Notice = { tone: "status" | "error"; text: string }`).
+   - `finishAction({ notice, refresh, setNotice, requestFocus }: { notice: Notice | null; refresh: (() => Promise<RefreshResult>) | null; ... })`:
+     `setNotice(notice)`; if `refresh` then `r = await refresh()`; `r.ok === false && r.code === "not_found"` →
+     `setNotice(null)`; other failure → `setNotice({tone:"error", text: detail.refreshFailed})`; finally `requestFocus()`.
+4. **Dialog host** (`useDeviceDetailActions.tsx`) — **duplicate, do not extract** (see Assumptions A1):
+   - Inputs: `{ api, roomsApi, seatsApi, refresh, requestFocus }`.
+   - State: `open: DetailDialog | null`, `notice`, `busyId`, `acting` ref (re-entry guard, as `DevicesPage.tsx:67`).
+   - `refreshAll = async () => { const [r, count] = await Promise.all([refresh(), api.handoffCount()]); if (count.ok) setBadge(count.value); return r; }` with `setBadge = useSetHandoffBadge()` (keeps the nav badge in step, as the list's `refreshAll` does at `DevicesPage.tsx:104-115`).
+   - Handler `open`: `setNotice(null); setOpen(d)`. Handler `cancel` mirrors `DevicesPage.tsx:187-199`: guard with
+     `acting`, `setBusyId(device.id)`, `cancelOutcome(await api.cancelHandoff(pending.id), device, pending.kind)`, then
+     `finishAction({ notice: outcome.notice, refresh: outcome.refresh ? refreshAll : null, ... })`, release guard.
+   - Each dialog's `onDone`: `setOpen(null)`, guard + `setBusyId(device.id)`, `finishAction({ notice: doneNotice(open), refresh: refreshAll, ... })`, release. Assign `onDone(mode)` and Place `onDone()` take the device and mode from the `open` value captured when the dialog was opened.
+   - Each dialog's `onStale`: `void refreshAll()` only (no notice, no focus; the dialog shows its own error).
+   - `dialogs`: the six dialog elements with the same props as `DevicesPage.tsx:323-405`, each fed
+     `open?.kind === "<kind>" ? open.device : null` (Place/Assign: `open={open?.kind === "place"}` etc.).
+   - Returns `{ handlers: useMemo(() => detailHandlers(...)), busyId, notice, dialogs }`.
+5. **View** (`DeviceDetailView.tsx`): props `notice?: Notice | null` and `actions?: React.ReactNode`. Render the
+   `<div aria-live="polite">` (markup copied from `DevicesView.tsx:62-73`) right after the back link, outside every
+   status branch. In the ready branch render `{actions}` right after `heading(device.name)` and before the Details section.
+6. **Page** (`DeviceDetailPage.tsx`): `roomsApi`/`seatsApi` via `useMemo` as `DevicesPage.tsx:51-52`;
+   `const [focusSeq, setFocusSeq] = useState(0)`; `requestFocus = () => setFocusSeq(n => n + 1)`; an effect on
+   `focusSeq` (skip 0) calls `headingRef.current?.focus()` after the commit, so a ready → notFound switch focuses the
+   new h1 (same reason as `DevicesPage.tsx:83`). Keep the one-shot mount focus effect (lines 18-23) unchanged. Pass
+   `notice`, `actions={detail.device && <DeviceRowActions device={detail.device} handlers={handlers} busyId={busyId} />}`, and render `{dialogs}` after the view (outside the view so they survive status changes).
+7. **Copy** (`src/ui/copy/devices.ts` under `detail`):
+   - `done: { assigned: (name, inv) => \`${name} (${inv}) assigned.\`, holdingSaved: (name, inv) => \`Holding of ${name} (${inv}) saved.\`, placement: (name, inv) => \`Placement of ${name} (${inv}) updated.\` }`
+   - `refreshFailed: "The change was saved, but the page could not be refreshed. Reload the page to see the latest state."`
+8. Run Checks: `pnpm format:check`, `pnpm typecheck && pnpm check:layers`, `pnpm test`, `pnpm build`.
 
-Manual checks (local, `pnpm dev` with a dev token and `pnpm seed:dev` data; the reviewer or implementer records them in impl-log):
-- **M1** As the holder of a device: open `/devices/<id>`. Transfer and Give back show; Edit and Delete never show.
-  Transfer → pick a member → submit. The page does not flash a skeleton; the notice "Transfer of … sent…" shows; the
-  Pending handoff section and a "Cancel transfer" button appear; the history's top entry is the transfer start; focus
-  is on the device name heading (Tab goes to the next control after it).
-- **M2** Cancel transfer → cancelled notice, pending section gone, history grows, focus on the heading. Give back →
-  sent notice, pending return shown.
-- **M3** As an Admin: Assign an org-inventory device, then Note/expiry, then Place, Move and Return to inventory, then
-  Take back on an owned device. Each shows its notice, updates the "Where it is"/"Holder" sections and the history,
-  and focuses the heading. The take-back notice has no list-filter hint.
-- **M4** As a plain user who does not hold the device: no action bar.
-- **M5** As the holder of an overdue device: Extend → extension notice, pending extension shown.
-- **M6** Refresh failure (optional): in DevTools block `/api/devices/<id>` after opening a dialog, then submit. The
-  old data stays, the notice shows with "The page could not be updated…" as an alert, focus on the heading.
-- **M7** Delete the device in another tab, then do any action on the stale page (for example cancel): the page turns
-  into "Device not found", the notice stays visible, focus on that heading.
+Rules: **R1** all new code is in `src/ui/**` and imports only ui and `@/lib` (no `src/server`); `check:layers` proves it.
+**R4** `DevicesPage` and the dialogs are untouched; the extraction is a follow-up. **R5** pure module and reducers
+have unit tests. **D36** every new string in `copy/devices.ts`. R2/R3/R6/R7 not affected (no server, schema or env change).
 
-Rules: R1 (all new code is in `src/ui/**`; imports `@/lib/*` and ui modules only; no `src/server` import;
-`pnpm check:layers`), R4 (file list above; `DevicesPage.tsx` untouched), R5 (tests above), R7 (no new route; the
-dialogs' calls are unchanged), D36 (new strings in `src/ui/copy/devices.ts`), R2/R3/R6 not affected.
+Size estimate: about 300 lines of product code (host hook ~140, pure module ~70, reducers/hook ~50, view/page ~35,
+copy ~10) and about 250 lines of tests. Fits M.
 
 ## Specialist input used
-- **frontend-developer**
-  - Adopted: silent refresh with new reducer events and tests (rec. 2); notice and always-mounted live region outside
-    the status branches (rec. 3); focus by a counter + `useEffect` (rec. 3); dialog device from its own slot, not from
-    `detail.device` (rec. 4); cancel-handoff with `acting` ref, `busyId = device.id`, `cancelOutcome`, refresh only
-    if `outcome.refresh` (rec. 4); `actions` slot in the view, no `hasAnyAction` (rec. 5); pure helpers + static markup
-    and the reworded test plan (rec. 6); `takeBackDone(device, "all")` (rec. 4).
-  - Adopted with a change: busy state covers the post-action refresh too, so the bar is disabled until the refresh
-    lands (rec. 4 "hide or disable"; disable chosen, so the bar does not jump).
-  - Rejected: extracting `useDeviceDialogState` + a shared dialogs component into `DevicesPage` (rec. 1). See Assumption 1.
-- **ux-architect**
-  - Adopted: header row with `h1` and the action bar, `flex-wrap`, no menu, `rowActions` order unchanged, bar absent
-    outside `ready` (recs. 1-2); silent refresh, keep data on failure and show an error notice (rec. 4); clear the
-    notice when a dialog opens (rec. 5); focus the heading after every action including Place and Assign-edit
-    (rec. 6); stay on the page after a transfer or return, `notFound` on 404 (recs. 7-8); copy in
-    `devicesCopy.detail` (rec. 9).
-  - Adopted with a change: the live region sits right below the back link, not below the heading row, because it must
-    stay mounted across `ready` → `notFound` and the h1 lives inside those branches (rec. 5).
-  - Rejected: list parity "no notice" for Place and Assign-edit (rec. 5, OQ3). The ticket's AC2 asks for a notice
-    after an action. See Assumption 3.
-  - Rejected: `useDeviceDialogs` extraction (rec. 3). See Assumption 1.
+- frontend-developer rec 1 (duplicate in a new host file, keep `DevicesPage` untouched, follow-up to unify): **adopted** (A1).
+- frontend-developer rec 2 / ux rec 2 (the eight handlers, no Edit/Delete, no `bannerHandlers`, keep `rowActions` order): **adopted**.
+- frontend-developer rec 3 / ux rec 4 (silent `refresh()` without `load`; keep old data on failure; 404 → notFound): **adopted**, with explicit `refresh`/`refreshed` reducer events because `loaded` checks `latest`, which only `load` sets today.
+- frontend-developer rec 4 / ux rec 1 (always-mounted `aria-live` region outside the ready branch, `takeBackDone(device, "all")`, clear the notice when an action opens): **adopted**.
+- frontend-developer rec 5 / ux rec 5 (focus h1 after refresh, keep one-shot effect): **adopted**, focus applied in an effect after commit. Focus also after Assign `edit` and Place (ux rec 5), unlike the list, because AC2 says focus returns after an action.
+- frontend-developer rec 6 (`actions` as a ReactNode prop of the pure view): **adopted**.
+- ux rec 3 (extract `useDeviceDialogs` from `DevicesPage` now): **rejected** for this ticket, see A1.
+- ux rec 5 / open question 2 (notices for Place, Assign, Edit holding with new copy): **adopted** (A2).
+- ux rec 7 (`onStale` → silent refresh): **adopted**.
+- ux rec 8 (inline overdue line in Holder): **already met** — `OwnerLabel` shows the overdue chip and `holding.expired` today (`DeviceDetailView.test.tsx:88-97`); no `OverdueBanner` on the detail page.
+- ux rec 9 (touch target / `className` on `DeviceRowActions`): **not adopted**; same `size="sm"` buttons as the list, consistent; change would touch a shared component (follow-up if wanted).
+- ux rec 10 (`role="group"` + `aria-label` on the bar): **not adopted**; needs a `DeviceRowActions` change; each button already has a per-device `aria-label`.
+- frontend-developer open question 3 (refresh the nav badge): **adopted** (A4).
 
 ## Assumptions
-Planner assumptions, non-blocking, for Ming to confirm.
-
-1. **No extraction from `DevicesPage`; the dialogs are wired again on the detail page.** The list's `onDone` bodies
-   differ per dialog (`refreshDevices` vs `refreshAll` with three handoff lists, the overdue list and the nav badge;
-   `takeBackDone` with the list filter; focus only for Assign "assign"). A shared hook would have to carry all of that
-   through callbacks, and `DevicesPage` has no test that can catch a focus or notice regression without a DOM.
-   The detail page uses one `DetailDialog` union slot instead of six `useState` slots. The new
-   `DeviceDetailDialogs.tsx` is generic (slot in, `onDone(done)` out), so the list can adopt it later. Follow-up: "Use
-   `DeviceDetailDialogs` + `DetailDialog` in `DevicesPage`" (low priority).
-2. **Take-back notice on the detail page = `takeBackDone(device, "all")`**, that is
-   `devicesCopy.takeBack.done(name, inv)` ("… is back in the org inventory.") with no list-filter hint
-   (`return-device.ts:93-99`). No new string.
-3. **Place and Assign show a notice on the detail page**, unlike the list (AC2 asks for "a notice" after an action,
-   and the existing `*.sent` strings do not cover these). New strings: `detail.done.assigned`, `holdingSaved`,
-   `placed`, `moved`, `returnedToInventory`. The list stays silent for these (unchanged, R4).
-4. **Cancel "gone" notice on the detail page** says "The page has been refreshed." (`detail.done.handoffGone`) instead
-   of the list's "The list has been refreshed." (`transfer/giveBack/extend.gone`). Other cancel outcomes reuse
-   `cancelOutcome` as is.
-5. **A failed refresh keeps the old device and history** (no skeleton, no `error` state). The notice turns into an
-   error (`role="alert"`) with the action's text followed by `detail.done.refreshFailed`; focus still goes to the
-   heading. A refresh whose detail answer is `not_found` is not a failure: the page shows "Device not found" with the
-   notice. `onStale` refreshes the device only, silently.
-6. **History after an action resets to page 1** (extra "Load more" pages are dropped; the new event is on top). A
-   "Load more" answer that started before the refresh is dropped.
-7. **Focus goes to the `h1` after every action**, including Assign "edit" and Place (the list skips focus for
-   Assign "edit"). The first-load focus is unchanged.
-8. **The action bar is disabled (`busyId`) while a cancel or a post-action refresh is in flight**, to prevent a double
-   submit; it is not hidden.
-9. **Live region position:** right below the "Back to devices" link, above the heading, always mounted.
-10. **Handoff start fix is in.** PR #102 is SIM-037.6's own PR (merged, a4548e9 per `work/tickets/BUG-002/plan.md:64`).
-    The start-insert bug was fixed by BUG-002 (board: MERGED). The code confirms it: `src/server/devices/handoffs.ts:179-181`,
-    `236-238` and `291-294` use the guarded `from (select $1::uuid as org_id) o where o.org_id = $1::uuid` form. Checked
-    by grep on the checked-out branch `claude/modest-allen-yru4g8`, which is based on `main`. Starting a transfer,
-    return or extension therefore works in M1, M2 and M5.
-11. **Hotspots:** no other ticket is `IN_PROGRESS`, `REVIEW` or `DONE` (board). SIM-037.12 is merged. `DevicesPage.tsx`
-    is not touched.
-12. **Test plan wording** changes from "Component" to "pure helpers + `renderToStaticMarkup`" (no DOM, no jsdom). The
-    container's call order and focus are checked by code read and manual checks M1-M7.
+- **A1 (for Ming) — duplicate, do not extract `useDeviceDialogs` now.** The consultants disagree (frontend: duplicate;
+  ux: extract). Chosen: duplicate, because it is the smaller risk:
+  - The list wiring is entangled with list-only state: `filter` (`takeBackDone(device, filter)`, `filterAfterCreate`),
+    `refreshAll` over three handoff lists + overdue list + badge, and `focusTarget`. A shared hook needs a callback
+    contract for all of that and a change to `DevicesPage.tsx`, the busiest UI file, in a ticket whose goal is the detail page (R4).
+  - `DevicesPage` has no interactive tests (static-markup tests only), so a "pure move" there could regress the list
+    without any test noticing.
+  - Duplication is bounded (~100 lines of dialog JSX) and reuses every outcome helper and copy string, so drift is limited to wiring.
+  - Follow-up to record: "Extract a shared device dialogs host used by `DevicesPage` and `DeviceDetailPage`".
+- **A2 — notices for every action.** AC2 says "a notice" after an action, so Assign, Edit holding and Place get new
+  notices (`detail.done.*`), though the list shows none. Place's `onDone` also fires when a stale re-fetch shows the
+  mode no longer applies (`PlaceDeviceDialog.tsx:219`), so its copy is neutral ("Placement … updated"), not "placed".
+- **A3 — refresh failure.** A failed post-action refresh keeps the old device and history and replaces the success
+  notice with `detail.refreshFailed` (`role="alert"`). A 404 shows the existing notFound card with no notice (an
+  Assign that settles `not_found` as done, `assign-device.ts:104`, would otherwise claim success).
+- **A4 — nav badge.** The detail page refreshes the handoff badge after each action (`api.handoffCount` + `useSetHandoffBadge`), as the list does; a failed count keeps the old badge.
+- **A5 — existing `*.gone` copy** ("… The list has been refreshed.") is reused for a cancel on a handoff that is no
+  longer pending; slightly list-worded on the detail page. Not changed here (shared with the list); follow-up if Ming wants detail wording.
+- **A6** — After Take back or Give back the page stays and shows the refreshed state (no redirect to the list).
+- **A7** — Starting transfer/return/extension works on `main` (BUG-002, PR #104, merged).
+- **Hotspots:** none found. No other ticket in `IN_PROGRESS`/`REVIEW`; SIM-039.7 (`DONE`, PR #111) is about device
+  types and is not known to touch these files. If it changed `src/ui/copy/devices.ts`, expect a trivial rebase.
 
 ## Blocking questions
 None.
 
 ## Split proposal
-None. Estimate: about 330 product lines (reducers +30, hook +30, `device-detail-actions.ts` ~90,
-`DeviceDetailDialogs.tsx` ~90, `DeviceDetailPage.tsx` +60, `DeviceDetailView.tsx` +25, copy +10) and about 250 test
-lines. This is under the 450-line limit and fits size M.
+None (estimated ~300 product lines + ~250 test lines, within one cycle).

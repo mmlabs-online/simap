@@ -8,7 +8,9 @@ import {
   detailReducer,
   historyReducer,
 } from "./device-detail-state";
-import { refreshOk } from "./device-detail-actions";
+
+export type RefreshResult = { ok: true } | { ok: false; code: string };
+export type RefreshFn = () => Promise<RefreshResult>;
 
 /** Loads one device and its first history page in parallel; stale answers are dropped. */
 export function useDeviceDetail(api: DevicesApi, deviceId: string) {
@@ -50,8 +52,8 @@ export function useDeviceDetail(api: DevicesApi, deviceId: string) {
     if (mounted.current) dispatchHistory({ type: "moreLoaded", id, result });
   }, [api, deviceId]);
 
-  /** Silent reload of the device and page 1 of the history; resolves false when the page could not be updated. */
-  const refresh = useCallback(async () => {
+  /** Re-reads the device and the first history page without the loading state; the old data stays until the answer. */
+  const refresh = useCallback(async (): Promise<RefreshResult> => {
     const dId = ++detailCounter.current;
     const hId = ++historyCounter.current;
     dispatchDetail({ type: "refresh", id: dId });
@@ -61,15 +63,7 @@ export function useDeviceDetail(api: DevicesApi, deviceId: string) {
       dispatchDetail({ type: "refreshed", id: dId, result: d });
       dispatchHistory({ type: "refreshed", id: hId, result: h });
     }
-    return refreshOk(d, h);
-  }, [api, deviceId]);
-
-  /** Silent reload of the device only (a refused action does not change the history). */
-  const refreshDevice = useCallback(async () => {
-    const id = ++detailCounter.current;
-    dispatchDetail({ type: "refresh", id });
-    const result = await api.get(deviceId);
-    if (mounted.current) dispatchDetail({ type: "refreshed", id, result });
+    return d.ok ? { ok: true } : { ok: false, code: d.code };
   }, [api, deviceId]);
 
   useEffect(() => {
@@ -77,5 +71,5 @@ export function useDeviceDetail(api: DevicesApi, deviceId: string) {
     void retryHistory();
   }, [retryDetail, retryHistory]);
 
-  return { detail, history, retryDetail, retryHistory, loadMore, refresh, refreshDevice };
+  return { detail, history, retryDetail, retryHistory, loadMore, refresh };
 }

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | #112 |
+| PR | https://github.com/mmlabs-online/simap/pull/113 |
 
 ## Goal
 A viewer can act on a device from its detail page (transfer, return, assign, and the other actions their flags allow) without going back to the list.
@@ -30,24 +30,23 @@ docs/spec-v1.md §6 DEV-11; slice 2 split from SIM-037.6 (its plan.md `## Split 
 - Edit / Delete (stay on the list page).
 
 ## Acceptance criteria
-- [x] The detail page shows exactly the actions the device's server flags allow, and each opens the same dialog as on the list.
-- [x] After an action the page shows the updated device and history, a notice, and focus returns to the heading.
-- [x] All new strings live in `src/ui/copy/*` (D36).
+- [ ] The detail page shows exactly the actions the device's server flags allow, and each opens the same dialog as on the list.
+- [ ] After an action the page shows the updated device and history, a notice, and focus returns to the heading.
+- [ ] All new strings live in `src/ui/copy/*` (D36).
 
 ## Technical notes
 - See SIM-037.6 plan.md `## Split proposal`. Starting transfer/return/extension depends on the handoff start bug fix (see SIM-037.6 PR #102).
 
 ## Test plan
-- Pure helpers (`device-detail-actions.ts`, reducer events) + `renderToStaticMarkup` of `DeviceDetailView` for gating, dialog choice, notice and live region; the container's focus and call order are checked by code read and the manual walk. (Reworded from "Component: action gating, dialog open, refresh + notice + focus after done": Vitest runs in node with no DOM and jsdom is not allowed.)
+- Component: action gating, dialog open, refresh + notice + focus after done.
 
 ## Notes / answers from Ming
 Split from SIM-037.6 by the planner (2026-11-25); added by the orchestrator, Ming to confirm.
 
 ## Handoff
-- 2026-11-25 implementer: reworded `## Test plan` as the plan asks (no DOM in Vitest). Ming to confirm.
 
-### 2026-11-25 — claude — DONE
-- Agent calls: 5 (frontend-developer×1 42k, ux-architect×1 60k, planner×1 92k, implementer×1 69k, reviewer×1 58k; default models). No security audit (UI only).
-- Done: detail page action bar (DeviceRowActions without Edit/Delete), six dialogs via DeviceDetailDialogs, silent refresh in the detail/history reducers, always-mounted aria-live notice, focus to h1 after every action, cancel-handoff with busy/acting guards, new detail notice copy. Review attempt 1 PASS; checks green (3125 tests, build ok).
-- In progress / next: Ming merges and walks M1-M7 (screen reader: notice announced, focus on the device name after a Transfer); confirm assumptions 1-8 and the reworded test plan line.
-- Gotchas: follow-ups — DevicesPage could adopt DeviceDetailDialogs; two dialog error texts still say "The list has been refreshed." (copy/devices.ts:91,104); empty live region adds a gap; rare wrong "could not be updated" notice if Retry is pressed mid-refresh.
+### 2026-11-26 — claude — DONE
+- Agent calls: 5, tokens ~285k total (in/out split not reported): frontend-developer×1 37k, ux-architect×1 44k, planner×1 77k, implementer×1 76k, reviewer×1 51k, all on default models.
+- Done: added viewer actions to the detail page, with a silent refresh, a notice and focus back to the h1. The dialog wiring is copied (A1); `DevicesPage` is unchanged. Attempt 1 PASS, no security trigger (UI only). PR #113.
+- In progress / next: Ming confirms A1–A7 and merges #113. Follow-up: extract a shared dialogs host.
+- Gotchas: the consultants disagreed on extract vs copy; the planner chose to copy. The CI `image` job fails on every branch because of SIM-034's `/Users/mingming` check (BUG-006 to file).

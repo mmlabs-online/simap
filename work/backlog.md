@@ -94,7 +94,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-037.11 | Devices UI: overdue chip and filter, owner banner, extension requests | MERGED | P2 | M | ui, ux | SIM-037.5 | none | 1 | 2026-11-25 |
 | SIM-037.12 | Devices UI: pending extensions for Manager+ | MERGED | P2 | S | ui | SIM-037.11 | none | 0 | 2026-11-25 |
 | SIM-037.6 | Device detail page with history | MERGED | P2 | M | ui, api, ux | SIM-037.4, SIM-037.5 | none | 0 | 2026-11-25 |
-| SIM-037.13 | Device detail page: viewer actions | IN_PROGRESS | P2 | M | ui, ux | SIM-037.6 | none | 0 | 2026-11-25 |
+| SIM-037.13 | Device detail page: viewer actions | MERGED | P2 | M | ui, ux | SIM-037.6 | none | 0 | 2026-11-25 |
 | SIM-014 | Seat requests: state machine and write API | MERGED | P1 | M | api | SIM-012 | plan-approval | 1 | 2026-11-24 |
 | SIM-014.1 | Requests read API and decided badge | MERGED | P1 | S | api | SIM-014 | plan-approval | 0 | 2026-11-24 |
 | SIM-014.2 | Approvals page UI | MERGED | P1 | M | ui, ux | SIM-014.1 | plan-approval | 0 | 2026-11-24 |
@@ -113,6 +113,9 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-038 | Sync the deploy-simap draft with the deployment repo (Drive secrets) | MERGED | P2 | XS | security | — | plan-approval | 0 | 2026-11-25 |
 | SIM-021 | Go-live checklist and first production deploy | BACKLOG | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | none | 0 | 2026-11-20 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
+| BUG-003 | devices.db test violates device_handoffs_decided_check (return flags test) | MERGED | P1 | XS | db | — | none | 0 | 2026-11-26 |
+| BUG-004 | manage.db deactivate test expects the old audit meta (no cancelledHandoffs) | MERGED | P1 | XS | db | — | none | 0 | 2026-11-26 |
+| BUG-005 | map-items list order differs between Postgres collation and the test's JS sort | MERGED | P1 | XS | db, api | — | none | 0 | 2026-11-26 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.
 

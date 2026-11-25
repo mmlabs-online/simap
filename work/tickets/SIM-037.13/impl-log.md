@@ -1,42 +1,38 @@
-## Attempt 1 — 2026-11-25
+# Impl log — SIM-037.13
+
+## Attempt 1
 
 ### Files touched
 | File | Required because |
 |---|---|
-| `src/ui/devices/device-detail-state.ts` | `refresh`/`refreshed` events for a silent reload (no skeleton) |
-| `src/ui/devices/device-detail-state.test.ts` | tests for the refresh events and races |
-| `src/ui/devices/useDeviceDetail.ts` | `refresh()` and `refreshDevice()` |
-| `src/ui/devices/device-detail-actions.ts` (new) | pure helpers: handlers, dialog slot, notices, refresh rules |
-| `src/ui/devices/device-detail-actions.test.ts` (new) | tests of those helpers |
-| `src/ui/devices/DeviceDetailDialogs.tsx` (new) | mounts the six existing dialogs from one slot |
-| `src/ui/devices/DeviceDetailPage.tsx` | wiring: slot, handlers, cancel, notice, busy, focus |
-| `src/ui/devices/DeviceDetailView.tsx` | `actions` slot, always-mounted live region |
-| `src/ui/devices/DeviceDetailView.test.tsx` | gating and live-region markup tests |
-| `src/ui/copy/devices.ts` | `devicesCopy.detail.done.*` (D36) |
-| `work/tickets/SIM-037.13/ticket.md` | `## Test plan` reworded; Handoff line added |
+| `src/ui/devices/device-detail-state.ts` | `refresh`/`refreshed` events so a silent refresh keeps the shown device and focus. |
+| `src/ui/devices/device-detail-state.test.ts` | Reducer tests for the new events. |
+| `src/ui/devices/useDeviceDetail.ts` | `refresh()` plus `RefreshResult`/`RefreshFn` types. |
+| `src/ui/devices/device-detail-actions.ts` (new) | Pure `detailHandlers`, `doneNotice`, `finishAction`. |
+| `src/ui/devices/device-detail-actions.test.ts` (new) | Tests for the pure module (flag table, dialogs, notices, order, failure, not_found, null notice). |
+| `src/ui/devices/useDeviceDetailActions.tsx` (new) | Dialog host for the detail page (duplicate of list wiring, plan A1). |
+| `src/ui/devices/DeviceDetailView.tsx` | Always-mounted notice region and `actions` slot under the h1. |
+| `src/ui/devices/DeviceDetailView.test.tsx` | Notice region, tones, actions placement. |
+| `src/ui/devices/DeviceDetailPage.tsx` | Wiring, `rooms`/`seats` APIs, post-action focus effect, dialogs. |
+| `src/ui/copy/devices.ts` | `detail.done.*` and `detail.refreshFailed` (D36). |
 
-### Tests added / changed
-- device-detail-state.test.ts › refresh events (detail refresh, load after refresh, history refresh, moreLoaded after refresh)
-- device-detail-actions.test.ts › detailHandlers (x3), dialogFor, doneNotice, detailCancelOutcome, refreshOk/afterRefresh
-- DeviceDetailView.test.tsx › actions and notice (x4)
+### Tests added
+Reducer refresh tests, `device-detail-actions.test.ts`, two view tests (as listed in the plan).
 
-### Checks (actual output summary)
-- typecheck: exit 0
-- check:layers: 808 files, no violations
-- format:check: all matched files use the correct format (after `pnpm format`)
-- test: 308 files passed | 1 skipped; 3125 tests passed | 7 skipped
-- build: exit 0
+### Checks
+- format:check: All matched files use the correct format.
+- typecheck: next typegen + tsc, no errors.
+- check:layers: 802 files, no violations.
+- test: Tests 3102 passed | 9 skipped.
+- build: succeeded.
 
 ### Out-of-plan files
 None.
 
-### Deviations
-- `DeviceDetailDialogs` ignores the `mode` argument of Assign's `onDone` and the no-arg Place `onDone`; both report the slot's snapshot (as the plan says).
-- The container (focus, call order) is not unit-tested (no DOM); manual checks M1-M7 not run here (no browser/dev token).
-
-### Follow-ups (noticed, not done)
-- Use `DeviceDetailDialogs` + `DetailDialog` in `DevicesPage` (low priority).
+### Follow-ups
+- Extract a shared device dialogs host used by `DevicesPage` and `DeviceDetailPage` (plan A1).
+- `*.gone` copy is list-worded on the detail page (plan A5).
+- `finishAction` skipped when another action is in flight (re-entry guard drops a second dialog `onDone` notice); rare.
 
 ### Scope self-check
-- Could the diff be smaller? No.
-- Diff size: about 400 product lines (incl. new files), tests extra.
+Only plan files changed; Edit/Delete not offered; no server, schema or env change.

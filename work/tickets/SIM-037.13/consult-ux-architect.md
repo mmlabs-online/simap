@@ -1,95 +1,52 @@
 ## Findings
 
-Read: ticket, SIM-037.6 plan, `DeviceDetailPage/View`, `useDeviceDetail`, `device-detail-state`, `DeviceRowActions`, `device-actions.ts`, `DevicesPage`, `DevicesView`, and the `Pending` and `Section` pieces of the detail view.
-
-- **`DeviceRowActions` already fits.**
-  - It is a `flex flex-wrap` row of `sm` tonal buttons.
-  - `rowActions(device, handlers, busyId)` gates on the server flags (`canTransfer`, `canReturn`, `canAssign`, `canEditHolding`, `canTakeBack`, `pendingHandoff.canCancel`, `mine && overdue`, `placeModes`). Passing no `onEdit`/`onDelete` gives the "Edit/Delete stay on the list" scope with no extra code.
-  - Buttons carry `aria-label` with the inventory number. That is useful on the detail page too, since there is only one device.
-  - Order today: cancel-handoff, extend, assign, edit-holding, place/move/return-to-inventory, transfer, give back, (edit), take-back (danger), (delete).
-- **The list page owns all the wiring in `DevicesPage`.**
-  - Six dialogs: Transfer, Return, Extend, TakeBack, Place and Assign. Each has its own `useState` target.
-  - `onDone` follows one pattern: close, `setNotice({tone:"status", text: devicesCopy.X.sent(name, inv)})`, refresh, then focus the `h1`.
-  - `takeBackDone(device, filter)` is the TakeBack notice, and it takes the list filter, which the detail page does not have.
-  - `onCancelHandoff` is inline: `acting` ref, `cancellingId` as `busyId`, `cancelOutcome(result, device, kind)`, notice, refresh.
-  - Place and Assign-edit show no notice on the list. Assign "assign" mode focuses the heading and "edit" mode does not.
-  - `onStale` re-fetches after a 409/stale answer.
-- **The notice region is the list's pattern.** `<div aria-live="polite">` is always mounted. The notice goes inside it as `<p role="status">` or `<p role="alert">`. The detail view has no notice slot and no live region yet.
-- **Refresh problem.** `useDeviceDetail.retryDetail` dispatches `load`, and `detailReducer` resets to `INITIAL_DETAIL` (`loading`, `device: null`). Using it after an action would swap the whole page for a skeleton. That unmounts the h1, the action bar and the live region, so the notice and the focus would be lost. `retryHistory` has the same reset: items vanish and the card shows a skeleton. Only the Retry buttons are meant to use these.
-- **Both loaders return no value.** `useDeviceDetail` has no "refresh without a loading state" function, and nothing returns the new device. `DevicesPage` gets this from `refresh()` in `useDevices`. The same shape is missing here.
-- **Losing access.** The detail page uses `GET /api/devices/:id`, which any member can read (DEV-11 "Every member"), and it is not scoped to the holder. After a transfer or a return the viewer still reads the device, but the flags change: `canTransfer`, `canReturn` and `mine` go false and a `pendingHandoff` appears. The page should therefore refresh and re-render, not navigate away. A 404 can only come from a delete or a stale id, and `notFound` already handles it. A 401/403 is handled by `apiFetch` and `AuthGate`.
-- **Mixed paths in `DeviceDetailPage`.** `focused` is a once-only ref, and a second focus after an action must be explicit. The view focuses the heading only in `ready` and `notFound`.
-- **Copy.** `devicesCopy.detail` holds the back link, sections and labels. `*.sent`, `actions.*` and the dialog copy all exist. The cancel and take-back notices come from `cancelOutcome` and `takeBackDone`, which are plain functions.
+- The detail page is `DeviceDetailPage` (client, owns data and focus) plus `DeviceDetailView` (pure). Props today are `status, device, errorCode, holderSince, onRetry, headingRef, history`. The ready layout is: back link, `h1` (device name), then Section cards for Fields, Where, Holder and Pending (a read-only chip), then the history card. The paths are `d:\project\simap-game-ui\src\ui\devices\DeviceDetailView.tsx` and `DeviceDetailPage.tsx`.
+- `DeviceRowActions` plus `rowActions()` in `device-actions.ts` already gate every action on the server flags (`canAssign`, `canTransfer`, `canReturn`, `canEditHolding`, `canTakeBack`, `pendingHandoff.canCancel`, `mine && overdue && !pending`, and `placeModes`). A missing handler means no button. The component renders `null` when the device has no actions and uses `flex flex-wrap gap-1.5` with `size="sm"` buttons. Its `aria-label`s are per-device ("Transfer device INV"), so they are reusable as is.
+- Order produced by `rowActions` today: cancel handoff, extend, assign, edit holding, place/move/return-to-stock, transfer, give back, edit, take back (danger), delete (danger). This is the same order the list uses. Omitting `onEdit` and `onDelete` leaves exactly the set the ticket wants.
+- `DevicesPage` holds about 10 dialog states (`transferring`, `returning`, `extending`, `takingBack`, `placing`, `holding`), `acting` (a ref used as a re-entry guard), `cancellingId`, `notice` and `focusTarget`. It also holds list refresh logic that is entangled with the handoff lists, the nav badge and the `overdue` list. `onCancelHandoff` runs inline: `api.cancelHandoff` → `cancelOutcome` → notice → `refreshAll` → focus the `h1`.
+- Dialogs take `device` (or `open` and `device`) plus `devicesApi` / `seatsApi` / `roomsApi`, and `onClose`, `onStale` and `onDone(device)`. Place and Assign `onDone` pass no device and no notice (Assign passes its mode). The list gives no notice after Place, Assign or Edit holding, so those just refresh.
+- Notice markup in `DevicesView`: `<div aria-live="polite">` is always mounted, and inside it either `<p role="alert">` (error) or `<p role="status">` (status). The container being permanently mounted is what makes the announcement reliable. The detail view has no such region yet.
+- Notice copy that exists: `devicesCopy.transfer.sent`, `giveBack.sent`, `extend.sent`, `.cancelled` and `.gone` for each of transfer, giveBack and extend, plus `takeBack.done` via `takeBackDone(device, filter)`. `takeBackDone` appends `returns.filterHint` when `filter === "placed"`. That is a list-filter hint and is wrong on the detail page, so pass `"all"`.
+- `useDeviceDetail.retryDetail()` dispatches `load`, and the reducer resets to `INITIAL_DETAIL`. That sets status to `loading` and `device` to null, so the whole ready body unmounts, including the `h1` and any mounted dialogs. History `load` resets the same way (`INITIAL_HISTORY`). Calling `retryDetail`/`retryHistory` after an action would flash skeletons, drop the notice region if it lives inside the ready body, and lose focus. It would also unmount the dialog's own `onDone` context mid-call. `useDevices.refresh` on the list avoids this because it is a silent refresh. The detail hook has no silent variant.
+- The focus effect in `DeviceDetailPage` is one-shot (`focused` ref), so it will not re-fire after refresh.
+- There is no overdue banner on the detail page. `OverdueBanner` is only on the list, with `bannerHandlers` limited to extend, return and cancel. The detail device carries `d.overdue`, `d.mine`, `d.holding.expiresOn`, so the page can show an overdue state itself. `devicesCopy.overdueChip`, `holding.expired(d)` and `overdueBanner.*` exist.
+- Pending handoff: `Pending` on the page is read-only, showing `pendingText(device)` (chip plus "to"). `rowActions` already switches to "Cancel transfer/return/extension" when `canCancel`, and hides Extend while pending. Take back also cancels a pending transfer (dialog says so).
 
 ## Recommendations
 
-1. **Action placement (AC1).**
-   - Reuse `DeviceRowActions` in a header row, with no menu.
-   - Put it in the same row as the `h1`. `DevicesView` already uses `flex items-center justify-between gap-3` with the `h1` on the left. Use `flex-wrap` and let the bar drop below the heading on narrow screens.
-   - Add an optional `actions?: React.ReactNode` slot to `DeviceDetailView`, rendered only in `ready`.
-   - A menu would be new UI with no spec support. The set is at most about 6 buttons, and the row already wraps.
-   - Pass handlers `onAssign`, `onEditHolding`, `onPlace`, `onTransfer`, `onReturn`, `onExtend`, `onTakeBack` and `onCancelHandoff`. Leave out `onEdit` and `onDelete`.
-   - Keep the action bar out of the loading, error and notFound states.
-2. **Order and grouping.**
-   - Use `rowActions` order as is. Cancel handoff comes first as the resolution of a pending item, and the danger action (Admin return, Take back) comes last. This matches the list, so a user sees the same order in both places.
-   - No new grouping and no divider. If you ever add one, separate the danger button only.
-   - Do not hide the bar when the viewer has no action. `DeviceRowActions` returns null, and the header collapses on its own.
-3. **Shared dialog wiring.**
-   - Extract `useDeviceDialogs({ api, seatsApi, roomsApi, onResult })`. It returns `{ handlers, dialogs: ReactNode }`, with the six `useState` targets and the six dialog elements. `onResult(notice | null, refreshKind)` is the host's callback.
-   - Reason: duplicating about 150 lines of identical `onDone` wiring would drift, and SIM-037.12 also touches `DevicesPage.tsx`.
-   - Expect a rebase there.
-   - Fallback if the extraction is too big for this slice: copy the six dialogs into `DeviceDetailPage` and record a follow-up. The hook is the better choice, but R4 allows the fallback if the diff of `DevicesPage.tsx` grows.
-   - Keep `onCancelHandoff` (it has the `acting` ref and `busyId`) in the hook too, so both pages share it.
-   - `takeBackDone(device, filter)` needs a filter. Pass `"all"` or add a detail-page overload. Check its output text in `return-device.ts` first.
-4. **Refresh without flashing.**
-   - Add a silent `refresh()` to `useDeviceDetail`. It re-fetches the device and the first history page. It does not dispatch `load`. It dispatches `loaded` with a fresh counter id, and replaces the data only on success.
-   - Keep the previous data on failure, and surface it as an error notice. Do not drop to `error` status.
-   - History: dispatch `loaded` directly. That resets the pagination to page 1 (`nextCursor` from the new first page), which is the intended behaviour. It also keeps the `holderSince` in sync.
-   - Return the new device from `refresh` so the host can decide on focus (see 6).
-   - Add reducer tests: a refresh `loaded` while `ready` keeps status `ready`, and a stale refresh is dropped.
-5. **Notices and the live region (AC2).**
-   - Add a notice state in `DeviceDetailPage`: `{tone, text} | null`. Pass it to the view as `notice`.
-   - Render `<div aria-live="polite">` once, above the sections and below the heading row. It is always mounted, so the announcement fires. Use the same `p role="status"`/`role="alert"` markup as `DevicesView`. Extract that markup if a third copy appears.
-   - Clear the notice when a new dialog opens (the list calls `setNotice(null)` in each handler). Do not clear it on refresh.
-   - Success notices reuse `devicesCopy.transfer.sent`, `giveBack.sent`, `extend.sent`, `takeBackDone` and `cancelOutcome(...).notice`.
-   - Place and Assign-edit have no notice on the list. Keep that, or add one new string under `devicesCopy.detail`. Add it only if the page would otherwise show no feedback. Prefer the list parity; the page itself visibly changes.
-6. **Focus.**
-   - After a successful action, close the dialog, `await refresh()`, then `headingRef.current?.focus()`. The `h1` is `tabIndex={-1}` and stays mounted because of recommendation 4.
-   - Do this for every `onDone`, including Place and Assign. A closing dialog returns focus to its opener, but the opener may have disappeared (the Transfer button vanishes once `canTransfer` is false). Focusing the heading is the safe landing spot, and the AC says "focus returns to the heading".
-   - On a failed refresh, still focus the heading and show the error notice.
-   - Keep the first-load `focused` ref as is. Do not re-focus on every refresh.
-   - Use `useEffect` after commit if the heading could be replaced, as `DevicesPage` does with `focusTarget`. With a silent refresh the node stays the same, so a direct call after the await is enough.
-7. **Pending handoff state.**
-   - After a start (transfer, return, extension), the refreshed device carries `pendingHandoff`. The existing `Pending` section then shows it, and the action bar shows Cancel because `canCancel` is true, while `canTransfer` and `canReturn` go false.
-   - No extra "pending" UI is needed. The notice text already says it waits for confirmation.
-   - Disable the whole bar while an action runs, using `busyId = device.id`, as the list does. Also guard double submits with an `acting` ref.
-8. **Viewer loses access.**
-   - Stay on the page and re-render from the refreshed flags. Do not redirect.
-   - On a 404 from the refresh (deleted elsewhere), the existing `notFound` state takes over. Let the refresh dispatch it so the user sees the not-found card, and focus its heading.
-   - If a dialog gets a stale answer, `onStale` calls `refresh()` and keeps the dialog behaviour as on the list.
-9. **Copy (D36).**
-   - Reuse the existing strings (`devicesCopy.actions.*`, `*.sent`).
-   - Any new string goes in `src/ui/copy/devices.ts` under `detail` (for example a refresh-failed notice). Check that `apiErrorMessage` is not enough first.
-10. **Tests.**
-   - Pure: `refresh` reducer behaviour, and the notice and focus decisions as a small pure helper if one is extracted.
-   - View (`renderToStaticMarkup`): the action bar renders only in `ready`. It renders exactly the actions for the flags (for example a holder gets Transfer and Give back, a user with nothing gets no bar). `aria-live` is present when there is no notice. The `status` and `alert` roles are right.
-   - Page-level focus after done is a behavioural test. If the harness cannot do it (the repo uses static markup), cover it through the pure helper and state it in the review notes.
+1. Placement. Put the action bar directly under the `h1`, before the Fields card, inside the ready branch: `<DeviceRowActions device handlers busyId />`. It is the first thing after the title, it works the same on mobile and desktop, and it matches the list's buttons. Put the aria-live notice region between the `h1` and the bar, or just above the `h1`. Keep the same permanently mounted `<div aria-live="polite">` pattern as `DevicesView`, but render it outside the `status === "ready"` conditional so it survives a reload. If the bar is empty the component returns null, so no empty gap appears (check there is no stray `gap-4` space; it comes from the parent flex and is fine).
+2. Actions and order: reuse `rowActions` unchanged, with handlers `onCancelHandoff, onExtend, onAssign, onEditHolding, onPlace, onTransfer, onReturn, onTakeBack` and no `onEdit` or `onDelete`. Do not reorder; a different order than the list would surprise users and need a second test matrix. Because `rowActions` does the gating, the acceptance criterion "exactly the actions the flags allow" is satisfied by construction. Test it with a table of device fixtures.
+3. Extract a shared hook, but narrowly. Yes, do extract `useDeviceDialogs` (or a `DeviceActionDialogs` component plus hook), because six dialogs with their state would otherwise be duplicated and drift. Keep the contract small:
+   - Input: `{ api, roomsApi, seatsApi, onDone: (r: {notice?: Notice; refresh: "devices"|"all"}) => Promise<void>|void }`.
+   - Output: `{ handlers: DeviceRowHandlers (without edit/delete), busyId, dialogs: ReactNode }`.
+   - It owns the six open states, the `acting` ref, `cancellingId` and the cancel flow (`cancelOutcome`). It does not own the handoff lists, the overdue list, the badge or `focusTarget`; the host page does the refresh and focus in the callback.
+   - Pre-flight check for layers: the file lives in `src/ui/devices` (UI to UI imports and `@/lib` only), so R1 is fine.
+   - A cheaper fallback, if the refactor of `DevicesPage` is judged too large for an M ticket: a standalone `useDetailActions` in the detail folder that duplicates about 60 lines. I recommend the extraction, since the list's behavior is already covered by `DevicesView.test.tsx` and it will keep `DevicesPage` honest, but it must be a pure move with the list tests unchanged (R4: no behavior change on the list).
+4. After an action: a silent refresh (the key change). Add a `refresh()` to `useDeviceDetail` that re-fetches the device and the first history page without dispatching `load`, i.e. with new `refreshed` events (or reuse `loaded` with a fresh counter id) that keep the current state shown until the answer lands and replace `device` and the first page. History: after refresh the first page replaces `items` and resets `nextCursor`, so "load more" pages are dropped; that is acceptable and matches "first history page". Keep the stale-answer guard (`latest` counter). `refresh()` should return a promise that resolves after both are applied, so focus can be set after it. If a refresh fails, keep the old device and show an error notice (`apiErrorMessage`) rather than dropping to the error card; a failed refresh that returns 404 `not_found` should fall through to `notFound` (the device was deleted).
+5. Notice and focus. On done: close the dialog, `setNotice({tone:"status", text: devicesCopy.<x>.sent(name, inv)})`, `await refresh()`, then `headingRef.current?.focus()`. Set the notice before the refresh (as the list does) so it is announced even if refresh is slow. Clear the notice when any action opens (same as the list's `setNotice(null)`). Keep `tabIndex={-1}` on the `h1` (already there). Note that the one-shot focus effect should stay as it is. Do not move focus to the notice. Because the `h1` text may change if the device is renamed (not by these actions), nothing else is needed. For Place and Assign: list gives no notice and does not focus for Edit holding, but the criterion says "after an action ... a notice, and focus". Recommend a notice for those two as well (new copy, see below), and focus the `h1` in all cases on the detail page; the heading is the only stable landmark here.
+6. Cancel handoff on detail: reuse `cancelOutcome(result, device, kind)`, then the same flow (notice, refresh, focus). Reuse `busyId` so the bar disables while a cancel is in flight. Also disable the bar while a dialog is submitting? Not needed; the dialogs are modal.
+7. Stale handling: dialogs call `onStale` when the server says the device changed. On detail that must be a silent `refresh()` (not `retryDetail`). Same for the Place and Assign stale paths.
+8. Pending handoff and overdue banner. Do not mount `OverdueBanner` on the detail page (it is a list-wide reminder). Instead, when `device.mine && device.overdue`, show an inline overdue line in the Holder section (`copy.overdueChip` chip plus `holding.expired(expiresOn)`), which are existing strings, and let the bar carry the Extend and Give back buttons. This also keeps the same pairing the banner has (Extend/Give back/Cancel). When a handoff is pending, `rowActions` already hides Extend and shows Cancel; the existing Pending section stays as the explanation, and the bar's cancel button should sit next to it. After any action the refreshed `pendingHandoff` re-renders both. No change to `bannerHandlers`.
+9. Mobile layout. The bar is `flex-wrap`, buttons are `size="sm"`. On narrow screens up to 7 buttons could wrap into 3 rows. Options: leave the wrap (simplest, consistent with list cards), but make sure buttons keep a 44px touch target (check `Button size="sm"` height; if under 44px use `min-h-11` via className on the detail bar only, which needs `DeviceRowActions` to accept a `className`, or wrap in a container). Put the danger button (Take back) last, which `rowActions` already does. Keep the bar in normal flow, not sticky, to avoid covering the history on small screens. The notice sits above the bar so it is visible without scrolling.
+10. Copy (D36). New strings go in `src/ui/copy/devices.ts` under `detail`, for example `detail.actionsLabel` (for `role="group"` `aria-label` on the bar, ideally add `aria-label` in `DeviceRowActions` as an optional prop), `detail.placed(name, inv)` / `detail.moved` / `detail.returnedToStock` for Place modes, `detail.assigned(name, inv)` / `detail.holdingUpdated(name, inv)` for Assign and Edit holding, `detail.refreshFailed` if you do not reuse `apiErrorMessage`, and `detail.overdueSince` if the Holder line needs wording beyond `holding.expired`. Everything else is reused (`transfer.sent`, `giveBack.sent`, `extend.sent`, `*.cancelled`, `takeBack.done`). Check the Place and Assign dialogs' `onDone` payload for what the notice needs (name and inventory number come from the `device` you already hold).
+11. Tests (R5). Component tests for the new view: action gating table (each flag alone shows exactly its button, no Edit/Delete ever); a button opens its dialog (mock the dialogs or use real ones as the list tests do); on done: notice text in the live region, refresh called once (no loading skeleton shown, device and history updated), `document.activeElement` is the `h1`; cancel flow; refresh failure keeps the old device; 404 on refresh falls to notFound. A reducer test for the new silent-refresh event in `device-detail-state.test.ts`. Keep `DevicesView.test.tsx` and `DeviceDetailView.test.tsx` unchanged where the contract is unchanged.
 
 ## Risks
 
-- **Whole-page skeleton after an action** if `retryDetail` is reused. It loses the live region, the notice and focus. Mitigation: recommendation 4.
-- **`DevicesPage.tsx` conflicts with SIM-037.12** if the dialog wiring is extracted. Mitigation: a small hook with an unchanged `DevicesPage` render, or the copy fallback.
-- **Handoff start bug** (SIM-037.6 PR #102) affects start transfer/return/extension. Check that the fix is on `main` before the manual walk.
-- **Focus lost after a dialog closes** if the opener button vanished. Mitigation: always focus the heading.
-- **History pagination reset**: after an action the user may lose their "Load more" position. Acceptable, and the new event is on top.
-- **`takeBackDone(device, filter)`** is list-filter specific, so the text could mention a list filter that does not exist on this page.
-- **Race**: an action and an in-flight refresh. The counter pattern drops stale answers. Make sure `refresh` uses the same `latest` counter.
-- **Double submit** from a dialog and the cancel button. Use the `acting` ref.
+- Reusing `retryDetail` for post-action refresh would unmount the page (skeleton flash, lost notice, lost focus, possibly interrupt the dialog close). This is the biggest trap; it needs the silent refresh.
+- Extracting `useDeviceDialogs` touches `DevicesPage`, a High-traffic file; regressions would hit the list. Mitigation: pure move, run the existing list tests, do not change list notices or focus.
+- Take back with `takeBackDone(device, filter)`: passing the list's filter hint on the detail page would show a misleading "filter" sentence; use `"all"`.
+- The ticket notes that starting transfer, return and extension depends on the handoff start bug fix (PR #102). Confirm it is merged before relying on these flows in manual checks.
+- Notice region inside the ready-only branch would be torn down by a reload; mount it outside.
+- `h1` focus when status flips `ready → ready` is not covered by the one-shot effect; focus must be explicit after refresh.
+- Buttons' accessible names include the inventory number, which is fine, but duplicates on a single device page are harmless; do not add visible device names to the labels.
+- Race: user opens a dialog while a refresh is in flight; the dialog holds a stale `device` copy. The dialogs already handle conflicts via `onStale`; do not pass a fresh device into an open dialog mid-edit.
 
 ## Open questions
 
-1. Extract `useDeviceDialogs` (recommended) or copy the wiring and file a follow-up? It is the planner's decision under R4.
-2. Does `takeBackDone` have a filter-free variant? If not, which text should the detail page show?
-3. Should Place and Assign-edit show a notice on the detail page? The list shows none. Recommended: no, for parity.
-4. Should a refresh failure show a notice with the old data kept (recommended), or drop to the `error` state?
-5. Is the handoff start bug fix (PR #102) merged on `main`?
+1. Is Ming fine with extracting the dialogs and hook out of `DevicesPage` in this ticket (recommended), or should the list stay untouched and the detail page duplicate the state?
+2. Should Place, Move, Return to stock, Assign and Edit holding show a notice on the detail page? The list shows none, but the acceptance criterion reads as "a notice" for every action. Recommended: yes, with new copy.
+3. Where should the overdue state live on the detail page: only the inline Holder line plus buttons (recommended), or a banner-style callout at the top?
+4. After Take back or Return, the viewer may lose any reason to be on the page; should it stay (recommended, it just shows the refreshed state) or go back to the list?
+5. Should the refresh keep loaded history pages (merge) or reset to the first page (recommended, as the ticket states)?
+6. Does `Button size="sm"` meet the project's mobile touch-target expectation, or is a larger size wanted on the detail page?

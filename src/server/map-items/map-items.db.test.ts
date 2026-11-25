@@ -71,6 +71,21 @@ describe("map-items (db)", () => {
     }
   });
 
+  it("list order does not depend on the database locale", async () => {
+    const o = await seeded();
+    const [k1, k2, k3] = LIBRARY_ITEMS.map((l) => l.builtinKey).slice(0, 3) as [
+      string,
+      string,
+      string,
+    ];
+    // Under a locale collation spaces and hyphens are ignored, so "!!ab" would not sort last of these three.
+    await setName(o, k1, "!!ab");
+    await setName(o, k2, "!!a b");
+    await setName(o, k3, "!!a-c");
+    const keys = (await list(o)).map((i) => i.builtinKey);
+    expect(keys.slice(0, 3)).toEqual([k2, k3, k1]);
+  });
+
   it("list is ordered by lower(name), then builtin_key", async () => {
     const o = await seeded();
     await setName(o, "wall.base", "Aaa wall");
@@ -79,7 +94,8 @@ describe("map-items (db)", () => {
     expect(items[0]!.builtinKey).toBe("wall.base");
     expect(items.at(-1)!.builtinKey).toBe("door");
     const names = items.map((i) => i.name.toLowerCase());
-    expect(names).toEqual([...names].sort());
+    // The "C" code-point rule the SQL enforces.
+    expect(names).toEqual([...names].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)));
   });
 
   it("hidden rows: left out with includeHidden false, listed with hidden true when includeHidden true", async () => {
