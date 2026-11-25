@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T04:29:33Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -48,4 +48,12 @@ docs/spec-v1.md §6 DEV-08; D63; OQ-43 (expiry carries over).
 ## Notes / answers from Ming
 Ming 2026-11-25: "lên ticket và làm luôn".
 
+Waiting for Ming: plan approval (High tier: migration) and the split (UI slice → proposed SIM-037.8)
+
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3 (api-platform-engineer×1 ~53k, frontend-developer×1 ~58k, planner×1; default models).
+- Done: consult files; plan.md READY for slice 1 (API + migration + device-row fields), High tier (decided_by_id CHECK migration), assumptions A1-A14; UI slice proposed as SIM-037.8.
+- In progress / next: Ming approves plan + split (M-57); then create SIM-037.8 and IMPLEMENT slice 1.
+- Gotchas: BUG-001 (another session) edits devices.ts / rules.ts / devices.db.test.ts — expect a merge. Member-deactivation cancel of handoffs left to SIM-037.4 (A5).
