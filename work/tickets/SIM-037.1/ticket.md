@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T02:15:15Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -48,4 +48,12 @@ docs/spec-v1.md §4 Device and DeviceHandoff, §5 invariant 5, §6 DEV-01 (creat
 ## Notes / answers from Ming
 Ming 2026-11-25: "lên ticket và làm luôn".
 
+Waiting for Ming: plan approval (High tier)
+
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 4 (software-architect×1 at /idea ~27k, database-optimizer×1 ~43k, api-platform-engineer×1 ~50k, planner×1 ~105k; default models).
+- Done: consult files (architect, database-optimizer, api-platform-engineer); plan.md READY with assumptions A1-A12.
+- In progress / next: Ming approves plan (M-51), then IMPLEMENT.
+- Gotchas: CHECK `devices_unowned_not_placed_check` is immediate while invariant-3 triggers are deferred: unplace before (or in the same UPDATE as) nulling the owner. AC 4 reworded in plan (A1).
