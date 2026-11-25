@@ -84,3 +84,35 @@ describe("edit action", () => {
     expect(hasAnyAction([d({ canPlace: false, canEdit: true })], { onEdit: vi.fn() })).toBe(true);
   });
 });
+
+describe("assign and holding actions", () => {
+  it("Assign only with canAssign and onAssign; listed first", () => {
+    const onAssign = vi.fn();
+    const row = d({ canAssign: true, canEdit: true });
+    expect(rowActions(row, {})).toEqual([]);
+    expect(rowActions(d({ canAssign: false }), { onAssign })).toEqual([]);
+    const a = rowActions(row, { onAssign, onPlace: vi.fn(), onEdit: vi.fn() });
+    expect(a.map((x) => x.key)).toEqual(["assign", "place", "edit"]);
+    expect(a[0].label).toBe("Assign");
+    expect(a[0].ariaLabel).toBe("Assign device INV-7");
+    a[0].run();
+    expect(onAssign).toHaveBeenCalledWith(expect.objectContaining({ id: "d1" }), "assign");
+  });
+  it("Note / expiry only with canEditHolding and onEditHolding; listed first", () => {
+    const onEditHolding = vi.fn();
+    const row = d({ canEditHolding: true, canEdit: true, canPlace: false });
+    expect(rowActions(row, {})).toEqual([]);
+    expect(rowActions(d({ canEditHolding: false }), { onEditHolding })).toEqual([]);
+    const a = rowActions(row, { onEditHolding, onEdit: vi.fn() });
+    expect(a.map((x) => x.key)).toEqual(["editHolding", "edit"]);
+    expect(a[0].label).toBe("Note / expiry");
+    expect(a[0].ariaLabel).toBe("Edit note and expiry of device INV-7");
+    a[0].run();
+    expect(onEditHolding).toHaveBeenCalledWith(expect.objectContaining({ id: "d1" }), "edit");
+  });
+  it("hasAnyAction is true for a canAssign-only row", () => {
+    expect(hasAnyAction([d({ canPlace: false, canAssign: true })], { onAssign: vi.fn() })).toBe(
+      true,
+    );
+  });
+});

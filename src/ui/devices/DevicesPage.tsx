@@ -7,6 +7,8 @@ import { useApiFetch } from "../auth/api-fetch-context";
 import { createRoomsApi } from "../rooms/rooms-api";
 import { createSeatsApi } from "../seats/seats-api";
 import { useSession } from "../session";
+import type { AssignMode } from "./assign-device";
+import { AssignDeviceDialog } from "./AssignDeviceDialog";
 import { DeleteDeviceDialog } from "./DeleteDeviceDialog";
 import { DeviceFormDialog } from "./DeviceFormDialog";
 import { PlaceDeviceDialog } from "./PlaceDeviceDialog";
@@ -25,6 +27,7 @@ export function DevicesPage() {
   const seatsApi = useMemo(() => createSeatsApi(apiFetch), [apiFetch]);
   const [filter, setFilter] = useState<PlacementFilter>("all");
   const [placing, setPlacing] = useState<{ device: DeviceDto; mode: PlaceMode } | null>(null);
+  const [holding, setHolding] = useState<{ device: DeviceDto; mode: AssignMode } | null>(null);
   const session = useSession();
   const isAdmin = session ? atLeastTier(session.tier, "admin") : false;
   const [form, setForm] = useState<{ device: DeviceDto | null } | null>(null);
@@ -33,6 +36,8 @@ export function DevicesPage() {
   const { status, items, truncated, errorCode, reload, refresh } = useDevices(api, filter);
   const actions = useMemo<DeviceRowHandlers>(
     () => ({
+      onAssign: (device, mode) => setHolding({ device, mode }),
+      onEditHolding: (device, mode) => setHolding({ device, mode }),
       onPlace: (device, mode) => setPlacing({ device, mode }),
       onEdit: (device) => setForm({ device }),
       onDelete: (device) => setDeleting(device),
@@ -66,6 +71,21 @@ export function DevicesPage() {
         onDone={() => {
           setPlacing(null);
           void refresh();
+        }}
+      />
+      <AssignDeviceDialog
+        open={holding !== null}
+        device={holding?.device ?? null}
+        mode={holding?.mode ?? "assign"}
+        devicesApi={api}
+        seatsApi={seatsApi}
+        onClose={() => setHolding(null)}
+        onStale={() => void refresh()}
+        onDone={(mode) => {
+          setHolding(null);
+          const done = refresh();
+          // An assigned row leaves the filter or swaps its button; an edited row keeps its button.
+          if (mode === "assign") void done.then(() => headingRef.current?.focus());
         }}
       />
       <DeviceFormDialog

@@ -10,7 +10,9 @@ const svc = vi.hoisted(() => ({
   assignDevice: vi.fn(),
   updateHolding: vi.fn(),
 }));
+const hsvc = vi.hoisted(() => ({ startTransfer: vi.fn() }));
 vi.mock("@/server/devices/devices", () => svc);
+vi.mock("@/server/devices/handoffs", () => hsvc);
 vi.mock("@/server/db/pool", () => ({ getPool: () => ({}) }));
 
 import { GET as listGET, POST } from "./route";
@@ -18,6 +20,7 @@ import { DELETE, GET, PATCH } from "./[id]/route";
 import { PUT } from "./[id]/placement/route";
 import { POST as ASSIGN } from "./[id]/assignment/route";
 import { PATCH as HOLDING } from "./[id]/holding/route";
+import { POST as TRANSFER } from "./[id]/handoffs/route";
 
 const ISSUER = "https://api.mmlabs.online";
 const ID = "33333333-3333-4333-8333-333333333333";
@@ -52,6 +55,7 @@ const okPut = { seatId: SEAT, role: "primary", expectedSeatId: null };
 
 beforeEach(() => {
   for (const f of Object.values(svc)) f.mockReset();
+  hsvc.startTransfer.mockReset();
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -258,5 +262,32 @@ describe("assignment and holding routes", () => {
     svc.updateHolding.mockResolvedValue({ ok: false, status: 409, code: "not_assigned" });
     const n = await patch({ note: "x" });
     expect([n.status, await n.json()]).toEqual([409, { error: { code: "not_assigned" } }]);
+  });
+});
+
+describe("POST /api/devices/:id/handoffs", () => {
+  const MEMBER = "66666666-6666-4666-8666-666666666666";
+  const ok = { kind: "transfer", toMemberId: MEMBER, note: "x" };
+  it("201 on success, no-store, with the caller's context", async () => {
+    fakeAuth(["simap:user"]);
+    hsvc.startTransfer.mockResolvedValue({ ok: true, value: { id: "h1" } });
+    const r = await TRANSFER(req("POST", undefined, ok), idRoute);
+    expect(r.status).toBe(201);
+    expect(r.headers.get("Cache-Control")).toBe("no-store");
+    expect(hsvc.startTransfer.mock.calls[0]!.slice(2)).toEqual(["s1", "user", ID, ok]);
+  });
+  it("400 on a bad body, 404 on a bad id, no service call", async () => {
+    fakeAuth(["simap:user"]);
+    expect((await TRANSFER(req("POST", undefined, { kind: "return" }), idRoute)).status).toBe(400);
+    const bad = { params: Promise.resolve({ id: "nope" }) };
+    expect((await TRANSFER(req("POST", undefined, ok), bad)).status).toBe(404);
+    expect(hsvc.startTransfer).not.toHaveBeenCalled();
+  });
+  it("maps a refusal to its status and code", async () => {
+    fakeAuth(["simap:user"]);
+    hsvc.startTransfer.mockResolvedValue({ ok: false, status: 409, code: "handoff_pending" });
+    const r = await TRANSFER(req("POST", undefined, ok), idRoute);
+    expect(r.status).toBe(409);
+    expect(await r.json()).toEqual({ error: { code: "handoff_pending" } });
   });
 });

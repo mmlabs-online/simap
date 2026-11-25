@@ -676,8 +676,9 @@ try {
   const insHandoff = (device, kind, to, status = "pending", newExpires = null, from = m1.id) =>
     q(
       `insert into device_handoffs (org_id, device_id, kind, from_member_id, to_member_id, requested_by_id, status,
-         new_expires_on, decided_at)
-       values ($1, $2, $3, $4, $5, $4, $6, $7, case when $6 = 'pending' then null else now() end)`,
+         new_expires_on, decided_at, decided_by_id)
+       values ($1, $2, $3, $4, $5, $4, $6, $7, case when $6 = 'pending' then null else now() end,
+         case when $6 = 'pending' then null else $4::uuid end)`,
       [A.org, device, kind, from, to, status, newExpires],
     );
   const hDev = a.uid("8", 3); // owned by m2, not placed
@@ -732,13 +733,41 @@ try {
     refused(
       await tx(
         q(
-          `insert into device_handoffs (org_id, device_id, kind, from_member_id, requested_by_id, status)
-           values ($1, $2, 'return', $3, $3, 'confirmed')`,
+          `insert into device_handoffs (org_id, device_id, kind, from_member_id, requested_by_id, status, decided_by_id)
+           values ($1, $2, 'return', $3, $3, 'confirmed', $3)`,
           [A.org, hDev, m1.id],
         ),
       ),
       "23514",
       "device_handoffs_decided_check",
+    ),
+  );
+  check(
+    "10 pending handoff with decided_by_id refused (23514 device_handoffs_decided_by_check)",
+    refused(
+      await tx(
+        q(
+          `insert into device_handoffs (org_id, device_id, kind, from_member_id, requested_by_id, decided_by_id)
+           values ($1, $2, 'return', $3, $3, $3)`,
+          [A.org, hDev, m1.id],
+        ),
+      ),
+      "23514",
+      "device_handoffs_decided_by_check",
+    ),
+  );
+  check(
+    "10 decided handoff without decided_by_id refused (23514 device_handoffs_decided_by_check)",
+    refused(
+      await tx(
+        q(
+          `insert into device_handoffs (org_id, device_id, kind, from_member_id, requested_by_id, status, decided_at)
+           values ($1, $2, 'return', $3, $3, 'declined', now())`,
+          [A.org, hDev, m1.id],
+        ),
+      ),
+      "23514",
+      "device_handoffs_decided_by_check",
     ),
   );
   check(

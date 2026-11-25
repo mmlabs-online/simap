@@ -8,6 +8,7 @@ import {
   addMember,
   addRoom,
   addSeat,
+  addTransfer,
   assertTestDb,
   newOrg,
   testPool,
@@ -825,5 +826,44 @@ describe("devices (db): serial, manufacturer and brand", () => {
       dto({ inventoryNumber: "S-1", serial: "SN-1" }),
     );
     expect(cross.ok).toBe(true);
+  });
+});
+
+describe("devices (db): pending transfer", () => {
+  it("the DTO shows the pending transfer to everyone; canTransfer, canAssign and canDelete are off while pending", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const before = await getDevice(pool, w.scope, await subOf(w.x), "user", d);
+    expect(before.ok && before.value).toMatchObject({ canTransfer: true, pendingHandoff: null });
+    const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
+    const asOwner = await getDevice(pool, w.scope, await subOf(w.x), "user", d);
+    expect(asOwner.ok && asOwner.value).toMatchObject({
+      canTransfer: false,
+      canDelete: false,
+      canAssign: false,
+      canPlace: true,
+      pendingHandoff: {
+        id: h,
+        kind: "transfer",
+        to: { id: w.y },
+        requestedBy: { id: w.x },
+        canCancel: true,
+      },
+    });
+    const asOther = await getDevice(pool, w.scope, await subOf(w.z), "user", d);
+    expect(asOther.ok && asOther.value.pendingHandoff).toMatchObject({ id: h, canCancel: false });
+    const asManager = await getDevice(pool, w.scope, await subOf(w.z), "manager", d);
+    expect(asManager.ok && asManager.value.pendingHandoff?.canCancel).toBe(true);
+    const listed = await listDevices(pool, w.scope, await subOf(w.z), "user", "all");
+    expect(listed.ok && listed.value.items.find((i) => i.id === d)?.pendingHandoff?.id).toBe(h);
+  });
+
+  it("delete refuses a device with a pending transfer", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await addTransfer(pool, w.orgId, d, w.x, w.y);
+    const r = await deleteDevice(pool, w.scope, await subOf(w.z), "admin", d);
+    expect(r.ok).toBe(false);
+    expect(await count("select count(*)::int as n from devices where id = $1", [d])).toBe(1);
   });
 });

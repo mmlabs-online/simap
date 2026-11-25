@@ -49,6 +49,16 @@ describe("DeviceFormFields", () => {
     expect(type).not.toContain("pattern");
     expect(type).toContain('maxLength="60"');
   });
+  it("serial, manufacturer and brand fields with maxLength 100", () => {
+    const html = render();
+    for (const l of [copy.fields.serial, copy.fields.manufacturer, copy.fields.brand]) {
+      expect(html).toContain(l);
+    }
+    expect(html.match(/maxLength="100"/g)).toHaveLength(3);
+    const serial = html.match(/<input[^>]*maxLength="100"[^>]*>/)?.[0] ?? "";
+    expect(serial).toContain('spellCheck="false"');
+    expect(html.match(/required/g)).toHaveLength(3);
+  });
   it("create has no owner fields", () => {
     const html = render();
     expect(html).not.toContain(copy.fields.owner);

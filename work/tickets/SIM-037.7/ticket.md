@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/87 |
 
 ## Goal
 Admins and Managers assign org-inventory devices and edit a holding's note and expiry from the Devices page, and the device form and list show serial number, manufacturer and brand.
@@ -46,4 +46,18 @@ docs/spec-v1.md §6 DEV-01 (fields), DEV-02, DEV-07; D63. UI slice split from SI
 ## Notes / answers from Ming
 Split from SIM-037.2 with Ming's approval (2026-11-25, "ok").
 
+Plan approved (2026-11-25, Ming: "ok") with assumptions A1-A11, one cycle (no split).
+
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 2 (ux-architect×1 ~31k, planner×1; default models). frontend-developer consult reused from SIM-037.2.
+- Done: consult files; plan.md READY (whole ticket in one cycle; Files table split into Part A / Part B if Ming wants two tickets), assumptions A1-A11.
+- In progress / next: Ming approves plan (M-55), then IMPLEMENT.
+- Gotchas: no High path, no `src/server/**` change (security trigger will not fire). SIM-036.4 may touch `icons.ts` / seats UI.
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 2 since plan approval (implementer×1 ~119k, reviewer×1 ~63k; default models). No review-trigger agent (UI only).
+- Done: attempt 1 implemented (Part A + B); review PASS, no issues (3 nits). Merged origin/main; checks green after merge (dev-process flaky test passes alone).
+- In progress / next: Ming opens the PR (M-56, prefilled link in chat), runs the 6 manual checks, merges; then SIM-037.3 (transfer).
+- Gotchas: no `gh` on this machine.

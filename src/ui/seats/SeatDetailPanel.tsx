@@ -7,7 +7,7 @@ import { seatsCopy } from "../copy/seats";
 import { Button, IconButton } from "../Button";
 import { Icon } from "../Icon";
 import { isOutsideRect, splitDevices, statusView, type PanelView } from "./seat-view";
-import { CLIP } from "./SeatsView";
+import { CLIP } from "../clip";
 
 const LABEL = "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant";
 

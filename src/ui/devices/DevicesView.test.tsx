@@ -31,6 +31,8 @@ const base: DeviceDto = {
   holding: null,
   canAssign: false,
   canEditHolding: false,
+  canTransfer: false,
+  pendingHandoff: null,
 };
 const secondary: DeviceDto = {
   ...base,
@@ -88,7 +90,7 @@ describe("DevicesView rows", () => {
   it("has a caption, th scope=col per column and no action controls", () => {
     const html = render();
     expect(html).toContain(`<caption class="sr-only">${devicesCopy.caption}</caption>`);
-    expect(html.match(/<th scope="col"/g)).toHaveLength(6);
+    expect(html.match(/<th scope="col"/g)).toHaveLength(7);
     expect(html.match(/<button/g)).toHaveLength(4); // only the filter chips
     expect(html).not.toMatch(/Edit|Delete|Move to/);
   });
@@ -100,9 +102,9 @@ describe("DevicesView row actions", () => {
   const inventoryItem: DeviceDto = { ...stored, id: "d5", canPlace: true };
 
   it("actions column only when a row has an action", () => {
-    expect(render({ actions }).match(/<th scope="col"/g)).toHaveLength(6);
-    expect(render({ actions, devices: [placeable] }).match(/<th scope="col"/g)).toHaveLength(7);
-    expect(render({ devices: [placeable] }).match(/<th scope="col"/g)).toHaveLength(6);
+    expect(render({ actions }).match(/<th scope="col"/g)).toHaveLength(7);
+    expect(render({ actions, devices: [placeable] }).match(/<th scope="col"/g)).toHaveLength(8);
+    expect(render({ devices: [placeable] }).match(/<th scope="col"/g)).toHaveLength(7);
   });
 
   it("Place / Move / Return buttons per canPlace row, none on a canPlace:false row", () => {
@@ -198,5 +200,54 @@ describe("DevicesView create and edit entries", () => {
   });
   it("h1 is focusable (tabindex -1)", () => {
     expect(render()).toMatch(/<h1[^>]*tabindex="-1"/i);
+  });
+});
+
+describe("DevicesView details and holding", () => {
+  const full: DeviceDto = {
+    ...base,
+    id: "d6",
+    manufacturer: "Dell",
+    brand: "XPS",
+    serial: "SN-123",
+  };
+  const held: DeviceDto = {
+    ...stored,
+    id: "d7",
+    holding: { note: "Máy mượn cho dự án", expiresOn: "2026-12-31" },
+  };
+  const heldNoExpiry: DeviceDto = { ...held, id: "d8", holding: { note: null, expiresOn: null } };
+
+  it("Details column: maker over the serial; a dash when empty", () => {
+    const html = render({ devices: [full] });
+    expect(html).toContain(devicesCopy.columns.details);
+    expect(html).toContain("Dell XPS");
+    expect(html).toContain("SN: SN-123");
+    expect(html.indexOf("Dell XPS")).toBeLessThan(html.indexOf("SN: SN-123"));
+    expect(render({ devices: [base] })).toContain(devicesCopy.details.none);
+  });
+
+  it("owner cell shows Until, No expiry and the note with a title; none on an unowned row", () => {
+    const html = render({ devices: [held, heldNoExpiry] });
+    expect(html).toContain("Until 2026-12-31");
+    expect(html).toContain("No expiry");
+    expect(html).toContain('title="Máy mượn cho dự án"');
+    expect(html).toContain("Máy mượn cho dự án");
+    const plain = render({ devices: [base] });
+    expect(plain).not.toContain("Until");
+    expect(plain).not.toContain("No expiry");
+  });
+
+  it("Assign and Note / expiry buttons follow the flags; neither when both are false", () => {
+    const assignable: DeviceDto = { ...stored, id: "d9", owner: null, canAssign: true };
+    const editable: DeviceDto = { ...held, canEditHolding: true };
+    const actions = { onAssign: noop, onEditHolding: noop };
+    const html = render({ actions, devices: [assignable, editable] });
+    expect(html.match(/aria-label="Assign device INV-1"/g)).toHaveLength(2);
+    expect(html.match(/aria-label="Edit note and expiry of device INV-1"/g)).toHaveLength(2);
+    expect(html).toContain(">Note / expiry<");
+    const none = render({ actions, devices: [base] });
+    expect(none).not.toContain("Assign device");
+    expect(none).not.toContain("Note / expiry");
   });
 });

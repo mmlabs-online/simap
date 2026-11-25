@@ -109,7 +109,10 @@ export function DeviceFormFields({
   form: DeviceForm;
   ownerName: string | null;
   suggestions: readonly string[];
-  onField: (key: "name" | "type" | "inventoryNumber" | "mac", value: string) => void;
+  onField: (
+    key: "name" | "type" | "inventoryNumber" | "mac" | "serial" | "manufacturer" | "brand",
+    value: string,
+  ) => void;
 }) {
   const listId = useId();
   return (
@@ -155,6 +158,32 @@ export function DeviceFormFields({
         onChange={(e) => onField("mac", e.target.value)}
         placeholder={copy.macPlaceholder}
         spellCheck={false}
+        autoComplete="off"
+      />
+      <DialogField
+        label={copy.fields.serial}
+        icon="qr_code"
+        value={form.serial}
+        onChange={(e) => onField("serial", e.target.value)}
+        maxLength={DEVICE_LIMITS.serial}
+        spellCheck={false}
+        autoCapitalize="off"
+        autoComplete="off"
+      />
+      <DialogField
+        label={copy.fields.manufacturer}
+        icon="factory"
+        value={form.manufacturer}
+        onChange={(e) => onField("manufacturer", e.target.value)}
+        maxLength={DEVICE_LIMITS.manufacturer}
+        autoComplete="off"
+      />
+      <DialogField
+        label={copy.fields.brand}
+        icon="sell"
+        value={form.brand}
+        onChange={(e) => onField("brand", e.target.value)}
+        maxLength={DEVICE_LIMITS.brand}
         autoComplete="off"
       />
       {mode === "edit" && (
