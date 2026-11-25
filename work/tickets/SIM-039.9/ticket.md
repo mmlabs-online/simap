@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | IN_PROGRESS |
+| State | REWORK |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
 | Gate | plan-approval |
 | Depends on | SIM-039.6, SIM-039.8 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-25 |
 | Claimed by | claude@2026-11-25T17:03Z |
 | PR | — |
