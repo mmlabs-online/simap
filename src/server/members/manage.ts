@@ -410,6 +410,37 @@ export function deactivateMember(
        where org_id = $1 and subject_id = $2 and status = 'pending'`,
       [id, actor[0]?.id ?? null],
     );
+    // OQ-44: pending handoffs to or from the member are cancelled; their devices stay assigned.
+    // decided_by_id is required, so a portal Admin with no member row falls back to the target (A6).
+    const { rows: cancelled } = await orgQuery<{
+      id: string;
+      kind: string;
+      device_id: string;
+      from_member_id: string;
+      to_member_id: string | null;
+    }>(
+      c,
+      scope,
+      `update device_handoffs set status = 'cancelled', decided_by_id = $3, decided_at = now(), updated_at = now()
+       where org_id = $1 and status = 'pending' and (from_member_id = $2 or to_member_id = $2)
+       returning id, kind, device_id, from_member_id, to_member_id`,
+      [id, actor[0]?.id ?? id],
+    );
+    for (const h of cancelled) {
+      await writeAudit(c, scope, {
+        actorSub,
+        action: `device.${h.kind}_cancel`,
+        entity: "device",
+        entityId: h.device_id,
+        meta: {
+          handoffId: h.id,
+          fromMemberId: h.from_member_id,
+          toMemberId: h.to_member_id,
+          byDeactivation: true,
+          memberId: id,
+        },
+      });
+    }
     await orgQuery(
       c,
       scope,
@@ -427,6 +458,7 @@ export function deactivateMember(
         devices: impact.placedDevices,
         demoted: impact.primaryDevicesToDemote,
         cancelledRequests: impact.pendingRequests,
+        cancelledHandoffs: cancelled.length,
       },
     });
     return mustLoad(c, scope, id);

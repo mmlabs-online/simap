@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui, security |
@@ -46,5 +46,18 @@ docs/spec-v1.md §6 DEV-09; D63; OQ-44 (deactivated or removed owner).
 
 ## Notes / answers from Ming
 Ming 2026-11-25: "lên ticket và làm luôn".
+Plan approved 2026-11-25 (Ming: "duyệt"), A1-A12 as written; split approved (UI to SIM-037.10).
 
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 3, tokens ~173k total (api-platform-engineer×1 consult 37k, frontend-developer×1 consult 38k, planner×1 opus 98k; in/out split not reported)
+- Done: consults saved; plan.md READY for slice 1 (API, DTO flags, deactivation cancels handoffs; no migration, no High path, Medium tier). Split proposal: UI to a new ticket SIM-037.10.
+- In progress / next: Ming approves the plan (A1–A12) and the split (M-65). Then create SIM-037.10 on the board and resume /run SIM-037.4 at IMPLEMENT.
+- Gotchas: security review trigger fires (src/server/). Member "remove" has no code path (A3, deactivation only). A10 race to record as a `debt` issue at PR time.
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 7 total, tokens ~496k (api-platform-engineer×1 37k, frontend-developer×1 38k, planner×1 98k, implementer×1 116k, reviewer×1 82k, security auditor×1 via general-purpose 107k; in/out split not reported)
+- Done: plan + split approved (M-65); slice 1 implemented, review PASS, security review no 🔴 (one 🟡 deadlock deactivate vs handoff decision); rebased on main (SIM-039.2), checks green; test:db not run locally.
+- In progress / next: Ming opens the PR (M-66, prefilled link in chat), decides on the 🟡 (REWORK here or follow-up), waits for CI test:db, merges. Then SIM-037.10 (UI).
+- Gotchas: no `gh` here, so the A10 `debt` issue is not filed yet. No local Postgres: DB tests only typechecked.

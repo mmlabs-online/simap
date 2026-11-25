@@ -5,6 +5,7 @@ import {
   type DeviceCreateValue,
   type DevicePatchValue,
   type DeviceRole,
+  type HandoffBox,
   type HandoffStartValue,
   type HoldingPatchValue,
   type PlacementFilter,
@@ -197,23 +198,28 @@ export function validateAssign(body: unknown, today: string): Validated<AssignVa
   return { ok: true, value: { memberId: body.memberId, note, expiresOn } };
 }
 
-/** DEV-08 start body. Only `kind: "transfer"` until SIM-037.4 / SIM-037.5. */
+/** DEV-08 / DEV-09 start body: `transfer` or `return`. `extension` comes with SIM-037.5. */
 export function validateHandoffStart(body: unknown): Validated<HandoffStartValue> {
   if (!isPlainObject(body)) return { ok: false, field: "body" };
-  const extra = Object.keys(body).find((k) => !["kind", "toMemberId", "note"].includes(k));
+  const isReturn = body.kind === "return";
+  const allowed = isReturn ? ["kind", "note"] : ["kind", "toMemberId", "note"];
+  const extra = Object.keys(body).find((k) => !allowed.includes(k));
   if (extra !== undefined) return { ok: false, field: extra };
-  if (body.kind !== "transfer") return { ok: false, field: "kind" };
-  if (!isCanonicalUuid(body.toMemberId)) return { ok: false, field: "toMemberId" };
+  if (body.kind !== "transfer" && !isReturn) return { ok: false, field: "kind" };
   const note = body.note === undefined ? null : noteText(body.note, DEVICE_LIMITS.note);
   if (note === undefined) return { ok: false, field: "note" };
+  if (isReturn) return { ok: true, value: { kind: "return", note } };
+  if (!isCanonicalUuid(body.toMemberId)) return { ok: false, field: "toMemberId" };
   return { ok: true, value: { kind: "transfer", toMemberId: body.toMemberId, note } };
 }
 
-/** `GET /api/handoffs?box=`: exactly one `box`, and only `incoming` for now. */
-export function validateHandoffBox(params: URLSearchParams): Validated<"incoming"> {
+/** `GET /api/handoffs?box=`: exactly one `box`, `incoming` or `returns`. */
+export function validateHandoffBox(params: URLSearchParams): Validated<HandoffBox> {
   const all = params.getAll("box");
-  if (all.length !== 1 || all[0] !== "incoming") return { ok: false, field: "box" };
-  return { ok: true, value: "incoming" };
+  if (all.length !== 1 || (all[0] !== "incoming" && all[0] !== "returns")) {
+    return { ok: false, field: "box" };
+  }
+  return { ok: true, value: all[0] };
 }
 
 /** DEV-07 holding edit: a non-empty partial; only the keys sent are checked (an overdue note stays editable). */

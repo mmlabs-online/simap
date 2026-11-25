@@ -12,7 +12,7 @@ export const GET = withAuth(
     if (!box.ok) return apiError(400, "invalid_request");
     const pool = getPool();
     if (!pool) return apiError(503, "unavailable");
-    const r = await listHandoffs(pool, ctx.scope, ctx.sub, ctx.tier);
+    const r = await listHandoffs(pool, ctx.scope, ctx.sub, ctx.tier, box.value);
     if (!r.ok) return apiError(r.status, r.code);
     return Response.json(r.value, { headers: { "Cache-Control": "no-store" } });
   },

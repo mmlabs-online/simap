@@ -1,6 +1,6 @@
 import { isCanonicalUuid } from "@/lib/validate/uuid";
 import { validateHandoffStart } from "@/lib/validate/device";
-import { startTransfer } from "@/server/devices/handoffs";
+import { startReturn, startTransfer } from "@/server/devices/handoffs";
 import { getPool } from "@/server/db/pool";
 import { apiError } from "@/server/http/respond";
 import { withAuth } from "@/server/http/with-auth";
@@ -18,7 +18,10 @@ export const POST = withAuth<{ id: string }>(
     if (!body.ok) return apiError(400, "invalid_request");
     const v = validateHandoffStart(body.body);
     if (!v.ok) return apiError(400, "invalid_request");
-    const r = await startTransfer(pool, ctx.scope, ctx.sub, ctx.tier, id, v.value);
+    const r =
+      v.value.kind === "return"
+        ? await startReturn(pool, ctx.scope, ctx.sub, ctx.tier, id, v.value)
+        : await startTransfer(pool, ctx.scope, ctx.sub, ctx.tier, id, v.value);
     if (!r.ok) return apiError(r.status, r.code);
     return Response.json(r.value, { status: 201, headers: { "Cache-Control": "no-store" } });
   },
