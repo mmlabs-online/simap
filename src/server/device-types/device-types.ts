@@ -42,7 +42,7 @@ async function inTx<T>(pool: Db, fn: (c: TxClient) => Promise<T>): Promise<Resul
   }
 }
 
-type Row = {
+export type Row = {
   id: string;
   name: string;
   slot: DeviceKind;
@@ -50,9 +50,9 @@ type Row = {
   image_version: number;
 };
 
-const COLS = "id, name, slot, (image_drive_file_id is not null) as has_image, image_version";
+export const COLS = "id, name, slot, (image_drive_file_id is not null) as has_image, image_version";
 
-const toDto = (r: Row): DeviceTypeDto => ({
+export const toDto = (r: Row): DeviceTypeDto => ({
   id: r.id,
   name: r.name,
   slot: r.slot,
@@ -169,12 +169,16 @@ export function deleteDeviceType(
   scope: OrgScope,
   actorSub: string,
   id: string,
-): Promise<Result<null>> {
+): Promise<Result<{ imageFileId: string | null }>> {
   return inTx(db, async (c) => {
-    const { rows } = await orgQuery<{ name: string; slot: string }>(
+    const { rows } = await orgQuery<{
+      name: string;
+      slot: string;
+      image_drive_file_id: string | null;
+    }>(
       c,
       scope,
-      "delete from device_types where org_id = $1 and id = $2 returning name, slot",
+      "delete from device_types where org_id = $1 and id = $2 returning name, slot, image_drive_file_id",
       [id],
     );
     if (!rows[0]) throw new Abort(notFound);
@@ -185,6 +189,6 @@ export function deleteDeviceType(
       entityId: id,
       meta: { name: rows[0].name, slot: rows[0].slot },
     });
-    return null;
+    return { imageFileId: rows[0].image_drive_file_id };
   });
 }

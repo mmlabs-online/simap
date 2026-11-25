@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | api, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-24 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/79 |
 
 ## Goal
 An Admin can give a device type its own square image, and every member of the org can load it for the map, stored in
@@ -62,5 +62,22 @@ Google Drive (D61).
 
 ## Notes / answers from Ming
 - 2026-11-24: split approved with the SIM-036.2 plan (Ming: "duyệt").
+- 2026-11-24: Ming ran `/run SIM-036.5`; M-46 is go-live only ("code and tests do not need it"), so it does not block this run.
+
+Waiting for Ming: plan approval (ticket Gate)
+- 2026-11-25 Plan approved (Ming: "1ok"; A1 no row lock across the Drive upload, compare-and-set with 409 `image_changed`, and the Q2–Q6 defaults). M-50.
 
 ## Handoff
+
+### 2026-11-24 — claude — BLOCKED
+- Agent calls: 2, ~120k tokens (api-platform-engineer×1 opus 45.8k, planner×1 opus 74.4k; per-call in/out split not reported)
+- Done: consult (api; security has no consult agent), plan READY. No High path. Gate is `plan-approval` from the ticket.
+- In progress / next: Ming approves `plan.md` (M-50; key decision A1: no row lock across the Drive upload, compare-and-set plus 409 `image_changed`). Then `/run SIM-036.5` resumes at IMPLEMENT.
+- Gotchas: ~450 product + ~800 test lines (fallback: move the `deleteDeviceType` cleanup to a follow-up). Session branch `claude/confident-cerf-67q5le`.
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 3 this run, ~194k tokens (implementer×1 opus 84.0k, reviewer×1 opus 58.7k, security-ai-generated-code-auditor×1 opus 51.2k; per-call in/out split not reported). Whole ticket: 5 calls, ~314k.
+- Done: plan approved (M-50, Ming "1ok"); attempt 1 implemented; review PASS with all checks green incl. `pnpm test:db`; security review no 🔴/🟡. PR https://github.com/mmlabs-online/simap/pull/79.
+- In progress / next: Ming reviews and merges PR #79. Then SIM-036.3 and SIM-036.4 become runnable. Manual Drive check after M-46.
+- Gotchas: three 🟢 security suggestions are follow-ups. UI must load the image via `apiFetch` + `blob:` URL. Session branch `claude/confident-cerf-67q5le`.
+

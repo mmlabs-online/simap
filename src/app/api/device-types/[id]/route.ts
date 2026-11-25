@@ -3,6 +3,8 @@ import { validateDeviceTypePatch } from "@/lib/validate/device-type";
 import { isCanonicalUuid } from "@/lib/validate/uuid";
 import { deleteDeviceType, updateDeviceType } from "@/server/device-types/device-types";
 import { getPool } from "@/server/db/pool";
+import { discardImageFile } from "@/server/device-types/image";
+import { getDrive } from "@/server/drive/drive";
 import { apiError } from "@/server/http/respond";
 import { withAuth } from "@/server/http/with-auth";
 import { readJson } from "@/server/request/read-json";
@@ -36,6 +38,7 @@ export const DELETE = withAuth<{ id: string }>(
     if (!pool) return apiError(503, "unavailable");
     const r = await deleteDeviceType(pool, ctx.scope, ctx.sub, id);
     if (!r.ok) return apiError(r.status, r.code);
+    await discardImageFile(getDrive, r.value.imageFileId, id);
     return new Response(null, { status: 204, headers: NO_STORE });
   },
   { tier: "admin" },
