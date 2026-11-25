@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T04:44:53Z |
 | PR | — |
 
 ## Goal
@@ -48,7 +48,7 @@ docs/spec-v1.md §6 DEV-08; D63; OQ-43 (expiry carries over).
 ## Notes / answers from Ming
 Ming 2026-11-25: "lên ticket và làm luôn".
 
-Waiting for Ming: plan approval (High tier: migration) and the split (UI slice → proposed SIM-037.8)
+Plan approved (2026-11-25, Ming: "ok") with assumptions A1-A14 (migration kept) and the split: the UI slice is SIM-037.8.
 
 ## Handoff
 
