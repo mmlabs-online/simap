@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T04:05:17Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -55,3 +55,9 @@ Plan approved (2026-11-25, Ming: "ok") with assumptions A1-A11, one cycle (no sp
 - Done: consult files; plan.md READY (whole ticket in one cycle; Files table split into Part A / Part B if Ming wants two tickets), assumptions A1-A11.
 - In progress / next: Ming approves plan (M-55), then IMPLEMENT.
 - Gotchas: no High path, no `src/server/**` change (security trigger will not fire). SIM-036.4 may touch `icons.ts` / seats UI.
+
+### 2026-11-25 — claude — DONE
+- Agent calls: 2 since plan approval (implementer×1 ~119k, reviewer×1 ~63k; default models). No review-trigger agent (UI only).
+- Done: attempt 1 implemented (Part A + B); review PASS, no issues (3 nits). Merged origin/main; checks green after merge (dev-process flaky test passes alone).
+- In progress / next: Ming opens the PR (M-56, prefilled link in chat), runs the 6 manual checks, merges; then SIM-037.3 (transfer).
+- Gotchas: no `gh` on this machine.
