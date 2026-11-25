@@ -81,7 +81,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-037.2 | Assign from org inventory and new device fields | MERGED | P1 | M | api, ui | SIM-037.1 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.7 | Devices UI: assign dialog, note/expiry edit and new device fields | MERGED | P1 | M | ui, ux | SIM-037.2 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.3 | Transfer a device with recipient confirmation | MERGED | P1 | M | api, ui, security | SIM-037.2 | plan-approval | 0 | 2026-11-25 |
-| SIM-037.8 | Devices UI: transfer dialog, incoming transfers and nav badge | PLANNING | P1 | M | ui, ux | SIM-037.3 | plan-approval | 0 | 2026-11-25 |
+| SIM-037.8 | Devices UI: transfer dialog, incoming transfers and nav badge | BLOCKED | P1 | M | ui, ux | SIM-037.3 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.4 | Return a device to the org inventory with Admin confirmation | BACKLOG | P1 | M | api, ui, security | SIM-037.3 | plan-approval | 0 | 2026-11-25 |
 | SIM-037.5 | Overdue badge, reminder and extension request | BACKLOG | P2 | S | api, ui | SIM-037.2, SIM-037.3 | none | 0 | 2026-11-25 |
 | SIM-037.6 | Device detail page with history | BACKLOG | P2 | M | ui, api, ux | SIM-037.4, SIM-037.5 | none | 0 | 2026-11-25 |
