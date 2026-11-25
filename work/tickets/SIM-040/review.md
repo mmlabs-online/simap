@@ -82,3 +82,46 @@ None. `security-review.md` attempt 1: 🔴 none, 🟡 none.
 ### Follow-ups (out of scope)
 - Larger map slot box (A1) if Ming wants images bigger on the desk, not just sharper.
 - Expect a rebase with SIM-037.10 in `AppShellView.tsx`, its test and `copy/shell.ts` (A6).
+
+## Attempt 2 — 2026-11-25
+Verdict: PASS
+
+### Checks (run by reviewer)
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck` — exit 0, "Types generated successfully", tsc clean.
+- `pnpm check:layers` — exit 0, "check-layers: 731 files, no violations"
+- `pnpm test` — exit 0, "Test Files 276 passed | 1 skipped (277); Tests 2808 passed | 7 skipped (2815)" (same as attempt 1)
+- `pnpm build` — not re-run: `git diff f08f613 HEAD --stat` shows only `docs/spec-v1.md`, `impl-log.md` and `ticket.md`
+  changed since attempt 1, so the attempt 1 builds (with and without `NEXT_PUBLIC_SIMAP_VERSION`) still apply.
+- `pnpm test:db` — skipped (CI-only, no DB change).
+
+### Acceptance criteria
+- [x] 1–7 — unchanged since attempt 1 (no code change); evidence as recorded in Attempt 1, checks re-run green above.
+- [x] Plan file row `docs/spec-v1.md` (A3) §12 change-log row — evidence: `git diff origin/main...HEAD -- docs/spec-v1.md`
+  now has exactly two hunks: line 271 (DEV catalog bullet, unchanged from attempt 1) and line 733, the D68 row as the
+  first data row of §12 "Change log", directly above the `2026-11-25 | D66:` row. The §2 seatMGT role table
+  (`docs/spec-v1.md:61-65`) is byte-identical to `origin/main` (no hunk there). Issue 1 resolved.
+
+Ming verification after merge (carry into the PR):
+- After the next release, the deployed app shows `vX.Y.Z` beside "simap" in the header.
+- On production, upload a 100 × 100 PNG of about 60–100 KB to a device type: it saves, shows at 48 px in the admin list
+  and draws smoothly on a desk at the same size as before; an existing 24 × 24 image still draws as before.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations. Rework touched only the spec row (R4: in plan) and work files; R1/R3/R5 status from attempt 1 holds and
+checks are green.
+
+### Blockers from review agents
+None. `security-review.md` attempt 1: 🔴 none, 🟡 none (no code change since).
+
+### Nits (do not block)
+- Carried from attempt 1: `src/ui/copy/shell.ts:21` literal `"dev"` vs `DEV_VERSION`; M-69 A6/A7 label swap in
+  `work/ming-todo.md`.
+- impl-log Attempt 2 lists only format:check and test; reviewer re-ran all four checks.
+
+### Follow-ups (out of scope)
+- Larger map slot box (A1) if Ming wants images bigger on the desk.
+- Expect a rebase with SIM-037.10 in `AppShellView.tsx`, its test and `copy/shell.ts` (A6).

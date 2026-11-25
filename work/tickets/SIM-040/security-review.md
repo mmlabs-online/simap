@@ -35,3 +35,7 @@
 
 ### Follow-ups (out of scope)
 None.
+
+## Attempt 2
+
+Security re-check: no security-relevant change, no 🔴 or 🟡 findings. Attempt 2 only moved the D68 row into the §12 change-log table of `docs/spec-v1.md` (plain markdown, no runtime, build or CI effect); the row matches `src/lib/validate/png.ts:68-69` and `IMAGE_LIMITS.maxBytes`. Attempt 1 conclusions stand. Follow-ups: none.
