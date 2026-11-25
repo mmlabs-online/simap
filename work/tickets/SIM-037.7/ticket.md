@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T03:57:42Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -46,4 +46,12 @@ docs/spec-v1.md §6 DEV-01 (fields), DEV-02, DEV-07; D63. UI slice split from SI
 ## Notes / answers from Ming
 Split from SIM-037.2 with Ming's approval (2026-11-25, "ok").
 
+Waiting for Ming: plan approval (P1)
+
 ## Handoff
+
+### 2026-11-25 — claude — BLOCKED
+- Agent calls: 2 (ux-architect×1 ~31k, planner×1; default models). frontend-developer consult reused from SIM-037.2.
+- Done: consult files; plan.md READY (whole ticket in one cycle; Files table split into Part A / Part B if Ming wants two tickets), assumptions A1-A11.
+- In progress / next: Ming approves plan (M-55), then IMPLEMENT.
+- Gotchas: no High path, no `src/server/**` change (security trigger will not fire). SIM-036.4 may touch `icons.ts` / seats UI.
