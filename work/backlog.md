@@ -91,7 +91,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-037.5 | Overdue badge, reminder and extension request | MERGED | P2 | S | api, ui | SIM-037.2, SIM-037.3 | none | 1 | 2026-11-25 |
 | SIM-037.11 | Devices UI: overdue chip and filter, owner banner, extension requests | MERGED | P2 | M | ui, ux | SIM-037.5 | none | 1 | 2026-11-25 |
 | SIM-037.12 | Devices UI: pending extensions for Manager+ | BACKLOG | P2 | S | ui | SIM-037.11 | none | 0 | 2026-11-25 |
-| SIM-037.6 | Device detail page with history | PLANNING | P2 | M | ui, api, ux | SIM-037.4, SIM-037.5 | none | 0 | 2026-11-25 |
+| SIM-037.6 | Device detail page with history | DONE | P2 | M | ui, api, ux | SIM-037.4, SIM-037.5 | none | 0 | 2026-11-25 |
+| SIM-037.13 | Device detail page: viewer actions | BACKLOG | P2 | M | ui, ux | SIM-037.6 | none | 0 | 2026-11-25 |
 | SIM-014 | Seat requests: state machine and write API | MERGED | P1 | M | api | SIM-012 | plan-approval | 1 | 2026-11-24 |
 | SIM-014.1 | Requests read API and decided badge | MERGED | P1 | S | api | SIM-014 | plan-approval | 0 | 2026-11-24 |
 | SIM-014.2 | Approvals page UI | MERGED | P1 | M | ui, ux | SIM-014.1 | plan-approval | 0 | 2026-11-24 |
