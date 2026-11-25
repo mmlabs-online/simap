@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T07:30:49Z |
 | PR | — |
 
 ## Goal
@@ -44,7 +44,7 @@ Each org has one catalog row per library item (fixtures, floors, `desk.single`, 
 ## Notes / answers from Ming
 - 2026-11-25: scope from Ming's answers on the map item catalog (D66); OQ-52/OQ-53 take their defaults.
 - 2026-11-25 (Ming, answers on plan A1-A11): A1 "name Alphabet" — items are ordered alphabetically by name, not by a seeded palette order. A2, A3, A5-A8, A10, A11 ok. A4 changed: hidden items are not returned to members (non-Admin); Admins still get them for the admin page. A9 changed: placed items on a saved room layout get a foreign key to `map_items`; when an item's name or image changes, the saved room layouts show the change. Re-plan with these answers; the plan needs approval again (D67).
-- Waiting for Ming: plan approval (High tier), re-plan after D67
+- 2026-11-25: Plan approved (Ming: "duyệt SIM-039.1") for the re-plan after D67, assumptions as written; A13 takes the plan's default (one-off cleanup of undrawable placements, not `not valid` FKs).
 
 ## Handoff
 
