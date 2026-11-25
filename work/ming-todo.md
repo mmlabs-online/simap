@@ -11,8 +11,8 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [ ] M-1 Register app `simap` in org-admin-api: origin `https://simap.mmlabs.online` (and the local dev origin),
   `org_mode = required`, join policy, org-scope roles (OQ-37) and org owner role; create the first org and appoint its
   admin in the admin portal. Before the auth ticket can be checked end to end. (D5, D8)
-- [ ] M-2 Cloudflare Tunnel published application `simap.mmlabs.online` → the simap container, service `http://simap:3000` (HTTP, not HTTPS). Before go-live. (D8)
-- [ ] M-3 Shared Postgres: create database and role `simap`; put the password where the deployment repo's deploy job
+- [x] M-2 (2026-11-25, Ming: deployed via the deployment repo; tunnel route and DB `simap` working) Cloudflare Tunnel published application `simap.mmlabs.online` → the simap container, service `http://simap:3000` (HTTP, not HTTPS). Before go-live. (D8)
+- [x] M-3 (2026-11-25, Ming: deployed via the deployment repo; tunnel route and DB `simap` working) Shared Postgres: create database and role `simap`; put the password where the deployment repo's deploy job
   reads it (as tudocuatui). Before the first deploy. (D3)
 - [x] M-4 (2026-11-20) Approve plan for SIM-001: `work/tickets/SIM-001/plan.md` (High tier; 9 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
 - [x] M-4 (2026-11-24) Run the org-admin-api request for an app-facing org members read and remove-from-org (prompt in
@@ -24,10 +24,10 @@ Never write a secret value here: name the secret and where Ming puts it.
   token; set repository secrets on `mmlabs-online/simap`: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `DEPLOY_REPO_TOKEN`
   (fine-grained PAT on `mmlabs-online/deployment` only: Contents read/write, Pull requests read/write). Values go only
   into GitHub secrets, never into a file or chat. Before the first `release/X.Y.Z` push. (D8)
-- [ ] M-7 Deployment-repo setup PR for simap (not a `release/*` branch): copy `deploy/deployment-repo/**` from the simap
+- [x] M-7 (2026-11-25, Ming: deployed via the deployment repo; tunnel route and DB `simap` working) Deployment-repo setup PR for simap (not a `release/*` branch): copy `deploy/deployment-repo/**` from the simap
   repo, run `bash postgres/scripts/add-app-db.sh simap` (this is M-3) and add the CODEOWNERS line; steps in
   `deploy/deployment-repo/README.md`. Ming merges; deploy-simap skips until a release PR writes `release.env`. (D3, D8)
-- [ ] M-8 First release: from a commit on `main`, push branch `release/0.1.0` (Ming's step, agents never push
+- [x] M-8 (2026-11-25, Ming: deployed via the deployment repo; tunnel route and DB `simap` working) First release: from a commit on `main`, push branch `release/0.1.0` (Ming's step, agents never push
   `release/*`); check the `release` run is green, review and merge the `release/simap-v0.1.0` PR on
   `mmlabs-online/deployment`, then check the `deploy-simap` run and `/api/readyz` (needs M-2, M-3, M-6, M-7). (D8)
 - [ ] M-9 Pixel art, phase 1 (D45, D54): pick 1 main free pack (+1 backup) from `docs/art/asset-candidates.md`, check
@@ -114,3 +114,4 @@ Never write a secret value here: name the secret and where Ming puts it.
   `name_taken`; rename/delete never touch devices (they fall back to the placeholder). Add a dated "Plan approved"
   line in the ticket's *Notes / answers from Ming* and say whether to create SIM-036.5.
 - [x] M-50 (2026-11-25, Ming: "1ok") Approve plan for SIM-036.5: `work/tickets/SIM-036.5/plan.md` (ticket Gate; no High path; A1 no row lock across the Drive upload: plain select, upload, then compare-and-set with 409 `image_changed`; defaults for Q2–Q6: audit `device_type.image_set`/`image_remove`, idempotent 204 remove, 502 when Drive lost the file, keep `Retry-After` on 503, PNG CRC check and APNG rejected; PUT returns the updated DTO). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
+- [ ] M-51 Apply `docs/requests/deployment-simap-drive.md` in a session on `mmlabs-online/deployment` (PR that writes simap's four Drive secrets to the host env file), add the four `SIMAP_*` secrets (M-46), merge, run `deploy-simap` with `workflow_dispatch` from `main`. Then paste or link the merged `deploy-simap.yml` for SIM-037.
