@@ -36,7 +36,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-009.2 | Accept-invitation page | MERGED | P1 | M | security, ui | SIM-009 | none | 1 | 2026-11-22 |
 | BUG-001 | `pnpm test:db` red on main after SIM-037.2 (devices uniqueness, CSV export columns) | MERGED | P0 | XS | db | — | none | 1 | 2026-11-25 |
 | BUG-002 | Starting a transfer, return or extension always fails (orgQuery guard rejects the insert) | MERGED | P0 | XS | api, db | — | none | 0 | 2026-11-25 |
-| SIM-034 | Run simap's GitHub Actions on the Mac self-hosted runner | DONE | P1 | S | security, architecture | — | plan-approval | 1 | 2026-11-23 |
+| SIM-034 | Run simap's GitHub Actions on the Mac self-hosted runner | MERGED | P1 | S | security, architecture | — | plan-approval | 2 | 2026-11-23 |
 | SIM-011 | Members page, profile fields and deactivation | MERGED | P1 | M | api, ui, security | SIM-007 | plan-approval | 1 | 2026-11-22 |
 | SIM-024 | Sprite atlas, manifest, placeholder art and map renderer | MERGED | P1 | M | ui, architecture | SIM-003 | none | 1 | 2026-11-21 |
 | SIM-024.1 | Room map renderer, avatars, name tags and dev demo | MERGED | P1 | M | ui, architecture | SIM-024 | none | 2 | 2026-11-22 |
@@ -66,7 +66,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-039.6 | "Map items" admin page | MERGED | P1 | M | ui, ux | SIM-039.2, SIM-039.4 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.9 | Map items page: art per direction | MERGED | P1 | M | ui, ux | SIM-039.6, SIM-039.8 | plan-approval | 1 | 2026-11-25 |
 | SIM-039.10 | Map items art: atlas previews | MERGED | P2 | S | ui | SIM-039.9 | none | 0 | 2026-11-25 |
-| SIM-039.7 | Device types: pick a bundled package sprite | PLANNING | P2 | S | db, api, ui | SIM-039.9 | plan-approval | 0 | 2026-11-25 |
+| SIM-039.7 | Device types: pick a bundled package sprite | IN_PROGRESS | P2 | S | db, api, ui | SIM-039.9 | plan-approval | 0 | 2026-11-25 |
 | SIM-040 | Show the release version in the UI and allow device type images up to 100 × 100 px | MERGED | P2 | M | ui, api, architecture | — | plan-approval | 1 | 2026-11-25 |
 | SIM-011.2 | Members page UI: list, edit and deactivate dialogs | MERGED | P1 | M | ui | SIM-011 | plan-approval | 1 | 2026-11-24 |
 | SIM-013 | Devices: placement rules, read and placement API | MERGED | P1 | M | api | SIM-012 | plan-approval | 0 | 2026-11-23 |
