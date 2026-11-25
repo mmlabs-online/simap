@@ -15,8 +15,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-25T17:59:30Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/110 |
 
 ## Report
 Ming: "ok" (2026-11-26) to fixing the 3 `pnpm test:db` failures that keep CI red on `main`. Found during BUG-002 and SIM-034 (reviewers verified that they fail the same way on `origin/main`). While `test:db` fails, the later CI steps (format, build, the `image` job) never run on the self-hosted runner (SIM-034 AC2).
@@ -54,3 +54,9 @@ Ming: "ok" (2026-11-26) to fixing the 3 `pnpm test:db` failures that keep CI red
 ## Notes / answers from Ming
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: shared across the BUG-003/004/005 batch, 6 total, ~147k tokens (in/out split not reported): planner×3 sonnet 18k+19k+23k (fast lane), implementer×1 36k (all three, one commit each), reviewer×1 sonnet 33k (a review.md per bug), security-ai-generated-code-auditor×1 18k.
+- Done: the regression test failed before the fix and passes after (recorded in impl-log). Review PASS, security 🟢. With all three, `pnpm test:db` has 0 failures. Batch PR #110 (branch bug/BUG-003, from the `/bug` "fix now" path).
+- In progress / next: Ming merges #110. This PR's CI is the first run of format, build and the `image` job on MacBookPro (SIM-034 AC2).
+- Gotchas: `pnpm test:db` does not pass a test filter through, so it always runs the whole suite.
