@@ -112,9 +112,29 @@ describe("release.yml", () => {
       expect(m[1]).not.toContain("${{");
     }
   });
-  it("deploys nothing itself: GitHub runner, no docker compose, no ssh", () => {
-    expect(release).toContain("runs-on: ubuntu-latest");
-    expect(release).not.toMatch(/self-hosted|docker compose|\bssh\b/);
+  it("deploys nothing itself: macbook-runner (D60), no docker compose, no ssh", () => {
+    expect(release).toContain("runs-on: [self-hosted, macbook-runner]");
+    expect(release).not.toContain("ubuntu-latest");
+    expect(release).not.toMatch(/docker compose|\bssh\b/);
+  });
+  it("deployment clone lives in RUNNER_TEMP and keeps no token", () => {
+    const pr = stepRun("pull request on the deployment repo");
+    expect(pr).toContain('"$RUNNER_TEMP/deployment"');
+    expect(pr).toContain(
+      "git remote set-url origin https://github.com/mmlabs-online/deployment.git",
+    );
+    expect(pr).toContain(
+      'git push "https://x-access-token:$GH_TOKEN@github.com/mmlabs-online/deployment.git" "$branch"',
+    );
+    const cleanup = stepRun("cleanup");
+    expect(cleanup).toContain("if: always()");
+    expect(cleanup).toContain('rm -rf "$RUNNER_TEMP/deployment" "$RUNNER_TEMP/docker"');
+  });
+  it("login happens before the version tag is reserved", () => {
+    const tag = release.indexOf("- name: create version tag");
+    expect(release.indexOf("docker/login-action")).toBeGreaterThan(-1);
+    expect(release.indexOf("docker/login-action")).toBeLessThan(tag);
+    expect(release.indexOf("docker/setup-buildx-action")).toBeLessThan(tag);
   });
 });
 

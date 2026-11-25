@@ -1,6 +1,7 @@
 # spaceM project-kit: label every PR with its risk tier (CLAUDE.md §7), computed from changed paths and
 # .github/risk-tiers.yml by .github/scripts/risk_tier.py. Informational: it never blocks or merges.
 # /run-batch --auto-merge reads the same script locally; this label is what Ming sees on the PR.
+# SIM-034 (D60): local edit of a kit-managed file: runs on the self-hosted runner, portable sed, fork guard.
 name: risk-tier
 
 on:
@@ -17,9 +18,15 @@ concurrency:
 
 jobs:
   tier:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macbook-runner] # D60: simap's workflows run on the home server's runner
+    if: github.event.pull_request.head.repo.full_name == github.repository
     timeout-minutes: 5
     steps:
+      - name: host tools
+        run: |
+          # Non-interactive: the macOS Command Line Tools stub of python3 would otherwise prompt or fail late.
+          command -v gh >/dev/null || { echo "::error::gh is not installed on the runner"; exit 1; }
+          python3 -I -c 'import sys; print(sys.version)' || { echo "::error::python3 is not usable on the runner"; exit 1; }
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -33,7 +40,7 @@ jobs:
           {
             echo "### Risk tier: $(tail -n 1 tier.txt)"
             echo '```'
-            head -n -1 tier.txt
+            sed '$d' tier.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: label PR

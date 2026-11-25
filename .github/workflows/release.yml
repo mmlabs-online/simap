@@ -3,6 +3,8 @@
 # git tag, builds and pushes mingming21400/simap, then opens a pull
 # request release/simap-vX.Y.Z on mmlabs-online/deployment that changes only apps/simap/release.env
 # (image pinned by digest). Merging it runs deploy-simap on macbook-runner; this workflow deploys nothing itself.
+# It runs on macbook-runner too (D60, supersedes "app code never runs on the home server" for simap): docker login and
+# buildx use an isolated DOCKER_CONFIG under RUNNER_TEMP (scripts/ci-docker-config.sh), never the host's ~/.docker.
 # Copied from tudocuatui's release.yml (plus the SIMAP_VERSION build arg, shown in the UI, SIM-040). Runbook: README.md, "Release and deploy".
 # The deploy runs backup + migrate before replacing the app.
 #
@@ -30,7 +32,7 @@ env:
 
 jobs:
   release:
-    runs-on: ubuntu-latest # GitHub's runner: app code never runs on the home server
+    runs-on: [self-hosted, macbook-runner] # D60: simap's workflows run on the home server's runner
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -62,6 +64,10 @@ jobs:
           if [ -n "$last" ] && [ "$(printf '%s\n%s\n' "$last" "$TAG" | sort -V | tail -n 1)" != "$TAG" ]; then
             echo "::error::$TAG is not higher than the latest release $last"; exit 1
           fi
+          # sort -V must exist and order numerically on this host (BSD sort on macOS).
+          if [ "$(printf 'v0.9.0\nv0.10.0\n' | sort -V | tail -n 1)" != v0.10.0 ]; then
+            echo "::error::sort -V is missing or not numeric on this runner"; exit 1
+          fi
           echo "release version: $TAG (previous: ${last:-none})"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           for name in DH_USER DH_TOKEN DEPLOY_TOKEN; do
@@ -70,7 +76,20 @@ jobs:
             fi
           done
 
-      # Reserve the version before pushing the image: a failed run never reuses it.
+      - name: docker config
+        run: bash scripts/ci-docker-config.sh
+
+      - uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Reserve the version before pushing the image: a failed run never reuses it. Docker config, buildx and login
+      # come first, so a failure there does not burn a version.
       - name: create version tag
         env:
           TAG: ${{ steps.version.outputs.tag }}
@@ -78,13 +97,6 @@ jobs:
         run: |
           git tag "$TAG" "$GITHUB_SHA"
           git push "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" "refs/tags/$TAG"
-
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: build and push
         id: image
@@ -118,8 +130,9 @@ jobs:
         run: |
           branch="release/$APP-$TAG"
           image_ref="$NAMESPACE/simap:$TAG@$DIGEST"
-          git clone --depth 1 "https://x-access-token:$GH_TOKEN@github.com/mmlabs-online/deployment.git" deployment
-          cd deployment
+          git clone --depth 1 "https://x-access-token:$GH_TOKEN@github.com/mmlabs-online/deployment.git" "$RUNNER_TEMP/deployment"
+          cd "$RUNNER_TEMP/deployment"
+          git remote set-url origin https://github.com/mmlabs-online/deployment.git
           git switch -c "$branch"
           mkdir -p "apps/$APP"
           {
@@ -134,7 +147,17 @@ jobs:
             echo "::error::release commit must change only apps/$APP/release.env"; exit 1
           fi
           git commit -m "$APP $TAG"
-          git push origin "$branch"
+          git push "https://x-access-token:$GH_TOKEN@github.com/mmlabs-online/deployment.git" "$branch"
           gh pr create --repo mmlabs-online/deployment --base main --head "$branch" \
             --title "$APP $TAG" \
             --body "Deploys \`$image_ref\` (Next.js server; deploy runs backup + migrate, then replaces the app; $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA). Merging runs deploy-$APP on macbook-runner."
+
+      # The runner is the production host: leave no credentials or clones behind.
+      - name: cleanup
+        if: always()
+        env:
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: |
+          docker logout || true
+          if [ -n "$DIGEST" ]; then docker image rm "$NAMESPACE/simap@$DIGEST" || true; fi
+          rm -rf "$RUNNER_TEMP/deployment" "$RUNNER_TEMP/docker"
