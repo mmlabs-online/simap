@@ -14,7 +14,7 @@ export type SeatDeviceDto = {
   type: string;
   inventoryNumber: string;
   role: "primary" | "secondary";
-  owner: { id: string; displayName: string };
+  owner: { id: string; displayName: string } | null;
 };
 
 export type SeatDto = {

@@ -72,10 +72,19 @@ try {
   // orgs that exist before the device types migration: one with only a member, one with only a room
   const oldMemberOrg = randomUUID();
   const oldRoomOrg = randomUUID();
-  await c.query(
-    `insert into members (org_id, sub, email, display_name) values ($1, $2, 'old@simap.example', 'Old')`,
-    [oldMemberOrg, randomUUID()],
-  );
+  const oldMember = (
+    await c.query(
+      `insert into members (org_id, sub, email, display_name) values ($1, $2, 'old@simap.example', 'Old') returning id`,
+      [oldMemberOrg, randomUUID()],
+    )
+  ).rows[0].id;
+  // a device that exists before the lifecycle migration (OQ-45: it keeps its owner)
+  const oldDevice = (
+    await c.query(
+      `insert into devices (org_id, name, type, inventory_number, owner_id) values ($1, 'Old device', 'laptop', 'OLD-1', $2) returning id`,
+      [oldMemberOrg, oldMember],
+    )
+  ).rows[0].id;
   await c.query(`insert into rooms (org_id, code, name) values ($1, 'OLD-1', 'Old room')`, [
     oldRoomOrg,
   ]);
@@ -560,6 +569,186 @@ try {
       "23514",
       "device_types_image_version_check",
     ),
+  );
+
+  // 10 device lifecycle (SIM-037.1)
+  const od = (await rows("select * from devices where id = $1", [oldDevice]))[0];
+  check(
+    "10 existing device keeps its owner after the lifecycle migration",
+    od.owner_id === oldMember &&
+      od.serial === null &&
+      od.manufacturer === null &&
+      od.brand === null &&
+      od.holding_note === null &&
+      od.holding_expires_on === null,
+  );
+  check(
+    "10 owner_id is nullable",
+    (
+      await rows(
+        `select 1 from pg_attribute where attrelid = 'devices'::regclass and attname = 'owner_id' and not attnotnull`,
+      )
+    ).length === 1,
+  );
+  // an unowned device; `col` (optional) is one extra column set to `val`
+  const unowned = (inv, col = "seat_id", val = null, role = "secondary") =>
+    q(
+      `insert into devices (org_id, name, type, inventory_number, owner_id, role, ${col})
+       values ($1, 'u', 't', $2, null, $3, $4)`,
+      [A.org, inv, role, val],
+    );
+  check("10 unowned device without a seat accepted", (await tx(unowned("U-1"), false)) === null);
+  check(
+    "10 unowned device at a seat refused (23514 devices_unowned_not_placed_check)",
+    refused(
+      await tx(unowned("U-2", "seat_id", freeSeatA)),
+      "23514",
+      "devices_unowned_not_placed_check",
+    ),
+  );
+  check(
+    "10 nulling the owner of a placed device refused (23514 devices_unowned_not_placed_check)",
+    refused(
+      await tx(
+        q(`update devices set owner_id = null where org_id = $1 and id = $2`, [
+          A.org,
+          a.uid("8", 2),
+        ]),
+      ),
+      "23514",
+      "devices_unowned_not_placed_check",
+    ),
+  );
+  check(
+    "10 unowned device with a holding note refused (23514 devices_unowned_no_holding_check)",
+    refused(
+      await tx(unowned("U-3", "holding_note", "lent")),
+      "23514",
+      "devices_unowned_no_holding_check",
+    ),
+  );
+  check(
+    "10 unowned device with an expiry refused (23514 devices_unowned_no_holding_check)",
+    refused(
+      await tx(unowned("U-4", "holding_expires_on", "2027-01-01")),
+      "23514",
+      "devices_unowned_no_holding_check",
+    ),
+  );
+  const ownedWith = (inv, col, v, org = A.org, owner = m1.id) =>
+    q(
+      `insert into devices (org_id, name, type, inventory_number, owner_id, ${col})
+       values ($1, 'o', 't', $2, $3, $4)`,
+      [org, inv, owner, v],
+    );
+  check(
+    "10 serial unique per org (23505 devices_org_serial_key)",
+    refused(
+      await tx(async () => {
+        await ownedWith("S-1", "serial", "SN-1")();
+        await ownedWith("S-2", "serial", "SN-1")();
+      }),
+      "23505",
+      "devices_org_serial_key",
+    ),
+  );
+  const bOwner = seedRows(B).members[0].id;
+  check(
+    "10 same serial in another org accepted",
+    (await tx(async () => {
+      await ownedWith("S-3", "serial", "SN-2")();
+      await ownedWith("S-3", "serial", "SN-2", B.org, bOwner)();
+    }, false)) === null,
+  );
+  for (const col of ["serial", "manufacturer", "brand"]) {
+    check(
+      `10 blank, untrimmed and 101-char ${col} refused (23514 devices_${col}_check)`,
+      refused(await tx(ownedWith("C-1", col, "")), "23514", `devices_${col}_check`) &&
+        refused(await tx(ownedWith("C-2", col, " x")), "23514", `devices_${col}_check`) &&
+        refused(await tx(ownedWith("C-3", col, "x".repeat(101))), "23514", `devices_${col}_check`),
+    );
+  }
+  check(
+    "10 blank holding note refused (23514 devices_holding_note_check)",
+    refused(await tx(ownedWith("C-4", "holding_note", " ")), "23514", "devices_holding_note_check"),
+  );
+
+  const insHandoff = (device, kind, to, status = "pending", newExpires = null, from = m1.id) =>
+    q(
+      `insert into device_handoffs (org_id, device_id, kind, from_member_id, to_member_id, requested_by_id, status,
+         new_expires_on, decided_at)
+       values ($1, $2, $3, $4, $5, $4, $6, $7, case when $6 = 'pending' then null else now() end)`,
+      [A.org, device, kind, from, to, status, newExpires],
+    );
+  const hDev = a.uid("8", 3); // owned by m2, not placed
+  check(
+    "10 second pending handoff refused (23505 device_handoffs_one_pending_idx)",
+    refused(
+      await tx(async () => {
+        await insHandoff(hDev, "return", null)();
+        await insHandoff(hDev, "transfer", m3.id)();
+      }),
+      "23505",
+      "device_handoffs_one_pending_idx",
+    ),
+  );
+  check(
+    "10 new pending handoff accepted after the old one is cancelled",
+    (await tx(async () => {
+      await insHandoff(hDev, "return", null, "cancelled")();
+      await insHandoff(hDev, "return", null)();
+    }, false)) === null,
+  );
+  check(
+    "10 cross-org handoff member refused (23503)",
+    refused(
+      await tx(insHandoff(hDev, "return", null, "pending", null, oldMember)),
+      "23503",
+      undefined,
+    ),
+  );
+  check(
+    "10 bad kind refused (23514 device_handoffs_kind_check)",
+    refused(await tx(insHandoff(hDev, "swap", null)), "23514", "device_handoffs_kind_check"),
+  );
+  check(
+    "10 bad status refused (23514 device_handoffs_status_check)",
+    refused(
+      await tx(insHandoff(hDev, "return", null, "rejected")),
+      "23514",
+      "device_handoffs_status_check",
+    ),
+  );
+  check(
+    "10 transfer without a recipient refused (23514 device_handoffs_shape_check)",
+    refused(await tx(insHandoff(hDev, "transfer", null)), "23514", "device_handoffs_shape_check"),
+  );
+  check(
+    "10 extension without a new expiry refused (23514 device_handoffs_shape_check)",
+    refused(await tx(insHandoff(hDev, "extension", null)), "23514", "device_handoffs_shape_check"),
+  );
+  check(
+    "10 decided status without decided_at refused (23514 device_handoffs_decided_check)",
+    refused(
+      await tx(
+        q(
+          `insert into device_handoffs (org_id, device_id, kind, from_member_id, requested_by_id, status)
+           values ($1, $2, 'return', $3, $3, 'confirmed')`,
+          [A.org, hDev, m1.id],
+        ),
+      ),
+      "23514",
+      "device_handoffs_decided_check",
+    ),
+  );
+  check(
+    "10 device delete cascades its non-pending handoffs",
+    (await tx(async () => {
+      await insHandoff(hDev, "return", null, "declined")();
+      await c.query(`delete from devices where org_id = $1 and id = $2`, [A.org, hDev]);
+      const left = await rows(`select 1 from device_handoffs where device_id = $1`, [hDev]);
+      if (left.length !== 0) throw new Error("handoff left");
+    }, false)) === null,
   );
 
   // extras

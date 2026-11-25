@@ -32,13 +32,15 @@ describe("devices-state helpers", () => {
     expect(emptyText("all")).toBe(shellCopy.pages.devices.empty);
     expect(emptyText("placed")).toBe(devicesCopy.empty.placed);
     expect(emptyText("inventory")).toBe(devicesCopy.empty.inventory);
+    expect(emptyText("unowned")).toBe(devicesCopy.empty.unowned);
   });
 
-  it("filterOptions: order all, placed, inventory with copy labels", () => {
+  it("filterOptions: order all, placed, inventory, unowned (Org inventory) with copy labels", () => {
     expect(filterOptions()).toEqual([
       { value: "all", label: "All" },
       { value: "placed", label: "Placed" },
       { value: "inventory", label: "Inventory" },
+      { value: "unowned", label: "Org inventory" },
     ]);
   });
 

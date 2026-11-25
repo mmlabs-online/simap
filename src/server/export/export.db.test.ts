@@ -62,6 +62,17 @@ describe("exportRows (db)", () => {
     ]);
   });
 
+  it("an unowned device row has empty Owner name and Owner employee code, Location inventory", async () => {
+    const a = await seed("u");
+    await addDevice(pool, a.orgId, null, null, "secondary");
+    const r = await exportRows(pool, a.scope, "devices");
+    expect(r.rows).toHaveLength(2);
+    const row = r.rows.find((x) => x[7] === "inventory")!;
+    expect(row[5]).toBeNull();
+    expect(row[6]).toBeNull();
+    expect(row[9]).toBeNull();
+  });
+
   it("cap: more rows than the cap are cut and flagged", async () => {
     const a = await seed("c");
     const r = await exportRows(pool, a.scope, "seats", 1);

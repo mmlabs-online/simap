@@ -67,7 +67,7 @@ export async function addSeat(
 export async function addDevice(
   db: Q,
   orgId: string,
-  ownerId: string,
+  ownerId: string | null,
   seatId: string | null,
   role: "primary" | "secondary",
 ): Promise<string> {
@@ -75,6 +75,21 @@ export async function addDevice(
     `insert into devices (org_id, name, type, inventory_number, owner_id, seat_id, role)
      values ($1, 'Laptop', 'laptop', $2, $3, $4, $5) returning id`,
     [orgId, randomUUID(), ownerId, seatId, role],
+  );
+  return rows[0].id;
+}
+
+export async function addHandoff(
+  db: Q,
+  orgId: string,
+  deviceId: string,
+  fromId: string,
+  status: "pending" | "confirmed" | "declined" | "cancelled",
+): Promise<string> {
+  const { rows } = await db.query(
+    `insert into device_handoffs (org_id, device_id, kind, from_member_id, requested_by_id, status, decided_at)
+     values ($1, $2, 'return', $3, $3, $4, case when $4 = 'pending' then null else now() end) returning id`,
+    [orgId, deviceId, fromId, status],
   );
   return rows[0].id;
 }

@@ -114,7 +114,7 @@ describe("devices routes", () => {
 
 describe("devices write routes", () => {
   const create = { name: "Laptop", type: "Laptop", inventoryNumber: "INV-1" };
-  const createValue = { ...create, mac: null, ownerId: null };
+  const createValue = { ...create, mac: null };
 
   it("POST 201, PATCH 200, DELETE 204 call the service with ctx.scope, ctx.sub, ctx.tier; all no-store", async () => {
     fakeAuth(["simap:manager"]);
@@ -150,6 +150,9 @@ describe("devices write routes", () => {
     });
     expect((await POST(badJson, noParams)).status).toBe(400);
     expect((await POST(req("POST", undefined, { name: "x" }), noParams)).status).toBe(400);
+    expect(
+      (await POST(req("POST", undefined, { ...create, ownerId: SEAT }), noParams)).status,
+    ).toBe(400);
     expect((await PATCH(req("PATCH", undefined, { ownerId: SEAT }), idRoute)).status).toBe(400);
     expect((await PATCH(req("PATCH", undefined, {}), idRoute)).status).toBe(400);
     for (const f of Object.values(svc)) expect(f).not.toHaveBeenCalled();
@@ -157,13 +160,19 @@ describe("devices write routes", () => {
 
   it("refusal -> apiError(status, code)", async () => {
     fakeAuth(["simap:user"]);
-    svc.deleteDevice.mockResolvedValue({ ok: false, status: 409, code: "device_placed" });
+    svc.deleteDevice.mockResolvedValue({ ok: false, status: 409, code: "handoff_pending" });
+    svc.placeDevice.mockResolvedValue({ ok: false, status: 422, code: "device_unowned" });
     svc.createDevice.mockResolvedValue({ ok: false, status: 409, code: "mac_taken" });
     svc.updateDevice.mockResolvedValue({ ok: false, status: 422, code: "not_allowed" });
     const d = await DELETE(req("DELETE"), idRoute);
     const c = await POST(req("POST", undefined, create), noParams);
     const u = await PATCH(req("PATCH", undefined, { name: "x" }), idRoute);
-    expect([d.status, await d.json()]).toEqual([409, { error: { code: "device_placed" } }]);
+    expect([d.status, await d.json()]).toEqual([409, { error: { code: "handoff_pending" } }]);
+    const p = await PUT(req("PUT", undefined, okPut), idRoute);
+    expect([p.status, await p.json()]).toEqual([422, { error: { code: "device_unowned" } }]);
+    svc.deleteDevice.mockResolvedValue({ ok: false, status: 409, code: "device_owned" });
+    const o = await DELETE(req("DELETE"), idRoute);
+    expect([o.status, await o.json()]).toEqual([409, { error: { code: "device_owned" } }]);
     expect([c.status, await c.json()]).toEqual([409, { error: { code: "mac_taken" } }]);
     expect([u.status, await u.json()]).toEqual([422, { error: { code: "not_allowed" } }]);
   });

@@ -16,6 +16,7 @@ describe("parseDeviceQuery", () => {
     expect(q("")).toEqual({ ok: true, value: "all" });
     expect(q("placement=placed")).toEqual({ ok: true, value: "placed" });
     expect(q("placement=inventory")).toEqual({ ok: true, value: "inventory" });
+    expect(q("placement=unowned")).toEqual({ ok: true, value: "unowned" });
     expect(q("placement=")).toEqual({ ok: true, value: "all" });
     expect(q("x=1")).toEqual({ ok: true, value: "all" });
     expect(q("placement=nope")).toEqual({ ok: false, field: "placement" });
@@ -114,14 +115,14 @@ describe("normalizeMac", () => {
 const base = { name: "Máy in tầng 3", type: "Printer", inventoryNumber: "INV-1" };
 
 describe("validateDeviceCreate", () => {
-  it("trims, keeps diacritics, defaults mac and ownerId to null", () => {
+  it("trims, keeps diacritics, defaults mac to null", () => {
     expect(validateDeviceCreate({ ...base, name: "  Máy in tầng 3 " })).toEqual({
       ok: true,
-      value: { ...base, mac: null, ownerId: null },
+      value: { ...base, mac: null },
     });
-    expect(validateDeviceCreate({ ...base, mac: "AA-BB-CC-DD-EE-FF", ownerId: A })).toEqual({
+    expect(validateDeviceCreate({ ...base, mac: "AA-BB-CC-DD-EE-FF" })).toEqual({
       ok: true,
-      value: { ...base, mac: "aa:bb:cc:dd:ee:ff", ownerId: A },
+      value: { ...base, mac: "aa:bb:cc:dd:ee:ff" },
     });
     expect(validateDeviceCreate({ ...base, mac: " " }).ok).toBe(true);
     expect(validateDeviceCreate({ ...base, mac: null }).ok).toBe(true);
@@ -140,7 +141,7 @@ describe("validateDeviceCreate", () => {
     expect(validateDeviceCreate({ ...base, inventoryNumber: "a".repeat(61) }).ok).toBe(false);
   });
 
-  it("rejects blank, control or format characters, missing fields, bad ids, unknown keys, bad bodies", () => {
+  it("rejects blank, control or format characters, missing fields, ownerId as an unknown key, unknown keys, bad bodies", () => {
     expect(validateDeviceCreate({ ...base, name: "   " }).ok).toBe(false);
     for (const bad of ["a\nb", "a\tb", "a​b"]) {
       expect(validateDeviceCreate({ ...base, name: bad }).ok).toBe(false);
@@ -152,7 +153,7 @@ describe("validateDeviceCreate", () => {
     expect(validateDeviceCreate({ name: "x", inventoryNumber: "1" }).ok).toBe(false);
     expect(validateDeviceCreate({ name: "x", type: "x" }).ok).toBe(false);
     expect(validateDeviceCreate({ ...base, mac: "nope" })).toEqual({ ok: false, field: "mac" });
-    expect(validateDeviceCreate({ ...base, ownerId: A.toUpperCase() })).toEqual({
+    expect(validateDeviceCreate({ ...base, ownerId: A })).toEqual({
       ok: false,
       field: "ownerId",
     });

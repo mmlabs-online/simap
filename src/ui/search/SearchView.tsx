@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { DeviceHit, MemberHit, SeatHit } from "@/lib/search/types";
 import { apiErrorMessage } from "../copy/api";
+import { devicesCopy } from "../copy/devices";
 import { searchCopy as copy } from "../copy/search";
 import { Button } from "../Button";
 import { Card } from "../Card";
@@ -50,7 +51,7 @@ function DeviceRow({ hit }: { hit: DeviceHit }) {
       </Link>
       <span className={META}>{hit.inventoryNumber}</span>
       {hit.mac !== null && <span className={META}>{copy.mac(hit.mac)}</span>}
-      <span className="text-on-surface">{hit.owner.displayName}</span>
+      <span className="text-on-surface">{hit.owner?.displayName ?? devicesCopy.orgInventory}</span>
       <span className={META}>
         {hit.placement
           ? copy.placement(hit.placement.roomCode, hit.placement.seatCode)

@@ -33,7 +33,7 @@ export function primaryRefusal(d: DeviceDto, seat: SeatDto): PlacementRefusalCod
     tier: "user",
     isOwner: true,
     deviceId: d.id,
-    ownerId: d.owner.id,
+    ownerId: d.owner?.id ?? null,
     current: { seatId: d.placement?.seatId ?? null, role: d.placement?.role ?? "secondary" },
     expectedSeatId: d.placement?.seatId ?? null,
     target: seatTarget(seat),
@@ -47,7 +47,7 @@ export function offeredRoles(d: DeviceDto, seat: SeatDto): DeviceRole[] {
 }
 
 export function placeVerb(d: DeviceDto, seat: SeatDto | null): "place" | "move" | "lend" {
-  if (seat?.occupant && seat.occupant.id !== d.owner.id) return "lend";
+  if (seat?.occupant && seat.occupant.id !== d.owner?.id) return "lend";
   return d.placement ? "move" : "place";
 }
 
@@ -79,7 +79,7 @@ export function planSubmit(
     tier: "user",
     isOwner: true,
     deviceId: d.id,
-    ownerId: d.owner.id,
+    ownerId: d.owner?.id ?? null,
     current: { seatId: d.placement?.seatId ?? null, role: d.placement?.role ?? "secondary" },
     expectedSeatId: d.placement?.seatId ?? null,
     target: seatTarget(seat),

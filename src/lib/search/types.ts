@@ -16,7 +16,7 @@ export type DeviceHit = {
   name: string;
   inventoryNumber: string;
   mac: string | null;
-  owner: { id: string; displayName: string };
+  owner: { id: string; displayName: string } | null;
   placement: DevicePlacementDto | null;
 };
 export type MemberHit = {

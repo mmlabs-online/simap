@@ -24,6 +24,7 @@ const base: DeviceDto = {
   mine: false,
   canEdit: false,
   canPlace: false,
+  canDelete: false,
 };
 const secondary: DeviceDto = {
   ...base,
@@ -82,7 +83,7 @@ describe("DevicesView rows", () => {
     const html = render();
     expect(html).toContain(`<caption class="sr-only">${devicesCopy.caption}</caption>`);
     expect(html.match(/<th scope="col"/g)).toHaveLength(6);
-    expect(html.match(/<button/g)).toHaveLength(3); // only the filter chips
+    expect(html.match(/<button/g)).toHaveLength(4); // only the filter chips
     expect(html).not.toMatch(/Edit|Delete|Move to/);
   });
 });
@@ -110,10 +111,10 @@ describe("DevicesView row actions", () => {
 });
 
 describe("DevicesView filter and states", () => {
-  it("renders three radios in a radiogroup with only the current one checked", () => {
+  it("renders four radios in a radiogroup with only the current one checked", () => {
     const html = render({ filter: "placed" });
     expect(html).toContain(`role="radiogroup" aria-label="${devicesCopy.filterLabel}"`);
-    expect(html.match(/role="radio"/g)).toHaveLength(3);
+    expect(html.match(/role="radio"/g)).toHaveLength(4);
     expect(html.match(/aria-checked="true"/g)).toHaveLength(1);
     expect(html).toMatch(/aria-checked="true"[^>]*>Placed</);
   });
@@ -161,12 +162,29 @@ describe("DevicesView create and edit entries", () => {
     });
     expect(html.match(/aria-label="Edit device INV-1"/g)).toHaveLength(2);
   });
-  it("Delete buttons on canEdit rows with aria-label 'Delete device <inv>'", () => {
+  it("unowned row shows Org inventory and no Place/Delete for a non-Admin", () => {
+    const unowned: DeviceDto = {
+      ...stored,
+      id: "d9",
+      owner: null,
+      mine: false,
+      canEdit: false,
+      canPlace: false,
+      canDelete: false,
+    };
+    const html = render({
+      devices: [unowned],
+      actions: { onPlace: noop, onDelete: noop, onEdit: noop },
+    });
+    expect(html).toContain(devicesCopy.orgInventory);
+    expect(html).not.toMatch(/Place device|Delete device|Edit device/);
+  });
+  it("Delete buttons on canDelete rows with aria-label 'Delete device <inv>'", () => {
     const html = render({
       actions: { onDelete: noop },
       devices: [
-        { ...base, canEdit: true },
-        { ...secondary, inventoryNumber: "INV-2", canEdit: false },
+        { ...base, canDelete: true },
+        { ...secondary, inventoryNumber: "INV-2", canEdit: true, canDelete: false },
       ],
     });
     expect(html.match(/aria-label="Delete device INV-1"/g)).toHaveLength(2);
