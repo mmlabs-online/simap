@@ -38,9 +38,10 @@ docs/spec-v1.md §6 DEV-11; slice 2 split from SIM-037.6 (its plan.md `## Split 
 - See SIM-037.6 plan.md `## Split proposal`. Starting transfer/return/extension depends on the handoff start bug fix (see SIM-037.6 PR #102).
 
 ## Test plan
-- Component: action gating, dialog open, refresh + notice + focus after done.
+- Pure helpers (`device-detail-actions.ts`, reducer events) + `renderToStaticMarkup` of `DeviceDetailView` for gating, dialog choice, notice and live region; the container's focus and call order are checked by code read and the manual walk. (Reworded from "Component: action gating, dialog open, refresh + notice + focus after done": Vitest runs in node with no DOM and jsdom is not allowed.)
 
 ## Notes / answers from Ming
 Split from SIM-037.6 by the planner (2026-11-25); added by the orchestrator, Ming to confirm.
 
 ## Handoff
+- 2026-11-25 implementer: reworded `## Test plan` as the plan asks (no DOM in Vitest). Ming to confirm.

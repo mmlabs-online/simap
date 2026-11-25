@@ -75,3 +75,67 @@ describe("historyReducer", () => {
     expect(late).toBe(reset);
   });
 });
+
+describe("refresh events", () => {
+  const readyDetail = detailReducer(detailReducer(INITIAL_DETAIL, { type: "load", id: 1 }), {
+    type: "loaded",
+    id: 1,
+    result: ok(device),
+  });
+  const fresh = { id: "d1", name: "Renamed" } as DeviceDto;
+
+  it("detail refresh: keeps status ready and the device while in flight; ok replaces; not_found -> notFound; other error keeps; stale dropped", () => {
+    const busy = detailReducer(readyDetail, { type: "refresh", id: 2 });
+    expect(busy).toMatchObject({ status: "ready", device, latest: 2 });
+    expect(detailReducer(busy, { type: "refreshed", id: 2, result: ok(fresh) })).toMatchObject({
+      status: "ready",
+      device: fresh,
+    });
+    expect(
+      detailReducer(busy, { type: "refreshed", id: 2, result: fail("not_found") }),
+    ).toMatchObject({ status: "notFound", device: null });
+    expect(detailReducer(busy, { type: "refreshed", id: 2, result: fail("unavailable") })).toBe(
+      busy,
+    );
+    expect(detailReducer(busy, { type: "refreshed", id: 1, result: ok(fresh) })).toBe(busy);
+  });
+
+  it("detail: a load (Retry) after a refresh drops the late refreshed answer", () => {
+    const busy = detailReducer(readyDetail, { type: "refresh", id: 2 });
+    const retry = detailReducer(busy, { type: "load", id: 3 });
+    expect(detailReducer(retry, { type: "refreshed", id: 2, result: ok(fresh) })).toBe(retry);
+  });
+
+  const readyHistory = (): HistoryState =>
+    historyReducer(historyReducer(INITIAL_HISTORY, { type: "load", id: 1 }), {
+      type: "loaded",
+      id: 1,
+      result: ok(pageOf(["a", "b"], "c1")),
+    });
+
+  it("history refresh: keeps items while in flight and clears loadingMore; ok replaces with page 1; error keeps; stale dropped", () => {
+    const more = historyReducer(readyHistory(), { type: "loadMore", id: 2 });
+    const busy = historyReducer(more, { type: "refresh", id: 3 });
+    expect(busy).toMatchObject({ status: "ready", loadingMore: false, moreError: false });
+    expect(busy.items).toHaveLength(2);
+    const done = historyReducer(busy, {
+      type: "refreshed",
+      id: 3,
+      result: ok({ items: [entry("n"), entry("a")], nextCursor: "c9", holderSince: "2026-01-01" }),
+    });
+    expect(done.items.map((i) => i.id)).toEqual(["n", "a"]);
+    expect(done).toMatchObject({ nextCursor: "c9", holderSince: "2026-01-01", status: "ready" });
+    expect(historyReducer(busy, { type: "refreshed", id: 3, result: fail("internal") })).toBe(busy);
+    expect(historyReducer(busy, { type: "refreshed", id: 2, result: ok(pageOf(["z"])) })).toBe(
+      busy,
+    );
+  });
+
+  it("history: a moreLoaded that started before a refresh is dropped", () => {
+    const more = historyReducer(readyHistory(), { type: "loadMore", id: 2 });
+    const busy = historyReducer(more, { type: "refresh", id: 3 });
+    expect(historyReducer(busy, { type: "moreLoaded", id: 2, result: ok(pageOf(["z"])) })).toBe(
+      busy,
+    );
+  });
+});

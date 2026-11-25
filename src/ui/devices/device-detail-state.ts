@@ -17,12 +17,21 @@ export const INITIAL_DETAIL: DetailState = {
 
 export type DetailEvent =
   | { type: "load"; id: number }
-  | { type: "loaded"; id: number; result: DevicesResult<DeviceDto> };
+  | { type: "loaded"; id: number; result: DevicesResult<DeviceDto> }
+  | { type: "refresh"; id: number }
+  | { type: "refreshed"; id: number; result: DevicesResult<DeviceDto> };
 
-/** An answer for an older request is ignored. A 404 is its own state, any other failure is an error with a Retry. */
+/**
+ * An answer for an older request is ignored. A 404 is its own state, any other failure is an error with a Retry.
+ * `refresh` keeps the data on screen; a failed `refreshed` (other than 404) keeps it too.
+ */
 export function detailReducer(state: DetailState, event: DetailEvent): DetailState {
   if (event.type === "load") return { ...INITIAL_DETAIL, latest: event.id };
+  if (event.type === "refresh") return { ...state, latest: event.id };
   if (event.id !== state.latest) return state;
+  if (event.type === "refreshed" && !event.result.ok && event.result.code !== "not_found") {
+    return state;
+  }
   if (event.result.ok) {
     return { status: "ready", device: event.result.value, errorCode: null, latest: state.latest };
   }
@@ -56,16 +65,22 @@ export type HistoryEvent =
   | { type: "load"; id: number }
   | { type: "loaded"; id: number; result: DevicesResult<DeviceHistoryPage> }
   | { type: "loadMore"; id: number }
-  | { type: "moreLoaded"; id: number; result: DevicesResult<DeviceHistoryPage> };
+  | { type: "moreLoaded"; id: number; result: DevicesResult<DeviceHistoryPage> }
+  | { type: "refresh"; id: number }
+  | { type: "refreshed"; id: number; result: DevicesResult<DeviceHistoryPage> };
 
-/** `load` resets (first page or Retry); `loadMore` appends. Any answer that is not for the latest request is dropped. */
+/** `load` resets (first page or Retry); `refresh` keeps the items until page 1 replaces them; `loadMore` appends. Any answer that is not for the latest request is dropped. */
 export function historyReducer(state: HistoryState, event: HistoryEvent): HistoryState {
   if (event.type === "load") return { ...INITIAL_HISTORY, latest: event.id };
   if (event.type === "loadMore") {
     return { ...state, loadingMore: true, moreError: false, latest: event.id };
   }
+  if (event.type === "refresh") {
+    return { ...state, loadingMore: false, moreError: false, latest: event.id };
+  }
   if (event.id !== state.latest) return state;
-  if (event.type === "loaded") {
+  if (event.type === "refreshed" && !event.result.ok) return state;
+  if (event.type === "loaded" || event.type === "refreshed") {
     return event.result.ok
       ? {
           ...INITIAL_HISTORY,
