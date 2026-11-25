@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | api, ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-25 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-25T08:19Z |
 | PR | — |
 
 ## Goal
@@ -46,7 +46,7 @@ docs/spec-v1.md §6 DEV-09; D63; OQ-44 (deactivated or removed owner).
 
 ## Notes / answers from Ming
 Ming 2026-11-25: "lên ticket và làm luôn".
-Waiting for Ming: plan approval (P1 gate) and the split (UI to SIM-037.10)
+Plan approved 2026-11-25 (Ming: "duyệt"), A1-A12 as written; split approved (UI to SIM-037.10).
 
 ## Handoff
 
