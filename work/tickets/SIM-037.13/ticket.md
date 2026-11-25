@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-25 |
 | Claimed by | — |
-| PR | — |
+| PR | #112 |
 
 ## Goal
 A viewer can act on a device from its detail page (transfer, return, assign, and the other actions their flags allow) without going back to the list.
