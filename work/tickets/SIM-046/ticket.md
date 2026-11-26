@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P3 |
 | Size | M |
 | Areas | api, db, ui, security |
