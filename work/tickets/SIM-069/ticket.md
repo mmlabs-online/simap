@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T16:34:17Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -66,5 +66,8 @@ header, summary tiles and one clean table of the member's devices, with the same
 
 ## Notes / answers from Ming
 - 2026-11-26: requested with the mockup image `mockup-my-devices.png`.
+
+- Plan approved (2026-11-26, batch 2026-11-26-7): Ming "duyệt hết, theo mặc định hết" — all batch questions 1–12 take their defaults.
+- Merge approved (2026-11-26, batch 2026-11-26-7): Ming "cho merge SIM-066, SIM-067, SIM-069".
 
 ## Handoff

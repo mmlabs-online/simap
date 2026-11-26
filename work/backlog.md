@@ -149,6 +149,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-064 | Layout editor warning for unreachable chairs | BACKLOG | P2 | S | ui, ux | SIM-061 | none | 0 | 2026-11-26 |
 | SIM-065 | Choose GitHub-hosted or macbook runner for simap workflows | MERGED | P2 | S | architecture, security | — | plan-approval | 1 | 2026-11-26 |
 | SIM-066 | Redesign My Portal → Profile layout and the portal tab bar | PLANNING | P2 | M | ui, ux | — | none | 0 | 2026-11-26 |
+| SIM-066.1 | Pixel character card polish (stage, Front/Back toggle, hairstyle cards) | BACKLOG | P2 | S | ui, ux | SIM-066 | none | 0 | 2026-11-26 |
 | SIM-067 | Redesign My Portal → My seat layout (seat cards and My requests list) | PLANNING | P2 | M | ui, ux | SIM-066 | none | 0 | 2026-11-26 |
 | SIM-068 | Redesign the sign-in page as a "small world" landing (Ming's mockup) | BLOCKED | P2 | M | ui, ux, security | — | none | 0 | 2026-11-26 |
 | SIM-069 | Redesign My Portal → My devices layout (summary tiles and device table) | PLANNING | P2 | M | ui, ux | SIM-066 | none | 0 | 2026-11-26 |
