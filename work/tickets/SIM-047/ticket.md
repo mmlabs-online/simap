@@ -57,3 +57,8 @@ derived from their account id.
 - Done: slice A: migration 20261126140000 (pixel_look jsonb + check), lib (validator, resolveLook, derivedChoice), /api/me/pixel-look, map draws stored look, schema-check section 12; review PASS attempt 1; PR #126.
 - In progress / next: Ming merges #125 first, then this branch is rebased (README bullet, schema-check 12→13) and #126 merged; SIM-047.1 (picker) after.
 - Gotchas: derived seed is members.id (not sub, spec wording follow-up); never run `pnpm migrate` locally at 140000 without 130000.
+
+### 2026-11-26 — claude — DONE (rebased after #125)
+- Agent calls: 0 (orchestrator rebase).
+- Done: rebased on main after SIM-046 (#125) merged. Conflicts resolved by keeping both sides: `db/migrations/README.md` (photo + pixel look bullets), `scripts/schema-check.mjs` (photo stays section 12, pixel look renumbered 12 → 13). Re-ran on the merged code: format:check, typecheck, check:layers (864 files), migrate:smoke, schema:check (22 section 12/13 cases pass), test (3282 passed, 9 skipped), test:db (335/335), build — all green.
+- In progress / next: Ming merges #126.
