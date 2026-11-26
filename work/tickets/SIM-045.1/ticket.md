@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T05:30Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/124 |
 
 ## Goal
 My Portal gets its My seat tab (slice B of SIM-045): the member sees the seats they occupy, their seat requests, and
@@ -49,3 +49,9 @@ slice B; consults in `work/tickets/SIM-045/`.
 ## Notes / answers from Ming
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 3 (planner×1 sonnet 66k, implementer×1 58k, reviewer×1 53k)
+- Done: My seat tab (default), seat list via /api/me → /api/members/<id> → /api/seats/<id>, release + cancel, empty state. Review PASS attempt 1. PR #124.
+- In progress / next: Ming merges PR #124.
+- Gotchas: SIM-046/SIM-047 also edit PortalPage.tsx / portal-state.ts (rebase hotspot).
