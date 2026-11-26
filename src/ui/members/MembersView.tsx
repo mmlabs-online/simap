@@ -135,7 +135,7 @@ export function MembersView(p: MembersViewProps) {
 function MemberRow({ m, p }: { m: MemberDto; p: MembersViewProps }) {
   const deactivated = m.status === "deactivated";
   const seatMore = moreCount(m.seatCount, m.seats.length);
-  const deviceMore = moreCount(m.deviceCount, m.devices.length);
+  const deviceMore = m.deviceCount === null ? 0 : moreCount(m.deviceCount, m.devices.length);
   return (
     <tr
       className={`border-b border-outline-variant last:border-b-0 ${deactivated ? "opacity-60" : ""}`}
@@ -170,7 +170,14 @@ function MemberRow({ m, p }: { m: MemberDto; p: MembersViewProps }) {
         )}
       </td>
       <td className={CELL}>
-        {m.deviceCount}
+        {m.deviceCount === null ? (
+          <>
+            <span aria-hidden="true">{membersCopy.hiddenDevices}</span>
+            <span className="sr-only">{membersCopy.hiddenDevicesLabel}</span>
+          </>
+        ) : (
+          m.deviceCount
+        )}
         {m.devices.length > 0 && (
           <ul className={REFS}>
             {m.devices.map((d) => (

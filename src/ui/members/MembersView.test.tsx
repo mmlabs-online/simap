@@ -66,6 +66,16 @@ const render = (p: Partial<MembersViewProps> = {}) =>
   );
 
 describe("MembersView", () => {
+  it("deviceCount null renders a dash and Not shown, no device refs, no +N more", () => {
+    const html = render({
+      items: [{ ...base, id: "3", displayName: "Hidden", deviceCount: null, devices: [] }],
+    });
+    expect(html).toContain(`>${membersCopy.hiddenDevices}<`);
+    expect(html).toContain(membersCopy.hiddenDevicesLabel);
+    expect(html).not.toContain("INV-1");
+    expect(html).not.toContain("more</li>");
+  });
+
   it("user sees no actions, no invitations section, accounts note present", () => {
     const html = render();
     expect(html).toContain(membersCopy.accountsNote.replace("'", "&#x27;"));

@@ -881,6 +881,38 @@ describe("getRoomLayout seatDevices (db)", () => {
     expect(JSON.stringify(res.seatDevices)).not.toMatch(/inventory|mac|owner|name/i);
   });
 
+  it("seatDevices for a User who holds none of them: only type and deviceType, no ids, names, inventory numbers, MAC or owner", async () => {
+    const o = await room();
+    const x = await addMember(pool, o.orgId);
+    const y = await addMember(pool, o.orgId);
+    const s = await addSeat(pool, o.orgId, o.roomId, "C302", 1, { occupantId: x });
+    const prim = await addDevice(pool, o.orgId, x, s, "primary");
+    const sec = await addDevice(pool, o.orgId, x, s, "secondary");
+    await setDevice(prim, "PC", "2026-01-01T00:00:00Z");
+    await setDevice(sec, "Monitor", "2026-01-02T00:00:00Z");
+    await run("update devices set mac = '00:11:22:33:44:55' where id = $1", [prim]);
+    await run("update devices set mac = '00:11:22:33:44:66' where id = $1", [sec]);
+    const ySub = (await one("select sub from members where id = $1", [y])).sub as string;
+    const res = await value(o, ySub);
+    const list = res.seatDevices[s]!;
+    expect(list).toHaveLength(2);
+    for (const e of list) {
+      expect(Object.keys(e).sort()).toEqual(["deviceType", "type"]);
+      expect(Object.keys(e.deviceType!).sort()).toEqual([
+        "hasImage",
+        "id",
+        "imageVersion",
+        "slot",
+        "sprite",
+      ]);
+    }
+    const json = JSON.stringify(res.seatDevices);
+    for (const secret of [prim, sec, x, "00:11:22:33:44:55", "00:11:22:33:44:66"])
+      expect(json).not.toContain(secret);
+    const inv = await one("select inventory_number from devices where id = $1", [prim]);
+    expect(json).not.toContain(inv.inventory_number);
+  });
+
   it("seatDevices: another org's devices, inventory devices and other rooms' devices are never returned", async () => {
     const a = await room();
     const ma = await addMember(pool, a.orgId);

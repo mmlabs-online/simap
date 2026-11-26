@@ -76,6 +76,8 @@ function SeatBody({ seat }: { seat: SeatDto }) {
           <ul>
             <Device device={primary} />
           </ul>
+        ) : hidden > 0 ? (
+          seatsCopy.panel.noneShown
         ) : (
           seatsCopy.panel.noPrimary
         )}
@@ -87,6 +89,8 @@ function SeatBody({ seat }: { seat: SeatDto }) {
               <Device key={d.id} device={d} />
             ))}
           </ul>
+        ) : hidden > 0 ? (
+          seatsCopy.panel.noneShown
         ) : (
           seatsCopy.panel.noSecondary
         )}

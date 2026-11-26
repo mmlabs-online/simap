@@ -34,6 +34,8 @@ afterAll(async () => {
   await pool.end();
 });
 
+const NOBODY = "99999999-9999-4999-8999-999999999999"; // manager-tier calls ignore the viewer sub
+
 const ok = <T>(r: { ok: true; value: T } | { ok: false; code?: string }): T => {
   if (!r.ok) throw new Error("expected ok, got " + JSON.stringify(r));
   return r.value;
@@ -197,7 +199,7 @@ describe("members manage (db)", () => {
     expect(ok(await reactivateMember(pool, w.scope, actorSub, w.target)).status).toBe("active");
     ok(await reactivateMember(pool, w.scope, actorSub, w.target));
     expect(await audits(w.orgId, "member.reactivate")).toHaveLength(1);
-    expect(ok(await getMember(pool, w.scope, w.target)).seatCount).toBe(0);
+    expect(ok(await getMember(pool, w.scope, NOBODY, "manager", w.target)).seatCount).toBe(0);
   });
 
   it("gate: deactivate makes dbMemberGate return deactivated; reactivate returns active on the next call", async () => {
@@ -291,8 +293,10 @@ describe("members manage (db)", () => {
       [ids[4]],
     );
 
-    const find = async (f: Partial<Parameters<typeof listMembers>[2]>) =>
-      (await listMembers(pool, a.scope, { status: "all", limit: 50, ...f })).items.map((i) => i.id);
+    const find = async (f: Partial<Parameters<typeof listMembers>[4]>) =>
+      (
+        await listMembers(pool, a.scope, NOBODY, "manager", { status: "all", limit: 50, ...f })
+      ).items.map((i) => i.id);
 
     expect(await find({})).toHaveLength(5);
     expect((await find({ q: "Nguyễn" })).sort()).toEqual([ids[0], ids[1], ids[2]].sort());
@@ -311,7 +315,7 @@ describe("members manage (db)", () => {
     let cursor: { k: string; id: string } | undefined;
     const { decodeMemberCursor } = await import("@/lib/members/cursor");
     for (let i = 0; i < 10; i++) {
-      const page = await listMembers(pool, a.scope, {
+      const page = await listMembers(pool, a.scope, NOBODY, "manager", {
         status: "all",
         limit: 2,
         ...(cursor && { cursor }),
@@ -327,14 +331,17 @@ describe("members manage (db)", () => {
     const room = await addRoom(pool, a.orgId, "BIG");
     for (let i = 1; i <= 22; i++)
       await addSeat(pool, a.orgId, room, "BIG", i, { occupantId: ids[0]! });
-    const big = (await listMembers(pool, a.scope, { status: "all", limit: 50 })).items.find(
-      (m) => m.id === ids[0],
-    )!;
+    const big = (
+      await listMembers(pool, a.scope, NOBODY, "manager", { status: "all", limit: 50 })
+    ).items.find((m) => m.id === ids[0])!;
     expect(big.seatCount).toBe(22);
     expect(big.seats).toHaveLength(20);
-    const full = ok(await getMember(pool, a.scope, ids[0]!));
+    const full = ok(await getMember(pool, a.scope, NOBODY, "manager", ids[0]!));
     expect(full.seats).toHaveLength(22);
-    expect(await getMember(pool, other.scope, ids[0]!)).toMatchObject({ ok: false, status: 404 });
+    expect(await getMember(pool, other.scope, NOBODY, "manager", ids[0]!)).toMatchObject({
+      ok: false,
+      status: 404,
+    });
   });
 
   it("invitations: only pending, unexpired, own org; empty table -> []", async () => {
@@ -407,5 +414,83 @@ describe("members manage (db)", () => {
     expect(
       await one("select status, decided_by_id from device_handoffs where id = $1", [h]),
     ).toEqual({ status: "cancelled", decided_by_id: w.target });
+  });
+});
+
+describe("members (db): device visibility", () => {
+  /** A (Nguyễn Văn Ân, 2 devices) and B (1 device, 1 seat). */
+  async function visWorld() {
+    const { orgId, scope } = newOrg();
+    const a = await addMember(pool, orgId);
+    const b = await addMember(pool, orgId);
+    await pool.query("update members set display_name = $2, employee_code = 'E-A' where id = $1", [
+      a,
+      "Nguyễn Văn Ân",
+    ]);
+    await pool.query(
+      "update members set display_name = 'Bình', employee_code = 'E-B' where id = $1",
+      [b],
+    );
+    const room = await addRoom(pool, orgId, "C1");
+    const bSeat = await addSeat(pool, orgId, room, "C1", 1, { occupantId: b });
+    await addDevice(pool, orgId, a, null, "secondary");
+    await addDevice(pool, orgId, a, null, "secondary");
+    await addDevice(pool, orgId, b, bSeat, "secondary");
+    return { orgId, scope, a, b, bSeat, aSub: await subOf(a) };
+  }
+  const f = { status: "all", limit: 50 } as const;
+
+  it("user A: own row full; B has deviceCount null and devices [] but seats and names unchanged", async () => {
+    const w = await visWorld();
+    const items = (await listMembers(pool, w.scope, w.aSub, "user", f)).items;
+    const a = items.find((m) => m.id === w.a)!;
+    const b = items.find((m) => m.id === w.b)!;
+    expect(a.deviceCount).toBe(2);
+    expect(a.devices).toHaveLength(2);
+    expect(a.displayName).toBe("Nguyễn Văn Ân");
+    expect(b.deviceCount).toBeNull();
+    expect(b.devices).toEqual([]);
+    expect(b.seatCount).toBe(1);
+    expect(b.seats).toEqual([{ id: w.bSeat, code: "C1-01" }]);
+    expect(b.displayName).toBe("Bình");
+    expect(b.employeeCode).toBe("E-B");
+  });
+
+  it("getMember as user: B null/[]; A full; filters and paging pick the same ids as manager", async () => {
+    const w = await visWorld();
+    const gb = ok(await getMember(pool, w.scope, w.aSub, "user", w.b));
+    expect(gb.deviceCount).toBeNull();
+    expect(gb.devices).toEqual([]);
+    expect(gb.seatCount).toBe(1);
+    const ga = ok(await getMember(pool, w.scope, w.aSub, "user", w.a));
+    expect(ga.deviceCount).toBe(2);
+    expect(ga.devices).toHaveLength(2);
+    for (const filter of [
+      { q: "binh" },
+      { q: "E-A" },
+      { limit: 1 },
+      { status: "active" as const },
+    ]) {
+      const u = await listMembers(pool, w.scope, w.aSub, "user", { ...f, ...filter });
+      const m = await listMembers(pool, w.scope, w.aSub, "manager", { ...f, ...filter });
+      expect(u.items.map((i) => i.id)).toEqual(m.items.map((i) => i.id));
+      expect(u.nextCursor).toEqual(m.nextCursor);
+    }
+  });
+
+  it("a user sub with no member row sees every row hidden; manager and admin see every row full", async () => {
+    const w = await visWorld();
+    const none = await listMembers(pool, w.scope, randomUUID(), "user", f);
+    expect(none.items).toHaveLength(2);
+    for (const m of none.items) {
+      expect(m.deviceCount).toBeNull();
+      expect(m.devices).toEqual([]);
+    }
+    for (const tier of ["manager", "admin"] as const) {
+      const r = await listMembers(pool, w.scope, randomUUID(), tier, f);
+      expect(r.items.find((m) => m.id === w.a)!.deviceCount).toBe(2);
+      expect(r.items.find((m) => m.id === w.b)!.deviceCount).toBe(1);
+      expect(r.items.find((m) => m.id === w.b)!.devices).toHaveLength(1);
+    }
   });
 });

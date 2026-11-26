@@ -92,6 +92,8 @@ describe("members routes: permissions (AC4, API)", () => {
     svc.getMember.mockResolvedValue({ ok: true, value: DTO });
     expect((await list.GET(req("GET", "http://x/api/members"), noParams)).status).toBe(200);
     expect((await detail.GET(req("GET"), idRoute)).status).toBe(200);
+    expect(svc.listMembers.mock.calls[0]!.slice(2, 4)).toEqual(["s1", "user"]);
+    expect(svc.getMember.mock.calls[0]!.slice(2)).toEqual(["s1", "user", ID]);
     const rs = [
       await detail.PATCH(req("PATCH", undefined, { displayName: "n" }), idRoute),
       await deactivate.POST(req("POST", undefined, { release: true }), idRoute),
@@ -110,6 +112,12 @@ describe("members routes: permissions (AC4, API)", () => {
 
   it("Manager passes the guard on every handler", async () => {
     fakeAuth(["simap:manager"]);
+    svc.listMembers.mockResolvedValue({ items: [], nextCursor: null, groups: [] });
+    svc.getMember.mockResolvedValue({ ok: true, value: DTO });
+    await list.GET(req("GET", "http://x/api/members"), noParams);
+    await detail.GET(req("GET"), idRoute);
+    expect(svc.listMembers.mock.calls[0]!.slice(2, 4)).toEqual(["s1", "manager"]);
+    expect(svc.getMember.mock.calls[0]!.slice(2, 4)).toEqual(["s1", "manager"]);
     svc.updateMember.mockResolvedValue({ ok: true, value: DTO });
     svc.deactivateMember.mockResolvedValue({ ok: true, value: DTO });
     svc.reactivateMember.mockResolvedValue({ ok: true, value: DTO });

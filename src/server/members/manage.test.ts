@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OrgScope } from "@/server/http/org-scope";
-import { deactivateMember, listMembers, updateMember } from "./manage";
+import { deactivateMember, getMember, listMembers, updateMember } from "./manage";
 
 const scope = { orgId: "11111111-1111-4111-8111-111111111111" } as OrgScope;
 const ACTOR = "22222222-2222-4222-8222-222222222222";
@@ -191,7 +191,11 @@ describe("listMembers", () => {
   it("binds q escaped, pages with limit + 1 and returns a cursor", async () => {
     const rows = [memberRow, { ...memberRow, id: GID }];
     const t = fakeDb((sql) => (sql.includes("json_agg") && sql.includes("limit $") ? rows : []));
-    const r = await listMembers(t.db, scope, { status: "active", limit: 1, q: "50%_" });
+    const r = await listMembers(t.db, scope, ACTOR, "manager", {
+      status: "active",
+      limit: 1,
+      q: "50%_",
+    });
     expect(r.items).toHaveLength(1);
     expect(r.nextCursor).not.toBeNull();
     const [sql, values] = t.calls[0]!;
@@ -202,7 +206,37 @@ describe("listMembers", () => {
   });
   it("folds q: Nguyễn binds %nguyen%", async () => {
     const t = fakeDb(() => []);
-    await listMembers(t.db, scope, { status: "active", limit: 1, q: "Nguyễn" });
+    await listMembers(t.db, scope, ACTOR, "manager", { status: "active", limit: 1, q: "Nguyễn" });
     expect(t.calls[0]![1]).toEqual([scope.orgId, "active", "%nguyen%", 2]);
+  });
+});
+
+describe("device visibility per tier (D69)", () => {
+  const WRAP = "case when coalesce(m.sub = $2::uuid, false) then";
+  it("listMembers user: sub is $2 and device_count/devices are wrapped; manager/admin unchanged", async () => {
+    const u = fakeDb(() => []);
+    await listMembers(u.db, scope, ACTOR, "user", { status: "active", limit: 1, q: "a" });
+    const [usql, uvalues] = u.calls[0]!;
+    expect(uvalues).toEqual([scope.orgId, ACTOR, "active", "%a%", 2]);
+    expect(usql.split(WRAP)).toHaveLength(3);
+    expect(usql).toContain("like $4 escape");
+    for (const tier of ["manager", "admin"] as const) {
+      const t = fakeDb(() => []);
+      await listMembers(t.db, scope, ACTOR, tier, { status: "active", limit: 1, q: "a" });
+      const [sql, values] = t.calls[0]!;
+      expect(values).toEqual([scope.orgId, "active", "%a%", 2]);
+      expect(sql).not.toContain("m.sub");
+      expect(sql).not.toContain("case when");
+    }
+  });
+  it("getMember user binds the sub as $3; manager binds only the id", async () => {
+    const u = fakeDb(() => [memberRow]);
+    await getMember(u.db, scope, ACTOR, "user", MID);
+    expect(u.calls[0]![1]).toEqual([scope.orgId, MID, ACTOR]);
+    expect(u.calls[0]![0]).toContain("case when coalesce(m.sub = $3::uuid, false) then");
+    const m = fakeDb(() => [memberRow]);
+    await getMember(m.db, scope, ACTOR, "manager", MID);
+    expect(m.calls[0]![1]).toEqual([scope.orgId, MID]);
+    expect(m.calls[0]![0]).not.toContain("m.sub");
   });
 });

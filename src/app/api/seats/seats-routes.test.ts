@@ -107,6 +107,22 @@ describe("seats routes: permissions", () => {
     expect((await GET(plain("GET"), idRoute)).status).toBe(200);
     expect((await roomGET(plain("GET"), idRoute)).status).toBe(200);
     expect((await releasePOST(plain("POST"), idRoute)).status).toBe(200);
+    expect(svc.getSeat.mock.calls[0]!.slice(2)).toEqual(["s1", "user", ID]);
+    expect(svc.listRoomSeats.mock.calls[0]!.slice(2)).toEqual(["s1", "user", ID]);
+    expect(svc.releaseSeat.mock.calls[0]!.slice(2)).toEqual(["s1", "user", ID]);
+  });
+
+  it("Manager: GET seat, GET room seats and release pass the manager tier", async () => {
+    fakeAuth(["simap:manager"]);
+    svc.getSeat.mockResolvedValue({ ok: true, value: { id: ID } });
+    svc.listRoomSeats.mockResolvedValue({ ok: true, value: { items: [] } });
+    svc.releaseSeat.mockResolvedValue({ ok: true, value: { id: ID } });
+    await GET(plain("GET"), idRoute);
+    await roomGET(plain("GET"), idRoute);
+    await releasePOST(plain("POST"), idRoute);
+    expect(svc.getSeat.mock.calls[0]!.slice(2)).toEqual(["s1", "manager", ID]);
+    expect(svc.listRoomSeats.mock.calls[0]!.slice(2)).toEqual(["s1", "manager", ID]);
+    expect(svc.releaseSeat.mock.calls[0]!.slice(2)).toEqual(["s1", "manager", ID]);
   });
 });
 
