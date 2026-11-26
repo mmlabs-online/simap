@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P2 |
 | Size | S |
 | Areas | architecture, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T13:10:50Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -60,4 +60,12 @@ home server's `[self-hosted, macbook-runner]`, so work is not blocked when the M
 - 2026-11-26: choose by repo variable plus manual run input; default (unset) is GitHub-hosted `ubuntu-latest`;
   release is included.
 
+Waiting for Ming: plan approval (High tier)
+
 ## Handoff
+
+### 2026-11-26 — claude — BLOCKED
+- Agent calls: 2 (software-architect×1 53k, planner×1 57k; default models)
+- Done: consult and plan (READY); plan gate (High path `.github/workflows/release.yml`); M-89 added.
+- In progress / next: Ming approves the plan (A1–A4) → implement.
+- Gotchas: ci.yml job `if:` guards must allow workflow_dispatch or a manual run shows green with all jobs skipped.
