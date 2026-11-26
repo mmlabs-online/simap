@@ -57,7 +57,9 @@ describe("ProfilePhotoSection", () => {
 
   it("file input accepts image/* and sits inside its label; the hint is shown", () => {
     const html = render();
-    expect(html).toMatch(/<label[^>]*>[^<]*<input[^>]*accept="image\/\*"/);
+    expect(html).toMatch(
+      /<label[^>]*>(?:<span[^>]*>[^<]*<\/span>)?[^<]*<input[^>]*accept="image\/\*"/,
+    );
     expect(html).toContain(copy.hint);
   });
 

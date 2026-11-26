@@ -1,9 +1,10 @@
 import { Avatar } from "../Avatar";
+import { Icon } from "../Icon";
 import { portalCopy } from "../copy/portal";
 
 const copy = portalCopy.profile.photo;
 const BTN =
-  "inline-flex items-center rounded-full bg-secondary-container text-on-secondary-container px-3 py-1.5 text-sm font-bold cursor-pointer focus-within:ring-2 focus-within:ring-primary";
+  "inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface text-on-surface px-4 py-2 text-sm font-bold cursor-pointer hover:border-outline focus-within:ring-2 focus-within:ring-primary";
 
 export type ProfilePhotoSectionProps = {
   name: string;
@@ -37,37 +38,39 @@ export function ProfilePhotoSection({
           : copy.upload;
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-sm font-extrabold text-on-surface">{copy.heading}</h3>
-      <div className="flex items-center gap-3">
-        <Avatar name={name} src={url} size={80} />
-        <div className="flex flex-wrap items-center gap-2">
-          <label className={BTN}>
-            {label}
-            <input
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              disabled={busy !== null}
-              onChange={(e) => {
-                const file = e.currentTarget.files?.[0];
-                e.currentTarget.value = "";
-                if (file) onPick(file);
-              }}
-            />
-          </label>
-          {url && (
-            <button
-              type="button"
-              disabled={busy !== null}
-              onClick={onRemove}
-              className="text-sm font-bold text-error px-2 py-1.5"
-            >
-              {busy === "remove" ? copy.removing : copy.remove}
-            </button>
-          )}
+      <div className="flex items-center gap-4">
+        <Avatar name={name} src={url} size={72} />
+        <div className="flex flex-col items-start gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <label className={BTN}>
+              <Icon name="upload" size={18} />
+              {label}
+              <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={busy !== null}
+                onChange={(e) => {
+                  const file = e.currentTarget.files?.[0];
+                  e.currentTarget.value = "";
+                  if (file) onPick(file);
+                }}
+              />
+            </label>
+            {url && (
+              <button
+                type="button"
+                disabled={busy !== null}
+                onClick={onRemove}
+                className="text-sm font-bold text-error px-2 py-1.5"
+              >
+                {busy === "remove" ? copy.removing : copy.remove}
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-on-surface-variant">{copy.hint}</p>
         </div>
       </div>
-      <p className="text-xs text-on-surface-variant">{copy.hint}</p>
       {status === "failed" && <p className="text-xs text-on-surface-variant">{copy.loadFailed}</p>}
       {error && (
         <p role="alert" className="text-xs font-medium text-error">

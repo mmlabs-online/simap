@@ -8,11 +8,12 @@ import { Icon } from "./Icon";
  */
 export function FilledInput({
   icon = "search",
+  trailingIcon,
   className = "",
   id,
   "aria-label": ariaLabel,
   ...rest
-}: { icon?: IconName } & InputHTMLAttributes<HTMLInputElement>) {
+}: { icon?: IconName; trailingIcon?: IconName } & InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div
       className={[
@@ -30,6 +31,7 @@ export function FilledInput({
         className="flex-1 min-w-0 bg-transparent outline-none text-sm font-medium text-on-surface placeholder:text-on-surface-variant"
         {...rest}
       />
+      {trailingIcon && <Icon name={trailingIcon} size={18} className="text-on-surface-variant" />}
     </div>
   );
 }

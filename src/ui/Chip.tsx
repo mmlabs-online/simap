@@ -79,3 +79,32 @@ export function Chip({
     </span>
   );
 }
+
+const PILL_TONES = {
+  accent: "bg-primary-container text-on-primary-container",
+  neutral: "bg-surface-high text-on-surface-variant",
+  success: "bg-tertiary-container text-on-tertiary-container",
+} as const;
+
+/** A small rounded label. `decorative` hides it from assistive tech. */
+export function Pill({
+  label,
+  tone = "neutral",
+  icon,
+  decorative,
+}: {
+  label: string;
+  tone?: keyof typeof PILL_TONES;
+  icon?: IconName;
+  decorative?: boolean;
+}) {
+  return (
+    <span
+      aria-hidden={decorative ? true : undefined}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${PILL_TONES[tone]}`}
+    >
+      {icon && <Icon name={icon} size={12} />}
+      {label}
+    </span>
+  );
+}

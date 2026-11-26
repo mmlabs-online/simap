@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { portalCopy } from "../copy/portal";
 import { PortalTabs } from "./PortalTabs";
-import { PORTAL_TABS, panelId, tabId, type PortalTab } from "./portal-state";
+import { PORTAL_TABS, PORTAL_TAB_ICONS, panelId, tabId, type PortalTab } from "./portal-state";
 
 const render = (active: PortalTab) =>
   renderToStaticMarkup(<PortalTabs tabs={PORTAL_TABS} active={active} onSelect={() => {}} />);
@@ -28,5 +28,18 @@ describe("PortalTabs", () => {
     expect(order).toEqual([...order].sort((a, b) => a - b));
     expect(order.every((i) => i >= 0)).toBe(true);
     expect(html).toContain(portalCopy.tabs.devices);
+  });
+
+  it("each tab has its PORTAL_TAB_ICONS icon; only Profile shows the You chip; selected tab has text-primary", () => {
+    const html = render("devices");
+    const tab = (t: PortalTab) =>
+      html.match(new RegExp(`<button[^>]*id="portal-tab-${t}"[^>]*>.*?</button>`))![0];
+    for (const t of PORTAL_TABS) {
+      expect(tab(t)).toContain(`>${PORTAL_TAB_ICONS[t]}</span>`);
+      expect(tab(t).includes(portalCopy.tabChips.profile!)).toBe(t === "profile");
+    }
+    expect(tab("profile")).toMatch(/<span[^>]*aria-hidden="true"[^>]*>You<\/span>/);
+    expect(tab("devices")).toContain("text-primary");
+    expect(tab("seat")).not.toContain("text-primary");
   });
 });
