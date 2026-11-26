@@ -118,12 +118,12 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | BUG-004 | manage.db deactivate test expects the old audit meta (no cancelledHandoffs) | MERGED | P1 | XS | db | — | none | 0 | 2026-11-26 |
 | BUG-005 | map-items list order differs between Postgres collation and the test's JS sort | MERGED | P1 | XS | db, api | — | none | 0 | 2026-11-26 |
 | BUG-006 | CI `image` job always fails at `compose config` on the self-hosted runner (false positive on /Users/mingming) | MERGED | P1 | XS | security | — | none | 0 | 2026-11-26 |
-| SIM-041 | Let an app-wide simap admin access every org | BACKLOG | P2 | M | security, api, architecture | — | plan-approval | 0 | 2026-11-26 |
-| SIM-042 | Restrict User device visibility and add a "my devices" API | BACKLOG | P1 | M | api, architecture, security | — | plan-approval | 0 | 2026-11-26 |
-| SIM-043 | My Portal part 1: My seat, My devices, display name | BACKLOG | P2 | M | ui, ux | SIM-042 | none | 0 | 2026-11-26 |
-| SIM-044 | Profile photo upload | BACKLOG | P3 | M | api, db, ui, security | SIM-043 | plan-approval | 0 | 2026-11-26 |
-| SIM-045 | Pixel character customisation | BACKLOG | P3 | M | db, api, ui, ux | SIM-043 | plan-approval | 0 | 2026-11-26 |
-| SIM-046 | A User places devices only on seats they occupy | BACKLOG | P2 | S | api, security | — | none | 0 | 2026-11-26 |
+| SIM-043 | Let an app-wide simap admin access every org | BACKLOG | P2 | M | security, api, architecture | — | plan-approval | 0 | 2026-11-26 |
+| SIM-044 | Restrict User device visibility and add a "my devices" API | BACKLOG | P1 | M | api, architecture, security | — | plan-approval | 0 | 2026-11-26 |
+| SIM-045 | My Portal part 1: My seat, My devices, display name | BACKLOG | P2 | M | ui, ux | SIM-044 | none | 0 | 2026-11-26 |
+| SIM-046 | Profile photo upload | BACKLOG | P3 | M | api, db, ui, security | SIM-045 | plan-approval | 0 | 2026-11-26 |
+| SIM-047 | Pixel character customisation | BACKLOG | P3 | M | db, api, ui, ux | SIM-045 | plan-approval | 0 | 2026-11-26 |
+| SIM-048 | A User places devices only on seats they occupy | BACKLOG | P2 | S | api, security | — | none | 0 | 2026-11-26 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.
 

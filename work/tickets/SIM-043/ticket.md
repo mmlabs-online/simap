@@ -1,58 +1,75 @@
-# SIM-043: My Portal part 1: My seat, My devices, display name
+# SIM-043: Let an app-wide simap admin access every org
 
 | Field | Value |
 |---|---|
 | State | BACKLOG |
 | Priority | P2 |
 | Size | M |
-| Areas | ui, ux |
-| Gate | none |
-| Depends on | SIM-042 |
-| Needs Ming | — |
+| Areas | security, api, architecture |
+| Gate | plan-approval |
+| Depends on | — |
+| Needs Ming | M-83, M-84 |
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
 | PR | — |
 
 ## Goal
-Every member has one page, My Portal, with three horizontal tabs showing their own seat, the devices they hold and
-their profile, so a User no longer needs the org Devices page.
+An account that holds an app-wide simap admin role in Identity can open and manage any org in simap without being
+added to each org as a member, so mmlabs staff can support every org from one account.
 
 ## Scope reference
-`docs/spec-v1.md` POR-01 to POR-04, SHL-01; decision D70. Open questions with proposed defaults: OQ-54 (home page:
-Dashboard stays home, My Portal is a nav entry), OQ-59 (badge moves to My Portal for Users).
+**None fits; this conflicts with the spec.** `docs/spec-v1.md` §2 *Roles*: "org data is never authorized from `roles`";
+`simap:member` (app scope) "grants no org access"; §2 "Super Admin … simap has no Super Admin screen of its own";
+AUT-02 "A valid token without `org` or without a simap org role gets 403 on org routes". Decisions D5, D10, D14 and
+rule R6 ("roles come only from `org_roles`"). The ticket can only run after Ming records a new decision that
+supersedes these points (M-83) and Identity can mint such tokens (M-84). Raised by Ming's team on 2026-11-26
+("admin với permission app-wide … đúng ra phải access được tất cả org").
 
 ## Scope
-- New page `/portal` (name per plan) with tabs My seat, My devices, Profile, addressable by `?tab=`.
-- My seat: occupied seats, "View on map", my requests with cancel, release seat, empty state.
-- My devices: list from the "my devices" endpoint, existing owner actions, "Waiting for my confirmation", overdue banner.
-- Profile: display name edit (existing API), email and role read-only "managed in mmlabs".
-- Nav entry for every tier and the badge per OQ-59. Copy in `src/ui/copy/portal.ts` (D36).
+- Read one app-scope role from the verified token's `roles` claim (key fixed by the M-83 decision, e.g.
+  `simap:superadmin`), with exact-key matching like `tierFromOrgRoles`.
+- In `withAuth`, a token with `org` and that role gets the admin tier in that org even if `org_roles` holds no simap
+  role. The org scope still comes only from the verified `org` claim.
+- Member gate and `/api/me` for an account with no `members` row in the org: behaviour per M-83 (create a member row
+  on first visit, or a virtual member that is not listed).
+- Audit every request (or at least every write) that is authorized only by the app-wide role, with the actor's `sub`.
+- Org picker: list every org for such an account, as far as Identity returns them (M-84).
 
 ## Out of scope
-- Profile photo (SIM-044) and pixel character (SIM-045).
-- New APIs or migrations (reuse SIM-042 and existing endpoints).
+- The org-admin-api change itself (minting org tokens for non-members, listing all orgs): M-84, another repo.
+- A simap screen to create orgs or appoint admins (D10 stays).
+- Changes to how normal `org_roles` tiers work.
 
 ## Acceptance criteria
-- [ ] My Portal is in the nav for every tier; three horizontal, keyboard-operable tabs, addressable by URL, default
-  My seat; works at 390 px.
-- [ ] My seat lists the member's seats with "View on map" (opens `/rooms/<code>` with the seat selected), their requests
-  with cancel for pending ones, release seat after confirmation, and an empty state linking to Rooms.
-- [ ] My devices lists held devices with placement, expiry and Overdue, offers only the actions the rules allow, and
-  shows "Waiting for my confirmation" with Confirm / Decline.
-- [ ] Profile edits the display name with the existing validation; email and role are read-only.
-- [ ] Only the caller's own data shows; a deactivated member gets the same refusal as other org pages.
-- [ ] Unit tests for the tab state / URL parsing and the per-device action rules.
+- [ ] A token with `org` = X, the app-wide role in `roles`, and no simap role in `org_roles` gets the admin tier in org X
+  (route tests: an admin-tier route returns 2xx, not 403 `forbidden`).
+- [ ] Any other value in `roles` (including `simap:member`, `simap:admin` in app scope, or a near-miss key) still grants
+  nothing: the same token gets 403 `forbidden`, as today.
+- [ ] The app-wide role never widens scope: every query still uses `ctx.scope` from the verified `org` claim, and a
+  token without `org` still gets 403 `org_required`.
+- [ ] A request authorized only by the app-wide role writes an audit row in org X naming the actor `sub` and marking the
+  cross-org access (shape per plan).
+- [ ] The member gate and `/api/me` behave as M-83 decides for an app-wide admin with no `members` row; a deactivated
+  member row still gives 403 `member_deactivated`.
+- [ ] Spec §2, AUT-02, AUT-04 and `CLAUDE.md` R6 are updated to match the new decision.
 
 ## Technical notes
-- Files: `src/app/(app)/portal/page.tsx`, `src/ui/portal/**`, `src/ui/copy/portal.ts`, `src/ui/AppShellView.tsx`,
-  reuse `src/ui/devices/**`, `src/ui/requests/**`, `src/ui/seats/**`, `src/ui/org/profile-form.ts`.
-- Risks / open questions: size may grow past M; if so the planner proposes SIM-043.1 / .2 (e.g. My devices separate).
+- Files: `src/server/identity/verify.ts` (today: "`roles` (app scope) is never read"), `src/server/http/with-auth.ts`,
+  `src/lib/auth/tier.ts`, `src/server/members/gate.ts`, `src/server/members/members.ts`, `src/server/audit/*`,
+  route tests (`with-auth.test.ts`, `verify.test.ts`), `docs/spec-v1.md`, `CLAUDE.md`.
+- High paths: `src/server/identity/**`, `src/server/http/**` → plan approval required.
+- Risks / open questions: (1) Identity must refuse to put the app-wide role in `roles` for anyone but staff; simap trusts
+  the claim. (2) Does the app-wide admin appear in the org's member list, seat assignment and dashboards? (3) Should the
+  app-wide admin be read-only by default? (4) `apiFetch` re-mint on 403 must not loop when Identity refuses the org.
 
 ## Test plan
-- Unit: tab parsing, action visibility rules, badge count.
-- Manual: User and Manager at desktop and 390 px; each action from My devices.
+- Unit: `verify.test.ts` (roles parsing, invalid shapes fail closed), `tier.test.ts`, `with-auth.test.ts` (grant, no
+  grant, no `org`, deactivated row, audit call).
+- Manual: with a staff test account holding the role, pick an org it is not a member of and open rooms/seats; check the
+  audit list.
 
 ## Notes / answers from Ming
+<Answers to blocking questions and "Plan approved (YYYY-MM-DD)" lines go here.>
 
 ## Handoff

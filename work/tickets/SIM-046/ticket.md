@@ -1,61 +1,56 @@
-# SIM-046: A User places devices only on seats they occupy
+# SIM-046: Profile photo upload
 
 | Field | Value |
 |---|---|
 | State | BACKLOG |
-| Priority | P2 |
-| Size | S |
-| Areas | api, security |
-| Gate | none |
-| Depends on | — |
-| Needs Ming | M-81 |
+| Priority | P3 |
+| Size | M |
+| Areas | api, db, ui, security |
+| Gate | plan-approval |
+| Depends on | SIM-045 |
+| Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
 | PR | — |
 
 ## Goal
-A User can place or move their devices only onto a seat they occupy, so devices are not parked on other people's
-seats (Ming, 2026-11-26).
+A member uploads, replaces or removes a real profile photo, shown in the app's people surfaces (not on the map).
 
 ## Scope reference
-**Conflicts with the spec.** `docs/spec-v1.md` DEV-04 "The device's owner places it as secondary on **any** seat" and
-DEV-03 "Secondary placement has no ownership check beyond the device having an owner"; DEV-05 (moves follow DEV-03).
-D19 (Manager+ move any owned device) is kept. The ticket supersedes DEV-04 for the User tier once Ming confirms M-81;
-the spec change (DEV-03/04/05 and a new D-entry) ships with this ticket.
+`docs/spec-v1.md` POR-05, Member entity (§4), LAY-06; decision D71 (amends D44). Open questions: OQ-56 (limits:
+PNG/JPEG, square, 64–512 px, ≤ 256 KB), OQ-57 (where it shows), OQ-61 (who may remove it). Precedent: D68 and
+SIM-036.5 device type image storage.
 
 ## Scope
-- Placement rule for the User tier: the target seat's occupant must be the caller's member, for primary and secondary.
-- Same rule for move (seat to seat); moving back to the owner's inventory stays allowed.
-- Refusal as a domain error (422, e.g. `seat_not_yours`) before any write (R7).
-- UI seat pickers for a User list only the seats they occupy; the server is the guard.
-- Spec: amend DEV-03, DEV-04, DEV-05; add the decision to `work/decisions.md`.
+- Forward-only migration adding the photo reference to `members` (expand only, R2).
+- Upload / replace / remove API for the caller's own photo, served behind the bearer like device type images.
+- Profile tab UI in My Portal; photo shown where OQ-57 says, fallback otherwise.
+- Audit every change without image bytes (SYS-03).
 
 ## Out of scope
-- Manager+ placement (D19 unchanged: any owned device on any seat).
-- Moving devices already lent to other seats (proposed default: they stay until next moved; no data change).
-- Auto-return when the User leaves the seat (DEV-06 unchanged).
+- Pixel character (SIM-047); server-side image resizing (no image library in the stack).
 
 ## Acceptance criteria
-- [ ] A User placing or moving their device onto a seat whose occupant is not their member gets 422 `seat_not_yours`
-  (name per plan) and nothing is written or audited.
-- [ ] A User placing onto a seat they occupy works as today (primary rules of DEV-03 unchanged).
-- [ ] A User can still move their device back to their inventory from any seat it sits on.
-- [ ] Manager and Admin can still place any owned device on any seat (D19).
-- [ ] For a User, the seat picker in the device actions offers only seats they occupy; with none, it says so.
-- [ ] Unit tests for the placement decision per tier (own seat, other's seat, empty seat, inventory).
-- [ ] DEV-03/04/05 in the spec and a new D-entry describe the rule.
+- [ ] Migration is forward-only and the previous image keeps working (R2).
+- [ ] The member uploads, replaces and removes their own photo; the file header and limits (OQ-56) are checked on the
+  server before any DB or storage call; refusals are 422 with a domain code.
+- [ ] The photo is stored org-scoped with a server-chosen name and served behind the bearer with ETag and
+  `private, no-cache`.
+- [ ] The photo shows where OQ-57 decides, with the fallback when absent; it is never drawn on the room map.
+- [ ] Only the rights OQ-61 decides exist (default: own photo only; Manager+ may remove another's, audited).
+- [ ] Every change writes an audit row without the image bytes; tests cover validation and permissions.
 
 ## Technical notes
-- Files: `src/lib/devices/*` (`decidePlacement`), `src/server/devices/devices.ts`, `src/ui/devices/**` (seat picker),
-  `src/ui/copy/*`, `docs/spec-v1.md`, `work/decisions.md`.
-- Risks / open questions (M-81): an empty seat counts as "not yours" (default yes); does the rule also bind Managers
-  for their own devices (default no, D19); what happens to devices a User already lent to other seats (default: left
-  as they are).
+- Files: `db/migrations/*`, `src/server/members/**`, `src/server/drive/**`, `src/app/api/me/**` (or a new route),
+  `src/lib/validate/**`, `src/ui/portal/**`, `src/ui/Avatar.tsx`.
+- Risks / open questions: High path (migration) → plan approval. Needs OQ-56, OQ-57, OQ-61 answered or defaults
+  accepted at the plan gate.
 
 ## Test plan
-- Unit: `decidePlacement` per tier and seat ownership; route test for the 422.
-- Manual: as User, try another member's seat and own seat; as Manager, any seat.
+- Unit: validator (format, size, dimensions, animation), permission rules, audit meta.
+- DB: `pnpm test:db` for the member photo columns; `pnpm schema:check`.
+- Manual: upload, replace, remove; check each place the photo shows.
 
 ## Notes / answers from Ming
 
