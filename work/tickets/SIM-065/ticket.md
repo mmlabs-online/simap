@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | S |
 | Areas | architecture, security |
@@ -59,8 +59,8 @@ home server's `[self-hosted, macbook-runner]`, so work is not blocked when the M
 ## Notes / answers from Ming
 - 2026-11-26: choose by repo variable plus manual run input; default (unset) is GitHub-hosted `ubuntu-latest`;
   release is included.
+- Plan approved (2026-11-26): Ming "duyệt SIM-065" — A1–A4 accepted as written.
 
-Waiting for Ming: plan approval (High tier)
 
 ## Handoff
 
