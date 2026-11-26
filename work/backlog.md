@@ -152,7 +152,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-066.1 | Pixel character card polish (stage, Front/Back toggle, hairstyle cards) | BACKLOG | P2 | S | ui, ux | SIM-066 | none | 0 | 2026-11-26 |
 | SIM-067 | Redesign My Portal → My seat layout (seat cards and My requests list) | MERGED | P2 | M | ui, ux | SIM-066 | none | 0 | 2026-11-26 |
 | SIM-068 | Redesign the sign-in page as a "small world" landing (Ming's mockup) | MERGED | P2 | M | ui, ux, security | — | none | 0 | 2026-11-26 |
-| SIM-068.1 | Four pixel rooms, paths and notes around the sign-in card | IN_PROGRESS | P2 | M | ui, ux | SIM-068 | none | 0 | 2026-11-26 |
+| SIM-068.1 | Four pixel rooms, paths and notes around the sign-in card | DONE | P2 | M | ui, ux | SIM-068 | none | 0 | 2026-11-26 |
 | SIM-069 | Redesign My Portal → My devices layout (summary tiles and device table) | MERGED | P2 | M | ui, ux | SIM-066 | none | 0 | 2026-11-26 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.
