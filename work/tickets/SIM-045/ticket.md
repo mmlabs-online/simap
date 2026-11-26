@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | REWORK |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
 | Gate | none |
 | Depends on | SIM-044 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-26 |
 | Claimed by | claude@2026-11-26T04:21Z |
 | PR | — |
