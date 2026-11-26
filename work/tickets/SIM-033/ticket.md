@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | S |
 | Areas | ui, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
-| Claimed by | claude@2026-11-26T00:46:49Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -46,8 +46,16 @@ Production shows the real sprites of the bundled package (the library behind the
 ## Notes / answers from Ming
 - 2026-11-26: M-63 done (Ming: "Đồng ý, làm luôn"): the real Imersa atlas is packed (55 map frames) and committed on this branch. Gate set to plan-approval (P1 policy `high-paths+P1`, matching the board).
 - 2026-11-26: The repo is PUBLIC (gh repo view), contrary to D45/D60; CREDITS.md:16 also says public. Ming: "Anh sẽ chuyển repo sang private" (M-77). The atlas commit (4383539) was already pushed while the repo was public. The PR must not open until the repo is private.
+- 2026-11-26: Ming: "ignore đi tôi chuyển private sau. hãy làm như thể repo đã private" — proceed as if the repo is private; M-77 stays open for Ming and does not block the PR.
+Waiting for Ming: plan approval (High tier) — M-78.
 - 2026-11-25: re-scoped to D66 (bundled package committed; per-item art moves to SIM-039.x).
 - 2026-11-25: D64 replaces the single-pack plan (M-9/M-10 not needed). Re-scope this ticket before running it: Admins pick art per item from a bundled package or a custom image.
 - 2026-11-22 (D58): created from the art review. Waits for M-10.
 
 ## Handoff
+
+### 2026-11-26 — claude — BLOCKED
+- Agent calls: 3, tokens ~100k+ (in/out split not reported): frontend-developer×1 41k, software-architect×1 59k, planner×1 (tokens not reported); all on default models.
+- Done: M-63. The real atlas was packed on Ming's PC (55 map frames) and committed on this branch, with Ming's OK. Consult and plan are done: `Status: READY`, no High path, about 300 lines.
+- In progress / next: Ming approves the plan (M-78), then `/run SIM-033` resumes at IMPLEMENT. M-77 (make the repo private) stays open; by Ming's instruction it does not block the PR.
+- Gotchas: the repo is PUBLIC, although D45 and D60 say private. The atlas commit 4383539 was pushed while it was public. `committed-atlas.test.ts` "placeholder-only" fails on this branch until the plan's test change lands.
