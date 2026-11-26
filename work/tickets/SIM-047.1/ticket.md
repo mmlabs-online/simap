@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T09:38Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -40,3 +40,9 @@ A member picks their pixel character in the My Portal Profile tab with a live pr
 - Plan approved (2026-11-26, batch 2026-11-26-3): "duyệt hết theo mặc định"; Q1 default: build after SIM-046.1 is merged (rebase first).
 
 ## Handoff
+
+### 2026-11-26 — claude — PLANNING (waiting)
+- Agent calls: 2, ~131k tokens (frontend-developer×1 default 39k, planner×1 default 93k; batch 2026-11-26-3).
+- Done: consult and plan (READY, approved 2026-11-26).
+- In progress / next: waits for Ming to merge PR #131 (SIM-046.1); then rebase this branch onto main and implement (`/run-batch --resume`).
+- Gotchas: picker mounts in SIM-046.1's `sections` slot; Reset seed is `members.id` via `readMeResult` (`src/lib/identity/flow.ts`, not a High path).
