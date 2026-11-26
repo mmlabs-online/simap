@@ -14,14 +14,18 @@ export function AuthLayout({
   scene?: boolean;
 }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-5 py-8 text-on-background">
+    <main className="px-stage flex min-h-dvh items-center justify-center overflow-x-clip px-5 py-8 text-on-background">
       <div className="flex w-full max-w-[816px] flex-col items-center justify-center gap-10 md:flex-row">
         {scene && <SignInScene />}
-        <div className="px-frame w-full max-w-[400px] flex-none">
-          <div className="px-strip" aria-hidden="true" />
-          <Card className="flex flex-col gap-4 rounded-none! border-0! p-5">
-            <p className="text-xs font-semibold text-on-surface-variant">{authCopy.brand}</p>
-            <h1 className="font-heading text-xl font-bold">{title}</h1>
+        <div className="px-frame w-full min-w-0 max-w-[400px] flex-none">
+          <div className="px-strip">
+            <p className="px-title">{authCopy.brand}</p>
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+          </div>
+          <Card className="px-card flex flex-col gap-4 rounded-none! border-0! p-5">
+            <h1 className="font-heading px-heading text-xl font-bold">{title}</h1>
             {children}
           </Card>
         </div>

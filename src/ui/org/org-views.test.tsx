@@ -21,6 +21,12 @@ describe("OrgPickerView", () => {
     expect(out).not.toContain("status");
   });
 
+  it("has the pixel frame, floor and title but no scene", () => {
+    const out = html(<OrgPickerView orgs={[A]} onPick={noop} onSignOut={noop} />);
+    for (const c of ["px-stage", "px-frame", "px-title"]) expect(out).toContain(c);
+    expect(out).not.toContain("px-scene");
+  });
+
   it("shows the org_denied notice in a status region", () => {
     const out = html(
       <OrgPickerView orgs={[A]} notice="org_denied" onPick={noop} onSignOut={noop} />,

@@ -21,7 +21,7 @@ export function OrgPickerView({
   onSignOut: () => void;
 }) {
   return (
-    <AuthLayout title={orgCopy.picker.title}>
+    <AuthLayout title={orgCopy.picker.title} scene={false}>
       {notice && <Notice kind="info">{orgCopy.notices[notice]}</Notice>}
       <ul aria-label={orgCopy.picker.listLabel} className="m-0 flex list-none flex-col gap-2 p-0">
         {orgs.map((o, i) => (
