@@ -51,6 +51,7 @@ export const shellCopy = {
   skipLink: "Skip to main content",
   nav: {
     dashboard: "Dashboard",
+    checkin: "Check in",
     search: "Search",
     rooms: "Rooms",
     devices: "Devices",
@@ -97,6 +98,7 @@ export const shellCopy = {
   },
   pages: {
     dashboard: { title: "Dashboard", empty: "No data yet." },
+    checkin: { title: "Check in", empty: "No data yet." },
     rooms: { title: "Rooms", empty: "No rooms yet." },
     roomDetail: { title: "Room details", empty: "No data yet." },
     deviceDetail: { title: "Device details", empty: "No data yet." },

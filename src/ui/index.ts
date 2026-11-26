@@ -20,6 +20,8 @@ export { VerifyEmailPage } from "./auth/VerifyEmailPage";
 export { ResetPasswordPage } from "./auth/ResetPasswordPage";
 export { AcceptInvitationPage } from "./auth/AcceptInvitationPage";
 export { DashboardPage } from "./dashboard/DashboardPage";
+export { CheckinPage } from "./checkin/CheckinPage";
+export { HomePage } from "./checkin/HomePage";
 export { RoomsPage } from "./rooms/RoomsPage";
 export { SeatsPage } from "./seats/SeatsPage";
 export { LayoutEditorPage } from "./roomlayout/LayoutEditorPage";

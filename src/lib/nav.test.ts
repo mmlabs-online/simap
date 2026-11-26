@@ -1,15 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { deviceDetailHref, isActive, navItemsFor, roomDetailHref, roomEditorHref } from "./nav";
+import {
+  deviceDetailHref,
+  homeFor,
+  isActive,
+  isCheckinView,
+  navItemsFor,
+  roomDetailHref,
+  roomEditorHref,
+} from "./nav";
 
 const ids = (tier: Parameters<typeof navItemsFor>[0]) => navItemsFor(tier).map((i) => i.id);
 
 describe("navItemsFor", () => {
-  it("user sees dashboard, search, rooms, members, portal (no devices)", () => {
-    expect(ids("user")).toEqual(["dashboard", "search", "rooms", "members", "portal"]);
+  it("user sees check in, dashboard, search, rooms, members, portal (no devices)", () => {
+    expect(ids("user")).toEqual(["checkin", "dashboard", "search", "rooms", "members", "portal"]);
   });
   it("manager adds approvals but not the editor", () => {
     expect(ids("manager")).toEqual([
       "dashboard",
+      "checkin",
       "search",
       "rooms",
       "devices",
@@ -23,7 +32,7 @@ describe("navItemsFor", () => {
       expect(ids(tier)).not.toContain("groups");
   });
   it("admin sees all items incl. roomEditor", () => {
-    expect(ids("admin")).toHaveLength(11);
+    expect(ids("admin")).toHaveLength(12);
     expect(ids("admin")).toContain("roomEditor");
   });
   it("audit is admin only", () => {
@@ -45,6 +54,7 @@ describe("navItemsFor", () => {
     const items = navItemsFor("admin");
     expect(items.filter((i) => i.placement === "rail").map((i) => i.id)).toEqual([
       "dashboard",
+      "checkin",
       "search",
       "rooms",
       "devices",
@@ -77,6 +87,44 @@ describe("isActive", () => {
     expect(isActive(item("search"), "/search")).toBe(true);
     expect(isActive(item("search"), "/search/x")).toBe(true);
     expect(isActive(item("search"), "/searchx")).toBe(false);
+  });
+});
+
+describe("home per tier", () => {
+  const href = (tier: Parameters<typeof navItemsFor>[0], id: string) =>
+    navItemsFor(tier).find((i) => i.id === id)!.href;
+  it("homeFor: user → checkin, manager/admin → dashboard", () => {
+    expect(homeFor("user")).toBe("checkin");
+    expect(homeFor("manager")).toBe("dashboard");
+    expect(homeFor("admin")).toBe("dashboard");
+  });
+  it("user: check in at / first, dashboard at /dashboard; manager/admin: dashboard at /, check in at /checkin second", () => {
+    expect(ids("user")[0]).toBe("checkin");
+    expect(href("user", "checkin")).toBe("/");
+    expect(href("user", "dashboard")).toBe("/dashboard");
+    for (const tier of ["manager", "admin"] as const) {
+      expect(ids(tier).slice(0, 2)).toEqual(["dashboard", "checkin"]);
+      expect(href(tier, "dashboard")).toBe("/");
+      expect(href(tier, "checkin")).toBe("/checkin");
+    }
+  });
+  it("isActive: user's check in active on /; manager's check in active on /checkin, dashboard only on /", () => {
+    const find = (tier: Parameters<typeof navItemsFor>[0], id: string) =>
+      navItemsFor(tier).find((i) => i.id === id)!;
+    expect(isActive(find("user", "checkin"), "/")).toBe(true);
+    expect(isActive(find("user", "dashboard"), "/")).toBe(false);
+    expect(isActive(find("manager", "checkin"), "/checkin")).toBe(true);
+    expect(isActive(find("manager", "dashboard"), "/checkin")).toBe(false);
+    expect(isActive(find("manager", "dashboard"), "/")).toBe(true);
+  });
+  it("isCheckinView: /checkin for every tier; / only for user; /rooms never", () => {
+    for (const tier of ["user", "manager", "admin"] as const) {
+      expect(isCheckinView("/checkin", tier)).toBe(true);
+      expect(isCheckinView("/rooms", tier)).toBe(false);
+    }
+    expect(isCheckinView("/", "user")).toBe(true);
+    expect(isCheckinView("/", "manager")).toBe(false);
+    expect(isCheckinView("/", "admin")).toBe(false);
   });
 });
 
