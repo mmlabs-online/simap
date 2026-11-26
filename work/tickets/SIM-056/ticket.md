@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T12:10Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/137 |
 
 ## Goal
 A member can pick any photo (any size, any shape, straight from a phone) as their profile photo: the browser crops it
@@ -83,3 +83,9 @@ crop và resize rồi lưu").
 - Plan approved (2026-11-26, batch 2026-11-26-4): "duyệt hết theo mặc định"; Q3 defaults: 20 MB / 50 MP input caps, JPEG quality floor 0.4, white fill for transparency, no preview step.
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 7, ~289k tokens (frontend-developer×1 default 28k, ux-architect×1 default 22k, planner×1 default 60k, implementer×2 default 63k+17k, reviewer×2 default 59k + sonnet 20k; batch 2026-11-26-4).
+- Done: browser-side center-crop, resize and re-encode of the profile photo (any input), new copy, processing/uploading states; review REWORK attempt 1 (processing notice kept after refusal), PASS attempt 2; PR #137.
+- In progress / next: Ming merges PR #137 and runs the manual browser checks listed in the PR.
+- Gotchas: no canvas/jsdom in Vitest, so photo-canvas.ts and the ProfilePhoto state are checked by hand.
