@@ -21,8 +21,7 @@ into new built-in library items with real art.
 ## Scope reference
 - D54 (cut objects from original sheets via `sprite-map.json`), D66 points 1 and 5 (built-in catalog rows seeded per
   org; bundled atlas committed), D67. Imersa row in `assets/art/CREDITS.md`.
-- **Scope conflict to confirm (M-82):** D66 (1) says phase 1 manages "the existing library items only"; this ticket
-  adds new built-in keys (not Admin-created kinds). Needs a decision line before PLAN.
+- D73 (Ming 2026-11-26, M-82): new built-in keys are in scope; amends D66 (1).
 - Ming 2026-11-26: "2 và 3".
 
 ## Scope
@@ -57,5 +56,6 @@ into new built-in library items with real art.
 - Manual: place each new item in `/dev/roommap` in all four directions.
 
 ## Notes / answers from Ming
+- 2026-11-26 Ming (M-82): "M-82 đồng ý" — adding new built-in library items is in scope; recorded as D73 (amends D66 (1)).
 
 ## Handoff
