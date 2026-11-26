@@ -20,11 +20,11 @@ describe("bundledKeys", () => {
     expect([...bundledKeys({ meta: { sources: { a: 1, b: null, c: "map" } } })!]).toEqual(["c"]);
   });
 
-  it("committed office.json: the set equals the sprite-map keys (55)", () => {
+  it("committed office.json: the set equals the sprite-map keys", () => {
     const json = JSON.parse(readFileSync("public/sprites/office.json", "utf8"));
     const map = JSON.parse(readFileSync("assets/art/sprite-map.json", "utf8"));
     const set = bundledKeys(json)!;
     expect([...set].sort()).toEqual(Object.keys(map.sprites).sort());
-    expect(set.size).toBe(55);
+    expect(set.size).toBe(Object.keys(map.sprites).length);
   });
 });

@@ -17,4 +17,11 @@ export const CREDITS: readonly CreditEntry[] = [
     attribution:
       "Office Pixel Art by Imersa Studios (https://imersastudios.itch.io/office-pixel-art)",
   },
+  {
+    pack: "Pixel Office",
+    author: "2dPig",
+    url: "https://2dpig.itch.io/pixel-office",
+    licence: "CC0 1.0 (public domain): no attribution required, credited anyway.",
+    attribution: "Pixel Office by 2dPig (https://2dpig.itch.io/pixel-office)",
+  },
 ];

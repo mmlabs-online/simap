@@ -90,6 +90,41 @@ describe("sprite packer", () => {
     expect([f.w, f.h]).toEqual([8, 8]);
   });
 
+  it("packs a 16 px second source at scale 2 next to a scale-1 source, both as map", () => {
+    const root = tempRoot();
+    const a = "assets/art/sources/imersa/s.png";
+    const b = "assets/art/sources/cc0/s.png";
+    write(
+      root,
+      "assets/art/sprite-map.json",
+      JSON.stringify({
+        sources: { imersa: { files: { s: a } }, cc0: { files: { s: b }, tile: 16 } },
+        sprites: {
+          sofa: { source: "imersa", sheet: "s", rect: [0, 0, 64, 32], scale: 1, tiles: [2, 1] },
+          "table.coffee": {
+            source: "cc0",
+            sheet: "s",
+            rect: [0, 0, 26, 16],
+            anchor: [-3, 0],
+            scale: 2,
+            tiles: [2, 1],
+          },
+        },
+      }),
+    );
+    write(root, a, solid(64, 32, "#00ff00"));
+    write(root, b, solid(26, 16, "#ff8800"));
+    const out = join(root, "out");
+    const r = pack({ root, outDir: out });
+    expect(r.errors).toEqual([]);
+    expect(r.sources.sofa).toBe("map");
+    expect(r.sources["table.coffee"]).toBe("map");
+    const frames = readManifest(out).frames;
+    expect([frames.sofa.w, frames.sofa.h]).toEqual([64, 32]);
+    expect([frames["table.coffee"].w, frames["table.coffee"].h]).toEqual([52, 32]);
+    expect(frames["table.coffee"].anchor).toEqual([6, 0]);
+  });
+
   it("packs placeholders only when sheets are missing", () => {
     const root = tempRoot();
     mkdirSync(join(root, "assets/art"), { recursive: true });
@@ -97,7 +132,7 @@ describe("sprite packer", () => {
     const out = join(root, "out");
     const r = pack({ root, outDir: out });
     expect(r.ok).toBe(true);
-    expect(r.warnings).toHaveLength(9);
+    expect(r.warnings).toHaveLength(10);
     const png = readFileSync(join(out, "office.png"));
     const manifest = readManifest(out);
     const v = validateSpriteManifest(manifest, readPngSize(png));
