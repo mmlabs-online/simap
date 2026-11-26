@@ -51,18 +51,20 @@ const keys = (d: DeviceDto) => rowActions(d, portalHandlers(all)).map((a) => a.k
 
 describe("parsePortalTab", () => {
   it("[] and unknown values are the default; one known value wins; repeats are the default", () => {
-    expect(parsePortalTab([])).toBe("devices");
+    expect(parsePortalTab([])).toBe("seat");
+    expect(parsePortalTab(["seat"])).toBe("seat");
     expect(parsePortalTab(["profile"])).toBe("profile");
     expect(parsePortalTab(["devices"])).toBe("devices");
-    for (const v of ["x", "", "Profile"]) expect(parsePortalTab([v])).toBe("devices");
-    expect(parsePortalTab(["profile", "profile"])).toBe("devices");
-    expect(parsePortalTab(["profile", "devices"])).toBe("devices");
+    for (const v of ["x", "", "Profile"]) expect(parsePortalTab([v])).toBe("seat");
+    expect(parsePortalTab(["profile", "profile"])).toBe("seat");
+    expect(parsePortalTab(["profile", "devices"])).toBe("seat");
   });
 });
 
 describe("portalTabHref", () => {
   it("the default tab keeps the bare path", () => {
-    expect(portalTabHref("/portal", "devices")).toBe("/portal");
+    expect(portalTabHref("/portal", "seat")).toBe("/portal");
+    expect(portalTabHref("/portal", "devices")).toBe("/portal?tab=devices");
     expect(portalTabHref("/portal", "profile")).toBe("/portal?tab=profile");
   });
 });

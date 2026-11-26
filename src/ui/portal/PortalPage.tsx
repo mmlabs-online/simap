@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Card } from "../Card";
 import { shellCopy } from "../copy/shell";
 import { MyDevicesTab } from "./MyDevicesTab";
+import { MySeatTab } from "./MySeatTab";
 import { PortalTabs } from "./PortalTabs";
 import { ProfileTab } from "./ProfileTab";
 import { PORTAL_TABS, panelId, parsePortalTab, portalTabHref, tabId } from "./portal-state";
@@ -23,7 +24,9 @@ function PortalLoaded() {
         onSelect={(next) => router.replace(portalTabHref(pathname, next), { scroll: false })}
       />
       <div role="tabpanel" id={panelId(tab)} aria-labelledby={tabId(tab)} tabIndex={0}>
-        {tab === "devices" ? <MyDevicesTab /> : <ProfileTab />}
+        {tab === "seat" && <MySeatTab />}
+        {tab === "devices" && <MyDevicesTab />}
+        {tab === "profile" && <ProfileTab />}
       </div>
     </div>
   );
