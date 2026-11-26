@@ -3,9 +3,11 @@ import type { ReactNode } from "react";
 import type { SeatDto } from "@/lib/seats/types";
 import { Button } from "../Button";
 import { Card } from "../Card";
+import { Pill } from "../Chip";
 import { apiErrorMessage } from "../copy/api";
 import { portalCopy } from "../copy/portal";
-import { seatResultHref } from "../search/search-state";
+import { PageHeader } from "../PageHeader";
+import { SeatCard } from "./SeatCard";
 
 export type MySeatViewProps = {
   status: "loading" | "ready" | "error";
@@ -34,8 +36,8 @@ export function MySeatView({
 }: MySeatViewProps) {
   const t = portalCopy.seat;
   return (
-    <div className="flex flex-col gap-4">
-      <h2 className="text-lg font-extrabold text-on-surface">{t.heading}</h2>
+    <div className="flex flex-col gap-6">
+      <h2 className="sr-only">{t.heading}</h2>
 
       <div aria-live="polite">
         {notice &&
@@ -67,53 +69,29 @@ export function MySeatView({
         </Card>
       )}
 
-      {status === "ready" && seats.length > 0 && (
-        <ul aria-label={t.heading} className="grid gap-3">
-          {seats.map((seat) => {
-            const href = seatResultHref(seat);
-            return (
-              <li key={seat.id}>
-                <Card className="flex min-w-0 flex-col gap-2 break-words p-4">
-                  <span className="text-sm font-bold text-on-surface">{seat.code}</span>
-                  <dl className="grid gap-1 text-xs text-on-surface-variant">
-                    <div>
-                      <dt className="inline font-semibold">{t.room}: </dt>
-                      <dd className="inline">{seat.roomCode}</dd>
-                    </div>
-                    <div>
-                      <dt className="inline font-semibold">{t.group}: </dt>
-                      <dd className="inline">{seat.group?.name ?? t.noTag}</dd>
-                    </div>
-                    <div>
-                      <dt className="inline font-semibold">{t.project}: </dt>
-                      <dd className="inline">{seat.project?.name ?? t.noTag}</dd>
-                    </div>
-                  </dl>
-                  <div className="flex flex-wrap items-center gap-3">
-                    {href !== null && (
-                      <Link href={href} className="font-semibold text-primary hover:underline">
-                        {t.viewOnMap}
-                      </Link>
-                    )}
-                    <Button
-                      variant="tonal"
-                      size="sm"
-                      className="min-h-11"
-                      disabled={busy}
-                      onClick={() => onRelease(seat)}
-                    >
-                      {t.release}
-                    </Button>
-                  </div>
-                </Card>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
-      {status === "ready" && seats.length === 0 && !empty && (
-        <p className="text-sm text-on-surface-variant">{t.noSeat}</p>
+      {status === "ready" && !empty && (
+        <section aria-labelledby="assigned-seats-heading" className="flex flex-col gap-4">
+          <PageHeader
+            level={3}
+            id="assigned-seats-heading"
+            title={t.assignedHeading}
+            titleAdornment={<Pill tone="neutral" label={String(seats.length)} />}
+          />
+          {seats.length > 0 ? (
+            <ul
+              aria-labelledby="assigned-seats-heading"
+              className="grid grid-cols-1 gap-4 lg:grid-cols-2"
+            >
+              {seats.map((seat) => (
+                <li key={seat.id} className="min-w-0">
+                  <SeatCard seat={seat} busy={busy} onRelease={onRelease} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-on-surface-variant">{t.noSeat}</p>
+          )}
+        </section>
       )}
 
       {empty && (

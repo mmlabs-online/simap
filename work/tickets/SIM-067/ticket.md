@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | IN_PROGRESS |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | claude@2026-11-26T17:02:49Z |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/145 |
 
 ## Goal
 The My seat tab of My Portal follows Ming's mockup (`mockup-my-seat.png` in this folder): the member's assigned seats
@@ -70,3 +70,9 @@ decisions D24, D74 (requests live in My seat; opening the tab marks decisions se
 - Merge approved (2026-11-26, batch 2026-11-26-7): Ming "cho merge SIM-066, SIM-067, SIM-069".
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 5 (frontend-developer×1 42k, ux-architect×1 41k, planner×1 98k, implementer×1 70k, reviewer×1 65k; default models)
+- Done: implemented on top of merged SIM-066; review PASS attempt 1; PR #145.
+- In progress / next: wait for CI, merge (Merge approved, batch 2026-11-26-7), then SIM-069.
+- Gotchas: new success/warning tokens turn SIM-066's "Live preview" pill green (expected).

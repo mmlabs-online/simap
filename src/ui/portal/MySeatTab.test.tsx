@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { portalCopy } from "../copy/portal";
 import { requestsCopy } from "../copy/requests";
-import { MyRequestsView } from "../requests/MyRequestsView";
+import { MyRequestsPanel } from "./MyRequestsPanel";
 import { MySeatView } from "./MySeatView";
 import { seatTabEmpty } from "./my-seats";
 
@@ -23,8 +23,7 @@ describe("My seat tab empty state", () => {
         onRetry={noop}
         onRelease={noop}
         requests={
-          <MyRequestsView
-            embedded
+          <MyRequestsPanel
             hideEmpty={empty}
             state="ready"
             items={[]}
@@ -33,7 +32,6 @@ describe("My seat tab empty state", () => {
             loadingMore={false}
             errorCode={null}
             cancellingId={null}
-            notice={null}
             onRetry={noop}
             onLoadMore={noop}
             onCancel={noop}
