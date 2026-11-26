@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { Zoom } from "@/lib/sprites/layout";
 import type { MapLoadState } from "@/lib/sprites/map-view";
 import { LAYOUT_LIMITS } from "@/lib/validate/layout";
@@ -10,7 +11,7 @@ import { Card } from "../Card";
 import { apiErrorMessage } from "../copy/api";
 import { roomlayoutCopy } from "../copy/roomlayout";
 import type { CatalogImages } from "./catalog-images";
-import { RoomMap, RoomMapStatus } from "./RoomMap";
+import { RoomMap, RoomMapStatus, type PresenceMapProps } from "./RoomMap";
 
 type Props = {
   state: MapLoadState;
@@ -19,10 +20,22 @@ type Props = {
   /** The editor link; given to admins only. */
   editHref?: string;
   catalogImages?: CatalogImages;
+  /** The check-in presence view (PRE-06); the room page passes none. */
+  presenceView?: PresenceMapProps;
+  /** Shown under the map, e.g. a move error. */
+  notice?: ReactNode;
 };
 
 /** The map card of the room page. A layout failure never hides the seat table. */
-export function RoomMapSection({ state, onRetry, onSelect, editHref, catalogImages }: Props) {
+export function RoomMapSection({
+  state,
+  onRetry,
+  onSelect,
+  editHref,
+  catalogImages,
+  presenceView,
+  notice,
+}: Props) {
   const [zoom, setZoom] = useState<Zoom>(2);
   const { view } = state;
   const failure =
@@ -53,6 +66,7 @@ export function RoomMapSection({ state, onRetry, onSelect, editHref, catalogImag
         onZoom={setZoom}
         onSelect={onSelect}
         catalogImages={catalogImages}
+        presenceView={presenceView}
       />
     );
   }
@@ -75,6 +89,7 @@ export function RoomMapSection({ state, onRetry, onSelect, editHref, catalogImag
       </div>
       {failure}
       {body}
+      {notice}
       {view?.truncated && (
         <p role="status" className="text-sm font-semibold text-on-surface-variant">
           {roomlayoutCopy.truncated(LAYOUT_LIMITS.seats)}

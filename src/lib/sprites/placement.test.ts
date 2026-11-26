@@ -593,3 +593,51 @@ describe("catalog art per direction (SIM-039.8)", () => {
     );
   });
 });
+
+describe("presence view (PRE-06)", () => {
+  const desk = { ...place("s1", "desk.single", 2, 2), code: "A1" };
+  const occupied = { s1: view({ state: "occupied", avatarSeed: "u" }) };
+  const devices = (...types: string[]) => ({ s1: types.map((type) => ({ type })) });
+  const draw = (
+    presence?: Record<string, "present" | "away">,
+    types: string[] = [],
+    views: Record<string, SeatView> = occupied,
+  ) =>
+    buildDrawList(room({ seats: [desk] }), views, manifest, devices(...types), undefined, {
+      presence,
+    });
+  const avatarKeys = (list: ReturnType<typeof draw>) =>
+    frames(list.ops).filter((k) => k.startsWith("avatar."));
+  const screens = (list: ReturnType<typeof draw>) => list.ops.filter((o) => o.type === "screen");
+
+  it("away seat draws no avatar frames; present seat draws the same avatar frames as today", () => {
+    expect(avatarKeys(draw())).not.toEqual([]);
+    expect(avatarKeys(draw({ s1: "away" }))).toEqual([]);
+    expect(avatarKeys(draw({ s1: "present" }))).toEqual(avatarKeys(draw()));
+  });
+
+  it("present seat with a monitor gets one screen op per monitor, on the overlay layer; none without a monitor; none when away", () => {
+    const two = screens(draw({ s1: "present" }, ["Monitor", "Monitor"]));
+    expect(two).toHaveLength(2);
+    expect(two.every((o) => o.layer === "overlay")).toBe(true);
+    expect(screens(draw({ s1: "present" }, ["PC", "IP phone"]))).toEqual([]);
+    expect(screens(draw({ s1: "away" }, ["Monitor"]))).toEqual([]);
+  });
+
+  it("the screen sits inside the monitor frame rect", () => {
+    const list = draw({ s1: "present" }, ["Monitor"]);
+    const mon = list.ops.find((o) => o.type === "frame" && o.key.startsWith("device.monitor"))!;
+    const [screen] = screens(list);
+    expect(screen.x).toBeGreaterThanOrEqual(mon.x);
+    expect(screen.y).toBeGreaterThanOrEqual(mon.y);
+    expect(screen.x + screen.w).toBeLessThanOrEqual(mon.x + mon.w);
+    expect(screen.y + screen.h).toBeLessThanOrEqual(mon.y + mon.h);
+  });
+
+  it("unassigned seat unchanged; presence undefined gives the ops of a call without the option", () => {
+    const empty = { s1: view() };
+    expect(draw({}, ["Monitor"], empty)).toEqual(draw(undefined, ["Monitor"], empty));
+    const plain = buildDrawList(room({ seats: [desk] }), occupied, manifest, devices("Monitor"));
+    expect(draw(undefined, ["Monitor"])).toEqual(plain);
+  });
+});

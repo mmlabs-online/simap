@@ -102,3 +102,88 @@ describe("SeatOverlay", () => {
     );
   });
 });
+
+describe("SeatOverlay presence view (D80, D77)", () => {
+  const row: Record<string, SeatView> = {
+    a: { state: "occupied", avatarSeed: "u", name: "Nguyễn Thị Ánh", look: null },
+    b: { state: "mine", avatarSeed: "v", name: "Lee", look: null },
+  };
+  const renderAlways = (
+    extra: Partial<Parameters<typeof SeatOverlay>[0]> = {},
+    presence: Record<string, "present" | "away"> | null = { a: "away", b: "present" },
+  ) =>
+    renderToStaticMarkup(
+      <SeatOverlay
+        list={buildDrawList(layout, row, manifest)}
+        views={row}
+        zoom={3}
+        tags="always"
+        presence={presence ?? undefined}
+        {...extra}
+      />,
+    );
+  const visibleTags = (html: string) =>
+    [...html.matchAll(/<span aria-hidden="true"( data-presence="[^"]*")? class="([^"]*)"/g)]
+      .map((m) => m[2])
+      .filter((c) => !c.includes("hidden"));
+
+  it("default mode (no tags prop): no always-visible tag, no open tag (D50)", () => {
+    const html = render();
+    expect(visibleTags(html)).toEqual([]);
+    expect(html).not.toContain("data-open-tag");
+    expect(html).not.toContain("data-presence");
+  });
+
+  it("always mode: one visible tag per occupied seat, aria-hidden and pointer-events-none; empty seats keep only the hover tag", () => {
+    const html = renderAlways();
+    const tags = visibleTags(html);
+    expect(tags).toHaveLength(2);
+    for (const c of tags) expect(c).toContain("pointer-events-none");
+    expect((html.match(/<span aria-hidden="true"/g) ?? []).length).toBe(5);
+    expect(html).toContain("Nguyễn Thị Ánh");
+  });
+
+  it("always mode: away tag has data-presence=away, the ring marker and the grey style; present has the filled dot; labels end here/away", () => {
+    const html = renderAlways();
+    const away =
+      /<span aria-hidden="true" data-presence="away" class="([^"]*)"[^>]*><span data-marker="ring"/.exec(
+        html,
+      );
+    expect(away?.[1]).toContain("bg-surface-container-high");
+    expect(html).toMatch(/data-presence="present"[^>]*><span data-marker="dot"/);
+    expect(html).toContain('aria-label="Seat A1, occupied, Nguyễn Thị Ánh, away"');
+    expect(html).toContain('aria-label="Seat A2, your seat, Lee, here"');
+    expect(html).toContain('aria-label="Seat B2, empty"');
+  });
+
+  it("always mode: the hover and focus tag holds the code and the full name without truncate", () => {
+    const hover = [
+      ...renderAlways().matchAll(
+        /<span aria-hidden="true" class="([^"]*)"[^>]*>(.*?)<\/span><\/button>/g,
+      ),
+    ];
+    expect(hover.length).toBe(3);
+    for (const m of hover) {
+      expect(m[1]).toContain("group-hover:flex");
+      expect(m[1]).not.toContain("max-w-40");
+      expect(m[0]).not.toContain("truncate");
+    }
+  });
+
+  it("open tags: one real button per open seat, a sibling of the seat buttons, disabled while busy", () => {
+    const html = renderAlways({ openTags: ["c"], onOpenTag: () => {} });
+    expect(html).toMatch(/<button[^>]*data-open-tag="B2"[^>]*aria-label="Move here, seat B2"/);
+    expect((html.match(/<button/g) ?? []).length).toBe(4);
+    expect(html).not.toMatch(/<button(?:(?!<\/button>)[\s\S])*<button/);
+    expect(html).not.toMatch(/data-open-tag="B2"[^>]*disabled=""/);
+    expect(renderAlways({ openTags: ["c"], openTagsBusy: true })).toMatch(
+      /data-open-tag="B2"[^>]*disabled=""/,
+    );
+  });
+
+  it("before the first presence answer the tags show without a present/away split", () => {
+    const html = renderAlways({}, null);
+    expect(html).not.toContain("data-presence");
+    expect(visibleTags(html)).toHaveLength(2);
+  });
+});
