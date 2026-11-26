@@ -9,6 +9,7 @@ import {
   type SeatDevice,
   type SeatView,
 } from "./layout";
+import { avatarFor, HAIR_RAMP, SHIRT_RAMP, SKIN_RAMP } from "./avatar";
 import {
   ROTATION_TO_DIR,
   buildDrawList,
@@ -45,6 +46,7 @@ const view = (p: Partial<SeatView> = {}): SeatView => ({
   state: "empty",
   avatarSeed: null,
   name: null,
+  look: null,
   ...p,
 });
 
@@ -247,6 +249,22 @@ describe("chairs, shadows and avatars", () => {
     expect(keys.filter((k) => k === "state.mine.tint")).toHaveLength(2);
     const none = buildDrawList(room({ seats: [seat] }), { s1: view() }, manifest).ops;
     expect(frames(none).some((k) => k.startsWith("avatar."))).toBe(false);
+  });
+
+  it("stored look tints the avatar frames; null look uses avatarFor(seed)", () => {
+    const seat = { ...place("s1", "desk.single", 2, 2), code: "A1" };
+    const tints = (look: SeatView["look"]) =>
+      buildDrawList(
+        room({ seats: [seat] }),
+        { s1: view({ state: "occupied", avatarSeed: "sub-1", look }) },
+        manifest,
+      )
+        .ops.flatMap((o) => (o.type === "frame" && o.key.startsWith("avatar.") ? [o.tint] : []))
+        .sort();
+    const stored = { skin: 3, hair: 4, style: 2, shirt: 5 } as const;
+    expect(tints(stored)).toEqual([SKIN_RAMP[3], HAIR_RAMP[4], SHIRT_RAMP[5]].sort());
+    const d = avatarFor("sub-1");
+    expect(tints(null)).toEqual([d.skin, d.hair, d.shirt].sort());
   });
 
   it("avatar uses back view on a .n chair, otherwise front", () => {

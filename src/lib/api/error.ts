@@ -63,6 +63,7 @@ export const API_ERROR_CODES = [
   "item_name_taken",
   "sprite_not_allowed",
   "layout_item_hidden",
+  "invalid_look",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];

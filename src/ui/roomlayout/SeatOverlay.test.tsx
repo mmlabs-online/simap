@@ -26,8 +26,8 @@ const layout: RoomLayout = {
   seats: [seat("c", "B2", 6, 4), seat("a", "A1", 2, 1), seat("b", "A2", 6, 1)],
 };
 const views: Record<string, SeatView> = {
-  a: { state: "occupied", avatarSeed: "u", name: "Nguyễn Thị Ánh" },
-  b: { state: "mine", avatarSeed: "v", name: "Lee" },
+  a: { state: "occupied", avatarSeed: "u", name: "Nguyễn Thị Ánh", look: null },
+  b: { state: "mine", avatarSeed: "v", name: "Lee", look: null },
 };
 const render = (m: SpriteManifest = manifest, zoom = 3) =>
   renderToStaticMarkup(

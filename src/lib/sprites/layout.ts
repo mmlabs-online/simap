@@ -1,5 +1,6 @@
 import type { MapItemDto } from "@/lib/map-items/types";
 import type { DeviceKind } from "./device-slots";
+import type { PixelLook } from "./pixel-look";
 
 /** Zoom levels of the room map: whole numbers only (spec LAY "Visual style"). */
 export const ZOOM_LEVELS = [1, 2, 3, 4] as const;
@@ -32,7 +33,13 @@ export type LayoutSaveValue = {
 
 export type SeatState = "empty" | "occupied" | "mine" | "pending" | "cannot";
 
-export type SeatView = { state: SeatState; avatarSeed: string | null; name: string | null };
+/** `look` is the occupant's chosen pixel character (POR-06), null = derived from `avatarSeed`. */
+export type SeatView = {
+  state: SeatState;
+  avatarSeed: string | null;
+  name: string | null;
+  look: PixelLook | null;
+};
 
 /** The catalog type a seat device resolves to (D61): its slot and image version, never the type name. */
 export type SeatDeviceType = {

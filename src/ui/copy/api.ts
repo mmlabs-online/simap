@@ -73,6 +73,7 @@ export const apiCopy = {
     item_fixed_size: "This item's size can't be changed.",
     item_name_taken: "Another map item already has this name.",
     sprite_not_allowed: "This sprite can't be used for this item or doesn't fit its size.",
+    invalid_look: "Choose one of the offered options for each part.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

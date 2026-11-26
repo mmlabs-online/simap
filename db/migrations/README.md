@@ -73,5 +73,10 @@ The app never migrates.
   `members_photo_check`) and `photo_version` (integer, default 0, bumped on every set and remove, used in the ETag).
   No FK and no index. The Drive file is deleted after commit (best effort; orphans are logged as `drive_orphan`). The
   MIME type is taken from the bytes on every read, not stored. The previous image never touches the columns.
+- Pixel look (SIM-047, `20261126140000_members_pixel_look.sql`, POR-06): `members.pixel_look` is a nullable jsonb;
+  null = the look derived from the member id (what the map drew before). Otherwise exactly `{skin, hair, style, shirt}`,
+  integers indexing the ramps in `src/lib/sprites/avatar.ts` (skin 0-3, hair colour 0-5, hair style 1-3, shirt 0-6),
+  checked by `members_pixel_look_check`. The ramps are append-only; widening one needs a migration that replaces the
+  check.
 - Dev seed: `pnpm seed:dev` loads fake data (fixed UUIDs, `@simap.example` emails, invented names) into a local
   database only; it refuses non-local hosts and `NODE_ENV=production`. Never put real data in the seed.

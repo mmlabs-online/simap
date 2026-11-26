@@ -1,5 +1,5 @@
 import { placeDevices, resolveDeviceArt } from "./device-slots";
-import { avatarFor, avatarFrames, avatarView } from "./avatar";
+import { avatarFrames, avatarView } from "./avatar";
 import { itemArtDir, itemBox, resolveItemArt, type ItemArt, type ItemImageSize } from "./item-art";
 import type {
   LayoutItem,
@@ -10,6 +10,7 @@ import type {
   SeatView,
 } from "./layout";
 import { overlayFor } from "./overlay";
+import { resolveLook } from "./pixel-look";
 import { REGISTRY } from "./registry";
 import type { Direction, Layer, SpriteFrame, SpriteManifest } from "./types";
 
@@ -33,7 +34,7 @@ export type SeatBox = { id: string; code: string; tileX: number; tileY: number }
 
 export type DrawList = { ops: DrawOp[]; bounds: Rect; seats: SeatBox[]; unknown: string[] };
 
-const EMPTY_VIEW: SeatView = { state: "empty", avatarSeed: null, name: null };
+const EMPTY_VIEW: SeatView = { state: "empty", avatarSeed: null, name: null, look: null };
 
 const byId = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
@@ -444,7 +445,10 @@ export function buildDrawList(
   for (const s of seatItems) {
     const view = seatViews[s.id] ?? EMPTY_VIEW;
     if (view.avatarSeed !== null) {
-      for (const f of avatarFrames(avatarFor(view.avatarSeed), avatarView(s.chairKey))) {
+      for (const f of avatarFrames(
+        resolveLook(view.look, view.avatarSeed),
+        avatarView(s.chairKey),
+      )) {
         emitFrame("avatar", f.key, s.chairX, s.chairY, [0, 0], f.tint);
       }
     }
