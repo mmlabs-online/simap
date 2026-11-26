@@ -255,6 +255,10 @@ export const devicesCopy = {
     current: "Current",
     hasPrimary: "Has a primary device",
     cannotSeat: "Cannot seat",
+    lentCurrent: (seatCode: string, name: string) =>
+      `Currently on seat ${seatCode}, lent to ${name}.`,
+    lentMoveHint:
+      "You can move this device only to a seat you occupy, so other seats are not listed.",
     lendHint: (name: string) => `Lent to ${name}'s seat as secondary.`,
     primaryUnavailable: "Primary is not available for this seat.",
     returnConfirm: (inv: string, seatCode: string) =>

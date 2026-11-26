@@ -14,7 +14,7 @@ export type SeatsResult<T> = { ok: true; value: T } | { ok: false; code: string 
 
 const fail = (code: string): { ok: false; code: string } => ({ ok: false, code });
 
-async function errorCode(res: Response): Promise<string> {
+export async function errorCode(res: Response): Promise<string> {
   try {
     const code = ((await res.json()) as { error?: { code?: unknown } } | null)?.error?.code;
     return typeof code === "string" ? code : "internal";

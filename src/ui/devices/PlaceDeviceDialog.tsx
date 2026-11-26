@@ -11,6 +11,7 @@ import type { RoomsApi } from "../rooms/rooms-api";
 import type { SeatsApi } from "../seats/seats-api";
 import type { DevicesApi } from "./devices-api";
 import {
+  lentSeat,
   offeredRoles,
   ownSeats,
   placeModes,
@@ -67,6 +68,7 @@ export function PlaceDeviceFields({
   const seat = offered.find((s) => s.id === seatId) ?? null;
   const roles: DeviceRole[] = seat ? offeredRoles(device, seat, tier) : ["secondary"];
   const verb = placeVerb(device, seat);
+  const lent = lentSeat(device, seats.seats, tier);
   return (
     <>
       <DialogSelect
@@ -94,6 +96,12 @@ export function PlaceDeviceFields({
             {devicesCopy.retry}
           </button>
         </div>
+      )}
+
+      {lent && seats.status === "ready" && lent.occupant && (
+        <p className={`text-sm ${HINT}`}>
+          {copy.lentCurrent(lent.code, lent.occupant.displayName)} {copy.lentMoveHint}
+        </p>
       )}
 
       {roomId !== null && (

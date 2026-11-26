@@ -53,6 +53,11 @@ describe("MyRequestsView", () => {
     expect(html).toContain(requestsCopy.mine.empty);
     expect(html).not.toContain("<ul");
   });
+  it("hideEmpty renders nothing when ready and empty; still renders items and loading", () => {
+    expect(render({ items: [], hideEmpty: true, embedded: true })).toBe("");
+    expect(render({ hideEmpty: true })).toContain("<ul");
+    expect(render({ state: "loading", items: [], hideEmpty: true })).toContain('aria-busy="true"');
+  });
   it("ready rows: seat line, status chip for every status incl. Pending, requested time, decided line with diacritics kept", () => {
     for (const status of REQUEST_STATUSES) {
       const html = render({ items: [req({ id: "1", status })] });

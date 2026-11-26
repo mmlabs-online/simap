@@ -67,6 +67,13 @@ describe("MyDevicesView", () => {
   it("Load more only when hasMore", () => {
     expect(render({ hasMore: true })).toContain(portalCopy.devices.loadMore);
   });
+  it("load-more error shows an alert and keeps rows and the button", () => {
+    const html = render({ hasMore: true, errorCode: "unavailable" });
+    expect(html).toContain('role="alert"');
+    expect(html).toContain(portalCopy.devices.loadMoreFailed);
+    expect(html).toContain("INV-1");
+    expect(html).toContain(portalCopy.devices.loadMore);
+  });
   it("banner and incoming slots render above the list", () => {
     const html = render({ banner: <p>BANNER</p>, incoming: <p>INCOMING</p> });
     expect(html.indexOf("BANNER")).toBeGreaterThan(-1);

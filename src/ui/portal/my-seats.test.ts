@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ApiFetch } from "@/lib/api/fetch";
+import { ApiAccessError, type ApiFetch } from "@/lib/api/fetch";
 import type { SeatDto } from "@/lib/seats/types";
 import { seatsCopy } from "../copy/seats";
 import type { SeatsResult } from "../seats/seats-api";
@@ -90,6 +90,37 @@ describe("loadMySeats", () => {
   it("404 on members gives error; no id gives error", async () => {
     expect((await run({ "/api/me": json({ member: { id: "m1" } }) })).ok).toBe(false);
     expect((await run({ "/api/me": json({ member: null }) })).ok).toBe(false);
+  });
+});
+
+describe("loadMySeats error codes", () => {
+  const get = async () => ({ ok: false, code: "internal" }) as const;
+  const load = (fetcher: (path: string) => Promise<Response>) =>
+    loadMySeats(fetcher as unknown as ApiFetch, { get });
+  const denied = () => json({ error: { code: "forbidden" } }, 403);
+
+  it("keeps the code of a failed /api/me", async () => {
+    expect(await load(async () => denied())).toEqual({ ok: false, code: "forbidden" });
+    expect(await load(async () => new Response("oops", { status: 502 }))).toEqual({
+      ok: false,
+      code: "internal",
+    });
+  });
+  it("keeps the code of a failed /api/members/<id>", async () => {
+    const r = await load(async (p) =>
+      p === "/api/me" ? json({ member: { id: "m1" } }) : denied(),
+    );
+    expect(r).toEqual({ ok: false, code: "forbidden" });
+  });
+  it("maps a thrown ApiAccessError", async () => {
+    const r = await load(async () => {
+      throw new ApiAccessError("signed_out");
+    });
+    expect(r).toEqual({ ok: false, code: "unauthenticated" });
+    expect(await load(async () => Promise.reject(new Error("x")))).toEqual({
+      ok: false,
+      code: "unavailable",
+    });
   });
 });
 

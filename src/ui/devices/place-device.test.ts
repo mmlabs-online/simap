@@ -4,6 +4,7 @@ import type { SeatDto } from "@/lib/seats/types";
 import { apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
 import {
+  lentSeat,
   offeredRoles,
   ownSeats,
   placeModes,
@@ -104,6 +105,20 @@ describe("offeredRoles and primaryRefusal", () => {
   it("the device is that seat's primary: primary stays offered", () => {
     const s = seat({ occupant: owner, devices: [primaryDev("d1")] });
     expect(offeredRoles(placed("s1", "primary"), s, "manager")).toEqual(["secondary", "primary"]);
+  });
+});
+
+describe("lentSeat", () => {
+  const lent = seat({ id: "s0", occupant: other });
+  it("user with the device on another member's seat gets that seat", () => {
+    expect(lentSeat(placed("s0"), [seat(), lent], "user")).toBe(lent);
+  });
+  it("own seat, unplaced, manager tier and a seat missing from the list give null", () => {
+    expect(lentSeat(placed("s0"), [seat({ id: "s0", occupant: owner })], "user")).toBeNull();
+    expect(lentSeat(device(), [lent], "user")).toBeNull();
+    expect(lentSeat(placed("s0"), [lent], "manager")).toBeNull();
+    expect(lentSeat(placed("s0"), [seat()], "user")).toBeNull();
+    expect(lentSeat(placed("s0"), [seat({ id: "s0" })], "user")).toBeNull();
   });
 });
 

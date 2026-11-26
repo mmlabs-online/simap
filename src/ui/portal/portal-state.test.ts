@@ -5,6 +5,7 @@ import { portalCopy } from "../copy/portal";
 import { rowActions } from "../devices/device-actions";
 import {
   devicesPageRedirect,
+  latestNotice,
   marksDecisionsSeen,
   nextTabIndex,
   parsePortalTab,
@@ -12,8 +13,40 @@ import {
   portalHandlers,
   portalTabHref,
   profileOutcome,
+  refreshFailureNotice,
   requestsPageRedirect,
 } from "./portal-state";
+import { apiErrorMessage } from "../copy/api";
+
+describe("latestNotice", () => {
+  const a = { tone: "status", text: "A" } as const;
+  const b = { tone: "error", text: "B" } as const;
+  it("the higher seq wins; a tie prefers the second; a newer clear wins", () => {
+    expect(latestNotice({ seq: 2, notice: a }, { seq: 1, notice: b })).toBe(a);
+    expect(latestNotice({ seq: 1, notice: a }, { seq: 2, notice: b })).toBe(b);
+    expect(latestNotice({ seq: 1, notice: a }, { seq: 1, notice: b })).toBe(b);
+    expect(latestNotice({ seq: 1, notice: a }, { seq: 2, notice: null })).toBeNull();
+    expect(latestNotice({ seq: 0, notice: null }, { seq: 0, notice: null })).toBeNull();
+  });
+});
+
+describe("refreshFailureNotice", () => {
+  it("is null when both refreshed", () => {
+    expect(refreshFailureNotice([], { ok: true })).toBeNull();
+  });
+  it("a failed incoming refresh gives the generic message", () => {
+    expect(refreshFailureNotice(null, { ok: true })).toEqual({
+      tone: "error",
+      text: portalCopy.devices.refreshFailed,
+    });
+  });
+  it("a failed devices refresh shows its code message", () => {
+    expect(refreshFailureNotice([], { ok: false, code: "unavailable" })).toEqual({
+      tone: "error",
+      text: apiErrorMessage("unavailable"),
+    });
+  });
+});
 import { ApiAccessError } from "@/lib/api/fetch";
 
 const noop = () => {};

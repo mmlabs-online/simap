@@ -11,7 +11,7 @@ export const portalCopy = {
   seat: {
     heading: "My seat",
     viewOnMap: "View on map",
-    release: "Release",
+    release: "Release seat",
     room: "Room",
     group: "Group",
     project: "Project",
@@ -19,6 +19,7 @@ export const portalCopy = {
     requestsHeading: "My requests",
     empty: "You do not have a seat yet.",
     emptyAction: "Browse rooms",
+    noSeat: "You do not have a seat.",
     loadFailed: "Could not load your seats.",
     retry: "Try again",
     released: "Seat released.",
@@ -29,6 +30,8 @@ export const portalCopy = {
     loadMore: "Load more",
     retry: "Try again",
     waiting: "Waiting for my confirmation",
+    loadMoreFailed: "Could not load more devices.",
+    refreshFailed: "Could not refresh the lists. Reload to see the latest.",
   },
   profile: {
     heading: "Profile",

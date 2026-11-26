@@ -57,6 +57,23 @@ export const requestsPageRedirect = "/portal?tab=seat";
 export const devicesPageRedirect = (tier: Tier | undefined): string | null =>
   tier === "user" ? "/portal?tab=devices" : null;
 
+type Notice = { tone: "status" | "error"; text: string };
+export type StampedNotice = { seq: number; notice: Notice | null };
+
+/** Of two stamped notice sources the one set last wins (even when it is a clear); a tie prefers `b`. */
+export const latestNotice = (a: StampedNotice, b: StampedNotice): Notice | null =>
+  a.seq > b.seq ? a.notice : b.notice;
+
+/** An error notice when the incoming list or the devices list failed to refresh; null when both refreshed. */
+export function refreshFailureNotice(
+  incoming: unknown[] | null,
+  devices: { ok: true } | { ok: false; code: string },
+): Notice | null {
+  if (devices.ok === false) return { tone: "error", text: apiErrorMessage(devices.code) };
+  if (incoming === null) return { tone: "error", text: portalCopy.devices.refreshFailed };
+  return null;
+}
+
 export type ProfileOutcomeView = {
   notice: { tone: "status" | "error"; text: string } | null;
   fieldError: "invalid" | null;
