@@ -29,7 +29,7 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [ ] M-7 Deployment-repo setup PR for simap (not a `release/*` branch): copy `deploy/deployment-repo/**` from the simap
   repo, run `bash postgres/scripts/add-app-db.sh simap` (this is M-3) and add the CODEOWNERS line; steps in
   `deploy/deployment-repo/README.md`. Ming merges; deploy-simap skips until a release PR writes `release.env`. (D3, D8)
-- [ ] M-8 First release: from a commit on `main`, push branch `release/0.1.0` (Ming's step, agents never push
+- [x] M-8 (2026-11-26, Ming: "M-8 đã xong"; releases up to v0.1.12 exist) First release: from a commit on `main`, push branch `release/0.1.0` (Ming's step, agents never push
   `release/*`); check the `release` run is green, review and merge the `release/simap-v0.1.0` PR on
   `mmlabs-online/deployment`, then check the `deploy-simap` run and `/api/readyz` (needs M-2, M-3, M-6, M-7). (D8)
 - [ ] M-9 Pixel art, phase 1 (D45, D54): pick 1 main free pack (+1 backup) from `docs/art/asset-candidates.md`, check
