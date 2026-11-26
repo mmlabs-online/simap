@@ -99,6 +99,19 @@ describe("AppShellView", () => {
     });
   });
 
+  it("Credits link in the header for user, manager and admin; absent signed out; aria-current only on /credits; nav hrefs unchanged", () => {
+    const link = (html: string) => /<a [^>]*href="\/credits"[^>]*>/.exec(html)?.[0];
+    for (const tier of ["user", "manager", "admin"] as const) {
+      const html = render(tier, "/rooms");
+      expect(link(html)).toBeDefined();
+      expect(link(html)).not.toContain("aria-current");
+      expect(html).toContain(`>${shellCopy.credits}<`);
+      expect(link(render(tier, "/credits"))).toContain('aria-current="page"');
+      expect(hrefs(html)).not.toContain("/credits");
+    }
+    expect(render(null)).not.toContain('href="/credits"');
+  });
+
   it("signed out shows the sign-in placeholder and no nav", () => {
     const html = render(null);
     expect(html).toContain(shellCopy.signedOut.title);

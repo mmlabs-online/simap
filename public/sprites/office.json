@@ -2,8 +2,8 @@
   "tile": 32,
   "frames": {
     "avatar.body.back": {
-      "x": 491,
-      "y": 97,
+      "x": 625,
+      "y": 111,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -17,8 +17,8 @@
       "blocks": false
     },
     "avatar.body.front": {
-      "x": 524,
-      "y": 97,
+      "x": 658,
+      "y": 111,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -32,8 +32,8 @@
       "blocks": false
     },
     "avatar.hair.1.back": {
-      "x": 557,
-      "y": 97,
+      "x": 691,
+      "y": 111,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -47,8 +47,8 @@
       "blocks": false
     },
     "avatar.hair.1.front": {
-      "x": 590,
-      "y": 97,
+      "x": 724,
+      "y": 111,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -62,8 +62,8 @@
       "blocks": false
     },
     "avatar.hair.2.back": {
-      "x": 623,
-      "y": 97,
+      "x": 757,
+      "y": 111,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -77,8 +77,8 @@
       "blocks": false
     },
     "avatar.hair.2.front": {
-      "x": 656,
-      "y": 97,
+      "x": 790,
+      "y": 111,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -92,8 +92,8 @@
       "blocks": false
     },
     "avatar.hair.3.back": {
-      "x": 689,
-      "y": 97,
+      "x": 823,
+      "y": 111,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -107,8 +107,8 @@
       "blocks": false
     },
     "avatar.hair.3.front": {
-      "x": 722,
-      "y": 97,
+      "x": 856,
+      "y": 111,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -122,8 +122,8 @@
       "blocks": false
     },
     "avatar.shirt.back": {
-      "x": 755,
-      "y": 97,
+      "x": 889,
+      "y": 111,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -137,8 +137,8 @@
       "blocks": false
     },
     "avatar.shirt.front": {
-      "x": 788,
-      "y": 97,
+      "x": 922,
+      "y": 111,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -152,13 +152,13 @@
       "blocks": false
     },
     "cabinet.filing.e": {
-      "x": 846,
+      "x": 963,
       "y": 0,
-      "w": 32,
-      "h": 48,
+      "w": 34,
+      "h": 58,
       "anchor": [
-        0,
-        -16
+        -1,
+        -28
       ],
       "tiles": [
         1,
@@ -167,13 +167,13 @@
       "blocks": true
     },
     "cabinet.filing.n": {
-      "x": 879,
+      "x": 872,
       "y": 0,
-      "w": 32,
-      "h": 48,
+      "w": 31,
+      "h": 59,
       "anchor": [
         0,
-        -16
+        -28
       ],
       "tiles": [
         1,
@@ -182,13 +182,13 @@
       "blocks": true
     },
     "cabinet.filing.s": {
-      "x": 912,
+      "x": 904,
       "y": 0,
-      "w": 32,
-      "h": 48,
+      "w": 31,
+      "h": 59,
       "anchor": [
         0,
-        -16
+        -29
       ],
       "tiles": [
         1,
@@ -197,13 +197,13 @@
       "blocks": true
     },
     "cabinet.filing.w": {
-      "x": 945,
-      "y": 0,
-      "w": 32,
-      "h": 48,
+      "x": 0,
+      "y": 111,
+      "w": 33,
+      "h": 58,
       "anchor": [
-        0,
-        -16
+        -1,
+        -28
       ],
       "tiles": [
         1,
@@ -212,13 +212,13 @@
       "blocks": true
     },
     "chair.office.e": {
-      "x": 978,
-      "y": 0,
-      "w": 32,
-      "h": 48,
+      "x": 105,
+      "y": 111,
+      "w": 33,
+      "h": 55,
       "anchor": [
-        0,
-        -16
+        -1,
+        -26
       ],
       "tiles": [
         1,
@@ -227,13 +227,13 @@
       "blocks": false
     },
     "chair.office.n": {
-      "x": 0,
-      "y": 97,
-      "w": 32,
-      "h": 48,
+      "x": 557,
+      "y": 111,
+      "w": 34,
+      "h": 42,
       "anchor": [
-        0,
-        -16
+        -1,
+        -14
       ],
       "tiles": [
         1,
@@ -242,13 +242,13 @@
       "blocks": false
     },
     "chair.office.s": {
-      "x": 33,
-      "y": 97,
-      "w": 32,
-      "h": 48,
+      "x": 34,
+      "y": 111,
+      "w": 34,
+      "h": 58,
       "anchor": [
-        0,
-        -16
+        -1,
+        -28
       ],
       "tiles": [
         1,
@@ -257,13 +257,13 @@
       "blocks": false
     },
     "chair.office.w": {
-      "x": 66,
-      "y": 97,
-      "w": 32,
-      "h": 48,
+      "x": 139,
+      "y": 111,
+      "w": 33,
+      "h": 55,
       "anchor": [
         0,
-        -16
+        -26
       ],
       "tiles": [
         1,
@@ -272,7 +272,7 @@
       "blocks": false
     },
     "desk.pair.e": {
-      "x": 130,
+      "x": 214,
       "y": 0,
       "w": 64,
       "h": 80,
@@ -287,7 +287,7 @@
       "blocks": true
     },
     "desk.pair.n": {
-      "x": 195,
+      "x": 279,
       "y": 0,
       "w": 64,
       "h": 80,
@@ -302,7 +302,7 @@
       "blocks": true
     },
     "desk.pair.s": {
-      "x": 260,
+      "x": 344,
       "y": 0,
       "w": 64,
       "h": 80,
@@ -317,7 +317,7 @@
       "blocks": true
     },
     "desk.pair.w": {
-      "x": 325,
+      "x": 409,
       "y": 0,
       "w": 64,
       "h": 80,
@@ -332,13 +332,13 @@
       "blocks": true
     },
     "desk.single.e": {
-      "x": 390,
+      "x": 138,
       "y": 0,
-      "w": 32,
-      "h": 80,
+      "w": 37,
+      "h": 84,
       "anchor": [
-        0,
-        -16
+        -3,
+        -20
       ],
       "tiles": [
         1,
@@ -347,13 +347,13 @@
       "blocks": true
     },
     "desk.single.n": {
-      "x": 99,
-      "y": 97,
-      "w": 64,
-      "h": 48,
+      "x": 173,
+      "y": 111,
+      "w": 68,
+      "h": 53,
       "anchor": [
-        0,
-        -16
+        -2,
+        -19
       ],
       "tiles": [
         2,
@@ -362,13 +362,13 @@
       "blocks": true
     },
     "desk.single.s": {
-      "x": 164,
-      "y": 97,
-      "w": 64,
-      "h": 48,
+      "x": 242,
+      "y": 111,
+      "w": 68,
+      "h": 53,
       "anchor": [
-        0,
-        -16
+        -2,
+        -21
       ],
       "tiles": [
         2,
@@ -377,13 +377,13 @@
       "blocks": true
     },
     "desk.single.w": {
-      "x": 423,
+      "x": 176,
       "y": 0,
-      "w": 32,
-      "h": 80,
+      "w": 37,
+      "h": 83,
       "anchor": [
-        0,
-        -16
+        -2,
+        -20
       ],
       "tiles": [
         1,
@@ -392,13 +392,13 @@
       "blocks": true
     },
     "device.laptop.e": {
-      "x": 365,
-      "y": 179,
-      "w": 16,
-      "h": 16,
+      "x": 955,
+      "y": 111,
+      "w": 23,
+      "h": 32,
       "anchor": [
-        8,
-        16
+        5,
+        -4
       ],
       "tiles": [
         1,
@@ -407,13 +407,13 @@
       "blocks": false
     },
     "device.laptop.n": {
-      "x": 382,
-      "y": 179,
-      "w": 22,
-      "h": 16,
+      "x": 561,
+      "y": 203,
+      "w": 24,
+      "h": 19,
       "anchor": [
-        5,
-        16
+        4,
+        3
       ],
       "tiles": [
         1,
@@ -422,13 +422,13 @@
       "blocks": false
     },
     "device.laptop.s": {
-      "x": 405,
-      "y": 179,
-      "w": 22,
-      "h": 16,
+      "x": 395,
+      "y": 203,
+      "w": 24,
+      "h": 31,
       "anchor": [
-        5,
-        16
+        4,
+        -3
       ],
       "tiles": [
         1,
@@ -437,13 +437,13 @@
       "blocks": false
     },
     "device.laptop.w": {
-      "x": 428,
-      "y": 179,
-      "w": 16,
-      "h": 16,
+      "x": 979,
+      "y": 111,
+      "w": 23,
+      "h": 32,
       "anchor": [
-        8,
-        16
+        4,
+        -4
       ],
       "tiles": [
         1,
@@ -452,8 +452,8 @@
       "blocks": false
     },
     "device.monitor.dual": {
-      "x": 228,
-      "y": 179,
+      "x": 515,
+      "y": 203,
       "w": 32,
       "h": 20,
       "anchor": [
@@ -467,13 +467,13 @@
       "blocks": false
     },
     "device.monitor.e": {
-      "x": 261,
-      "y": 179,
-      "w": 12,
-      "h": 20,
+      "x": 311,
+      "y": 111,
+      "w": 24,
+      "h": 48,
       "anchor": [
-        10,
-        12
+        4,
+        -17
       ],
       "tiles": [
         1,
@@ -482,13 +482,13 @@
       "blocks": false
     },
     "device.monitor.n": {
-      "x": 274,
-      "y": 179,
-      "w": 22,
-      "h": 20,
+      "x": 420,
+      "y": 203,
+      "w": 32,
+      "h": 30,
       "anchor": [
-        5,
-        12
+        0,
+        -2
       ],
       "tiles": [
         1,
@@ -497,13 +497,13 @@
       "blocks": false
     },
     "device.monitor.s": {
-      "x": 297,
-      "y": 179,
-      "w": 22,
-      "h": 20,
+      "x": 592,
+      "y": 111,
+      "w": 32,
+      "h": 34,
       "anchor": [
-        5,
-        12
+        0,
+        -6
       ],
       "tiles": [
         1,
@@ -512,13 +512,13 @@
       "blocks": false
     },
     "device.monitor.w": {
-      "x": 320,
-      "y": 179,
-      "w": 12,
-      "h": 20,
+      "x": 532,
+      "y": 111,
+      "w": 24,
+      "h": 47,
       "anchor": [
-        10,
-        12
+        4,
+        -17
       ],
       "tiles": [
         1,
@@ -527,8 +527,8 @@
       "blocks": false
     },
     "device.other": {
-      "x": 462,
-      "y": 179,
+      "x": 638,
+      "y": 203,
       "w": 14,
       "h": 12,
       "anchor": [
@@ -542,8 +542,8 @@
       "blocks": false
     },
     "device.pc": {
-      "x": 333,
-      "y": 179,
+      "x": 548,
+      "y": 203,
       "w": 12,
       "h": 20,
       "anchor": [
@@ -557,8 +557,8 @@
       "blocks": false
     },
     "device.phone": {
-      "x": 477,
-      "y": 179,
+      "x": 653,
+      "y": 203,
       "w": 8,
       "h": 12,
       "anchor": [
@@ -572,8 +572,8 @@
       "blocks": false
     },
     "door.e": {
-      "x": 821,
-      "y": 97,
+      "x": 0,
+      "y": 170,
       "w": 64,
       "h": 32,
       "anchor": [
@@ -587,7 +587,7 @@
       "blocks": true
     },
     "door.n": {
-      "x": 456,
+      "x": 676,
       "y": 0,
       "w": 32,
       "h": 64,
@@ -602,7 +602,7 @@
       "blocks": true
     },
     "door.s": {
-      "x": 489,
+      "x": 709,
       "y": 0,
       "w": 32,
       "h": 64,
@@ -617,8 +617,8 @@
       "blocks": true
     },
     "door.w": {
-      "x": 886,
-      "y": 97,
+      "x": 65,
+      "y": 170,
       "w": 64,
       "h": 32,
       "anchor": [
@@ -632,7 +632,7 @@
       "blocks": true
     },
     "elevator": {
-      "x": 522,
+      "x": 742,
       "y": 0,
       "w": 64,
       "h": 64,
@@ -647,8 +647,8 @@
       "blocks": true
     },
     "floor.carpet": {
-      "x": 951,
-      "y": 97,
+      "x": 130,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -662,8 +662,8 @@
       "blocks": false
     },
     "floor.carpet.alt": {
-      "x": 984,
-      "y": 97,
+      "x": 163,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -677,8 +677,8 @@
       "blocks": false
     },
     "floor.lavender": {
-      "x": 0,
-      "y": 146,
+      "x": 196,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -692,8 +692,8 @@
       "blocks": false
     },
     "floor.wood": {
-      "x": 33,
-      "y": 146,
+      "x": 229,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -707,8 +707,8 @@
       "blocks": false
     },
     "label.sign": {
-      "x": 66,
-      "y": 146,
+      "x": 262,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -722,8 +722,8 @@
       "blocks": false
     },
     "lamp.floor": {
-      "x": 229,
-      "y": 97,
+      "x": 336,
+      "y": 111,
       "w": 32,
       "h": 48,
       "anchor": [
@@ -737,8 +737,8 @@
       "blocks": true
     },
     "marker.blocked": {
-      "x": 99,
-      "y": 146,
+      "x": 295,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -752,8 +752,8 @@
       "blocks": true
     },
     "partition.glass": {
-      "x": 132,
-      "y": 146,
+      "x": 328,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -767,13 +767,13 @@
       "blocks": true
     },
     "plant.large": {
-      "x": 262,
-      "y": 97,
-      "w": 32,
-      "h": 48,
+      "x": 936,
+      "y": 0,
+      "w": 26,
+      "h": 59,
       "anchor": [
-        0,
-        -16
+        4,
+        -32
       ],
       "tiles": [
         1,
@@ -782,13 +782,13 @@
       "blocks": true
     },
     "plant.small": {
-      "x": 295,
-      "y": 97,
-      "w": 32,
-      "h": 48,
+      "x": 69,
+      "y": 111,
+      "w": 35,
+      "h": 57,
       "anchor": [
-        0,
-        -16
+        -1,
+        -31
       ],
       "tiles": [
         1,
@@ -797,8 +797,8 @@
       "blocks": true
     },
     "prop.keyboard": {
-      "x": 523,
-      "y": 179,
+      "x": 671,
+      "y": 203,
       "w": 18,
       "h": 8,
       "anchor": [
@@ -812,8 +812,8 @@
       "blocks": false
     },
     "prop.mouse": {
-      "x": 514,
-      "y": 179,
+      "x": 662,
+      "y": 203,
       "w": 8,
       "h": 10,
       "anchor": [
@@ -827,13 +827,13 @@
       "blocks": false
     },
     "prop.mug": {
-      "x": 503,
-      "y": 179,
-      "w": 10,
-      "h": 11,
+      "x": 605,
+      "y": 203,
+      "w": 15,
+      "h": 17,
       "anchor": [
-        11,
-        21
+        8,
+        5
       ],
       "tiles": [
         1,
@@ -842,13 +842,13 @@
       "blocks": false
     },
     "prop.papers": {
-      "x": 486,
-      "y": 179,
-      "w": 16,
-      "h": 12,
+      "x": 453,
+      "y": 203,
+      "w": 30,
+      "h": 30,
       "anchor": [
-        8,
-        20
+        1,
+        -1
       ],
       "tiles": [
         1,
@@ -857,8 +857,8 @@
       "blocks": false
     },
     "rack.server": {
-      "x": 328,
-      "y": 97,
+      "x": 369,
+      "y": 111,
       "w": 32,
       "h": 48,
       "anchor": [
@@ -872,8 +872,8 @@
       "blocks": true
     },
     "shelf.books": {
-      "x": 361,
-      "y": 97,
+      "x": 402,
+      "y": 111,
       "w": 64,
       "h": 48,
       "anchor": [
@@ -887,8 +887,8 @@
       "blocks": true
     },
     "sofa": {
-      "x": 165,
-      "y": 146,
+      "x": 361,
+      "y": 170,
       "w": 64,
       "h": 32,
       "anchor": [
@@ -902,7 +902,7 @@
       "blocks": true
     },
     "stairs": {
-      "x": 587,
+      "x": 807,
       "y": 0,
       "w": 64,
       "h": 64,
@@ -917,8 +917,8 @@
       "blocks": true
     },
     "state.cannot": {
-      "x": 445,
-      "y": 179,
+      "x": 621,
+      "y": 203,
       "w": 16,
       "h": 16,
       "anchor": [
@@ -932,8 +932,8 @@
       "blocks": false
     },
     "state.mine.tint": {
-      "x": 197,
-      "y": 179,
+      "x": 484,
+      "y": 203,
       "w": 30,
       "h": 22,
       "anchor": [
@@ -947,8 +947,8 @@
       "blocks": false
     },
     "state.pending": {
-      "x": 346,
-      "y": 179,
+      "x": 586,
+      "y": 203,
       "w": 18,
       "h": 18,
       "anchor": [
@@ -962,8 +962,8 @@
       "blocks": false
     },
     "table.coffee": {
-      "x": 230,
-      "y": 146,
+      "x": 426,
+      "y": 170,
       "w": 64,
       "h": 32,
       "anchor": [
@@ -979,11 +979,11 @@
     "table.meeting.e": {
       "x": 0,
       "y": 0,
-      "w": 64,
-      "h": 96,
+      "w": 68,
+      "h": 110,
       "anchor": [
-        0,
-        0
+        -2,
+        -20
       ],
       "tiles": [
         2,
@@ -992,13 +992,13 @@
       "blocks": true
     },
     "table.meeting.n": {
-      "x": 652,
+      "x": 474,
       "y": 0,
-      "w": 96,
-      "h": 64,
+      "w": 100,
+      "h": 76,
       "anchor": [
-        0,
-        0
+        -2,
+        -20
       ],
       "tiles": [
         3,
@@ -1007,13 +1007,13 @@
       "blocks": true
     },
     "table.meeting.s": {
-      "x": 749,
+      "x": 575,
       "y": 0,
-      "w": 96,
-      "h": 64,
+      "w": 100,
+      "h": 76,
       "anchor": [
-        0,
-        0
+        -2,
+        -20
       ],
       "tiles": [
         3,
@@ -1022,13 +1022,13 @@
       "blocks": true
     },
     "table.meeting.w": {
-      "x": 65,
+      "x": 69,
       "y": 0,
-      "w": 64,
-      "h": 96,
+      "w": 68,
+      "h": 110,
       "anchor": [
-        0,
-        0
+        -2,
+        -20
       ],
       "tiles": [
         2,
@@ -1037,8 +1037,8 @@
       "blocks": true
     },
     "wall.base": {
-      "x": 295,
-      "y": 146,
+      "x": 491,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1052,8 +1052,8 @@
       "blocks": true
     },
     "wall.corner.ne": {
-      "x": 328,
-      "y": 146,
+      "x": 524,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1067,8 +1067,8 @@
       "blocks": true
     },
     "wall.corner.ne.face": {
-      "x": 361,
-      "y": 146,
+      "x": 557,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1082,8 +1082,8 @@
       "blocks": true
     },
     "wall.corner.nw": {
-      "x": 394,
-      "y": 146,
+      "x": 590,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1097,8 +1097,8 @@
       "blocks": true
     },
     "wall.corner.nw.face": {
-      "x": 427,
-      "y": 146,
+      "x": 623,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1112,8 +1112,8 @@
       "blocks": true
     },
     "wall.corner.se": {
-      "x": 460,
-      "y": 146,
+      "x": 656,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1127,8 +1127,8 @@
       "blocks": true
     },
     "wall.corner.sw": {
-      "x": 493,
-      "y": 146,
+      "x": 689,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1142,8 +1142,8 @@
       "blocks": true
     },
     "wall.face": {
-      "x": 526,
-      "y": 146,
+      "x": 722,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1157,8 +1157,8 @@
       "blocks": true
     },
     "wall.face.shade": {
-      "x": 559,
-      "y": 146,
+      "x": 755,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1172,8 +1172,8 @@
       "blocks": true
     },
     "wall.front": {
-      "x": 592,
-      "y": 146,
+      "x": 788,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1187,8 +1187,8 @@
       "blocks": true
     },
     "wall.front.end.e": {
-      "x": 625,
-      "y": 146,
+      "x": 821,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1202,8 +1202,8 @@
       "blocks": true
     },
     "wall.front.end.w": {
-      "x": 658,
-      "y": 146,
+      "x": 854,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1217,8 +1217,8 @@
       "blocks": true
     },
     "wall.inner.h.end.w": {
-      "x": 691,
-      "y": 146,
+      "x": 887,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1232,8 +1232,8 @@
       "blocks": true
     },
     "wall.inner.h.end.w.face": {
-      "x": 724,
-      "y": 146,
+      "x": 920,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1247,8 +1247,8 @@
       "blocks": true
     },
     "wall.inner.v": {
-      "x": 757,
-      "y": 146,
+      "x": 953,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1262,8 +1262,8 @@
       "blocks": true
     },
     "wall.inner.v.end": {
-      "x": 790,
-      "y": 146,
+      "x": 986,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1277,8 +1277,8 @@
       "blocks": true
     },
     "wall.side.e": {
-      "x": 823,
-      "y": 146,
+      "x": 0,
+      "y": 203,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1292,8 +1292,8 @@
       "blocks": true
     },
     "wall.side.w": {
-      "x": 856,
-      "y": 146,
+      "x": 33,
+      "y": 203,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1307,8 +1307,8 @@
       "blocks": true
     },
     "wall.side.w.end": {
-      "x": 889,
-      "y": 146,
+      "x": 66,
+      "y": 203,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1322,8 +1322,8 @@
       "blocks": true
     },
     "wall.side.w.start": {
-      "x": 922,
-      "y": 146,
+      "x": 99,
+      "y": 203,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1337,8 +1337,8 @@
       "blocks": true
     },
     "wall.t.e": {
-      "x": 955,
-      "y": 146,
+      "x": 132,
+      "y": 203,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1352,8 +1352,8 @@
       "blocks": true
     },
     "wall.t.s": {
-      "x": 988,
-      "y": 146,
+      "x": 165,
+      "y": 203,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1367,8 +1367,8 @@
       "blocks": true
     },
     "wall.t.s.face": {
-      "x": 0,
-      "y": 179,
+      "x": 198,
+      "y": 203,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1382,8 +1382,8 @@
       "blocks": true
     },
     "wall.top": {
-      "x": 33,
-      "y": 179,
+      "x": 231,
+      "y": 203,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1397,8 +1397,8 @@
       "blocks": true
     },
     "whiteboard": {
-      "x": 426,
-      "y": 97,
+      "x": 467,
+      "y": 111,
       "w": 64,
       "h": 48,
       "anchor": [
@@ -1412,8 +1412,8 @@
       "blocks": true
     },
     "window.double": {
-      "x": 66,
-      "y": 179,
+      "x": 264,
+      "y": 203,
       "w": 64,
       "h": 32,
       "anchor": [
@@ -1427,8 +1427,8 @@
       "blocks": true
     },
     "window.single": {
-      "x": 131,
-      "y": 179,
+      "x": 329,
+      "y": 203,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1442,8 +1442,8 @@
       "blocks": true
     },
     "window.single.top": {
-      "x": 164,
-      "y": 179,
+      "x": 362,
+      "y": 203,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -1467,7 +1467,7 @@
   ],
   "meta": {
     "generator": "scripts/sprites-pack.mjs",
-    "version": "d6fb7931ba33",
+    "version": "4bd6e375f175",
     "sources": {
       "avatar.body.back": "placeholder",
       "avatar.body.front": "placeholder",
@@ -1479,31 +1479,31 @@
       "avatar.hair.3.front": "placeholder",
       "avatar.shirt.back": "placeholder",
       "avatar.shirt.front": "placeholder",
-      "cabinet.filing.e": "placeholder",
-      "cabinet.filing.n": "placeholder",
-      "cabinet.filing.s": "placeholder",
-      "cabinet.filing.w": "placeholder",
-      "chair.office.e": "placeholder",
-      "chair.office.n": "placeholder",
-      "chair.office.s": "placeholder",
-      "chair.office.w": "placeholder",
+      "cabinet.filing.e": "map",
+      "cabinet.filing.n": "map",
+      "cabinet.filing.s": "map",
+      "cabinet.filing.w": "map",
+      "chair.office.e": "map",
+      "chair.office.n": "map",
+      "chair.office.s": "map",
+      "chair.office.w": "map",
       "desk.pair.e": "placeholder",
       "desk.pair.n": "placeholder",
       "desk.pair.s": "placeholder",
       "desk.pair.w": "placeholder",
-      "desk.single.e": "placeholder",
-      "desk.single.n": "placeholder",
-      "desk.single.s": "placeholder",
-      "desk.single.w": "placeholder",
-      "device.laptop.e": "placeholder",
-      "device.laptop.n": "placeholder",
-      "device.laptop.s": "placeholder",
-      "device.laptop.w": "placeholder",
+      "desk.single.e": "map",
+      "desk.single.n": "map",
+      "desk.single.s": "map",
+      "desk.single.w": "map",
+      "device.laptop.e": "map",
+      "device.laptop.n": "map",
+      "device.laptop.s": "map",
+      "device.laptop.w": "map",
       "device.monitor.dual": "placeholder",
-      "device.monitor.e": "placeholder",
-      "device.monitor.n": "placeholder",
-      "device.monitor.s": "placeholder",
-      "device.monitor.w": "placeholder",
+      "device.monitor.e": "map",
+      "device.monitor.n": "map",
+      "device.monitor.s": "map",
+      "device.monitor.w": "map",
       "device.other": "placeholder",
       "device.pc": "placeholder",
       "device.phone": "placeholder",
@@ -1512,20 +1512,20 @@
       "door.s": "placeholder",
       "door.w": "placeholder",
       "elevator": "placeholder",
-      "floor.carpet": "placeholder",
-      "floor.carpet.alt": "placeholder",
+      "floor.carpet": "map",
+      "floor.carpet.alt": "map",
       "floor.lavender": "placeholder",
-      "floor.wood": "placeholder",
+      "floor.wood": "map",
       "label.sign": "placeholder",
       "lamp.floor": "placeholder",
       "marker.blocked": "placeholder",
       "partition.glass": "placeholder",
-      "plant.large": "placeholder",
-      "plant.small": "placeholder",
+      "plant.large": "map",
+      "plant.small": "map",
       "prop.keyboard": "placeholder",
       "prop.mouse": "placeholder",
-      "prop.mug": "placeholder",
-      "prop.papers": "placeholder",
+      "prop.mug": "map",
+      "prop.papers": "map",
       "rack.server": "placeholder",
       "shelf.books": "placeholder",
       "sofa": "placeholder",
@@ -1534,38 +1534,38 @@
       "state.mine.tint": "placeholder",
       "state.pending": "placeholder",
       "table.coffee": "placeholder",
-      "table.meeting.e": "placeholder",
-      "table.meeting.n": "placeholder",
-      "table.meeting.s": "placeholder",
-      "table.meeting.w": "placeholder",
+      "table.meeting.e": "map",
+      "table.meeting.n": "map",
+      "table.meeting.s": "map",
+      "table.meeting.w": "map",
       "wall.base": "placeholder",
-      "wall.corner.ne": "placeholder",
-      "wall.corner.ne.face": "placeholder",
-      "wall.corner.nw": "placeholder",
-      "wall.corner.nw.face": "placeholder",
-      "wall.corner.se": "placeholder",
-      "wall.corner.sw": "placeholder",
-      "wall.face": "placeholder",
+      "wall.corner.ne": "map",
+      "wall.corner.ne.face": "map",
+      "wall.corner.nw": "map",
+      "wall.corner.nw.face": "map",
+      "wall.corner.se": "map",
+      "wall.corner.sw": "map",
+      "wall.face": "map",
       "wall.face.shade": "placeholder",
-      "wall.front": "placeholder",
-      "wall.front.end.e": "placeholder",
-      "wall.front.end.w": "placeholder",
-      "wall.inner.h.end.w": "placeholder",
-      "wall.inner.h.end.w.face": "placeholder",
-      "wall.inner.v": "placeholder",
-      "wall.inner.v.end": "placeholder",
-      "wall.side.e": "placeholder",
-      "wall.side.w": "placeholder",
-      "wall.side.w.end": "placeholder",
-      "wall.side.w.start": "placeholder",
-      "wall.t.e": "placeholder",
-      "wall.t.s": "placeholder",
-      "wall.t.s.face": "placeholder",
-      "wall.top": "placeholder",
+      "wall.front": "map",
+      "wall.front.end.e": "map",
+      "wall.front.end.w": "map",
+      "wall.inner.h.end.w": "map",
+      "wall.inner.h.end.w.face": "map",
+      "wall.inner.v": "map",
+      "wall.inner.v.end": "map",
+      "wall.side.e": "map",
+      "wall.side.w": "map",
+      "wall.side.w.end": "map",
+      "wall.side.w.start": "map",
+      "wall.t.e": "map",
+      "wall.t.s": "map",
+      "wall.t.s.face": "map",
+      "wall.top": "map",
       "whiteboard": "placeholder",
       "window.double": "placeholder",
-      "window.single": "placeholder",
-      "window.single.top": "placeholder"
+      "window.single": "map",
+      "window.single.top": "map"
     }
   }
 }

@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | MERGED |
 | Priority | P1 |
 | Size | S |
 | Areas | ui, architecture |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-015.3 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/116 |
 
 ## Goal
 Production shows the real sprites of the bundled package (the library behind the map item catalog, D66) instead of placeholders, and credits its authors as the licence requires.
@@ -44,8 +44,25 @@ Production shows the real sprites of the bundled package (the library behind the
 - Manual: build the image and open a room map and the Credits page.
 
 ## Notes / answers from Ming
+- 2026-11-26: M-63 done (Ming: "Đồng ý, làm luôn"): the real Imersa atlas is packed (55 map frames) and committed on this branch. Gate set to plan-approval (P1 policy `high-paths+P1`, matching the board).
+- 2026-11-26: The repo is PUBLIC (gh repo view), contrary to D45/D60; CREDITS.md:16 also says public. Ming: "Anh sẽ chuyển repo sang private" (M-79). The atlas commit (4383539) was already pushed while the repo was public. The PR must not open until the repo is private.
+- 2026-11-26: Ming: "ignore đi tôi chuyển private sau. hãy làm như thể repo đã private" — proceed as if the repo is private; M-79 stays open for Ming and does not block the PR.
+Waiting for Ming: plan approval (High tier) — M-80 (filed as M-78; renumbered because main took M-77/M-78 for SIM-021). Repo-private item: M-79 (filed as M-77).
+Plan approved (2026-11-26, Ming: "duyệt SIM-033" — assumptions A1–A8 as written).
 - 2026-11-25: re-scoped to D66 (bundled package committed; per-item art moves to SIM-039.x).
 - 2026-11-25: D64 replaces the single-pack plan (M-9/M-10 not needed). Re-scope this ticket before running it: Admins pick art per item from a bundled package or a custom image.
 - 2026-11-22 (D58): created from the art review. Waits for M-10.
 
 ## Handoff
+
+### 2026-11-26 — claude — BLOCKED
+- Agent calls: 3, tokens ~100k+ (in/out split not reported): frontend-developer×1 41k, software-architect×1 59k, planner×1 (tokens not reported); all on default models.
+- Done: M-63. The real atlas was packed on Ming's PC (55 map frames) and committed on this branch, with Ming's OK. Consult and plan are done: `Status: READY`, no High path, about 300 lines.
+- In progress / next: Ming approves the plan (M-80), then `/run SIM-033` resumes at IMPLEMENT. M-79 (make the repo private) stays open; by Ming's instruction it does not block the PR.
+- Gotchas: the repo is PUBLIC, although D45 and D60 say private. The atlas commit 4383539 was pushed while it was public. `committed-atlas.test.ts` "placeholder-only" fails on this branch until the plan's test change lands.
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 2 this run, tokens ~110k (in/out split not reported): implementer×1 60k, reviewer×1 50k; both on default models. The planning run before it made 3 calls.
+- Done: Ming approved the plan (M-80). Implemented: atlas tests, licence wording, bundled sprite filter, Credits page with a header link, plus one out-of-plan, test-only fix (`placement.test.ts`). Attempt 1 PASS; no security trigger. Merged main because ming-todo conflicted; Ming items are now M-79 (repo private) and M-80 (plan approval). PR #116.
+- In progress / next: Ming merges #116, does the visual checks (room map desk with devices, /map-items browser, /credits) and makes the repo private (M-79).
+- Gotchas: the repo is PUBLIC (D45/D60 say private). The atlas commit 4383539 was pushed while public. plan.md, review.md and impl-log.md still say M-77 for the repo item; its final number is M-79.
