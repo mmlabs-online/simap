@@ -35,6 +35,7 @@ After the first production release, the manual flow run is recorded in `work/tic
 - Manual: none beyond the run (docs only).
 
 ## Notes / answers from Ming
+- 2026-11-26: Ming asked Claude to run what it can. Claude ran the signed-out automated checks (A1–A10 in `work/tickets/SIM-021/flow-run.md`): all PASS, one transient edge 503 noted. The signed-in F1–F11 run still needs Ming (accounts, Turnstile); send the results per row and Claude records them and files bugs.
 - 2026-11-26: created on SIM-021 plan approval (Ming approved the split).
 
 ## Handoff

@@ -185,3 +185,26 @@ through the placement, transfer and return rows; a second device D2 is created i
   screenshots that show request headers. Describe the host and path only.
 - Things outside the spec (placeholder art, no members sync before SIM-020) go into Notes, not into bugs.
 - After fixes ship, re-run only the failed rows and append the results with the new version.
+
+## Automated checks without sign-in (Claude, 2026-11-26)
+
+Run from a cloud session (curl + headless Chromium) against `https://simap.mmlabs.online`. No account was used, so the
+F1–F11 rows above stay for Ming's signed-in run. The session's network allowed only `simap.mmlabs.online`; requests to
+`api.mmlabs.online` (Identity), `challenges.cloudflare.com` (Turnstile) and `static.cloudflareinsights.com` were blocked
+by the session's proxy, not by the app, so those failures are environment artifacts.
+
+| # | Check | Result | Notes |
+|---|---|---|---|
+| A1 | `GET /api/healthz` | PASS | 200 `{"status":"ok"}` |
+| A2 | `GET /api/readyz` | PASS | 200 `{"status":"ok"}` (DB reachable) |
+| A3 | Org API without a token (`/api/me`, `/api/devices`, `/api/devices/mine`) | PASS | 401 `unauthenticated`, `cache-control: no-store` |
+| A4 | Malformed / wrong bearer and Basic auth on `/api/me`; `POST /api/devices` without a token | PASS | all 401 `unauthenticated`, no 500 |
+| A5 | Unknown API route `/api/nope` | PASS | 404 |
+| A6 | Security headers on `/` (SIM-027) | PASS | CSP with per-request nonce + `strict-dynamic`, `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'none'`, `connect-src 'self' https://api.mmlabs.online`, Turnstile allowed; HSTS 1 year; `X-Frame-Options: DENY`; `nosniff`; `Referrer-Policy: strict-origin-when-cross-origin`; COOP same-origin; Permissions-Policy denies camera/mic/geo/payment/usb; HTML `no-store` |
+| A7 | Signed-out pages at 390 px and 1280 px: `/`, `/sign-in`, `/sign-up`, `/forgot-password`, `/accept-invitation` | PASS | render, no horizontal overflow, no page (JS) errors; `/accept-invitation` without a token shows "Invitation not valid" |
+| A8 | Protected routes signed out: `/portal`, `/portal?tab=profile`, `/devices`, `/rooms`, `/members`, `/credits` | PASS | each shows the sign-in screen, no overflow, no page errors |
+| A9 | `/sign-up` security check | N-A | "The security check failed" because Turnstile was blocked by the session's network (artifact) |
+| A10 | Availability | Note | one request to `/sign-up` at 1280 px got a 503 "Scheduled maintenance" page from the edge; 15 follow-up requests were all 200 (likely a deploy window). Worth a look if it recurs |
+
+Not checked here (needs sign-in or Identity): every F1–F11 row, the app-header version, Turnstile on sign-up, and the
+DevTools CSP-violation check of M-14 in a signed-in session.
