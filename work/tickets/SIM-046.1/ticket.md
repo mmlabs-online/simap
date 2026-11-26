@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P3 |
 | Size | M |
 | Areas | ui |
@@ -37,5 +37,6 @@ A member sees, uploads, replaces and removes their own profile photo in the My P
 - [ ] All Checks pass.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-3): "duyệt hết theo mặc định"; Q3 default: no confirm on own photo removal.
 
 ## Handoff
