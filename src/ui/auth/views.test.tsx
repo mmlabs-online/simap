@@ -266,6 +266,17 @@ describe("landing", () => {
     expect(landing()).toMatch(new RegExp(`<label[^>]*>${authCopy.fields.password}`));
   });
 
+  it("renders the small world around the card, not the single vignette", () => {
+    const out = landing();
+    expect(out).toContain("aw-world");
+    expect(out).not.toContain("px-scene");
+    const esc = (s: string) => s.replace(/&/g, "&amp;");
+    for (const label of Object.values(w.rooms)) expect(out).toContain(esc(label));
+    for (const note of w.notes) expect(out).toContain(esc(note));
+    expect(plain()).not.toContain("aw-world");
+    expect(html(<AuthLayout title="T">x</AuthLayout>)).not.toContain("aw-world");
+  });
+
   it("the accept-invitation style sign-in stays plain", () => {
     const out = plain({ intro: <p id="the-intro" />, footer: <p id="the-footer" /> });
     expect(out).not.toContain(w.eyebrow);

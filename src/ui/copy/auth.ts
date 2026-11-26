@@ -1,6 +1,7 @@
 import { waitText } from "@/lib/format";
 import type { AuthError, AuthErrorCode } from "@/lib/identity/types";
 import type { FieldErrorCode } from "@/lib/validate/credentials";
+import type { WorldRoomId } from "@/lib/sprites/small-world-scenes";
 
 /** English strings for the sign-in surface (D36). Strings that take values are small functions. */
 export const authCopy = {
@@ -45,6 +46,13 @@ export const authCopy = {
     portalTitle: "Your workspace portal",
     introEyebrow: "Player, ready?",
     introHeading: "Come on in.",
+    rooms: {
+      focus: "The focus studio",
+      meeting: "Good ideas live here",
+      lounge: "The slow corner",
+      cafe: "Coffee & connection",
+    } satisfies Record<WorldRoomId, string>,
+    notes: ["Your next great day starts with a little hello", "Big ideas. Small pixels."],
     footer: [
       "© 2026 simap. Make room for you.",
       "Small pixels. Real connections.",
