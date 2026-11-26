@@ -42,6 +42,7 @@ Dashboard stays home, My Portal is a nav entry), OQ-59 (badge moves to My Portal
   shows "Waiting for my confirmation" with Confirm / Decline.
 - [ ] Profile edits the display name with the existing validation; email and role are read-only.
 - [ ] Only the caller's own data shows; a deactivated member gets the same refusal as other org pages.
+- [ ] The Devices nav entry is hidden for Users (`src/lib/nav.ts` minTier manager) and `/devices` redirects Users to My Portal client-side; `/devices/[id]` stays reachable for devices they hold (moved from SIM-044, plan Q1/Q2).
 - [ ] Unit tests for the tab state / URL parsing and the per-device action rules.
 
 ## Technical notes

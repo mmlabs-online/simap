@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | api, architecture, security |
@@ -43,9 +43,9 @@ LAY-06, SHL-01; decisions D69, D70. Open questions with proposed defaults: OQ-55
 - [ ] For a User, search (DSH-02) returns only devices they hold.
 - [ ] The "my devices" endpoint returns the caller's held devices for every tier, paged and org-scoped, with the fields
   listed in DEV-12.
-- [ ] Seat, member and layout responses for a User carry no id, name, inventory number, MAC or owner of devices they
+- [ ] *(moved to SIM-044.1, plan Q9)* Seat, member and layout responses for a User carry no id, name, inventory number, MAC or owner of devices they
   do not hold (per the OQ-55 / OQ-58 answer).
-- [ ] The Devices nav entry is hidden for Users; Manager+ keep it.
+- [ ] *(moved to SIM-045, plan Q1)* The Devices nav entry is hidden for Users; Manager+ keep it.
 - [ ] Unit tests cover the visibility rule per tier for list, detail, history, search and the new endpoint.
 
 ## Technical notes
@@ -59,5 +59,6 @@ LAY-06, SHL-01; decisions D69, D70. Open questions with proposed defaults: OQ-55
 - Manual: sign in as User and Manager; compare the Devices page, search and a seat panel.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26), Ming: "duyệt plan SIM-044, dùng mặc định" — every default in plan.md "Questions for Ming at approval": Q1 nav hide + /devices redirect move to SIM-045; Q2 /devices/[id] stays for held devices; Q3 404 for a device not held (incl. pending recipient, org inventory); Q4 former holder loses detail/history; Q5 OQ-55 spec default; Q6 OQ-58 spec default, other members' email → follow-up; Q7 OQ-60 no change; Q8 `GET /api/devices/mine` with full DeviceDto; Q9 slice A here, slice B = SIM-044.1; Q10 write-action existence oracle → follow-up; Q11 badge stays with SIM-045.
 
 ## Handoff
