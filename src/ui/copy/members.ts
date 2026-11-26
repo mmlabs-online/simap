@@ -20,6 +20,8 @@ export const membersCopy = {
   statusLabels: { active: "Active", deactivated: "Deactivated" },
   noGroup: "No group",
   noCode: "-",
+  hiddenDevices: "-",
+  hiddenDevicesLabel: "Not shown",
   moreRefs: (n: number) => `+${n} more`,
   deviceRef: (name: string, inventoryNumber: string, role: "primary" | "secondary") =>
     `${name} (${inventoryNumber}, ${role === "primary" ? "primary" : "secondary"})`,

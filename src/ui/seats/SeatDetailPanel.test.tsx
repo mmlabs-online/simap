@@ -52,6 +52,14 @@ const render = (view: PanelView, actions?: React.ReactNode) =>
   );
 
 describe("SeatDetailPanel", () => {
+  it("hidden devices: primary and secondary show None shown; none hidden: None", () => {
+    const hidden = render({ kind: "ready", seat: { ...seat, deviceCount: 2, devices: [] } });
+    expect(hidden.split(seatsCopy.panel.noneShown)).toHaveLength(3);
+    expect(hidden).toContain(seatsCopy.panel.moreDevices(2));
+    const none = render({ kind: "ready", seat: { ...seat, deviceCount: 0, devices: [] } });
+    expect(none).not.toContain(seatsCopy.panel.noneShown);
+    expect(none).toContain(seatsCopy.panel.noPrimary);
+  });
   it("renders nothing when closed", () => {
     expect(render({ kind: "closed" })).toBe("");
   });

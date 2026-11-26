@@ -6,6 +6,8 @@ import {
   inheritedGroup,
   seatStatus,
 } from "@/lib/seats/rules";
+import type { Tier } from "@/lib/auth/tier";
+import { deviceVisibility, type DeviceVisibility } from "@/lib/devices/visibility";
 import { SEAT_LIMITS, type RoomSeatsResponse, type SeatDto } from "@/lib/seats/types";
 import { formatSeatCode } from "@/lib/rooms/seat-code";
 import type { SeatTagsValue } from "@/lib/validate/group";
@@ -98,11 +100,15 @@ const toDto = (r: SeatRow): SeatDto => ({
   devices: r.devices,
 });
 
-/** $2 is the caller's sub (for `mine`); `where` and its values start at $3. Every join repeats org_id (R6). */
+/**
+ * $2 is the caller's sub (for `mine`); `where` and its values start at $3. Every join repeats org_id (R6).
+ * `held` (a User, D69): the devices list holds only devices owned by the caller's member; `device_count` stays the total.
+ */
 async function seatRows(
   db: Query,
   scope: OrgScope,
   sub: string,
+  visibility: DeviceVisibility,
   where: string,
   values: unknown[],
   deviceLimit: number,
@@ -123,7 +129,9 @@ async function seatRows(
                             else json_build_object('id', m.id, 'displayName', m.display_name) end) as j,
                  row_number() over (order by (d.role = 'primary') desc, lower(d.name), d.id) as rn
           from devices d left join members m on m.org_id = d.org_id and m.id = d.owner_id
-          where d.org_id = s.org_id and d.seat_id = s.id
+          where d.org_id = s.org_id and d.seat_id = s.id${
+            visibility === "held" ? " and coalesce(m.sub = $2::uuid, false)" : ""
+          }
           order by rn limit ${deviceLimit}) t) as devices
      from seats s
        join rooms r on r.org_id = s.org_id and r.id = s.room_id
@@ -137,8 +145,23 @@ async function seatRows(
   return rows.map(toDto);
 }
 
-async function loadSeat(db: Query, scope: OrgScope, sub: string, id: string): Promise<SeatDto> {
-  const rows = await seatRows(db, scope, sub, "s.id = $3", [id], SEAT_LIMITS.detailDevices, 1);
+async function loadSeat(
+  db: Query,
+  scope: OrgScope,
+  sub: string,
+  visibility: DeviceVisibility,
+  id: string,
+): Promise<SeatDto> {
+  const rows = await seatRows(
+    db,
+    scope,
+    sub,
+    visibility,
+    "s.id = $3",
+    [id],
+    SEAT_LIMITS.detailDevices,
+    1,
+  );
   return rows[0]!;
 }
 
@@ -146,9 +169,19 @@ export async function getSeat(
   db: Query,
   scope: OrgScope,
   sub: string,
+  tier: Tier,
   id: string,
 ): Promise<Result<SeatDto>> {
-  const rows = await seatRows(db, scope, sub, "s.id = $3", [id], SEAT_LIMITS.detailDevices, 1);
+  const rows = await seatRows(
+    db,
+    scope,
+    sub,
+    deviceVisibility(tier),
+    "s.id = $3",
+    [id],
+    SEAT_LIMITS.detailDevices,
+    1,
+  );
   return rows[0] ? { ok: true, value: rows[0] } : notFound;
 }
 
@@ -156,6 +189,7 @@ export async function listRoomSeats(
   db: Query,
   scope: OrgScope,
   sub: string,
+  tier: Tier,
   roomId: string,
 ): Promise<Result<RoomSeatsResponse>> {
   const { rows } = await orgQuery<{ id: string; code: string; name: string }>(
@@ -169,6 +203,7 @@ export async function listRoomSeats(
     db,
     scope,
     sub,
+    deviceVisibility(tier),
     "s.room_id = $3",
     [roomId],
     SEAT_LIMITS.listDevices,
@@ -336,6 +371,7 @@ export function addSeats(
       c,
       scope,
       actorSub,
+      "org", // route is Manager+/Admin, D69 filter not needed
       "s.id = any($3::uuid[])",
       [rows.map((r) => r.id)],
       SEAT_LIMITS.detailDevices,
@@ -416,7 +452,7 @@ export function setOccupant(
     });
     if (decision === "refuse_changed") throw refuse(409, "occupant_changed");
     if (decision === "refuse_cannot_seat") throw refuse(409, "seat_cannot_seat");
-    if (decision === "noop") return loadSeat(c, scope, actorSub, seatId);
+    if (decision === "noop") return loadSeat(c, scope, actorSub, "org", seatId);
     const groupId =
       decision === "remove" ? seat.group_id : inheritedGroup(seat.group_id, memberGroup);
     await writeOccupant(
@@ -432,7 +468,7 @@ export function setOccupant(
           ? "seat.replace"
           : "seat.unassign",
     );
-    return loadSeat(c, scope, actorSub, seatId);
+    return loadSeat(c, scope, actorSub, "org", seatId);
   });
 }
 
@@ -440,6 +476,7 @@ export function releaseSeat(
   db: Db,
   scope: OrgScope,
   actorSub: string,
+  tier: Tier,
   seatId: string,
 ): Promise<Result<SeatDto>> {
   return inTx(db, async (c) => {
@@ -452,7 +489,7 @@ export function releaseSeat(
     const seat = await lockSeat(c, scope, seatId, "share");
     const decision = decideRelease({ current: seat.occupant_id, actorMemberId: me[0]?.id ?? null });
     if (decision === "refuse") throw refuse(409, "not_allowed");
-    if (decision === "noop") return loadSeat(c, scope, actorSub, seatId);
+    if (decision === "noop") return loadSeat(c, scope, actorSub, deviceVisibility(tier), seatId);
     const demoted = await demotePrimary(c, scope, seatId);
     await orgQuery(
       c,
@@ -467,7 +504,7 @@ export function releaseSeat(
       entityId: seatId,
       meta: { code: seat.code, demoted },
     });
-    return loadSeat(c, scope, actorSub, seatId);
+    return loadSeat(c, scope, actorSub, deviceVisibility(tier), seatId);
   });
 }
 
@@ -482,7 +519,7 @@ export function setCannotSeat(
     const seat = await lockSeat(c, scope, seatId, "share");
     const reason = v.cannotSeat ? v.reason : null;
     if (seat.cannot_seat === v.cannotSeat && seat.cannot_seat_reason === reason) {
-      return loadSeat(c, scope, actorSub, seatId);
+      return loadSeat(c, scope, actorSub, "org", seatId);
     }
     await orgQuery(
       c,
@@ -498,7 +535,7 @@ export function setCannotSeat(
       entityId: seatId,
       meta: { code: seat.code, cannotSeat: v.cannotSeat, hasReason: reason !== null },
     });
-    return loadSeat(c, scope, actorSub, seatId);
+    return loadSeat(c, scope, actorSub, "org", seatId);
   });
 }
 
@@ -517,7 +554,7 @@ export function setSeatTags(
       project_id: v.projectId === undefined ? seat.project_id : v.projectId,
     };
     if (next.group_id === seat.group_id && next.project_id === seat.project_id) {
-      return loadSeat(c, scope, actorSub, seatId);
+      return loadSeat(c, scope, actorSub, "org", seatId);
     }
     // A newly referenced row is held `for share`: a concurrent delete waits (then clears this seat) or we fail here.
     // An unchanged id is not locked: the FK already keeps it, and locking it could deadlock with a forced delete.
@@ -553,6 +590,6 @@ export function setSeatTags(
       entityId: seatId,
       meta: { code: seat.code, groupId: next.group_id, projectId: next.project_id },
     });
-    return loadSeat(c, scope, actorSub, seatId);
+    return loadSeat(c, scope, actorSub, "org", seatId);
   });
 }

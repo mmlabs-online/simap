@@ -27,6 +27,7 @@ export const seatsCopy = {
     secondaryDevices: "Secondary devices",
     noPrimary: "None",
     noSecondary: "None",
+    noneShown: "None shown",
     owner: (name: string) => `Owner: ${name}`,
     group: "Group",
     project: "Project",

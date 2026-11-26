@@ -42,7 +42,8 @@ export type MemberDto = {
   group: MemberGroupRef | null;
   status: MemberStatus;
   seatCount: number;
-  deviceCount: number;
+  /** null: hidden from a User for another member (MEM-02, D69); `devices` is then []. */
+  deviceCount: number | null;
   seats: MemberSeatRef[];
   devices: MemberDeviceRef[];
 };

@@ -12,7 +12,7 @@ export const GET = withAuth(
     if (!q.ok) return apiError(400, "invalid_request");
     const pool = getPool();
     if (!pool) return apiError(503, "unavailable");
-    const page = await listMembers(pool, ctx.scope, q.value);
+    const page = await listMembers(pool, ctx.scope, ctx.sub, ctx.tier, q.value);
     return Response.json(page, { headers: { "Cache-Control": "no-store" } });
   },
   { tier: "user" },

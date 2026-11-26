@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | IN_PROGRESS |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | api, architecture, security |
@@ -11,8 +11,8 @@
 | Needs Ming | M-88 |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T05:09Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/123 |
 
 ## Goal
 Seat, member and layout responses no longer reveal other members' devices to a User (slice B of SIM-044, D69).
@@ -59,3 +59,9 @@ Waiting for Ming: plan approval (P1 gate)
 - Done: plan.md READY (~90 lines product, ~250 tests; no High path).
 - In progress / next: Ming approves the plan (6 questions with defaults), then implement.
 - Gotchas: none.
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 3 this run (implementer×1 88k, reviewer×1 57k, security-ai-generated-code-auditor×1 54k; default models); planner earlier.
+- Done: seats/members/layout limits for Users per plan; review PASS attempt 1 (test:db 319/319); security PASS. PR #123.
+- In progress / next: Ming merges PR #123 and runs the signed-in checks.
+- Gotchas: unowned devices cannot sit at a seat (DB check), so the plan's unowned-secondary test case was replaced.

@@ -1,4 +1,6 @@
 import "server-only";
+import type { Tier } from "@/lib/auth/tier";
+import { deviceVisibility } from "@/lib/devices/visibility";
 import { encodeMemberCursor } from "@/lib/members/cursor";
 import { decideDeactivation } from "@/lib/members/deactivation";
 import { changedFields } from "@/lib/members/profile";
@@ -72,7 +74,7 @@ type MemberRow = {
   group_name: string | null;
   group_color: string | null;
   seat_count: number;
-  device_count: number;
+  device_count: number | null;
   seats: MemberSeatRef[];
   devices: {
     id: string;
@@ -107,21 +109,25 @@ const toDto = (r: MemberRow): MemberDto => ({
   })),
 });
 
-/** Counts and capped ref lists are correlated subqueries (never one join fan-out); each repeats org_id = $1. */
+/**
+ * Counts and capped ref lists are correlated subqueries (never one join fan-out); each repeats org_id = $1.
+ * `visible` is a SQL boolean for the device count and refs (a User sees only their own, D69); null = always.
+ */
 const memberSelect = (
   refCap: number,
+  visible: string | null,
 ) => `select m.id, m.display_name, m.email, m.employee_code, m.status,
     lower(m.display_name) as sort_key, g.id as group_id, g.name as group_name, g.color as group_color,
     (select count(*)::int from seats s where s.org_id = $1 and s.occupant_id = m.id) as seat_count,
-    (select count(*)::int from devices d where d.org_id = $1 and d.owner_id = m.id) as device_count,
+    ${visible ? `case when ${visible} then ` : ""}(select count(*)::int from devices d where d.org_id = $1 and d.owner_id = m.id)${visible ? " end" : ""} as device_count,
     coalesce((select json_agg(x) from (
       select s.id, s.code from seats s where s.org_id = $1 and s.occupant_id = m.id
       order by s.code, s.id limit ${refCap}) x), '[]'::json) as seats,
-    coalesce((select json_agg(x) from (
+    ${visible ? `case when ${visible} then ` : ""}coalesce((select json_agg(x) from (
       select d.id, d.name, d.inventory_number, d.role, d.seat_id, ds.code as seat_code
       from devices d left join seats ds on ds.org_id = d.org_id and ds.id = d.seat_id
       where d.org_id = $1 and d.owner_id = m.id
-      order by d.name, d.id limit ${refCap}) x), '[]'::json) as devices
+      order by d.name, d.id limit ${refCap}) x), '[]'::json)${visible ? " else '[]'::json end" : ""} as devices
   from members m left join groups g on g.org_id = m.org_id and g.id = m.group_id
   where m.org_id = $1`;
 
@@ -137,6 +143,8 @@ export async function listGroupOptions(db: Query, scope: OrgScope): Promise<Memb
 export async function listMembers(
   db: Query,
   scope: OrgScope,
+  sub: string,
+  tier: Tier,
   f: MemberFilter,
 ): Promise<MemberListResponse> {
   const values: unknown[] = [];
@@ -145,6 +153,9 @@ export async function listMembers(
     values.push(v);
     return `$${values.length + 1}`;
   };
+  // Bound first so it is $2 (D69: a User sees device data only on their own row).
+  const visible =
+    deviceVisibility(tier) === "held" ? `coalesce(m.sub = ${bind(sub)}::uuid, false)` : null;
   if (f.status !== "all") conds.push(`m.status = ${bind(f.status)}`);
   if (f.q !== undefined) {
     const p = bind(`%${escapeLike(foldText(f.q))}%`);
@@ -160,7 +171,7 @@ export async function listMembers(
   const { rows } = await orgQuery<MemberRow>(
     db,
     scope,
-    `${memberSelect(MEMBER_LIMITS.listRefs)}${conds.map((c) => ` and ${c}`).join("")}
+    `${memberSelect(MEMBER_LIMITS.listRefs, visible)}${conds.map((c) => ` and ${c}`).join("")}
      order by lower(m.display_name), m.id limit ${limit}`,
     values,
   );
@@ -171,12 +182,18 @@ export async function listMembers(
   return { items: page.map(toDto), nextCursor, groups: await listGroupOptions(db, scope) };
 }
 
-async function loadMember(db: Query, scope: OrgScope, id: string): Promise<MemberDto | null> {
+async function loadMember(
+  db: Query,
+  scope: OrgScope,
+  id: string,
+  viewerSub: string | null,
+): Promise<MemberDto | null> {
+  const visible = viewerSub === null ? null : "coalesce(m.sub = $3::uuid, false)";
   const { rows } = await orgQuery<MemberRow>(
     db,
     scope,
-    `${memberSelect(MEMBER_LIMITS.detailRefs)} and m.id = $2`,
-    [id],
+    `${memberSelect(MEMBER_LIMITS.detailRefs, visible)} and m.id = $2`,
+    viewerSub === null ? [id] : [id, viewerSub],
   );
   return rows[0] ? toDto(rows[0]) : null;
 }
@@ -184,9 +201,11 @@ async function loadMember(db: Query, scope: OrgScope, id: string): Promise<Membe
 export async function getMember(
   db: Query,
   scope: OrgScope,
+  sub: string,
+  tier: Tier,
   id: string,
 ): Promise<Result<MemberDto>> {
-  const dto = await loadMember(db, scope, id);
+  const dto = await loadMember(db, scope, id, deviceVisibility(tier) === "held" ? sub : null);
   return dto ? { ok: true, value: dto } : notFound;
 }
 
@@ -233,7 +252,7 @@ async function lockMember<T extends { id: string }>(
 }
 
 const mustLoad = async (c: Query, scope: OrgScope, id: string): Promise<MemberDto> =>
-  (await loadMember(c, scope, id)) as MemberDto;
+  (await loadMember(c, scope, id, null)) as MemberDto;
 
 const COLUMN = {
   displayName: "display_name",

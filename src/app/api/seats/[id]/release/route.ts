@@ -12,7 +12,7 @@ export const POST = withAuth<{ id: string }>(
     if (!isCanonicalUuid(id)) return apiError(404, "not_found");
     const pool = getPool();
     if (!pool) return apiError(503, "unavailable");
-    const r = await releaseSeat(pool, ctx.scope, ctx.sub, id);
+    const r = await releaseSeat(pool, ctx.scope, ctx.sub, ctx.tier, id);
     if (!r.ok) return apiError(r.status, r.code);
     return Response.json(r.value, { headers: { "Cache-Control": "no-store" } });
   },

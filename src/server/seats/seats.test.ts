@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { OrgScope } from "@/server/http/org-scope";
-import { addSeats, deleteSeat, releaseSeat, setCannotSeat, setOccupant } from "./seats";
+import {
+  addSeats,
+  deleteSeat,
+  getSeat,
+  listRoomSeats,
+  releaseSeat,
+  setCannotSeat,
+  setOccupant,
+  setSeatTags,
+} from "./seats";
 
 const scope = { orgId: "11111111-1111-4111-8111-111111111111" } as OrgScope;
 const ACTOR = "22222222-2222-4222-8222-222222222222";
@@ -84,7 +93,7 @@ describe("org scoping (R6)", () => {
   it("every statement filters org_id = $1 and binds the scope org first", async () => {
     const t = fakeDb(base({ occupant_id: X }));
     await setOccupant(t.db, scope, ACTOR, SEAT, { memberId: Y, expectedOccupantId: X });
-    await releaseSeat(t.db, scope, ACTOR, SEAT);
+    await releaseSeat(t.db, scope, ACTOR, "user", SEAT);
     await setCannotSeat(t.db, scope, ACTOR, SEAT, { cannotSeat: true, reason: "r" });
     await addSeats(t.db, scope, ACTOR, ROOM, 2);
     await deleteSeat(t.db, scope, ACTOR, SEAT);
@@ -124,7 +133,7 @@ describe("lock order", () => {
   it("clear and release take no member lock; add and delete take the room for update before any seat", async () => {
     const t = fakeDb(base({ occupant_id: X }));
     await setOccupant(t.db, scope, ACTOR, SEAT, { memberId: null, expectedOccupantId: X });
-    await releaseSeat(t.db, scope, ACTOR, SEAT);
+    await releaseSeat(t.db, scope, ACTOR, "user", SEAT);
     expect(t.sqls().some((s) => s.includes("from members") && /for (share|update)/.test(s))).toBe(
       false,
     );
@@ -150,7 +159,7 @@ describe("transaction behaviour", () => {
     expect(s.some((q) => q.startsWith("update ") || q.startsWith("insert into"))).toBe(false);
     expect(s).toContain("commit");
     const e = fakeDb(base());
-    await releaseSeat(e.db, scope, ACTOR, SEAT);
+    await releaseSeat(e.db, scope, ACTOR, "user", SEAT);
     expect(e.sqls().some((q) => q.startsWith("update ") || q.startsWith("insert into"))).toBe(
       false,
     );
@@ -225,5 +234,58 @@ describe("addSeats", () => {
     const ins = t.calls.find(([q]) => q.startsWith("insert into seats"))!;
     expect(ins[1][2]).toEqual([4, 4]);
     expect(ins[1][3]).toEqual(["C302-04", "C302-04"]);
+  });
+});
+
+const withRoom: Script = (sql, values) =>
+  sql.startsWith("select id, code, name from rooms")
+    ? [{ id: ROOM, code: "C302", name: "Room" }]
+    : base()(sql, values);
+
+const HELD = "and coalesce(m.sub = $2::uuid, false)";
+const devicesSql = (sqls: string[]) => sqls.find((q) => q.includes("json_agg"))!;
+
+describe("seat reads per tier (D69)", () => {
+  it("getSeat/listRoomSeats: user adds the held clause to the devices subquery only", async () => {
+    for (const run of [
+      (db: ReturnType<typeof fakeDb>["db"], tier: "user" | "manager" | "admin") =>
+        getSeat(db, scope, X, tier, SEAT),
+      (db: ReturnType<typeof fakeDb>["db"], tier: "user" | "manager" | "admin") =>
+        listRoomSeats(db, scope, X, tier, ROOM),
+    ]) {
+      const u = fakeDb(withRoom);
+      await run(u.db, "user");
+      const sql = devicesSql(u.sqls());
+      expect(sql).toContain(HELD);
+      const countPart = sql.slice(
+        sql.indexOf("as device_count") - 120,
+        sql.indexOf("as device_count"),
+      );
+      expect(countPart).not.toContain("m.sub");
+      const call = u.calls.find(([q]) => q.includes("json_agg"))!;
+      expect(call[1][1]).toBe(X);
+      for (const tier of ["manager", "admin"] as const) {
+        const t = fakeDb(withRoom);
+        await run(t.db, tier);
+        expect(devicesSql(t.sqls())).not.toContain("m.sub = $2");
+      }
+    }
+  });
+  it("releaseSeat as user reloads with the held filter (noop and release paths)", async () => {
+    for (const occupant of [null, X]) {
+      const t = fakeDb(base({ occupant_id: occupant }));
+      await releaseSeat(t.db, scope, X, "user", SEAT);
+      expect(devicesSql(t.sqls())).toContain(HELD);
+    }
+  });
+  it("Manager/Admin writes never add the held clause", async () => {
+    const t = fakeDb(base({ occupant_id: X }));
+    await setOccupant(t.db, scope, ACTOR, SEAT, { memberId: Y, expectedOccupantId: X });
+    await setCannotSeat(t.db, scope, ACTOR, SEAT, { cannotSeat: true, reason: "r" });
+    await setSeatTags(t.db, scope, ACTOR, SEAT, {});
+    await addSeats(t.db, scope, ACTOR, ROOM, 2);
+    const sqls = t.sqls().filter((q) => q.includes("json_agg"));
+    expect(sqls.length).toBeGreaterThan(0);
+    for (const q of sqls) expect(q).not.toContain("m.sub = $2");
   });
 });

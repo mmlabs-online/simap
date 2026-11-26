@@ -186,7 +186,7 @@ describe("seats (db): list and detail", () => {
     }
     const other = await world({ occupied: true });
     const xSub = await subOf(w.x);
-    const r = await listRoomSeats(pool, w.scope, xSub, w.roomId);
+    const r = await listRoomSeats(pool, w.scope, xSub, "manager", w.roomId);
     if (!r.ok) throw new Error("list failed");
     expect(r.value.room).toEqual({ id: w.roomId, code: "C302", name: "Room C302" });
     expect(r.value.truncated).toBe(false);
@@ -206,16 +206,16 @@ describe("seats (db): list and detail", () => {
       mine: false,
       deviceCount: 0,
     });
-    const detail = await getSeat(pool, w.scope, await subOf(w.y), w.seatId);
+    const detail = await getSeat(pool, w.scope, await subOf(w.y), "manager", w.seatId);
     expect(detail.ok && detail.value.devices).toHaveLength(SEAT_LIMITS.listDevices + 3);
     expect(detail.ok && detail.value.mine).toBe(false);
     expect(JSON.stringify(r.value)).not.toContain("sub");
     // other org
-    expect(await getSeat(pool, w.scope, xSub, other.seatId)).toMatchObject({
+    expect(await getSeat(pool, w.scope, xSub, "manager", other.seatId)).toMatchObject({
       ok: false,
       status: 404,
     });
-    expect(await listRoomSeats(pool, w.scope, xSub, other.roomId)).toMatchObject({
+    expect(await listRoomSeats(pool, w.scope, xSub, "manager", other.roomId)).toMatchObject({
       ok: false,
       status: 404,
     });
@@ -369,7 +369,7 @@ describe("seats (db): cannot-seat", () => {
       ).ok,
     ).toBe(true);
     await pool.query("update seats set occupant_id = $2 where id = $1", [w.seatId, w.x]);
-    expect((await releaseSeat(pool, w.scope, await subOf(w.x), w.seatId)).ok).toBe(true);
+    expect((await releaseSeat(pool, w.scope, await subOf(w.x), "user", w.seatId)).ok).toBe(true);
     expect((await seatRow(w.seatId)).occupant_id).toBeNull();
   });
 
@@ -409,21 +409,21 @@ describe("seats (db): release", () => {
   it("occupant clears and demotes; others (including a Manager) -> 409 not_allowed; already empty -> 200, no audit", async () => {
     const w = await world({ occupied: true });
     const dev = await addDevice(pool, w.orgId, w.x, w.seatId, "primary");
-    expect(await releaseSeat(pool, w.scope, await subOf(w.y), w.seatId)).toEqual({
+    expect(await releaseSeat(pool, w.scope, await subOf(w.y), "user", w.seatId)).toEqual({
       ok: false,
       status: 409,
       code: "not_allowed",
     });
-    expect(await releaseSeat(pool, w.scope, actor(), w.seatId)).toMatchObject({
+    expect(await releaseSeat(pool, w.scope, actor(), "user", w.seatId)).toMatchObject({
       ok: false,
       code: "not_allowed",
     });
     expect((await seatRow(w.seatId)).occupant_id).toBe(w.x);
-    const r = await releaseSeat(pool, w.scope, await subOf(w.x), w.seatId);
+    const r = await releaseSeat(pool, w.scope, await subOf(w.x), "user", w.seatId);
     expect(r.ok && r.value.status).toBe("empty");
     expect((await deviceRole(dev)).role).toBe("secondary");
     expect(await auditCount(w.orgId, "seat.release")).toBe(1);
-    const again = await releaseSeat(pool, w.scope, await subOf(w.x), w.seatId);
+    const again = await releaseSeat(pool, w.scope, await subOf(w.x), "user", w.seatId);
     expect(again.ok).toBe(true);
     expect(await auditCount(w.orgId, "seat.release")).toBe(1);
   });
@@ -472,7 +472,9 @@ describe("seats (db): cross-org writes", () => {
         expectedOccupantId: other.x,
       }),
     ).toEqual(notFound);
-    expect(await releaseSeat(pool, w.scope, await subOf(other.x), other.seatId)).toEqual(notFound);
+    expect(await releaseSeat(pool, w.scope, await subOf(other.x), "user", other.seatId)).toEqual(
+      notFound,
+    );
     expect(
       await setCannotSeat(pool, w.scope, actor(), other.seatId, {
         cannotSeat: true,
@@ -481,5 +483,74 @@ describe("seats (db): cross-org writes", () => {
     ).toEqual(notFound);
     expect(await seatRow(other.seatId)).toEqual(before);
     expect([await auditAll(w.orgId), await auditAll(other.orgId)]).toEqual(auditBefore);
+  });
+});
+
+describe("seats (db): device visibility", () => {
+  /** Seat C302-01 occupied by X: X's primary and two of Y's secondaries (unowned devices cannot be placed). */
+  async function visWorld() {
+    const w = await world({ occupied: true });
+    const xPrim = await addDevice(pool, w.orgId, w.x, w.seatId, "primary");
+    const ySec = await addDevice(pool, w.orgId, w.y, w.seatId, "secondary");
+    const ySec2 = await addDevice(pool, w.orgId, w.y, w.seatId, "secondary");
+    return { ...w, xPrim, ySec, ySec2, xSub: await subOf(w.x), ySub: await subOf(w.y) };
+  }
+  const ids = (devices: { id: string }[]) => devices.map((d) => d.id);
+
+  it("user occupant X: detail, room list and release show only X's primary; deviceCount is the total", async () => {
+    const w = await visWorld();
+    const d = await getSeat(pool, w.scope, w.xSub, "user", w.seatId);
+    if (!d.ok) throw new Error("detail failed");
+    expect(ids(d.value.devices)).toEqual([w.xPrim]);
+    expect(d.value.deviceCount).toBe(3);
+    const l = await listRoomSeats(pool, w.scope, w.xSub, "user", w.roomId);
+    if (!l.ok) throw new Error("list failed");
+    expect(ids(l.value.items[0]!.devices)).toEqual([w.xPrim]);
+    expect(l.value.items[0]!.deviceCount).toBe(3);
+    const rel = await releaseSeat(pool, w.scope, w.xSub, "user", w.seatId);
+    if (!rel.ok) throw new Error("release failed");
+    expect(ids(rel.value.devices)).toEqual([w.xPrim]); // demoted, still X's
+    expect(rel.value.deviceCount).toBe(3);
+  });
+
+  it("user Y sees only Y's devices; user Z with none sees []; a sub with no member row sees []", async () => {
+    const w = await visWorld();
+    const z = await addMember(pool, w.orgId);
+    const y = await getSeat(pool, w.scope, w.ySub, "user", w.seatId);
+    expect(y.ok && ids(y.value.devices).sort()).toEqual([w.ySec, w.ySec2].sort());
+    const zr = await getSeat(pool, w.scope, await subOf(z), "user", w.seatId);
+    expect(zr.ok && zr.value.devices).toEqual([]);
+    expect(zr.ok && zr.value.deviceCount).toBe(3);
+    const nobody = await getSeat(pool, w.scope, randomUUID(), "user", w.seatId);
+    expect(nobody.ok && nobody.value.devices).toEqual([]);
+    expect(nobody.ok && nobody.value.deviceCount).toBe(3);
+  });
+
+  it("X's device placed on Y's seat appears for user X on Y's seat", async () => {
+    const w = await visWorld();
+    const s2 = await addSeat(pool, w.orgId, w.roomId, "C302", 2, { occupantId: w.y });
+    const lent = await addDevice(pool, w.orgId, w.x, s2, "secondary");
+    const r = await getSeat(pool, w.scope, w.xSub, "user", s2);
+    expect(r.ok && ids(r.value.devices)).toEqual([lent]);
+  });
+
+  it("manager and admin see all 3 devices with owners", async () => {
+    const w = await visWorld();
+    for (const tier of ["manager", "admin"] as const) {
+      const r = await getSeat(pool, w.scope, w.xSub, tier, w.seatId);
+      if (!r.ok) throw new Error("detail failed");
+      expect(ids(r.value.devices).sort()).toEqual([w.xPrim, w.ySec, w.ySec2].sort());
+      expect(r.value.devices.find((d) => d.id === w.ySec)!.owner).toMatchObject({ id: w.y });
+    }
+  });
+
+  it("user list cap: 22 own + 3 others -> 20 shown, deviceCount 25", async () => {
+    const w = await world({ occupied: true });
+    for (let i = 0; i < 22; i++) await addDevice(pool, w.orgId, w.x, w.seatId, "secondary");
+    for (let i = 0; i < 3; i++) await addDevice(pool, w.orgId, w.y, w.seatId, "secondary");
+    const l = await listRoomSeats(pool, w.scope, await subOf(w.x), "user", w.roomId);
+    if (!l.ok) throw new Error("list failed");
+    expect(l.value.items[0]!.devices).toHaveLength(SEAT_LIMITS.listDevices);
+    expect(l.value.items[0]!.deviceCount).toBe(25);
   });
 });
