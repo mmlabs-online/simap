@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | S |
 | Areas | api, security |
@@ -45,5 +45,6 @@ not part of what Users see (OQ-58 default lists names, employee code and seats o
 - DB: `manage.db.test.ts`, `search.db.test.ts` per tier.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-2): "duyệt hết theo mặc định"; Q1 default: hide email from Users (own email still shown).
 
 ## Handoff
