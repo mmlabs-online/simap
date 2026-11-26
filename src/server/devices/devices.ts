@@ -26,8 +26,12 @@ import {
   type DeviceRole,
   type HandoffKind,
   type HoldingPatchValue,
+  type MyDevicesPage,
   type PlacementFilter,
 } from "@/lib/devices/types";
+import { encodeMyDevicesCursor } from "@/lib/devices/cursor";
+import { deviceVisibility } from "@/lib/devices/visibility";
+import type { MyDevicesQuery } from "@/lib/validate/my-devices-query";
 import { todayUtc7 } from "@/lib/devices/holding";
 import type { PlacementPutValue } from "@/lib/validate/device";
 import { writeAudit } from "@/server/audit/write";
@@ -76,6 +80,7 @@ type DeviceRow = {
   h_by_id: string | null;
   h_by_name: string | null;
   h_from_me: boolean;
+  sort_key: string;
 };
 
 const toDto = (r: DeviceRow, tier: Tier): DeviceDto => {
@@ -125,20 +130,19 @@ const toDto = (r: DeviceRow, tier: Tier): DeviceDto => {
 };
 
 /** $2 is the caller's sub (for `mine`), $3 is today (UTC+7 day); `where` and its values start at $4. Every join repeats org_id (R6). */
-async function deviceRows(
+async function queryDeviceRows(
   db: Query,
   scope: OrgScope,
   sub: string,
-  tier: Tier,
   today: string,
   where: string,
   values: unknown[],
   limit: number,
-): Promise<DeviceDto[]> {
+): Promise<DeviceRow[]> {
   const { rows } = await orgQuery<DeviceRow>(
     db,
     scope,
-    `select d.id, d.name, d.type, d.inventory_number, d.mac, d.serial, d.manufacturer, d.brand, d.holding_note,
+    `select d.id, d.name, lower(d.name) as sort_key, d.type, d.inventory_number, d.mac, d.serial, d.manufacturer, d.brand, d.holding_note,
        to_char(d.holding_expires_on, 'YYYY-MM-DD') as holding_expires_on, d.owner_id, m.display_name as owner_name,
        coalesce(m.sub = $2::uuid, false) as mine, d.role, d.seat_id, s.code as seat_code, s.room_id, r.code as room_code,
        coalesce(d.owner_id is not null and d.holding_expires_on < $3::date, false) as overdue,
@@ -158,8 +162,26 @@ async function deviceRows(
      order by lower(d.name), d.id limit ${limit}`,
     [sub, today, ...values],
   );
+  return rows;
+}
+
+async function deviceRows(
+  db: Query,
+  scope: OrgScope,
+  sub: string,
+  tier: Tier,
+  today: string,
+  where: string,
+  values: unknown[],
+  limit: number,
+): Promise<DeviceDto[]> {
+  const rows = await queryDeviceRows(db, scope, sub, today, where, values, limit);
   return rows.map((r) => toDto(r, tier));
 }
+
+/** DEV-12: appended to a read's `where` so a User sees only devices whose owner is their member ($2 = sub). */
+const heldWhere = (tier: Tier, where: string): string =>
+  deviceVisibility(tier) === "held" ? `${where} and coalesce(m.sub = $2::uuid, false)` : where;
 
 /** `$3` is today (UTC+7 day), bound by `deviceRows`. */
 const FILTER_SQL: Record<PlacementFilter, string> = {
@@ -184,7 +206,7 @@ export async function listDevices(
     sub,
     tier,
     today,
-    FILTER_SQL[placement],
+    heldWhere(tier, FILTER_SQL[placement]),
     [],
     DEVICE_LIMITS.list + 1,
   );
@@ -205,8 +227,38 @@ export async function getDevice(
   id: string,
   today: string,
 ): Promise<Result<DeviceDto>> {
-  const rows = await deviceRows(db, scope, sub, tier, today, "d.id = $4", [id], 1);
+  const rows = await deviceRows(db, scope, sub, tier, today, heldWhere(tier, "d.id = $4"), [id], 1);
   return rows[0] ? { ok: true, value: rows[0] } : notFound;
+}
+
+/** DEV-12: the caller's held devices for every tier, keyset-paged on (lower(name), id). */
+export async function listMyDevices(
+  db: Query,
+  scope: OrgScope,
+  sub: string,
+  tier: Tier,
+  q: MyDevicesQuery,
+  today: string,
+): Promise<MyDevicesPage> {
+  const held = "coalesce(m.sub = $2::uuid, false)";
+  const rows = await queryDeviceRows(
+    db,
+    scope,
+    sub,
+    today,
+    q.cursor ? `${held} and (lower(d.name), d.id) > ($4::text, $5::uuid)` : held,
+    q.cursor ? [q.cursor.k, q.cursor.id] : [],
+    q.limit + 1,
+  );
+  const page = rows.slice(0, q.limit);
+  const last = page[page.length - 1];
+  return {
+    items: page.map((r) => toDto(r, tier)),
+    nextCursor:
+      rows.length > q.limit && last
+        ? encodeMyDevicesCursor({ k: last.sort_key, id: last.id })
+        : null,
+  };
 }
 
 // ---- writes ---------------------------------------------------------------------------------------------------

@@ -23,7 +23,13 @@ const filter = (qs: string) => {
   if (!r.ok) throw new Error("bad query " + qs);
   return r.value;
 };
-const find = (o: { scope: any }, qs: string, p: any = pool) => search(p, o.scope, filter(qs));
+const MANAGER = { sub: "00000000-0000-4000-8000-000000000000", tier: "manager" as const };
+const find = (
+  o: { scope: any },
+  qs: string,
+  p: any = pool,
+  viewer: { sub: string; tier: "user" | "manager" | "admin" } = MANAGER,
+) => search(p, o.scope, filter(qs), viewer);
 const q = (s: string, rest = "") => `q=${encodeURIComponent(s)}${rest}`;
 
 async function member(orgId: string, name: string, code: string | null = null) {
@@ -259,5 +265,33 @@ describe("search (db)", () => {
     expect(log[1]).toBe("set transaction isolation level repeatable read, read only");
     expect(log.at(-1)).toBe("commit");
     expect(log).toHaveLength(6);
+  });
+});
+
+describe("search (db): device group per tier", () => {
+  it("user finds only a device they hold (by name, MAC, owner name); manager finds both", async () => {
+    const o = newOrg();
+    const x = await member(o.orgId, "Xuan Owner");
+    const y = await member(o.orgId, "Yen Holder");
+    const mine = await addDevice(pool, o.orgId, x, null, "secondary");
+    const theirs = await addDevice(pool, o.orgId, y, null, "secondary");
+    await run("update devices set name = 'Zebra mine', mac = 'AA:BB:CC:00:00:01' where id = $1", [
+      mine,
+    ]);
+    await run("update devices set name = 'Zebra theirs', mac = 'AA:BB:CC:00:00:02' where id = $1", [
+      theirs,
+    ]);
+    const subX = (await run("select sub from members where id = $1", [x])).rows[0].sub as string;
+    const user = { sub: subX, tier: "user" as const };
+    const ids = async (qs: string, viewer: typeof user | typeof MANAGER) =>
+      ((await find(o, qs + "&kind=device", pool, viewer)).devices?.items ?? [])
+        .map((d) => d.id)
+        .sort();
+    expect(await ids(q("zebra"), user)).toEqual([mine]);
+    expect(await ids(q("theirs"), user)).toEqual([]);
+    expect(await ids(q("AA:BB:CC:00:00:02"), user)).toEqual([]);
+    expect(await ids(q("Yen Holder"), user)).toEqual([]);
+    expect(await ids(q("zebra"), MANAGER)).toEqual([mine, theirs].sort());
+    expect(await ids(q("Yen Holder"), MANAGER)).toEqual([theirs]);
   });
 });

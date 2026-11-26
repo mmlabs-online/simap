@@ -16,6 +16,8 @@ function fakeDb() {
 }
 const reads = (calls: [string, unknown[]][]) => calls.filter(([s]) => s.startsWith("select"));
 
+const VIEWER = { sub: "99999999-9999-4999-8999-999999999999", tier: "manager" as const };
+
 const filter = (o: Partial<SearchFilter> = {}): SearchFilter => ({
   q: "Nguyễn 50%_",
   folded: "nguyen 50%_",
@@ -27,7 +29,7 @@ const filter = (o: Partial<SearchFilter> = {}): SearchFilter => ({
 describe("search", () => {
   it("user text only in values: pattern %<escaped fold>%, limit+1; SQL contains translate constants and org_id = $1 on every table", async () => {
     const t = fakeDb();
-    await search(t.db, scope, filter());
+    await search(t.db, scope, filter(), VIEWER);
     const r = reads(t.calls);
     expect(r).toHaveLength(3);
     for (const [sql, values] of r) {
@@ -49,7 +51,7 @@ describe("search", () => {
 
   it("kind=seat runs only the seat query; others null", async () => {
     const t = fakeDb();
-    const res = await search(t.db, scope, filter({ kind: "seat" }));
+    const res = await search(t.db, scope, filter({ kind: "seat" }), VIEWER);
     expect(reads(t.calls)).toHaveLength(1);
     expect(res).toEqual({ seats: { items: [], nextCursor: null }, devices: null, members: null });
   });
@@ -66,10 +68,34 @@ describe("search", () => {
         kind: "device",
         cursor: { t: "device", k: "may in", id },
       }),
+      VIEWER,
     );
     const [sql, values] = reads(t.calls)[0]!;
     expect(sql).toContain("replace(d.mac, ':', '') like $3");
     expect(sql).toContain("(lower(d.name), d.id) > ($4::text, $5::uuid)");
     expect(values).toEqual([scope.orgId, "%aa-bb%", "%aabb%", "may in", id, 4]);
+  });
+
+  it("user tier: device query binds the sub and adds the held predicate; seat/member queries unchanged", async () => {
+    const t = fakeDb();
+    const user = { sub: VIEWER.sub, tier: "user" as const };
+    await search(t.db, scope, filter(), user);
+    const [seatQ, devQ, memQ] = reads(t.calls);
+    expect(devQ![0]).toContain("coalesce(m.sub = $3::uuid, false) and (");
+    expect(devQ![1]).toEqual([scope.orgId, "%nguyen 50\\%\\_%", user.sub, 4]);
+    for (const [sql, values] of [seatQ!, memQ!]) {
+      expect(sql).not.toContain("m.sub =");
+      expect(values).not.toContain(user.sub);
+    }
+  });
+
+  it("manager and admin: no sub bound in the device query", async () => {
+    for (const tier of ["manager", "admin"] as const) {
+      const t = fakeDb();
+      await search(t.db, scope, filter({ kind: "device" }), { sub: VIEWER.sub, tier });
+      const [sql, values] = reads(t.calls)[0]!;
+      expect(sql).not.toContain("m.sub =");
+      expect(values).not.toContain(VIEWER.sub);
+    }
   });
 });

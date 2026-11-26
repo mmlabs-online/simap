@@ -1,5 +1,7 @@
 import "server-only";
 import { encodeCursor } from "@/lib/audit/cursor";
+import { deviceVisibility } from "@/lib/devices/visibility";
+import type { Tier } from "@/lib/auth/tier";
 import { historyMemberIds, toHistoryEntry, type DeviceHistoryRow } from "@/lib/devices/history";
 import {
   DEVICE_HISTORY_ACTIONS,
@@ -25,26 +27,36 @@ type Row = {
 };
 
 /**
- * DEV-11: the history of one device, newest first, keyset-paged on (created_at, id). Read from audit_log and
- * the handoff rows (note and new expiry), no new table. An unknown id and another org's id are both 404.
+ * DEV-11/DEV-12: the history of one device, newest first, keyset-paged on (created_at, id). Read from audit_log and
+ * the handoff rows (note and new expiry), no new table. An unknown id, another org's id and (User) a device not held are all 404.
  */
 export async function listDeviceHistory(
   db: Query,
   scope: OrgScope,
+  sub: string,
+  tier: Tier,
   deviceId: string,
   q: DeviceHistoryQuery,
 ): Promise<Result<DeviceHistoryPage>> {
-  const dev = await orgQuery<{ owner_id: string | null; holder_since: string | null }>(
+  const dev = await orgQuery<{
+    owner_id: string | null;
+    holder_since: string | null;
+    held: boolean;
+  }>(
     db,
     scope,
     `select d.owner_id,
        to_char((select max(a.created_at) from audit_log a
                 where a.org_id = d.org_id and a.entity = 'device' and a.entity_id = d.id
-                  and a.action in ('device.assign', 'device.transfer_confirm')) at time zone 'UTC', ${TS}) as holder_since
-     from devices d where d.org_id = $1 and d.id = $2`,
-    [deviceId],
+                  and a.action in ('device.assign', 'device.transfer_confirm')) at time zone 'UTC', ${TS}) as holder_since,
+       coalesce(m.sub = $3::uuid, false) as held
+     from devices d
+       left join members m on m.org_id = d.org_id and m.id = d.owner_id
+     where d.org_id = $1 and d.id = $2`,
+    [deviceId, sub],
   );
   if (!dev.rows[0]) return notFound;
+  if (deviceVisibility(tier) === "held" && !dev.rows[0].held) return notFound;
   const holderSince = dev.rows[0].owner_id === null ? null : dev.rows[0].holder_since;
 
   const values: unknown[] = [deviceId, [...DEVICE_HISTORY_ACTIONS]];

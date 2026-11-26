@@ -6,6 +6,7 @@ import {
   deleteDevice,
   getDevice,
   listDevices,
+  listMyDevices,
   placeDevice,
   updateDevice,
   updateHolding,
@@ -197,6 +198,79 @@ describe("placeDevice refusals", () => {
   });
 });
 
+const HELD = "coalesce(m.sub = $2::uuid, false)";
+const readSql = (t: ReturnType<typeof fakeDb>) =>
+  t.calls.find(([s]) => s.startsWith("select d.id"))!;
+
+describe("device visibility per tier (DEV-12)", () => {
+  it("listDevices and getDevice: user SQL adds the held predicate; manager and admin do not", async () => {
+    for (const tier of ["user", "manager", "admin"] as const) {
+      const l = fakeDb(base());
+      await listDevices(l.db, scope, ACTOR, tier, "all", "2026-11-25");
+      const g = fakeDb(base());
+      await getDevice(g.db, scope, ACTOR, tier, DEV, "2026-11-25");
+      for (const t of [l, g]) {
+        const [sql, values] = readSql(t);
+        expect(sql.includes(` and ${HELD} order by`)).toBe(tier === "user");
+        expect(values[1]).toBe(ACTOR);
+      }
+    }
+  });
+
+  it("getDevice: no row is a 404", async () => {
+    const t = fakeDb(() => []);
+    expect(await getDevice(t.db, scope, ACTOR, "user", DEV, "2026-11-25")).toEqual({
+      ok: false,
+      status: 404,
+      code: "not_found",
+    });
+  });
+});
+
+describe("listMyDevices", () => {
+  const ID2 = "99999999-9999-4999-8999-999999999999";
+  const rowOf = (id: string, key: string) => ({ ...dtoRow, id, sort_key: key });
+
+  it("held predicate for every tier; no keyset values without a cursor; limit + 1", async () => {
+    for (const tier of ["user", "manager", "admin"] as const) {
+      const t = fakeDb(() => []);
+      const r = await listMyDevices(t.db, scope, ACTOR, tier, { limit: 5 }, "2026-11-25");
+      expect(r).toEqual({ items: [], nextCursor: null });
+      const [sql, values] = readSql(t);
+      expect(sql).toContain(`where d.org_id = $1 and ${HELD} order by lower(d.name), d.id limit 6`);
+      expect(values).toEqual([scope.orgId, ACTOR, "2026-11-25"]);
+    }
+  });
+
+  it("a cursor binds $4 text and $5 uuid; nextCursor comes from the DB sort_key", async () => {
+    const t = fakeDb(() => [rowOf(DEV, "đèn"), rowOf(ID2, "ghế")]);
+    const r = await listMyDevices(
+      t.db,
+      scope,
+      ACTOR,
+      "user",
+      { limit: 1, cursor: { k: "a", id: OTHER } },
+      "2026-11-25",
+    );
+    const [sql, values] = readSql(t);
+    expect(sql).toContain("(lower(d.name), d.id) > ($4::text, $5::uuid)");
+    expect(sql).toMatch(/limit 2$/);
+    expect(values).toEqual([scope.orgId, ACTOR, "2026-11-25", "a", OTHER]);
+    expect(r.items.map((i) => i.id)).toEqual([DEV]);
+    expect(JSON.parse(Buffer.from(r.nextCursor!, "base64url").toString("utf8"))).toEqual({
+      k: "đèn",
+      id: DEV,
+    });
+  });
+
+  it("the last page has no cursor", async () => {
+    const t = fakeDb(() => [rowOf(DEV, "a")]);
+    const r = await listMyDevices(t.db, scope, ACTOR, "user", { limit: 1 }, "2026-11-25");
+    expect(r.nextCursor).toBeNull();
+    expect(r.items).toHaveLength(1);
+  });
+});
+
 describe("org scoping (R6)", () => {
   it("every query passes org_id as $1", async () => {
     const t = fakeDb(base({ devSeat: SEAT_B }));
@@ -218,8 +292,9 @@ describe("org scoping (R6)", () => {
     );
     await listDevices(t.db, scope, ACTOR, "user", "placed", "2026-11-25");
     await getDevice(t.db, scope, ACTOR, "user", DEV, "2026-11-25");
+    await listMyDevices(t.db, scope, ACTOR, "user", { limit: 5 }, "2026-11-25");
     const data = t.calls.filter(([s]) => !/^(begin|commit|rollback)$/.test(s));
-    expect(data.length).toBeGreaterThan(10);
+    expect(data.length).toBeGreaterThan(11);
     for (const [sql, values] of data) {
       expect(sql).toMatch(/org_id\s*=\s*\$1/);
       expect(values[0]).toBe(scope.orgId);

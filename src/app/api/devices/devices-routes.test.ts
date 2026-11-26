@@ -9,6 +9,7 @@ const svc = vi.hoisted(() => ({
   placeDevice: vi.fn(),
   assignDevice: vi.fn(),
   updateHolding: vi.fn(),
+  listMyDevices: vi.fn(),
 }));
 const hsvc = vi.hoisted(() => ({
   startTransfer: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock("@/server/devices/history", () => histSvc);
 vi.mock("@/server/db/pool", () => ({ getPool: () => ({}) }));
 
 import { GET as listGET, POST } from "./route";
+import { GET as MINE } from "./mine/route";
 import { DELETE, GET, PATCH } from "./[id]/route";
 import { PUT } from "./[id]/placement/route";
 import { POST as ASSIGN } from "./[id]/assignment/route";
@@ -434,8 +436,9 @@ describe("GET /api/devices/:id/history", () => {
     expect(r.status).toBe(200);
     expect(r.headers.get("Cache-Control")).toBe("no-store");
     expect(await r.json()).toEqual(page);
-    const [, scopeArg, id, q] = histSvc.listDeviceHistory.mock.calls[0]!;
+    const [, scopeArg, sub, tier, id, q] = histSvc.listDeviceHistory.mock.calls[0]!;
     expect(scopeArg).toBeTruthy();
+    expect([sub, tier]).toEqual(["s1", "user"]);
     expect(id).toBe(ID);
     expect(q).toEqual({ limit: 2, cursor: { at: "2026-03-05T17:30:00.123456Z", id: ID } });
   });
@@ -445,5 +448,46 @@ describe("GET /api/devices/:id/history", () => {
     histSvc.listDeviceHistory.mockResolvedValue({ ok: false, status: 404, code: "not_found" });
     const r = await HISTORY(req("GET", url()), idRoute);
     expect([r.status, await r.json()]).toEqual([404, { error: { code: "not_found" } }]);
+  });
+});
+
+describe("GET /api/devices/mine", () => {
+  const url = (qs = "") => `http://x/api/devices/mine${qs}`;
+
+  it("401 without a token, before the service", async () => {
+    vi.stubEnv("MM_IDENTITY_ISSUER", ISSUER);
+    const r = await MINE(new Request(url(), { method: "GET" }), noParams);
+    expect(r.status).toBe(401);
+    expect(svc.listMyDevices).not.toHaveBeenCalled();
+  });
+
+  it("bad limit / cursor is 400 invalid_request, no service call", async () => {
+    fakeAuth(["simap:user"]);
+    for (const qs of ["?limit=0", "?limit=101", "?cursor=nope", "?limit=1&limit=2"]) {
+      const r = await MINE(req("GET", url(qs)), noParams);
+      expect([r.status, await r.json()]).toEqual([400, { error: { code: "invalid_request" } }]);
+    }
+    expect(svc.listMyDevices).not.toHaveBeenCalled();
+  });
+
+  it("every tier: passes scope, sub, tier, parsed query and today (UTC+7); 200 is no-store", async () => {
+    const page = { items: [], nextCursor: null };
+    for (const [role, tier] of [
+      ["simap:user", "user"],
+      ["simap:manager", "manager"],
+      ["simap:admin", "admin"],
+    ] as const) {
+      fakeAuth([role]);
+      svc.listMyDevices.mockReset();
+      svc.listMyDevices.mockResolvedValue(page);
+      const r = await MINE(req("GET", url("?limit=2")), noParams);
+      expect(r.status).toBe(200);
+      expect(r.headers.get("Cache-Control")).toBe("no-store");
+      expect(await r.json()).toEqual(page);
+      const [, scopeArg, sub, t, q, day] = svc.listMyDevices.mock.calls[0]!;
+      expect(scopeArg).toBeTruthy();
+      expect([sub, t, q]).toEqual(["s1", tier, { limit: 2 }]);
+      expect(day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
   });
 });

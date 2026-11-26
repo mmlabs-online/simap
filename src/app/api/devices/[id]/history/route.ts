@@ -17,7 +17,7 @@ export const GET = withAuth<{ id: string }>(
     if (!q.ok) return apiError(400, "invalid_request");
     const pool = getPool();
     if (!pool) return apiError(503, "unavailable");
-    const r = await listDeviceHistory(pool, ctx.scope, id, q.value);
+    const r = await listDeviceHistory(pool, ctx.scope, ctx.sub, ctx.tier, id, q.value);
     if (!r.ok) return apiError(r.status, r.code);
     return Response.json(r.value, { headers: NO_STORE });
   },

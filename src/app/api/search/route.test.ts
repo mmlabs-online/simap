@@ -63,6 +63,7 @@ describe("GET /api/search", () => {
       folded: "nguyen",
       kind: "member",
     });
+    expect(search.mock.calls[0]![3]).toEqual({ sub: "s1", tier: "user" });
   });
 
   it("bad query -> 400 invalid_request without calling search", async () => {
