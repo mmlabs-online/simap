@@ -136,7 +136,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-051 | Answer 404 for write actions on a device a User does not hold | IN_PROGRESS | P2 | S | api, security | — | none | 0 | 2026-11-26 |
 | SIM-052 | Send only the catalog device type to Users on the room map | IN_PROGRESS | P2 | S | api, ui, security | — | none | 0 | 2026-11-26 |
 | SIM-053 | My Portal and device dialog polish (SIM-045, SIM-045.1, SIM-048 follow-ups) | BACKLOG | P3 | S | ui | — | none | 0 | 2026-11-26 |
-| SIM-054 | Move "My requests" into My Portal → My seat | PLANNING | P2 | S | ui, ux | SIM-045.1 | none | 0 | 2026-11-26 |
+| SIM-054 | Move "My requests" into My Portal → My seat | IN_PROGRESS | P2 | S | ui, ux | SIM-045.1 | none | 0 | 2026-11-26 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.
 
