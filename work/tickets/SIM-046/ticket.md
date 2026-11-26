@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P3 |
 | Size | M |
 | Areas | api, db, ui, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T05:13:06Z |
+| Claimed by | claude@2026-11-26T05:34:54Z |
 | PR | — |
 
 ## Goal
@@ -53,5 +53,6 @@ SIM-036.5 device type image storage.
 - Manual: upload, replace, remove; check each place the photo shows.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-1; Ming: "duyệt hết theo mặc định", assumptions A1–A12 with defaults; split into SIM-046 server slice + SIM-046.1 + SIM-046.2).
 
 ## Handoff
