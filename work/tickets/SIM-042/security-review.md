@@ -43,3 +43,34 @@ I worked with Read, Grep and Glob only, because no Bash tool was available. I co
 - In a later ticket, consider making the clash handling in future backfills complete, so a second clash cannot abort a migration shared by all orgs. Options: a numbered suffix loop, or skipping with a NOTICE plus a report.
 
 Files reviewed: `db/migrations/20261126120000_map_items_new_builtin.sql`, `db/migrations/20261125200000_map_items.sql`, `scripts/schema-check.mjs`, `src/lib/validate/layout.ts`, `src/server/layout/save.ts`, `src/server/map-items/sql-sync.test.ts`, `work/tickets/SIM-042/plan.md`.
+
+## Attempt 2
+
+**Result: PASS. No 🔴.** Nothing in the attempt-2 change affects my attempt-1 conclusions. The migration is as I reviewed it.
+
+I had only Read, Grep and Glob, with no Bash, so I could not run `git diff` myself. I checked the current file contents against the line references in my attempt-1 review.
+
+### Findings
+
+**🟢 The attempt-2 change is test-only and has no security impact**
+- `src/server/layout/layout.db.test.ts:368-382`: the test "a SIM-042 item saves rotated and reads back" now strips `id` from both sides and sorts by `sprite` before `toEqual` (`:378-381`).
+- No production code changed. The read query is untouched, matching `work/tickets/SIM-042/impl-log.md:63` and its scope self-check at `:76`.
+- The test file's imports (`:1-19`) are unchanged in kind: crypto, pg types, vitest, lib and server modules.
+- The file has no DB URL, password, token or key.
+- The impl-log lists no out-of-plan files (`impl-log.md:72-73`).
+
+**🟢 The migration matches what I reviewed in attempt 1**
+File: `db/migrations/20261126120000_map_items_new_builtin.sql`. Every line I cited in attempt 1 is still in place:
+- The function signature is at `:7`: same signature, `language plpgsql`, no `security definer`.
+- The catalog insert is `:9`, followed by the `if found` guard at `:10`.
+- The seed has 59 rows at `:12-70`, all with `p_org`, ending in a targetless `on conflict do nothing` at `:71`.
+- The backfill is at `:78-93`: `c.org_id` at `:79`; the same-org name check `m.org_id = c.org_id` at `:81`; it reads only from `map_item_catalogs` (`:84`); it inserts the six new rows (`:86-91`), with `on conflict (org_id, builtin_key) do nothing` at `:93`.
+- It is still expand-only: there is no `update`, `delete`, `alter`, `drop`, constraint or index change.
+- It has no secrets.
+
+**🟡 Carried over from attempt 1, non-blocking and unchanged:** a second name clash in one org still aborts the shared migration for every org (`20261126120000_map_items_new_builtin.sql:78-93`).
+- The fix is still the pre-release check in `work/ming-todo.md` that I recommended in `work/tickets/SIM-042/security-review.md:14-20`.
+- Plan A5 accepts this risk on purpose.
+
+### Follow-ups
+- The follow-up from attempt 1 stands, and there is nothing new: make future backfills handle every name clash, so one org's data cannot abort a migration shared by all orgs.
