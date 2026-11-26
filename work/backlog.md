@@ -116,6 +116,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | BUG-003 | devices.db test violates device_handoffs_decided_check (return flags test) | MERGED | P1 | XS | db | — | none | 0 | 2026-11-26 |
 | BUG-004 | manage.db deactivate test expects the old audit meta (no cancelledHandoffs) | MERGED | P1 | XS | db | — | none | 0 | 2026-11-26 |
 | BUG-005 | map-items list order differs between Postgres collation and the test's JS sort | MERGED | P1 | XS | db, api | — | none | 0 | 2026-11-26 |
+| BUG-006 | CI `image` job always fails at `compose config` on the self-hosted runner (false positive on /Users/mingming) | MERGED | P1 | XS | security | — | none | 0 | 2026-11-26 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.
 
