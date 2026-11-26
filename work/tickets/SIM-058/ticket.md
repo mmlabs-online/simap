@@ -1,13 +1,13 @@
-# SIM-058: Present and away on the map, name tags, open desk tags, "Who's here" and polling
+# SIM-058: Presence record and check-in, check-out and move-seat API
 
 | Field | Value |
 |---|---|
 | State | BACKLOG |
 | Priority | P1 |
 | Size | M |
-| Areas | ui, api |
+| Areas | db, api, architecture, security |
 | Gate | plan-approval |
-| Depends on | SIM-055, SIM-056 |
+| Depends on | — |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
@@ -15,46 +15,56 @@
 | PR | — |
 
 ## Goal
-Everyone in the org sees who is in the office today on the room map and in "Who's here", kept fresh by polling, and a
-member with several seats in the room moves between them by clicking an open tag on the desk.
+A member checks in to a room where they have a seat, moves to another of their seats there, and checks out; the
+server keeps one presence row per member per UTC+7 work day and every member of the org can read a room's presence.
 
 ## Scope reference
-`docs/spec-v1.md` PRE-06, LAY-06 (presence item); decisions D76 (polling amends D24 for this view), D77 (open tags),
-D80 (name tags always shown, amends D50 for this view), D78.
+`docs/spec-v1.md` PRE-03, PRE-05, §4 Presence row; decisions D77 (lowest seat code, move seat), D78 (display only),
+D79 (UTC+7 work day, D35), D81 (same-day reopen), D82 (losing the seat ends the check-in); rules R2, R6, R7.
 
 ## Scope
-- Present/away rendering on the check-in room view; always-visible, non-overlapping name tags there only.
-- "Who's here" list content and seat focus.
-- Open desk tags wired to the SIM-056 move-seat call.
-- Polling of the SIM-056 room presence endpoint every 30–60 s, paused while the tab is hidden.
+- Forward-only migration: presence table per §4 (org, member, seat, work date, checked-in at, source, checked-out
+  at, checked-out by), unique (org, member, work date).
+- Check-in (by room), check-out and move-seat route handlers and server code; room presence read endpoint for the
+  polling client.
+- End of presence computed on read (no background job); D82 system check-out inside the existing seat release /
+  reassign and member deactivation transactions.
+- Audit entries for check-in, check-out, move and system check-out.
 
 ## Out of scope
-- Walk animations (SIM-059: until then changes show as the end state); other map views (keep D50).
+- UI (SIM-057, SIM-059, SIM-060); provider source (SIM-063); retention cleanup (OQ-70).
 
 ## Acceptance criteria
-- [ ] Every member of the org sees presence in every room: who is here, check-in time and source (self /
-  third-party); no hidden presence.
-- [ ] Checked in: the character sits at the chair with a typing idle and the monitor on; assigned but away: empty
-  chair and a grey name tag; unassigned seats look as today. Present/away is never shown by colour alone.
-- [ ] "Who's here" lists members checked in to the shown room (pixel character head, display name, seat code,
-  check-in time, source); selecting an entry focuses their seat on the map.
-- [ ] While checked in, each of the member's other seats in the same room shows an open tag on the desk; clicking or
-  keyboard-activating it moves their presence there (PRE-03 move seat).
-- [ ] The view polls every 30–60 s (no websockets) and pauses while the tab is hidden.
-- [ ] In this view name tags are always visible and do not overlap on adjacent seats (offset, stack or truncate, full
-  name on hover/focus); other map views keep hover/focus-only tags (D50).
-- [ ] Unit tests cover the present/away overlay choice, name-tag layout for adjacent seats and the polling
-  pause/resume rule.
+- [ ] Check-in names a room; the server requires a seat of the member in that room (422 `no_seat_in_room`), uses the
+  lowest seat code when there are several (D77), records source `self`, server time and today's UTC+7 work date; the
+  client never sends a time.
+- [ ] Idempotent: check-in again to the same room while checked in returns the existing record with 200 and writes
+  nothing; check-in to another room while checked in returns 409 `already_checked_in` naming the current room;
+  check-out with no active check-in returns 200 and changes nothing.
+- [ ] Move seat targets another of the member's own seats in the room of the active check-in (422 `seat_not_yours`
+  otherwise, 409 `not_checked_in` with no active check-in); moving to the seat already used returns 200 and writes
+  nothing; every move is audited.
+- [ ] A second check-in the same day after check-out reopens that day's row (new seat, source, time; checked-out
+  cleared); the audit log keeps the earlier check-in (D81).
+- [ ] A row with a work date before today (UTC+7) counts as ended when read; losing the checked-in seat (released,
+  reassigned) or deactivation ends the check-in in the same transaction, checked out by `system`, audited (D82).
+- [ ] Every query is scoped by the token's `org` (R6); auth refusals come only from the auth wrapper before any write
+  (R7); domain refusals use 409/422. A room presence read endpoint lists who is checked in to a room for any member of
+  the org.
+- [ ] The migration is forward-only (R2); unit tests cover the work-day boundary and the rules above, DB tests cover
+  the reopen and D82 paths.
 
 ## Technical notes
-- Files: `src/lib/sprites/overlay.ts`, `src/ui/roomlayout/SeatOverlay.tsx` / `RoomMap.tsx`, `src/ui/checkin/**`,
-  `src/ui/copy/`; API only if the SIM-056 read endpoint lacks a field the view needs.
-- Gate `plan-approval` because of the `high-paths+P1` policy (P1).
-- Risk: name-tag de-overlap and polling may push this to the top of M.
+- Files: `db/migrations/<ts>_presence.sql` (High path), new `src/server/presence/**`, new `src/app/api/rooms/[...]/presence`
+  and check-in/check-out/move routes (paths are a plan choice), `src/server/seats/seats.ts` and
+  `src/server/members/manage.ts` (D82 hooks), `src/lib/validate/`, `src/lib/` UTC+7 work-date helper.
+- Presence is display-only (D78): never in exports, reports or the dashboard.
+- Risks: D82 touches the seat release / reassign and deactivation transactions; size is at the top of M.
 
 ## Test plan
-- Unit: overlay state per seat, tag layout, polling visibility rule.
-- Manual: two browsers, one checks in/out/moves, the other sees it within 60 s; hidden tab stops requests.
+- Unit: UTC+7 work date around midnight, ended-on-read, idempotency, error codes.
+- DB (`pnpm test:db`): unique row per day, reopen, move, system check-out on release/reassign/deactivate, org scope.
+- `pnpm schema:check` against the local DB.
 
 ## Notes / answers from Ming
 

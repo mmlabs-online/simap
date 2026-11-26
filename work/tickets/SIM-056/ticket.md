@@ -1,13 +1,13 @@
-# SIM-056: Presence record and check-in, check-out and move-seat API
+# SIM-056: Crop and resize the profile photo in the browser before upload
 
 | Field | Value |
 |---|---|
 | State | BACKLOG |
-| Priority | P1 |
+| Priority | P2 |
 | Size | M |
-| Areas | db, api, architecture, security |
-| Gate | plan-approval |
-| Depends on | — |
+| Areas | ui, ux |
+| Gate | none |
+| Depends on | SIM-046.1 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
@@ -15,56 +15,69 @@
 | PR | — |
 
 ## Goal
-A member checks in to a room where they have a seat, moves to another of their seats there, and checks out; the
-server keeps one presence row per member per UTC+7 work day and every member of the org can read a room's presence.
+A member can pick any photo (any size, any shape, straight from a phone) as their profile photo: the browser crops it
+to a square and resizes it automatically, then saves it, so the upload no longer fails with "not square", "too large"
+or "re-save the image" (Ming, 2026-11-26: "Phần upload avatar, không ràng buộc size và square. Sau khi upload tự động
+crop và resize rồi lưu").
 
 ## Scope reference
-`docs/spec-v1.md` PRE-03, PRE-05, §4 Presence row; decisions D77 (lowest seat code, move seat), D78 (display only),
-D79 (UTC+7 work day, D35), D81 (same-day reopen), D82 (losing the seat ends the check-in); rules R2, R6, R7.
+- POR-05 Profile photo, OQ-56 (stored photo: PNG or JPEG, square, 64–512 px, ≤ 256 KB; **no server-side resizing**,
+  stack unchanged). This ticket keeps the stored limits and the server unchanged; only the browser converts the input.
+- SIM-046 plan A10 ("a canvas-based center-crop to 512 px in the browser … is a follow-up UX ticket") and the SIM-046
+  security review finding 4 (phone JPEGs with trailing data are refused today).
+- D36 (UI copy in `src/ui/copy/`).
 
 ## Scope
-- Forward-only migration: presence table per §4 (org, member, seat, work date, checked-in at, source, checked-out
-  at, checked-out by), unique (org, member, work date).
-- Check-in (by room), check-out and move-seat route handlers and server code; room presence read endpoint for the
-  polling client.
-- End of presence computed on read (no background job); D82 system check-out inside the existing seat release /
-  reassign and member deactivation transactions.
-- Audit entries for check-in, check-out, move and system check-out.
+- In the Profile tab photo section (SIM-046.1), the picked file is no longer checked against the square / pixel / byte
+  limits. Instead the browser:
+  1. decodes it (any image the browser can decode: JPEG, PNG, WebP, …), applying the EXIF orientation;
+  2. takes the largest **centered square**;
+  3. resizes it to 512 × 512 (or keeps the square's size if it is between 64 and 512; a square smaller than 64 is
+     scaled up to 64);
+  4. encodes it as JPEG (stepping the quality down until it fits 256 KB), or PNG when the image has transparency and
+     still fits;
+  5. checks the result with the existing `validatePhoto` and uploads it with the existing `PUT /api/me/photo`.
+- The re-encode drops all metadata (EXIF/GPS) and any trailing data, so phone photos are accepted.
+- A short "Processing…" state while converting; the preview and the shell avatar update as today after the save.
+- A guard against huge inputs (e.g. refuse files over a generous cap such as 20 MB or images over a pixel-count cap
+  with a clear message), so the tab does not run out of memory.
+- Updated limits hint and error copy in `src/ui/copy/portal.ts` (no more "must be square / 64–512 px / 256 KB" for the
+  user; only "could not read this image" / "image too big to process").
 
 ## Out of scope
-- UI (SIM-055, SIM-057, SIM-058); provider source (SIM-061); retention cleanup (OQ-70).
+- A manual crop tool (drag/zoom to choose the square); the crop is automatic and centered.
+- Any server, API, schema or limit change (OQ-56 stays: the server still refuses non-square or oversize bytes).
+- Manager-side upload for other members (does not exist), member lists and seat panel (unchanged).
+- New libraries (canvas / `createImageBitmap` only, stack unchanged).
 
 ## Acceptance criteria
-- [ ] Check-in names a room; the server requires a seat of the member in that room (422 `no_seat_in_room`), uses the
-  lowest seat code when there are several (D77), records source `self`, server time and today's UTC+7 work date; the
-  client never sends a time.
-- [ ] Idempotent: check-in again to the same room while checked in returns the existing record with 200 and writes
-  nothing; check-in to another room while checked in returns 409 `already_checked_in` naming the current room;
-  check-out with no active check-in returns 200 and changes nothing.
-- [ ] Move seat targets another of the member's own seats in the room of the active check-in (422 `seat_not_yours`
-  otherwise, 409 `not_checked_in` with no active check-in); moving to the seat already used returns 200 and writes
-  nothing; every move is audited.
-- [ ] A second check-in the same day after check-out reopens that day's row (new seat, source, time; checked-out
-  cleared); the audit log keeps the earlier check-in (D81).
-- [ ] A row with a work date before today (UTC+7) counts as ended when read; losing the checked-in seat (released,
-  reassigned) or deactivation ends the check-in in the same transaction, checked out by `system`, audited (D82).
-- [ ] Every query is scoped by the token's `org` (R6); auth refusals come only from the auth wrapper before any write
-  (R7); domain refusals use 409/422. A room presence read endpoint lists who is checked in to a room for any member of
-  the org.
-- [ ] The migration is forward-only (R2); unit tests cover the work-day boundary and the rules above, DB tests cover
-  the reopen and D82 paths.
+- [ ] Picking a non-square photo of any common size (e.g. a 4032 × 3024 phone JPEG of several MB) saves a centered
+      square photo of at most 512 × 512 px and at most 256 KB; the server accepts it with no error.
+- [ ] A rotated phone photo (EXIF orientation) is saved upright.
+- [ ] A small image (e.g. 40 × 30) is saved as a 64 × 64 square; a PNG with transparency stays PNG when it fits.
+- [ ] The saved bytes carry no EXIF/GPS metadata; phone JPEGs with trailing data are accepted.
+- [ ] A file the browser cannot decode, or one above the input cap, shows a clear message and sends no request.
+- [ ] All Checks pass.
 
 ## Technical notes
-- Files: `db/migrations/<ts>_presence.sql` (High path), new `src/server/presence/**`, new `src/app/api/rooms/[...]/presence`
-  and check-in/check-out/move routes (paths are a plan choice), `src/server/seats/seats.ts` and
-  `src/server/members/manage.ts` (D82 hooks), `src/lib/validate/`, `src/lib/` UTC+7 work-date helper.
-- Presence is display-only (D78): never in exports, reports or the dashboard.
-- Risks: D82 touches the seat release / reassign and deactivation transactions; size is at the top of M.
+- Files (likely): `src/ui/portal/profile-photo.ts` (replace `checkPhotoFile`'s size/shape gate with the conversion),
+  a new pure helper for the crop/resize maths (`src/ui/portal/photo-crop.ts`: source size → square rect → target
+  size), `src/ui/portal/ProfilePhoto.tsx` / `ProfilePhotoSection.tsx` (processing state), `src/ui/copy/portal.ts`, tests.
+- Use `createImageBitmap(file, { imageOrientation: "from-image" })` (falls back to an `<img>` decode), an
+  `OffscreenCanvas` or `<canvas>` with `imageSmoothingQuality = "high"`, and `toBlob`/`convertToBlob` with a quality
+  loop. Stepping down in halves for big inputs gives better quality than one big resize.
+- Vitest runs in node without canvas: keep the maths, the quality loop's decision logic and the error mapping pure and
+  unit-tested; the canvas calls stay a thin adapter checked by hand.
+- Risks: HEIC from iPhones decodes only in Safari (other browsers will show "could not read"); memory on very large
+  images (hence the cap); colour shifts from JPEG re-encode are acceptable.
 
 ## Test plan
-- Unit: UTC+7 work date around midnight, ended-on-read, idempotency, error codes.
-- DB (`pnpm test:db`): unique row per day, reopen, move, system check-out on release/reassign/deactivate, org scope.
-- `pnpm schema:check` against the local DB.
+- Unit: centered-square rect for landscape, portrait and square inputs; target size for big, mid and tiny squares;
+  quality loop stops at ≤ 256 KB and gives up with a clear code; transparency → PNG choice; error copy mapping; no
+  literals in JSX.
+- Manual: `pnpm dev`, Profile tab — upload a large landscape phone JPEG, a portrait one with EXIF rotation, a tiny
+  PNG, a transparent PNG, a WebP, and a non-image file; check the header avatar and that DevTools shows one PUT under
+  256 KB.
 
 ## Notes / answers from Ming
 

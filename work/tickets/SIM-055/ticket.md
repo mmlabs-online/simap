@@ -1,9 +1,9 @@
-# SIM-055: Check-in room view and home page per role
+# SIM-055: Give the sign-in screens a game-style look
 
 | Field | Value |
 |---|---|
 | State | BACKLOG |
-| Priority | P0 |
+| Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
 | Gate | none |
@@ -15,49 +15,64 @@
 | PR | — |
 
 ## Goal
-A User lands on a check-in room view (the room map with a "Who's here" list and a room switcher) instead of the
-Dashboard; Manager and Admin keep the Dashboard and reach the same view from a "Check in" nav entry (D76).
+The sign-in screens should feel like the start screen of a small office game, not a plain form next to an empty grey
+box (Ming, 2026-11-26, screenshot of `/` signed out: "thay đổi UI đăng nhập cho nó phong cách game hơn").
 
 ## Scope reference
-`docs/spec-v1.md` PRE-01 (amends SHL-01), SHL-01, LAY-06; decision D76 (amends the OQ-54 answer), D52 (pixel end-user
-surface).
+- D52 and `docs/art/style-guide.md` §1: sign-in and the org picker are pixel/game surfaces. Body text and forms never use
+  a pixel font; pixel styling goes into art, frames, headings and decoration. The kit's controls stay the base.
+- Style guide §4: `scene.signin`, "a small office vignette, about 12×7 tiles, composed from the above" (still the CSS
+  placeholder in `src/ui/auth/SignInScene.tsx`).
+- D41 / D46 / D48 (32 px tiles, whole-number scaling, `image-rendering: pixelated`, no game engine or new library);
+  D45 / D66 (only the licence-checked bundled art).
 
 ## Scope
-- New check-in room view page: room map (existing LAY-06 overlays, zoom, pan, seat detail on click), a "Who's here"
-  list region beside the map (below it at 390 px), a room switcher, and the slot for the floating "Check in" /
-  "Check out" button.
-- Home per role: a User's home (after sign-in and org choice) is this view; Manager and Admin keep the Dashboard and
-  get a "Check in" nav entry (desktop rail and mobile bar) that opens the same view.
-- First-room rule as a pure `src/lib` function with unit tests.
-- UI copy in `src/ui/copy/<feature>.ts` (D36).
+- Replace the `SignInScene` placeholder with a real pixel vignette of an office (desks, chairs, monitors, plants, a
+  window, one or two avatars at desks), drawn from the committed sprite atlas with the existing map paint code
+  (canvas or DOM), at a whole-number scale. It stays decorative (`aria-hidden`) and hidden below `md`, as today.
+- Game-style frame for the sign-in card in `AuthLayout`: a stronger pixel frame (stepped corners, darker outline, a
+  drop shadow made of pixels), the brand line as a small pixel "title" (pixel font or pixel lettering allowed for the
+  brand and the screen heading only), and a game-like primary button (chunky pixel border, pressed state).
+- The page background gets a subtle tiled floor pattern (or similar pixel texture) behind the card and scene.
+- Applies to every screen that uses `AuthLayout` (sign in, forgot password, create account, accept invitation, the
+  signed-out notice) and the org picker (`OrgPickerView`), so they look like one set.
+- All new copy in `src/ui/copy/auth.ts` (D36).
 
 ## Out of scope
-- Presence data, check-in/check-out API (SIM-056); popup (SIM-057); present/away, name tags, "Who's here" content and
-  polling (SIM-058); walk animation (SIM-059).
+- Changing the sign-in flow, fields, validation, Turnstile or Identity calls.
+- Pixel fonts in inputs, labels, notices, links or body text (style guide §1).
+- New third-party art or fonts that are not already licence-checked (D45); new libraries; animation beyond a small
+  idle effect (optional, must respect `prefers-reduced-motion`).
+- Management screens (D52 keeps them on the clean kit).
 
 ## Acceptance criteria
-- [ ] A User lands on the check-in room view after sign-in and org choice, instead of the Dashboard.
-- [ ] Manager and Admin keep the Dashboard as home and have a "Check in" nav entry (desktop and mobile) that opens the
-  same view with the same behaviour.
-- [ ] The view shows the room map with LAY-06 overlays, zoom, pan and seat detail on click, a "Who's here" list beside
-  the map (below it at 390 px), a room switcher, and a floating "Check in" / "Check out" button slot.
-- [ ] The room shown first is: the room of today's active check-in; else the room of the member's most recent
-  check-in where they still have a seat; else their first assigned room by room code. A member with no seat gets the
-  no-seat empty state (PRE-02 wording).
-- [ ] Unit tests cover the first-room rule and the nav/home per tier.
+- [ ] On a desktop width, the sign-in screen shows a pixel office vignette next to the card instead of the grey box;
+      it is drawn from the bundled atlas at a whole-number scale with no smoothing, and is hidden from assistive tech.
+- [ ] The card, brand/heading and primary button have a game-style pixel look; inputs, labels, notices and links keep
+      the readable kit font and the kit's controls, and keyboard focus stays clearly visible.
+- [ ] Every `AuthLayout` screen and the org picker share the new look; below `md` the card fills the width with no
+      horizontal scroll at 320 px.
+- [ ] Contrast of text and the focus ring meets WCAG AA; `prefers-reduced-motion` disables any animation.
+- [ ] If the atlas fails to load, the scene falls back to the current placeholder and sign-in still works.
+- [ ] All Checks pass.
 
 ## Technical notes
-- Files: `src/lib/nav.ts` (+ tests), `src/ui/AppShell*.tsx`, `src/app/(app)/page.tsx` (home per role), a new check-in
-  page under `src/app/(app)/`, a new `src/ui/checkin/**` (name is a plan choice), `src/ui/roomlayout/RoomMap*.tsx`
-  reuse, `src/lib/room-switcher.ts`, `src/ui/copy/`.
-- The first-room rule takes check-in inputs; until SIM-056 lands they are empty and the rule falls back to the first
-  assigned room by room code. Wiring the real presence data follows SIM-056/SIM-058.
-- Gate: P0 with no High path; the `high-paths+P1` policy as read here covers P1 only. Set `plan-approval` if Ming reads
-  it as P1-and-above.
+- Files (likely): `src/ui/auth/SignInScene.tsx`, `src/ui/auth/AuthLayout.tsx`, `src/ui/org/OrgPickerView.tsx`,
+  `src/app/globals.css` (`px-frame`, `px-strip`, new pixel button/background utilities), `src/ui/copy/auth.ts`,
+  possibly a small scene layout constant next to `src/lib/sprites/` (pure data: which sprite on which tile), reusing
+  `useAtlas` / `tintedFrame` from `src/ui/roomlayout/` (check the R1 layer rules: ui → ui and lib only).
+- A pixel font for the brand/heading: only if one is already in the repo or its licence is checked (D45); otherwise use
+  pixel lettering via CSS (e.g. text-shadow steps) and keep the kit font. Flag in the plan if a font is needed.
+- The SIM-046.1 guard test (`src/ui/no-photo-on-map.test.ts`) must stay green.
+- Risks: the sign-in page is the first paint for everyone — keep the atlas load off the critical path (render the card
+  first, the scene when the atlas is ready); CSP (SIM-027) must still allow the canvas/atlas.
 
 ## Test plan
-- Unit: first-room rule (active check-in, recent check-in with/without a seat, lowest room code, no seat); nav per tier.
-- Manual: sign in as User (lands on the view), as Manager/Admin (Dashboard + "Check in" entry); 390 px layout.
+- Unit: the scene layout data uses only keys that exist in `keys.json` and fits the scene size; `AuthLayout` and
+  `OrgPickerView` render the new frame classes; no pixel-font class on inputs, labels or body text (like the existing
+  `AuditView` check); copy has no literals.
+- Manual: `pnpm dev`, signed out at desktop and 320 px; tab through the form; reload with the atlas blocked; check
+  forgot password, create account and the org picker.
 
 ## Notes / answers from Ming
 

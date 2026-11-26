@@ -1,13 +1,13 @@
-# SIM-057: Pixel check-in popup
+# SIM-057: Check-in room view and home page per role
 
 | Field | Value |
 |---|---|
 | State | BACKLOG |
-| Priority | P1 |
+| Priority | P0 |
 | Size | M |
 | Areas | ui, ux |
-| Gate | plan-approval |
-| Depends on | SIM-055, SIM-056 |
+| Gate | none |
+| Depends on | — |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
@@ -15,45 +15,49 @@
 | PR | — |
 
 ## Goal
-A member who has not checked in today gets a pixel-style popup on the room view that lists their rooms and checks
-them in with one click, or lets them "Just look".
+A User lands on a check-in room view (the room map with a "Who's here" list and a room switcher) instead of the
+Dashboard; Manager and Admin keep the Dashboard and reach the same view from a "Check in" nav entry (D76).
 
 ## Scope reference
-`docs/spec-v1.md` PRE-02, PRE-01 (floating button), PRE-03; decisions D52 (pixel end-user surface), D35/D79 (UTC+7),
-D76.
+`docs/spec-v1.md` PRE-01 (amends SHL-01), SHL-01, LAY-06; decision D76 (amends the OQ-54 answer), D52 (pixel end-user
+surface).
 
 ## Scope
-- Modal popup over the check-in room view; room list with locked rooms; "Check in to <room>" and "Just look";
-  no-seat empty state; floating "Check in" / "Check out" button wired to SIM-056.
-- Any data the popup needs (per room: seat code, checked-in count, last check-in) from the SIM-056 endpoints, or a
-  small read addition if the plan finds one is missing.
+- New check-in room view page: room map (existing LAY-06 overlays, zoom, pan, seat detail on click), a "Who's here"
+  list region beside the map (below it at 390 px), a room switcher, and the slot for the floating "Check in" /
+  "Check out" button.
+- Home per role: a User's home (after sign-in and org choice) is this view; Manager and Admin keep the Dashboard and
+  get a "Check in" nav entry (desktop rail and mobile bar) that opens the same view.
+- First-room rule as a pure `src/lib` function with unit tests.
+- UI copy in `src/ui/copy/<feature>.ts` (D36).
 
 ## Out of scope
-- Walk-in animation (SIM-059; this ticket only triggers the end state); provider skip logic beyond "no popup when
-  already checked in from any source" (SIM-061).
+- Presence data, check-in/check-out API (SIM-058); popup (SIM-059); present/away, name tags, "Who's here" content and
+  polling (SIM-060); walk animation (SIM-061).
 
 ## Acceptance criteria
-- [ ] A member with no check-in today (from any source) sees a modal popup on arrival, in the room's pixel style
-  (pixel frame, title bar in the room's wall colour, 3D pixel buttons, body text in the normal font, D52).
-- [ ] It lists every room where the member has a seat: layout thumbnail, room name and code, the member's seat code,
-  how many are checked in now, and the member's last check-in there (UTC+7 date and time, or "never"); rooms without
-  a seat are listed below, locked, with "Request a seat" opening that room's map for REG-01.
-- [ ] Changing the selected room switches the room behind the popup.
-- [ ] "Check in to <room>" checks in (PRE-03) and closes the popup; "Just look" closes it without checking in and the
-  floating "Check in" button stays; the popup shows once per page load.
-- [ ] A member with no seat at all sees "You don't have a seat yet" with "Request a seat" (Rooms page); nothing can be
-  checked in.
-- [ ] Keyboard-operable and screen-reader labelled (focus trap, Escape = "Just look"); works at 390 px; component
-  tests cover show/hide rules, locked rooms and the empty state.
+- [ ] A User lands on the check-in room view after sign-in and org choice, instead of the Dashboard.
+- [ ] Manager and Admin keep the Dashboard as home and have a "Check in" nav entry (desktop and mobile) that opens the
+  same view with the same behaviour.
+- [ ] The view shows the room map with LAY-06 overlays, zoom, pan and seat detail on click, a "Who's here" list beside
+  the map (below it at 390 px), a room switcher, and a floating "Check in" / "Check out" button slot.
+- [ ] The room shown first is: the room of today's active check-in; else the room of the member's most recent
+  check-in where they still have a seat; else their first assigned room by room code. A member with no seat gets the
+  no-seat empty state (PRE-02 wording).
+- [ ] Unit tests cover the first-room rule and the nav/home per tier.
 
 ## Technical notes
-- Files: `src/ui/checkin/**` (from SIM-055), `src/ui/copy/`, client API wrapper in `src/ui/`/`src/lib/`.
-- Gate `plan-approval` because of the `high-paths+P1` policy (P1).
+- Files: `src/lib/nav.ts` (+ tests), `src/ui/AppShell*.tsx`, `src/app/(app)/page.tsx` (home per role), a new check-in
+  page under `src/app/(app)/`, a new `src/ui/checkin/**` (name is a plan choice), `src/ui/roomlayout/RoomMap*.tsx`
+  reuse, `src/lib/room-switcher.ts`, `src/ui/copy/`.
+- The first-room rule takes check-in inputs; until SIM-058 lands they are empty and the rule falls back to the first
+  assigned room by room code. Wiring the real presence data follows SIM-058/SIM-060.
+- Gate: P0 with no High path; the `high-paths+P1` policy as read here covers P1 only. Set `plan-approval` if Ming reads
+  it as P1-and-above.
 
 ## Test plan
-- Unit/component: popup visibility (no check-in, checked in, after "Just look"), room list ordering and lock state,
-  Escape, empty state.
-- Manual: User with two rooms, check in, reload (no popup); 390 px; keyboard only.
+- Unit: first-room rule (active check-in, recent check-in with/without a seat, lowest room code, no seat); nav per tier.
+- Manual: sign in as User (lands on the view), as Manager/Admin (Dashboard + "Check in" entry); 390 px layout.
 
 ## Notes / answers from Ming
 

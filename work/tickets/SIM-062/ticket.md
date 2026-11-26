@@ -1,13 +1,13 @@
-# SIM-062: Layout editor warning for unreachable chairs
+# SIM-062: Multi-direction walking avatar frames
 
 | Field | Value |
 |---|---|
 | State | BACKLOG |
 | Priority | P2 |
-| Size | S |
-| Areas | ui, ux |
+| Size | M |
+| Areas | ui |
 | Gate | none |
-| Depends on | SIM-059 |
+| Depends on | SIM-061 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
@@ -15,31 +15,34 @@
 | PR | — |
 
 ## Goal
-The Admin sees a warning in the layout editor when a chair cannot be reached from any door or a room with seats has
-no door, so walk-ins work.
+Characters walk with proper frames for each direction, for every pixel-character layer, instead of the phase 1
+frames.
 
 ## Scope reference
-`docs/spec-v1.md` PRE-07 (editor warning), LAY-05, LAY-01 (block rules).
+`docs/spec-v1.md` PRE-07 (art item), POR-06 (character layers); decision D45 (asset rules).
 
 ## Scope
-- Reuse the SIM-059 path module to find unreachable chairs and the no-door case in the editor draft; show a warning.
+- Multi-direction walking frames for each POR-06 layer in the sprite atlas with manifest entries; the walk uses them
+  by direction.
 
 ## Out of scope
-- Changing block rules or save validation.
+- Path-finding and walk logic (SIM-061).
 
 ## Acceptance criteria
-- [ ] The layout editor warns when a chair cannot be reached from any door.
-- [ ] It warns when a room with seats has no door.
-- [ ] The warning never blocks a save.
-- [ ] Unit tests cover the reachability check on editor drafts (reachable, unreachable, no door).
+- [ ] Each POR-06 layer has walking frames for every direction the walk uses, packed into the atlas with manifest
+  entries (D45 asset rules).
+- [ ] The walk picks the frame set by direction of travel; swapping the art needs no code change (atlas + manifest
+  only).
+- [ ] Unit tests check the manifest has every direction for every layer.
 
 ## Technical notes
-- Files: `src/lib/layout-editor/**`, the SIM-059 path module, `src/ui/roomlayout/EditorInspector.tsx` or toolbar,
-  `src/ui/copy/`.
+- Files: `public/sprites/office.png/json` via `pnpm sprites:pack`, `src/lib/sprites/avatar.ts`, `keys.json`, credits
+  if the art comes from a package.
+- Art source may need Ming (as M-63 did for the atlas); record it in `Needs Ming` at PLAN if so.
 
 ## Test plan
-- Unit: reachability on drafts.
-- Manual: wall off a chair in the editor, see the warning, save still works.
+- Unit: manifest coverage per layer and direction.
+- Manual: walk in each direction in a room.
 
 ## Notes / answers from Ming
 
