@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | State | BACKLOG |
-| Priority | P2 |
+| Priority | P3 |
 | Size | M |
 | Areas | ui |
 | Gate | none |
