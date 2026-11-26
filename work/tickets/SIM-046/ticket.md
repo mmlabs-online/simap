@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T05:34:54Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/125 |
 
 ## Goal
 A member uploads, replaces or removes a real profile photo, shown in the app's people surfaces (not on the map).
@@ -56,3 +56,9 @@ SIM-036.5 device type image storage.
 - Plan approved (2026-11-26, batch 2026-11-26-1; Ming: "duyệt hết theo mặc định", assumptions A1–A12 with defaults; split into SIM-046 server slice + SIM-046.1 + SIM-046.2).
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE (batch 2026-11-26-1)
+- Agent calls: 6, ~436k tokens (api-platform-engineer×1 40k, database-optimizer×1 29k, planner×1 125k, implementer×1 114k, reviewer×1 76k, security-ai-generated-code-auditor×1 52k; default models).
+- Done: slice 1 (server): migration 20261126130000, photo validator + metadata strip, readBytes list, Drive cap 256 KB, service, 5 route handlers, schema-check block 12, tests; review PASS attempt 1; PR #125.
+- In progress / next: Ming merges PR #125 before SIM-047; SIM-046.1 (UI, after SIM-045.1 — now DONE) and SIM-046.2 (after SIM-044.1 — merged).
+- Gotchas: migrator refuses an older pending migration; security 🟡 1 (JPEG metadata between scans) and 🟡 2 (orphan log traceability) are follow-ups.
