@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T12:22:12Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/136 |
 
 ## Goal
 A User lands on a check-in room view (the room map with a "Who's here" list and a room switcher) instead of the
@@ -62,3 +62,9 @@ surface).
 ## Notes / answers from Ming
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 5 (frontend-developer×1 37k, ux-architect×1 51k, planner×1 98k, implementer×1 73k, reviewer×1 55k; default models)
+- Done: check-in room view, home per tier, nav entry, first-room rule; review PASS on attempt 1; PR #136.
+- In progress / next: Ming reviews and merges PR #136; then SIM-058 (presence API) and SIM-059/060.
+- Gotchas: should-fix on `?room=` + failed room list (skeleton with no retry); manual 1280/390 px check not done; Users keep `/dashboard` (assumption).
