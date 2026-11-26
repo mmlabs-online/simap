@@ -3,6 +3,7 @@ import { SEAT_LIMITS } from "@/lib/seats/types";
 import type { FloorZone, LayoutSaveValue, Placement, Rotation } from "@/lib/sprites/layout";
 import { ROTATION_TO_DIR, chairFor, resolveFrameKey } from "@/lib/sprites/placement";
 import { REGISTRY } from "@/lib/sprites/registry";
+import { rotationAllowed } from "@/lib/sprites/rotations";
 import { isCanonicalUuid } from "./uuid";
 
 export const LAYOUT_LIMITS = {
@@ -177,6 +178,7 @@ function checkGridSpritesRotations(layout: LayoutRulesInput): LayoutFailure | nu
     if (item.rotation !== 0 && !SPRITES.get(item.sprite)?.directional) {
       return fail("layout_bad_rotation");
     }
+    if (!rotationAllowed(item.sprite, item.rotation)) return fail("layout_bad_rotation");
   }
   return null;
 }

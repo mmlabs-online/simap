@@ -31,8 +31,17 @@ describe("artDirs", () => {
     expect(artDirs(dto("plant.large"))).toEqual(["s"]);
     expect(artDirs(dto("floor.wood"))).toEqual(["s"]);
     expect(artDirs(dto("chair.office"))).toEqual(
-      artDirs({ directional: dto("chair.office").directional }),
+      artDirs({
+        directional: dto("chair.office").directional,
+        builtinKey: dto("chair.office").builtinKey,
+      }),
     );
+  });
+
+  it("artDirs for clock.wall and screen.projector is n,s", () => {
+    expect(artDirs(dto("clock.wall"))).toEqual(["n", "s"]);
+    expect(artDirs(dto("screen.projector"))).toEqual(["n", "s"]);
+    expect(artDirs(dto("bin.trash"))).toEqual(["n", "e", "s", "w"]);
   });
 });
 

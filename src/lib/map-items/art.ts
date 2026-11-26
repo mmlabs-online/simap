@@ -1,4 +1,5 @@
 import { REGISTRY, isFrameKey } from "@/lib/sprites/registry";
+import { allowedDirs } from "@/lib/sprites/rotations";
 import type { Direction } from "@/lib/sprites/types";
 import { LIBRARY_ITEMS, type LibraryItem } from "./library";
 import { MAP_ITEM_LIMITS } from "./types";
@@ -14,9 +15,11 @@ export const sizeFor = (dir: Direction, w: number, h: number): [number, number] 
 export const frameTiles = (frameKey: string): [number, number] =>
   REGISTRY[frameKey]?.tiles ?? [1, 1];
 
-/** A non-directional item uses `s` only. */
-export const artDirAllowed = (item: Pick<LibraryItem, "directional">, dir: Direction): boolean =>
-  item.directional || dir === "s";
+/** A non-directional item uses `s` only; clock.wall and screen.projector use `n` and `s` (SIM-049). */
+export const artDirAllowed = (
+  item: Pick<LibraryItem, "directional" | "builtinKey">,
+  dir: Direction,
+): boolean => (item.directional ? allowedDirs(item.builtinKey).includes(dir) : dir === "s");
 
 /** Group and layer rule: a catalog group frame; floor frames only for floor items and only floor frames for floors. */
 export function spriteAllowedFor(item: Pick<LibraryItem, "kind">, frameKey: string): boolean {

@@ -152,6 +152,28 @@ describe("rotateItems", () => {
     expect(refused(rotateItems(free, ["s:a"]))).toBe("ok");
   });
 
+  it("rotateItems toggles clock.wall and screen.projector between s and n", () => {
+    for (const key of ["clock.wall", "screen.projector"]) {
+      let d = empty({ fixtures: [fx(key, 4, 4)] });
+      const seen: number[] = [];
+      for (let n = 0; n < 3; n++) {
+        d = ok(rotateItems(d, ["f:0"]));
+        seen.push(d.items[0].rotation);
+      }
+      expect(seen, key).toEqual([180, 0, 180]);
+    }
+  });
+
+  it("rotateItems still cycles four directions for bin.trash", () => {
+    let d = empty({ fixtures: [fx("bin.trash", 4, 4)] });
+    const seen: number[] = [];
+    for (let n = 0; n < 4; n++) {
+      d = ok(rotateItems(d, ["f:0"]));
+      seen.push(d.items[0].rotation);
+    }
+    expect(seen).toEqual([90, 180, 270, 0]);
+  });
+
   it("rotateItems refuses a rotate that pushes footprint or chair out of bounds; refuses a selection of only non-directional sprites; leaves non-directional items at 0 in a mixed selection", () => {
     // desk at the bottom row: facing east is 1x2 and leaves the room
     expect(refused(rotateItems(empty({ seats: [seat("a", 0, 6)] }), ["s:a"]))).toBe("ok");
