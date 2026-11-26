@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P3 |
 | Size | M |
 | Areas | db, api, ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-26T05:22:24Z |
 | PR | — |
 
 ## Goal
