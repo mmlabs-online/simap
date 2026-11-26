@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -80,5 +80,6 @@ crop và resize rồi lưu").
   256 KB.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-4): "duyệt hết theo mặc định"; Q3 defaults: 20 MB / 50 MP input caps, JPEG quality floor 0.4, white fill for transparency, no preview step.
 
 ## Handoff
