@@ -71,6 +71,18 @@ describe("SpriteBrowser", () => {
     expect(render({ staged: keys[0]! })).not.toContain("<canvas");
   });
 
+  it("with an atlas that has meta.sources only bundled keys are listed", () => {
+    const sources = Object.fromEntries(keys.map((k, i) => [k, i === 0 ? "map" : "placeholder"]));
+    const a = {
+      manifest: { frames: { [keys[0]!]: frame }, meta: { sources } },
+      image: {},
+    } as unknown as Atlas;
+    const html = render({ atlas: a });
+    expect(html.match(/<input/g)).toHaveLength(1);
+    expect(html).toContain(`value="${keys[0]}"`);
+    expect(html).toContain(copy.count(1));
+  });
+
   it("frame missing in atlas: no canvas, the row text stays", () => {
     const html = render({ atlas: atlas([]) });
     expect(html).not.toContain("<canvas");

@@ -1,5 +1,6 @@
 import { frameTiles, sizeFor } from "@/lib/map-items/art";
 import type { MapItemDto } from "@/lib/map-items/types";
+import { bundledKeys } from "@/lib/sprites/bundled";
 import type { Direction } from "@/lib/sprites/types";
 import { mapItemsCopy } from "../copy/mapItems";
 import { Button } from "../Button";
@@ -32,7 +33,7 @@ export function SpriteBrowser({
   onCancel: () => void;
 }) {
   const label = mapItemsCopy.art.dirs[dir]!;
-  const groups = spriteChoices(item, dir);
+  const groups = spriteChoices(item, dir, bundledKeys(atlas?.manifest));
   const count = groups.reduce((n, g) => n + g.keys.length, 0);
   const [iw, ih] = sizeFor(dir, item.w, item.h);
   const [fw, fh] = staged ? frameTiles(staged) : [0, 0];

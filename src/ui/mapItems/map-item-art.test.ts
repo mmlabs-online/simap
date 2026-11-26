@@ -122,6 +122,16 @@ describe("spriteChoices", () => {
     expect(keys("e")).toContain("desk.single.e");
   });
 
+  it("spriteChoices with bundled keys lists only bundled keys; null or omitted keeps the full list", () => {
+    const desk = dto("desk.single");
+    const all = spriteChoices(desk, "n").flatMap((g) => g.keys);
+    expect(all.length).toBeGreaterThan(1);
+    const bundled = new Set([all[0]!, "not.a.key"]);
+    expect(spriteChoices(desk, "n", bundled).flatMap((g) => g.keys)).toEqual([all[0]]);
+    expect(spriteChoices(desk, "n", new Set()).flatMap((g) => g.keys)).toEqual([]);
+    expect(spriteChoices(desk, "n", null)).toEqual(spriteChoices(desk, "n"));
+  });
+
   it("for a 1x1 item excludes frames larger than 1x1", () => {
     const item = { ...dto("plant.large"), w: 1, h: 1 };
     for (const g of spriteChoices(item, "s")) {

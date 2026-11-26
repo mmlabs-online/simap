@@ -32,6 +32,7 @@ export const shellCopy = {
     title: (v: string) =>
       v === "dev" ? "Development build (no release tag)" : `simap release ${v}`,
   },
+  credits: "Credits",
   navLabel: "Main navigation",
   skipLink: "Skip to main content",
   nav: {

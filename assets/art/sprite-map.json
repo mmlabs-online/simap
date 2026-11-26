@@ -3,7 +3,7 @@
     "Phase-1 sprite map (style guide §0, §8b; D54). rect = [x, y, w, h] in source pixels, verified by cropping on 2026-11-20.",
     "anchor = [x, y] inside rect of the pixel that sits on the top-left corner of the footprint (copied from the pack's own atlas JSON). Pack sprites overhang their footprint and are taller than the 16 px headroom of style guide §8, so the packing script must place them by this anchor, not by bottom-alignment.",
     "Directions: pack 'front' (faces the viewer) = .s, 'back' = .n, 'left' = .w, 'right' = .e. Checked against the pack's sample Meeting Room (a chair rotated 90 deg uses the 'right' view).",
-    "Sources are not committed: the pack licence forbids redistributing the asset files, and the repo is public. Copy the sheets from the downloaded pack into assets/art/sources/<pack-id>/ locally (see CREDITS.md)."
+    "Sources are not committed: the pack licence forbids redistributing the asset files; the repo is private but the sheets still must not be committed. Copy the sheets from the downloaded pack into assets/art/sources/<pack-id>/ locally (see CREDITS.md)."
   ],
   "sources": {
     "imersa-office": {
