@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { firstRoomInputs } from "@/lib/checkin-popup";
 import { firstRoom, shownRoom, type FirstRoom } from "@/lib/checkin-room";
 import { roomDetailHref } from "@/lib/nav";
 import {
@@ -30,7 +31,12 @@ import { panelView, parseSeatParam } from "../seats/seat-view";
 import { createSeatsApi } from "../seats/seats-api";
 import { useRoomLayout } from "../seats/useRoomLayout";
 import { useRoomSeats } from "../seats/useRoomSeats";
+import { CheckinButton } from "./CheckinButton";
+import { CheckinPopup } from "./CheckinPopup";
 import { CheckinView, type CheckinViewState } from "./CheckinView";
+import { createPresenceApi } from "./presence-api";
+import { useCheckinFlow } from "./useCheckinFlow";
+import { useMyPresence } from "./useMyPresence";
 
 function CheckinPageInner() {
   const apiFetch = useApiFetch();
@@ -51,12 +57,13 @@ function CheckinPageInner() {
     setGoodRooms((prev) => keepGoodRooms(prev, rooms.status, rooms.rooms));
   }, [rooms.status, rooms.rooms]);
 
-  // Check-in inputs stay empty until SIM-058 (presence data) and SIM-060 supply them.
+  const presenceApi = useMemo(() => createPresenceApi(apiFetch), [apiFetch]);
+  const myPresence = useMyPresence(presenceApi);
+  // Wait for presence to settle so the first room is not picked and then changed; on an error the inputs are empty.
   const first: FirstRoom | null =
-    mySeats.status === "ready"
+    mySeats.status === "ready" && myPresence.status !== "loading"
       ? firstRoom({
-          activeCheckinRoom: null,
-          recentCheckins: [],
+          ...firstRoomInputs(myPresence.data),
           seatRoomCodes: mySeats.seats.map((s) => s.roomCode),
         })
       : null;
@@ -105,6 +112,17 @@ function CheckinPageInner() {
   };
   const detailHref = shownCode !== null ? roomDetailHref(shownCode) : null;
 
+  const flow = useCheckinFlow({
+    mySeats,
+    rooms: goodRooms,
+    myPresence,
+    presenceApi,
+    seatsApi,
+    shownCode,
+    seatPanelOpen: openCode !== null,
+    navigate: (code) => router.replace(checkinRoomHref(pathname, code, null), { scroll: false }),
+  });
+
   let state: CheckinViewState;
   if (mySeats.status === "error") {
     state = {
@@ -136,6 +154,7 @@ function CheckinPageInner() {
     <>
       <CheckinView
         state={state}
+        button={<CheckinButton {...flow.button} />}
         switcher={
           <RoomSwitcherView
             rooms={goodRooms}
@@ -152,6 +171,7 @@ function CheckinPageInner() {
           />
         }
       />
+      <CheckinPopup {...flow.popup} />
       {shown.kind === "room" && (
         <SeatDetailPanel
           view={view}
