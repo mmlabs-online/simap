@@ -174,6 +174,10 @@ try {
     "1 later run applies map_items",
     later.some((l) => l.includes("map_items")),
   );
+  check(
+    "1 later run applies presence",
+    later.some((l) => l.includes("presence")),
+  );
   const second = await run();
   check("1 second run is up to date", second.length === 1 && second[0] === "up to date");
 
@@ -1176,6 +1180,98 @@ try {
       refused(await tx(setLook(bad)), "23514", "members_pixel_look_check"),
     );
   }
+
+  // 14 presence (SIM-058)
+  const b14 = seedRows(B);
+  const pIns = (
+    /** @type {string} */ org,
+    /** @type {string} */ member,
+    /** @type {string} */ seat,
+    /** @type {{ source?: string, outAt?: string | null, outBy?: string | null, inAt?: string }} */ o = {},
+  ) =>
+    q(
+      `insert into presence (org_id, member_id, seat_id, work_date, checked_in_at, source, checked_out_at, checked_out_by)
+       values ($1, $2, $3, '2026-11-26', $4::timestamptz, $5, $6::timestamptz, $7)`,
+      [
+        org,
+        member,
+        seat,
+        o.inAt ?? "2026-11-26T03:00:00Z",
+        o.source ?? "self",
+        o.outAt ?? null,
+        o.outBy ?? null,
+      ],
+    );
+  check(
+    "14 valid presence rows accepted (self open, provider closed by day_end)",
+    (await tx(async () => {
+      await pIns(A.org, m1.id, seatA)();
+      await c.query(`delete from presence where org_id = $1`, [A.org]);
+      await pIns(A.org, m1.id, seatA, {
+        source: "provider",
+        outAt: "2026-11-26T09:00:00Z",
+        outBy: "day_end",
+      })();
+    }, false)) === null,
+  );
+  check(
+    "14 duplicate (org, member, work date) refused (23505 presence_org_member_date_key)",
+    refused(
+      await tx(async () => {
+        await pIns(A.org, m1.id, seatA)();
+        await pIns(A.org, m1.id, freeSeatA)();
+      }),
+      "23505",
+      "presence_org_member_date_key",
+    ),
+  );
+  check(
+    "14 bad source refused (23514 presence_source_check)",
+    refused(await tx(pIns(A.org, m1.id, seatA, { source: "x" })), "23514", "presence_source_check"),
+  );
+  check(
+    "14 bad checked_out_by refused (23514 presence_checked_out_by_check)",
+    refused(
+      await tx(pIns(A.org, m1.id, seatA, { outAt: "2026-11-26T09:00:00Z", outBy: "x" })),
+      "23514",
+      "presence_checked_out_by_check",
+    ),
+  );
+  check(
+    "14 checked_out_by without checked_out_at refused (23514 presence_checkout_pair_check)",
+    refused(
+      await tx(pIns(A.org, m1.id, seatA, { outBy: "self" })),
+      "23514",
+      "presence_checkout_pair_check",
+    ),
+  );
+  check(
+    "14 checked out before checked in refused (23514 presence_checkout_order_check)",
+    refused(
+      await tx(pIns(A.org, m1.id, seatA, { outAt: "2026-11-26T02:00:00Z", outBy: "self" })),
+      "23514",
+      "presence_checkout_order_check",
+    ),
+  );
+  check(
+    "14 cross-org member refused (23503 presence_member_fkey)",
+    refused(await tx(pIns(A.org, b14.members[0].id, seatA)), "23503", "presence_member_fkey"),
+  );
+  check(
+    "14 cross-org seat refused (23503 presence_seat_fkey)",
+    refused(await tx(pIns(A.org, m1.id, b14.uid("6", 11))), "23503", "presence_seat_fkey"),
+  );
+  check(
+    "14 seat delete cascades presence",
+    (await tx(async () => {
+      await pIns(A.org, m1.id, freeSeatA)();
+      await c.query(`delete from seats where org_id = $1 and id = $2`, [A.org, freeSeatA]);
+      const n = (
+        await c.query(`select count(*)::int as n from presence where seat_id = $1`, [freeSeatA])
+      ).rows[0].n;
+      if (n !== 0) throw new Error("presence survived the seat delete");
+    }, false)) === null,
+  );
 
   // extras
   const reqIns = q(

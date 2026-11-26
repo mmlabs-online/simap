@@ -78,5 +78,12 @@ The app never migrates.
   integers indexing the ramps in `src/lib/sprites/avatar.ts` (skin 0-3, hair colour 0-5, hair style 1-3, shirt 0-6),
   checked by `members_pixel_look_check`. The ramps are append-only; widening one needs a migration that replaces the
   check.
+- Presence (SIM-058, `20261126150000_presence.sql`, D77-D82): new table `presence`, one row per member per UTC+7 work
+  date (`presence_org_member_date_key`). `seat_id` cascades on seat delete (a room delete removes its seats), so
+  presence rows vanish with the seat; the member FK has no cascade (members are never deleted). `source` allows `self` /
+  `provider`, `checked_out_by` allows `self` / `provider` / `day_end` / `system`; SIM-058 writes only `self` and
+  `system`. Forward-only; rolling back to the previous image is safe (it ignores the table), but while it runs its
+  `releaseSeat` / `deactivateMember` do not end presence, and the read guard (seat occupant must still be the member)
+  hides such rows.
 - Dev seed: `pnpm seed:dev` loads fake data (fixed UUIDs, `@simap.example` emails, invented names) into a local
   database only; it refuses non-local hosts and `NODE_ENV=production`. Never put real data in the seed.

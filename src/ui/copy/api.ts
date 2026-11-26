@@ -74,6 +74,9 @@ export const apiCopy = {
     item_name_taken: "Another map item already has this name.",
     sprite_not_allowed: "This sprite can't be used for this item or doesn't fit its size.",
     invalid_look: "Choose one of the offered options for each part.",
+    no_seat_in_room: "You have no seat in this room.",
+    already_checked_in: "You are already checked in to another room. Check out first.",
+    not_checked_in: "You are not checked in.",
   } satisfies Record<ApiErrorCode, string>,
 } as const;
 

@@ -15,6 +15,7 @@ import type { CannotSeatValue, OccupantPutValue } from "@/lib/validate/seat";
 import { writeAudit } from "@/server/audit/write";
 import { withTx, type TxClient, type TxPool } from "@/server/db/tx";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
+import { endPresenceForSeat } from "@/server/presence/end";
 import { allocateSeatSeq } from "@/server/rooms/rooms";
 import { seatConflict } from "./pg-error";
 
@@ -326,6 +327,16 @@ export async function writeOccupant(
     "update seats set occupant_id = $3, group_id = $4, updated_at = now() where org_id = $1 and id = $2",
     [seat.id, memberId, groupId],
   );
+  if (seat.occupant_id !== null && seat.occupant_id !== memberId) {
+    await endPresenceForSeat(
+      c,
+      scope,
+      actorSub,
+      seat.id,
+      seat.occupant_id,
+      memberId === null ? "seat_unassigned" : "seat_reassigned",
+    );
+  }
   await writeAudit(c, scope, {
     actorSub,
     action,
@@ -508,6 +519,7 @@ export function releaseSeat(
       "update seats set occupant_id = null, updated_at = now() where org_id = $1 and id = $2",
       [seatId],
     );
+    await endPresenceForSeat(c, scope, actorSub, seatId, seat.occupant_id!, "seat_released");
     await writeAudit(c, scope, {
       actorSub,
       action: "seat.release",

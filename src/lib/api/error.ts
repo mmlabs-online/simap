@@ -64,8 +64,11 @@ export const API_ERROR_CODES = [
   "sprite_not_allowed",
   "layout_item_hidden",
   "invalid_look",
+  "no_seat_in_room",
+  "already_checked_in",
+  "not_checked_in",
 ] as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[number];
 
-export type ApiErrorBody = { error: { code: ApiErrorCode; rooms?: number } };
+export type ApiErrorBody = { error: { code: ApiErrorCode; rooms?: number; room?: string } };

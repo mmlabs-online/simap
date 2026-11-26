@@ -258,12 +258,13 @@ describe("delete impact and deleteRoom", () => {
     );
     expect(s[3]).toMatch(/count\(\*\)::int as seats/);
     expect(s[4]).toMatch(/^update devices set role = 'secondary', seat_id = null/);
-    expect(s[5]).toMatch(/^delete from seats/);
-    expect(s[6]).toMatch(/^delete from rooms/);
-    expect(s[7]).toMatch(/^insert into audit_log/);
-    expect(s[8]).toBe("commit");
-    expect(t.calls[7]![1][2]).toBe("room.delete");
-    expect(JSON.parse(t.calls[7]![1][5] as string)).toEqual({
+    expect(s[5]).toMatch(/^update presence p set/);
+    expect(s[6]).toMatch(/^delete from seats/);
+    expect(s[7]).toMatch(/^delete from rooms/);
+    expect(s[8]).toMatch(/^insert into audit_log/);
+    expect(s[9]).toBe("commit");
+    expect(t.calls[8]![1][2]).toBe("room.delete");
+    expect(JSON.parse(t.calls[8]![1][5] as string)).toEqual({
       code: "C302",
       seats: 3,
       devices: 2,

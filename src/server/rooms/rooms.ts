@@ -6,6 +6,7 @@ import type { RoomCreateValue, RoomPatchValue } from "@/lib/validate/room";
 import { writeAudit } from "@/server/audit/write";
 import { withTx, type TxClient, type TxPool } from "@/server/db/tx";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
+import { endPresenceForRoom } from "@/server/presence/end";
 import { roomConflict } from "./pg-error";
 
 type Query = { query(text: string, values: unknown[]): Promise<{ rows: any[] }> };
@@ -248,6 +249,7 @@ export function deleteRoom(
        where org_id = $1 and seat_id in (select id from seats where org_id = $1 and room_id = $2)`,
       [id],
     );
+    await endPresenceForRoom(c, scope, actorSub, id, "room_deleted");
     await orgQuery(c, scope, "delete from seats where org_id = $1 and room_id = $2", [id]);
     await orgQuery(c, scope, "delete from rooms where org_id = $1 and id = $2", [id]);
     await writeAudit(c, scope, {
