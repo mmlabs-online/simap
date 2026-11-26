@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T08:09Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/127 |
 
 ## Goal
 A User no longer receives other members' email addresses from the members API or search, so D69's privacy intent
@@ -48,3 +48,9 @@ not part of what Users see (OQ-58 default lists names, employee code and seats o
 - Plan approved (2026-11-26, batch 2026-11-26-2): "duyệt hết theo mặc định"; Q1 default: hide email from Users (own email still shown).
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 4, ~129k tokens (planner×1 sonnet 27k, implementer×1 default 38k, reviewer×1 sonnet 26k, security-ai-generated-code-auditor×1 default 38k; consult skipped, fast lane; batch 2026-11-26-2).
+- Done: email null for other members for Users (list, detail, `q`); UI dash; per-tier DB test; review PASS attempt 1; PR #127.
+- In progress / next: Ming merges PR #127.
+- Gotchas: email hiding reuses the device `visible` condition; reviewer saw one unexplained `pnpm test` exit 1, green on re-run.
