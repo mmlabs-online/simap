@@ -141,7 +141,7 @@ function MemberRow({ m, p }: { m: MemberDto; p: MembersViewProps }) {
       className={`border-b border-outline-variant last:border-b-0 ${deactivated ? "opacity-60" : ""}`}
     >
       <td className={`${CELL} font-bold`}>{m.displayName}</td>
-      <td className={`${CELL} break-all`}>{m.email}</td>
+      <td className={`${CELL} break-all`}>{m.email ?? membersCopy.hiddenEmail}</td>
       <td className={CELL}>{m.employeeCode ?? membersCopy.noCode}</td>
       <td className={CELL}>
         {m.group ? (

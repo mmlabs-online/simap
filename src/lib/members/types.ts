@@ -37,7 +37,8 @@ export type MemberGroupRef = { id: string; name: string; color: string };
 export type MemberDto = {
   id: string;
   displayName: string;
-  email: string;
+  /** null: withheld from a User for another member (MEM-02, D69). */
+  email: string | null;
   employeeCode: string | null;
   group: MemberGroupRef | null;
   status: MemberStatus;

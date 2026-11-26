@@ -493,4 +493,34 @@ describe("members (db): device visibility", () => {
       expect(r.items.find((m) => m.id === w.b)!.devices).toHaveLength(1);
     }
   });
+
+  it("email: a user sees only their own, in list and detail; q by another's email matches nothing; manager and admin see all", async () => {
+    const w = await visWorld();
+    await pool.query("update members set email = 'an.own@simap.example' where id = $1", [w.a]);
+    await pool.query("update members set email = 'Binh.Other@simap.example' where id = $1", [w.b]);
+    const items = (await listMembers(pool, w.scope, w.aSub, "user", f)).items;
+    expect(items.find((m) => m.id === w.a)!.email).toBe("an.own@simap.example");
+    expect(items.find((m) => m.id === w.b)!.email).toBeNull();
+    expect(ok(await getMember(pool, w.scope, w.aSub, "user", w.a)).email).toBe(
+      "an.own@simap.example",
+    );
+    expect(ok(await getMember(pool, w.scope, w.aSub, "user", w.b)).email).toBeNull();
+    const ids = async (tier: "user" | "manager" | "admin", q: string) =>
+      (
+        await listMembers(pool, w.scope, tier === "user" ? w.aSub : NOBODY, tier, { ...f, q })
+      ).items.map((i) => i.id);
+    expect(await ids("user", "binh.other")).toEqual([]);
+    expect(await ids("user", "simap.example")).toEqual([w.a]);
+    expect(await ids("user", "an.own")).toEqual([w.a]);
+    expect(await ids("user", "binh")).toEqual([w.b]);
+    expect(await ids("user", "E-B")).toEqual([w.b]);
+    for (const tier of ["manager", "admin"] as const) {
+      expect(await ids(tier, "binh.other")).toEqual([w.b]);
+      const all = (await listMembers(pool, w.scope, NOBODY, tier, f)).items;
+      expect(all.map((m) => m.email).sort()).toEqual([
+        "Binh.Other@simap.example",
+        "an.own@simap.example",
+      ]);
+    }
+  });
 });

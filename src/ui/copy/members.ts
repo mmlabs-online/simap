@@ -20,6 +20,7 @@ export const membersCopy = {
   statusLabels: { active: "Active", deactivated: "Deactivated" },
   noGroup: "No group",
   noCode: "-",
+  hiddenEmail: "-",
   hiddenDevices: "-",
   hiddenDevicesLabel: "Not shown",
   moreRefs: (n: number) => `+${n} more`,

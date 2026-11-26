@@ -76,6 +76,12 @@ describe("MembersView", () => {
     expect(html).not.toContain("more</li>");
   });
 
+  it("renders a dash when email is null", () => {
+    const html = render({ items: [{ ...base, id: "4", email: null }] });
+    expect(html).toContain(`>${membersCopy.hiddenEmail}</td>`);
+    expect(html).not.toContain("anh@example.com");
+  });
+
   it("user sees no actions, no invitations section, accounts note present", () => {
     const html = render();
     expect(html).toContain(membersCopy.accountsNote.replace("'", "&#x27;"));

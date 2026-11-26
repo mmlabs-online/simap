@@ -74,7 +74,7 @@ function EditInner({
     <EntityFormDialog
       open
       title={membersCopy.editDialog.title}
-      subtitle={member.email}
+      subtitle={member.email ?? undefined}
       submitLabel={kitCopy.save}
       submitting={submitting}
       error={error}
