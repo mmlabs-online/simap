@@ -122,7 +122,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | BUG-006 | CI `image` job always fails at `compose config` on the self-hosted runner (false positive on /Users/mingming) | MERGED | P1 | XS | security | — | none | 0 | 2026-11-26 |
 | SIM-043 | Let an app-wide simap admin access every org | BACKLOG | P2 | M | security, api, architecture | — | plan-approval | 0 | 2026-11-26 |
 | SIM-044 | Restrict User device visibility and add a "my devices" API | MERGED | P1 | M | api, architecture, security | — | plan-approval | 1 | 2026-11-26 |
-| SIM-044.1 | Limit device data in seat, member and layout responses for Users | PLANNING | P1 | M | api, architecture, security | SIM-044 | plan-approval | 0 | 2026-11-26 |
+| SIM-044.1 | Limit device data in seat, member and layout responses for Users | BLOCKED | P1 | M | api, architecture, security | SIM-044 | plan-approval | 0 | 2026-11-26 |
 | SIM-045 | My Portal part 1: My seat, My devices, display name | BACKLOG | P2 | M | ui, ux | SIM-044 | none | 0 | 2026-11-26 |
 | SIM-046 | Profile photo upload | BACKLOG | P3 | M | api, db, ui, security | SIM-045 | plan-approval | 0 | 2026-11-26 |
 | SIM-047 | Pixel character customisation | BACKLOG | P3 | M | db, api, ui, ux | SIM-045 | plan-approval | 0 | 2026-11-26 |

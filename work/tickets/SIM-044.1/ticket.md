@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | api, architecture, security |
 | Gate | plan-approval |
 | Depends on | SIM-044 |
-| Needs Ming | — |
+| Needs Ming | M-88 |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T04:15Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -49,5 +49,12 @@ Seat, member and layout responses no longer reveal other members' devices to a U
 - DB: `seats.db.test.ts`, `manage.db.test.ts`, `layout.db.test.ts`; route tests.
 
 ## Notes / answers from Ming
+Waiting for Ming: plan approval (P1 gate)
 
 ## Handoff
+
+### 2026-11-26 — claude — BLOCKED
+- Agent calls: 1 (planner×1 default). Consult skipped: SIM-044's consults and plan "Split proposal" cover slice B.
+- Done: plan.md READY (~90 lines product, ~250 tests; no High path).
+- In progress / next: Ming approves the plan (6 questions with defaults), then implement.
+- Gotchas: none.
