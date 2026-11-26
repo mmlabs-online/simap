@@ -1,3 +1,5 @@
+import type { MemberPhotoDto } from "./photo";
+
 export type MemberStatus = "active" | "deactivated";
 
 export type MeMemberDto = {
@@ -34,7 +36,7 @@ export type MemberDeviceRef = {
 
 export type MemberGroupRef = { id: string; name: string; color: string };
 
-export type MemberDto = {
+export type MemberDto = MemberPhotoDto & {
   id: string;
   displayName: string;
   /** null: withheld from a User for another member (MEM-02, D69). */

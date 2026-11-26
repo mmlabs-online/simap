@@ -6,6 +6,7 @@ import { deviceDetailHref } from "@/lib/nav";
 import type { SeatDeviceDto, SeatDto } from "@/lib/seats/types";
 import { apiErrorMessage } from "../copy/api";
 import { seatsCopy } from "../copy/seats";
+import { Avatar } from "../Avatar";
 import { Button, IconButton } from "../Button";
 import { Icon } from "../Icon";
 import { isOutsideRect, splitDevices, statusView, type PanelView } from "./seat-view";
@@ -40,7 +41,7 @@ function Device({ device }: { device: SeatDeviceDto }) {
   );
 }
 
-function SeatBody({ seat }: { seat: SeatDto }) {
+function SeatBody({ seat, occupantPhoto }: { seat: SeatDto; occupantPhoto: string | null }) {
   const status = statusView(seat);
   const { primary, secondary } = splitDevices(seat.devices);
   const hidden = Math.max(0, seat.deviceCount - seat.devices.length);
@@ -67,9 +68,14 @@ function SeatBody({ seat }: { seat: SeatDto }) {
         </Field>
       )}
       <Field label={seatsCopy.panel.occupant}>
-        <span className={`block max-h-12 ${CLIP}`}>
-          {seat.occupant ? seat.occupant.displayName : seatsCopy.noOccupant}
-        </span>
+        {seat.occupant ? (
+          <span className="flex items-center gap-2">
+            <Avatar name={seat.occupant.displayName} src={occupantPhoto} size={32} />
+            <span className={`block max-h-12 min-w-0 ${CLIP}`}>{seat.occupant.displayName}</span>
+          </span>
+        ) : (
+          <span className={`block max-h-12 ${CLIP}`}>{seatsCopy.noOccupant}</span>
+        )}
       </Field>
       <Field label={seatsCopy.panel.primaryDevice}>
         {primary ? (
@@ -136,6 +142,7 @@ export function SeatDetailPanel({
   onRetry,
   actions,
   focusSignal = 0,
+  occupantPhoto = null,
 }: {
   view: PanelView;
   seatCode: string | null;
@@ -143,6 +150,8 @@ export function SeatDetailPanel({
   onRetry: () => void;
   actions?: ReactNode;
   focusSignal?: number;
+  /** Blob URL of the occupant's loaded photo, or null (initials). */
+  occupantPhoto?: string | null;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const pressedOnScrim = useRef(false);
@@ -244,7 +253,7 @@ export function SeatDetailPanel({
             </Button>
           </div>
         )}
-        {view.kind === "ready" && <SeatBody seat={view.seat} />}
+        {view.kind === "ready" && <SeatBody seat={view.seat} occupantPhoto={occupantPhoto} />}
         {actions}
       </div>
     </dialog>

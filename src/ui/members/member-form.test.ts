@@ -11,6 +11,8 @@ const member: MemberDto = {
   employeeCode: "E1",
   group: { id: "11111111-1111-4111-8111-111111111111", name: "Dev", color: "#fff" },
   status: "active",
+  hasPhoto: false,
+  photoVersion: 0,
   seatCount: 0,
   deviceCount: 0,
   seats: [],

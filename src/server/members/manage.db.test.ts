@@ -524,3 +524,32 @@ describe("members (db): device visibility", () => {
     }
   });
 });
+
+describe("members (db): photo fields (SIM-046.2)", () => {
+  it("photo fields: list and detail carry hasPhoto/photoVersion; JSON has no Drive id", async () => {
+    const { orgId, scope } = newOrg();
+    const a = await addMember(pool, orgId);
+    const b = await addMember(pool, orgId);
+    await pool.query(
+      "update members set photo_drive_file_id = 'file_abcdefghij', photo_version = 2 where id = $1",
+      [b],
+    );
+    const f = { status: "all", limit: 50 } as const;
+    const aSub = await subOf(a);
+    const lists = [
+      await listMembers(pool, scope, aSub, "user", f),
+      await listMembers(pool, scope, NOBODY, "manager", f),
+    ];
+    for (const l of lists) {
+      expect(l.items.find((m) => m.id === b)).toMatchObject({ hasPhoto: true, photoVersion: 2 });
+      expect(l.items.find((m) => m.id === a)).toMatchObject({ hasPhoto: false, photoVersion: 0 });
+    }
+    const detail = ok(await getMember(pool, scope, NOBODY, "manager", b));
+    expect(detail).toMatchObject({ hasPhoto: true, photoVersion: 2 });
+    for (const v of [...lists, detail]) {
+      const json = JSON.stringify(v);
+      expect(json).not.toContain("file_abcdefghij");
+      expect(json.toLowerCase()).not.toContain("drive");
+    }
+  });
+});

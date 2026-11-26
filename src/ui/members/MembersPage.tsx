@@ -11,6 +11,7 @@ import { createMembersApi } from "./members-api";
 import { listQuery } from "./members-state";
 import { MembersView } from "./MembersView";
 import { ReactivateMemberDialog } from "./ReactivateMemberDialog";
+import { useMemberPhotos } from "./useMemberPhotos";
 import { useMembers } from "./useMembers";
 import { usePendingInvitations } from "./usePendingInvitations";
 
@@ -38,6 +39,7 @@ export function MembersPage({ headerAction }: { headerAction?: ReactNode }) {
   const query = useMemo(() => listQuery(committed, statusFilter), [committed, statusFilter]);
   const members = useMembers(api, query);
   const invitations = usePendingInvitations(api, canManage);
+  const photoUrl = useMemberPhotos(api, members.items);
 
   const close = () => setDialog(null);
   const done = () => {
@@ -59,6 +61,7 @@ export function MembersPage({ headerAction }: { headerAction?: ReactNode }) {
         loadingMore={members.loadingMore}
         invitations={invitations}
         headerAction={headerAction}
+        photoUrl={photoUrl}
         onSearch={(v) => {
           setSearch(v);
           if (v === "") setCommitted("");
@@ -75,6 +78,8 @@ export function MembersPage({ headerAction }: { headerAction?: ReactNode }) {
         member={dialog?.kind === "edit" ? dialog.member : null}
         groups={members.groups}
         api={api}
+        photoUrl={dialog?.kind === "edit" ? photoUrl(dialog.member) : null}
+        onPhotoRemoved={() => void members.reload()}
         onClose={close}
         onDone={done}
       />

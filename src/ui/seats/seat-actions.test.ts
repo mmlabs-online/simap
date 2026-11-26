@@ -101,7 +101,7 @@ describe("parseAddCount", () => {
 
 describe("deleteBlock", () => {
   const base = { occupant: null, deviceCount: 0, devices: [] };
-  const occupant = { id: "m", displayName: "Ân" };
+  const occupant = { id: "m", displayName: "Ân", hasPhoto: false, photoVersion: 0 };
   it("empty seat is not blocked", () => {
     expect(deleteBlock(base)).toBeNull();
   });
@@ -222,7 +222,7 @@ const seatOf = (over: Partial<SeatDto> = {}): SeatDto => ({
   ...over,
 });
 const occupied = (id = "o1", displayName = "Trần Thị Bích") =>
-  seatOf({ status: "occupied", occupant: { id, displayName } });
+  seatOf({ status: "occupied", occupant: { id, displayName, hasPhoto: false, photoVersion: 0 } });
 const chosen = { id: "m1", displayName: "Nguyễn Văn Ân" };
 
 describe("seatButtons", () => {
@@ -555,7 +555,11 @@ describe("request", () => {
       ["occupied", occupied(), false],
       [
         "own seat",
-        seatOf({ status: "occupied", mine: true, occupant: { id: "me", displayName: "Me" } }),
+        seatOf({
+          status: "occupied",
+          mine: true,
+          occupant: { id: "me", displayName: "Me", hasPhoto: false, photoVersion: 0 },
+        }),
         false,
       ],
       ["empty and cannot-seat", seatOf({ cannotSeat: true, cannotSeatReason: "x" }), false],
