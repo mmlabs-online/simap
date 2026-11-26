@@ -1,11 +1,11 @@
-Status: BLOCKED
+Status: READY
 
 # Plan — SIM-068: Redesign the sign-in page as a "small world" landing (Ming's mockup)
 
-> Blocked only on Ming's product choices (palette, headline font, h1, other screens, breakpoints, café art, "[01]",
-> button label, split). Every question has a default below. If Ming answers "defaults", the plan is READY as written.
-> The ticket is too big for one implement/review cycle, so this plan covers **slice 1** (the frame and the landing
-> without the four rooms). Slice 2 (the four-room world) is outlined under `## Split proposal`.
+> Ming accepted every default of the 9 product questions on 2026-11-26 ("theo mặc định", see ticket Notes). The
+> palette and font decision is D85 in `work/decisions.md`. The ticket is too big for one implement/review cycle, so
+> this plan covers **slice 1** (the frame and the landing without the four rooms). Slice 2 (the four-room world) is
+> ticket `work/tickets/SIM-068.1/ticket.md`, see `## Split proposal`.
 
 ## Scope summary
 Ticket (`work/tickets/SIM-068/ticket.md`):
@@ -30,9 +30,11 @@ Scope sources:
 - `docs/art/style-guide.md` §1: "Body text, numbers, tables and forms are never in a pixel font, on any screen. Pixel
   styling goes into art, frames, headings and decoration only".
 - D46: "Art style: Style 2 'modern office' (light, cool greys, teal/blue accents, dark slate outline). UI shell: A
-  (clean UI; pixel art only inside the map)." (conflicts with the mockup's cream/green, see Q1)
+  (clean UI; pixel art only inside the map)." (the mockup's cream/green amends this for AuthLayout screens only, per D85)
+- D85: AuthLayout screens use the warm cream/green `--aw-*` palette and the Fraunces italic headline font (Ming
+  accepted Q1 and Q2 defaults).
 - D45: only licence-checked assets ("only CC0, CC-BY, or free packs whose page explicitly allows commercial use and
-  modification"); it covers pixel-art packs, not fonts, so the font licence needs Ming's call (Q2).
+  modification"); it covers pixel-art packs, not fonts; the font choice (OFL Fraunces) is covered by D85.
 - D36 / CLAUDE.md: "UI copy: English, in `src/ui/copy/<feature>.ts`".
 
 ## Acceptance criteria → verification
@@ -71,7 +73,7 @@ on a deployed build.)
 | `src/ui/auth/views.tsx` | `SignInView` gets `landing?: boolean` (default `false`) and passes it to `AuthLayout` (lines 26-80 only: props type + the `<AuthLayout>` tag). Form, fields, links, buttons, Turnstile and notices untouched | Landing only on the gate's sign-in, not on accept-invitation's sign-in | No |
 | `src/ui/auth/AuthGate.tsx` | Add `landing` to the `<SignInView>` at line 692 (one line) | The gate's signed-out view is "the sign-in page" | No |
 | `src/ui/copy/auth.ts` | Add `authCopy.world` (tagline, eyebrow, headlineLead, headlineEm, subline, portalTitle, introEyebrow, introHeading, footer[3]) after line 38 | D36 | No |
-| `src/app/layout.tsx` | One `next/font/google` import of the serif (Q2 default Fraunces, italic, `latin`, `display: "swap"`, `preload: false`, `variable: "--font-serif"`) and add its `.variable` to the `<html>` className (lines 3, 9-13, 21) | Headline font, bundled at build | No (shared hotspot) |
+| `src/app/layout.tsx` | One `next/font/google` import of the serif (Fraunces per D85, italic, `latin`, `display: "swap"`, `preload: false`, `variable: "--font-serif"`) and add its `.variable` to the `<html>` className (lines 3, 9-13, 21) | Headline font, bundled at build | No (shared hotspot) |
 | `src/app/globals.css` | **Append only** after line 465: one block starting with the marker comment `/* SIM-068 auth world (aw-*) */` holding `:root { --aw-* }`, `[data-theme="dark"] { --aw-* }` and the `.aw-*` classes. No edit to existing lines | Palette, frame, hero, header/footer, button colour | No (shared hotspot) |
 | `src/ui/auth/views.test.tsx` | Update the "pixel surface (D52)" block (lines 163-204) to the `aw-*` class names and the new strip text; add the "landing" and "frame" tests below | R5; markup-only changes to existing tests | No |
 | `src/ui/org/org-views.test.tsx` | Line 26: assert `aw-stage`, `aw-frame`, `aw-strip` instead of `px-stage`, `px-frame`, `px-title`; line 27 unchanged | Org picker uses `AuthLayout` (markup-only update) | No |
@@ -118,8 +120,7 @@ All node-only (`renderToStaticMarkup`, no jsdom), in the style of the existing `
 2. **Font** (`src/app/layout.tsx`): `const serif = Fraunces({ subsets: ["latin"], style: ["italic"], display: "swap",
    preload: false, variable: "--font-serif" });` and `className={`${manrope.variable} ${serif.variable}`}`.
    `preload: false` keeps the file off every app route; it downloads only where `.aw-serif` is used. Do not touch
-   `@theme`, `--font-heading` or the preconnect/icon lines. If Ming picks "no new font" (Q2), skip this step and
-   `.aw-serif` uses `font-family: inherit; font-style: italic` (synthesised Manrope oblique; record in impl-log).
+   `@theme`, `--font-heading` or the preconnect/icon lines. Fraunces is decided (D85); no fallback to a synthesised oblique.
 3. **CSS** (`src/app/globals.css`, appended after line 465 under the marker comment):
    - Tokens, light `:root` / dark `[data-theme="dark"]` (proposed values; the contrast test is the gate, adjust if it
      fails): `--aw-bg #f3efe4 / #15170f`, `--aw-ink #26291f / #ecebe2`, `--aw-muted #585c4e / #b9bcac`,
@@ -170,17 +171,17 @@ password stays in `SignInView` state and goes only to `onSignIn` as today; the d
 - frontend-developer 1 (`SmallWorld.tsx`, `RoomVignette`, `useWide`), 2 (atlas keys, 1x zoom), 3 (CSS paths): moved
   to slice 2.
 - frontend-developer 4 / ux-architect 5 (OFL serif via `next/font/google`, no CSP change, `--font-serif` only on the
-  `<em>`): adopted as Q2 default; `preload: false` added so other routes do not fetch it; not exposed in `@theme` (keeps
+  `<em>`): adopted as decided in D85; `preload: false` added so other routes do not fetch it; not exposed in `@theme` (keeps
   the shared `@theme` block untouched).
 - frontend-developer 5 (form byte-for-byte, forbidden-string scan, control count): adopted; count compares landing vs
   plain render instead of a stored fixture (no fixture to rot).
 - frontend-developer 7 / ux-architect 2 (390 px order, `overflow-x-clip`, wrap long mono strings): adopted.
 - frontend-developer 10 (append-only `globals.css`, new class prefix): adopted with prefix `aw-` and a marker comment
   that a test checks.
-- ux-architect 1 (shared frame for all screens, world only on sign-in): adopted (Q4 default).
-- ux-architect 3 (hero `h1`, card title `h2` on landing): adopted (Q3 default).
+- ux-architect 1 (shared frame for all screens, world only on sign-in): adopted (Q4 answered).
+- ux-architect 3 (hero `h1`, card title `h2` on landing): adopted (Q3 answered).
 - ux-architect 6 (separate `--aw-*` tokens with dark variants, AA contrast): adopted, plus an automated contrast test.
-- ux-architect 7 ("[01]" decorative, eyebrow legible face ≥ 12 px): "[01]" dropped by default (Q7); eyebrow in
+- ux-architect 7 ("[01]" decorative, eyebrow legible face ≥ 12 px): "[01]" dropped (Q7 answered); eyebrow in
   Manrope.
 - ux-architect 9 (header/main/footer landmarks, logo not a link): adopted.
 - ux-architect 10 (year literal to avoid hydration mismatch): adopted (literal from the ticket).
@@ -202,39 +203,31 @@ password stays in `SignInView` state and goes only to `onSignIn` as today; the d
   "Email" / "Password", button "Sign in".
 - A5 The logo is the app's existing mark (orange tile with the `grid_view` icon from `AppShellView.tsx:67-73`); no new
   image asset. The icon font is already loaded globally from Google (unchanged).
-- A6 The OFL licence of the serif needs no in-app credit (OFL does not require one); it is recorded in the decision
-  note Ming approves for Q2, not in `assets/art/CREDITS.md` (that file is for art, D45).
+- A6 The OFL licence of the serif needs no in-app credit (OFL does not require one); it is recorded in D85, not in
+  `assets/art/CREDITS.md` (that file is for art, D45).
 - A7 The dark theme follows `data-theme` like the rest of the app; signed-out users get the system setting.
 
-## Blocking questions
-Each has a default; "defaults" from Ming makes the plan READY unchanged.
+### Decisions answered by Ming (2026-11-26, all defaults accepted; formerly "Blocking questions")
+1. **Palette:** cream/green `--aw-*` tokens (light and dark), scoped to the AuthLayout screens only; map art,
+   `--px-*` tokens and the app shell stay D46. Recorded as D85.
+2. **Headline font:** Fraunces italic (OFL 1.1) via `next/font/google`, `latin` subset, `preload: false`, fallback
+   Georgia. Recorded in D85.
+3. **Page `h1`:** on the landing the hero headline is the only `h1`; the card shows "Player, ready?" and "Come on
+   in." (`h2`) instead of the "Sign in" heading; "Sign in" stays as the button label and tab title. Other screens
+   keep their card title as `h1`.
+4. **Other AuthLayout screens:** new header, background, card frame, footer and green primary button on all of them
+   (including org picker, DevGate and the old profile view); no hero; they keep today's single office vignette beside
+   the card from `md` up; the four-room world is sign-in only.
+5. **Breakpoints:** 390 px order header, hero, card, footer. Slice 2's world shows from 1280 px (`xl`) up; between
+   768 and 1279 px the landing shows hero and card only.
+6. **Café art (slice 2):** approximate "Coffee & connection" from existing sprites; no new art (D45/D64).
+7. **"[ 01 ]" in the card title bar:** dropped.
+8. **Primary button label:** keep "Sign in".
+9. **Split:** accepted; this PR = slice 1, slice 2 = SIM-068.1.
 
-1. **Palette.** Switch the AuthLayout screens to the mockup's warm cream/green (new `--aw-*` tokens, light and dark),
-   or keep D46's cool grey/teal and only borrow the composition?
-   *Default:* cream/green, scoped to the AuthLayout screens only; map art, `--px-*` tokens and the app shell stay D46.
-   The orchestrator records a decision note (e.g. D73 "AuthLayout screens use the warm 'world' palette; amends D46
-   for sign-in surfaces only").
-2. **Headline font.** Add an OFL italic serif via `next/font/google` (self-hosted at build, no runtime host, no CSP
-   change), and which family?
-   *Default:* **Fraunces** italic (OFL 1.1), `latin` subset, `preload: false`, fallback Georgia; recorded in the same
-   decision note. Alternatives: Newsreader italic; or no new font → synthesised Manrope oblique.
-3. **Page `h1`.** *Default:* on the landing the hero headline is the only `h1`; the card shows "Player, ready?" and
-   "Come on in." (`h2`) instead of the "Sign in" heading; "Sign in" stays as the button label and the tab title. Other
-   screens keep their card title as `h1`.
-4. **Other AuthLayout screens.** *Default:* new header, background, card frame, footer and green primary button on
-   all of them (including org picker, DevGate and the old profile view); no hero; they keep today's single office
-   vignette beside the card from `md` up; the four-room world is sign-in only.
-5. **Breakpoints.** *Default:* 390 px order header → hero → card → footer ("card first" read as card before any room).
-   Slice 2's world shows from 1280 px (`xl`) up; between 768 and 1279 px the landing shows hero and card only, since
-   two 384 px rooms plus a 400 px card do not fit before ~1260 px at 1x.
-6. **Café art (slice 2).** *Default:* approximate "Coffee & connection" from existing sprites (`floor.wood`,
-   `desk.single` as tables, `cabinet.filing` as counter, `cooler.water`, `prop.mug`, plants); no coffee machine or
-   counter sprite, no new art (D45/D64).
-7. **"[ 01 ]" in the card title bar.** *Default:* drop it.
-8. **Primary button label.** *Default:* keep "Sign in" (mockup's "Enter your workspace →" not used; "keep the current
-   buttons").
-9. **Split.** *Default:* accept the split below: this PR = slice 1; slice 2 = new ticket SIM-068.1 (four rooms,
-   paths, avatars, notes, card avatar).
+## Blocking questions
+None. All 9 were answered by Ming on 2026-11-26 (defaults accepted); see "Decisions answered by Ming" under
+`## Assumptions`.
 
 ## Split proposal
 The full ticket is about 900 changed lines (frame and landing ~350 incl. tests; the canvas world ~550 incl. tests),
@@ -243,10 +236,11 @@ over one implement/review cycle.
 - **Slice 1 — SIM-068 (this plan):** palette, font, header, hero, restyled card, footer, frame on every AuthLayout
   screen, 390 px, no-demo and no-new-control tests. The landing keeps today's single vignette beside the card until
   slice 2.
-- **Slice 2 — SIM-068.1 (new ticket, depends on SIM-068):** the four-room world on the landing only.
+- **Slice 2 — SIM-068.1 (ticket `work/tickets/SIM-068.1/ticket.md`, depends on SIM-068):** the four-room world on
+  the landing only. Outline kept here for reference; the ticket is the scope source for that slice.
   - Files: new `src/lib/sprites/small-world-scenes.ts` (+ `.test.ts`): `FOCUS` (desks, two seated avatars; reuse
     `SIGNIN_SCENE` or a top-down 12×7), `MEETING` (`table.meeting.*`, `chair.office`, `whiteboard`, `floor.lavender`),
-    `LOUNGE` (`sofa`, `table.coffee`, `shelf.books`, `lamp.floor`, plants), `CAFE` (Q6) as 12×7 `RoomLayout`s, plus
+    `LOUNGE` (`sofa`, `table.coffee`, `shelf.books`, `lamp.floor`, plants), `CAFE` (Q6: existing sprites only) as 12×7 `RoomLayout`s, plus
     `avatarDrawList(look, manifest)` for 3-4 path avatars and the card avatar. New `src/ui/auth/SmallWorld.tsx`
     (+ `.test.ts`): `aria-hidden`, `pointer-events-none`, `paintVignette(canvas, atlas, list)` via `paintRoom(…, 1)`,
     canvases mounted only when `(min-width: 1280px)` matches (atlas never fetched on phones), CSS placeholder per
