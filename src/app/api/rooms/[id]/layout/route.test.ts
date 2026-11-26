@@ -70,10 +70,11 @@ describe("GET /api/rooms/{id}/layout", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("Cache-Control")).toBe("no-store");
     expect(await res.json()).toEqual({ version: 3 });
-    const [, scope, sub, id] = svc.getRoomLayout.mock.calls[0]!;
+    const [, scope, sub, id, tier] = svc.getRoomLayout.mock.calls[0]!;
     expect(scope).toMatchObject({ orgId: expect.any(String) });
     expect(sub).toBe("s1");
     expect(id).toBe(ID);
+    expect(tier).toBe("user");
   });
 
   it("service not_found maps to 404 not_found", async () => {

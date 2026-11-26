@@ -15,6 +15,7 @@ import { LIBRARY_ITEMS } from "@/lib/map-items/library";
 import type { LayoutSaveValue } from "@/lib/sprites/layout";
 import { resolveLayout } from "@/lib/sprites/resolve-layout";
 import type { TxClient, TxPool } from "@/server/db/tx";
+import type { Tier } from "@/lib/auth/tier";
 import { getRoomLayout } from "./layout";
 import { saveRoomLayout } from "./save";
 
@@ -85,7 +86,8 @@ const get = (
   o: { scope: any; roomId: string },
   sub: string = randomUUID(),
   p: TxPool = pool as never,
-) => getRoomLayout(p, o.scope, sub, o.roomId);
+  tier: Tier = "admin",
+) => getRoomLayout(p, o.scope, sub, o.roomId, tier);
 const value = async (...a: Parameters<typeof get>) => {
   const r = await get(...a);
   if (!r.ok) throw new Error("expected ok");
@@ -921,7 +923,7 @@ describe("getRoomLayout seatDevices (db)", () => {
     await run("update devices set mac = '00:11:22:33:44:55' where id = $1", [prim]);
     await run("update devices set mac = '00:11:22:33:44:66' where id = $1", [sec]);
     const ySub = (await one("select sub from members where id = $1", [y])).sub as string;
-    const res = await value(o, ySub);
+    const res = await value(o, ySub, undefined, "user");
     const list = res.seatDevices[s]!;
     expect(list).toHaveLength(2);
     for (const e of list) {
@@ -939,6 +941,59 @@ describe("getRoomLayout seatDevices (db)", () => {
       expect(json).not.toContain(secret);
     const inv = await one("select inventory_number from devices where id = $1", [prim]);
     expect(json).not.toContain(inv.inventory_number);
+  });
+
+  describe("free-text type by tier (SIM-052)", () => {
+    const fixture = async () => {
+      const o = await room();
+      const x = await addMember(pool, o.orgId);
+      const y = await addMember(pool, o.orgId);
+      const s = await addSeat(pool, o.orgId, o.roomId, "C302", 1, { occupantId: x });
+      const other = await addDevice(pool, o.orgId, x, s, "primary");
+      const held = await addDevice(pool, o.orgId, y, s, "secondary");
+      await setDevice(held, "PC", "2026-01-01T00:00:00Z");
+      await setDevice(other, "Lan's MacBook", "2026-01-02T00:00:00Z");
+      return { o, s, ySub: await subOf(y), xSub: await subOf(x) };
+    };
+
+    it("User: non-held device type null, held device keeps type, free text absent from JSON", async () => {
+      const { o, s, ySub } = await fixture();
+      const res = await value(o, ySub, undefined, "user");
+      expect(res.seatDevices[s]).toEqual([
+        { type: null, deviceType: null },
+        { type: "PC", deviceType: await catalogType(o.orgId, "PC") },
+      ]);
+      expect(JSON.stringify(res.seatDevices)).not.toContain("MacBook");
+    });
+
+    it("User: non-held device with a catalog match keeps deviceType", async () => {
+      const { o, s, xSub } = await fixture();
+      const res = await value(o, xSub, undefined, "user");
+      expect(res.seatDevices[s]).toEqual([
+        { type: "Lan's MacBook", deviceType: null },
+        { type: null, deviceType: await catalogType(o.orgId, "PC") },
+      ]);
+    });
+
+    it("manager and admin: every device keeps type", async () => {
+      const { o, s, ySub } = await fixture();
+      for (const tier of ["manager", "admin"] as const) {
+        const res = await value(o, ySub, undefined, tier);
+        expect(res.seatDevices[s], tier).toEqual([
+          { type: "Lan's MacBook", deviceType: null },
+          { type: "PC", deviceType: await catalogType(o.orgId, "PC") },
+        ]);
+      }
+    });
+
+    it("User without a member row: every type null, no error", async () => {
+      const { o, s } = await fixture();
+      const res = await value(o, randomUUID(), undefined, "user");
+      expect(res.seatDevices[s]).toEqual([
+        { type: null, deviceType: null },
+        { type: null, deviceType: await catalogType(o.orgId, "PC") },
+      ]);
+    });
   });
 
   it("seatDevices: another org's devices, inventory devices and other rooms' devices are never returned", async () => {

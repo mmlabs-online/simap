@@ -240,7 +240,7 @@ describe("devices (db): placement", () => {
     });
   });
 
-  it("manager moves another member's device seat to seat (across two rooms); user gets 422 not_allowed and the row is unchanged", async () => {
+  it("manager moves another member's device seat to seat (across two rooms); user gets 404 not_found and the row is unchanged", async () => {
     const w = await world();
     const dev = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
     const asUser = await placeDevice(
@@ -251,7 +251,7 @@ describe("devices (db): placement", () => {
       dev,
       put(w.b1, "secondary", w.a1),
     );
-    expect(asUser).toEqual({ ok: false, status: 422, code: "not_allowed" });
+    expect(asUser).toEqual({ ok: false, status: 404, code: "not_found" });
     expect(await devRow(dev)).toEqual({ seat_id: w.a1, role: "primary" });
     const asManager = await placeDevice(
       pool,
@@ -453,13 +453,17 @@ describe("devices (db): create / edit / delete", () => {
       [w.orgId],
     );
     expect(audit.meta).toEqual({ fields: ["name", "mac"] });
-    for (const tier of ["user", "manager"] as const) {
-      expect(await updateDevice(pool, w.scope, subY, tier, dev, { name: "Nope" })).toEqual({
-        ok: false,
-        status: 422,
-        code: "not_allowed",
-      });
-    }
+    // a User does not hold it: 404, the same answer as an unknown id (DEV-12)
+    expect(await updateDevice(pool, w.scope, subY, "user", dev, { name: "Nope" })).toEqual({
+      ok: false,
+      status: 404,
+      code: "not_found",
+    });
+    expect(await updateDevice(pool, w.scope, subY, "manager", dev, { name: "Nope" })).toEqual({
+      ok: false,
+      status: 422,
+      code: "not_allowed",
+    });
     expect((await one("select name from devices where id = $1", [dev])).name).toBe("Renamed");
     const asAdmin = await updateDevice(pool, w.scope, subY, "admin", dev, {
       type: "Desktop",
@@ -477,6 +481,31 @@ describe("devices (db): create / edit / delete", () => {
       status: 404,
       code: "not_found",
     });
+  });
+
+  it("a User editing a device they do not hold gets 404, even with a clashing inventory number; row and audit unchanged", async () => {
+    const w = await world();
+    const subX = await subOf(w.x);
+    const subY = await subOf(w.y);
+    const a = await createDevice(pool, w.scope, subX, "admin", dto({ inventoryNumber: "CLASH-1" }));
+    const b = await createDevice(pool, w.scope, subX, "admin", dto({ inventoryNumber: "CLASH-2" }));
+    const bId = b.ok ? b.value.id : "";
+    expect(a.ok && b.ok).toBe(true);
+    await pool.query("update devices set owner_id = $1 where id = $2", [w.x, bId]);
+    const before = await auditCount(w.orgId, "device.update");
+    expect(
+      await updateDevice(pool, w.scope, subY, "user", bId, { inventoryNumber: "CLASH-1" }),
+    ).toEqual({ ok: false, status: 404, code: "not_found" });
+    expect(await auditCount(w.orgId, "device.update")).toBe(before);
+    const kept = await one("select inventory_number from devices where id = $1", [bId]);
+    expect(kept.inventory_number).toBe("CLASH-2");
+    // Manager and Admin never get the new 404
+    const asManager = await updateDevice(pool, w.scope, subY, "manager", bId, { name: "m" });
+    expect(asManager).toEqual({ ok: false, status: 422, code: "not_allowed" });
+    const asAdmin = await updateDevice(pool, w.scope, subY, "admin", bId, {
+      inventoryNumber: "CLASH-1",
+    });
+    expect(asAdmin).toEqual({ ok: false, status: 409, code: "inventory_number_taken" });
   });
 
   it("delete: Admin deletes an unowned device with audit; owned -> 409 device_owned; pending handoff -> 409 handoff_pending and row kept; only a cancelled handoff -> deleted with its handoff; User/Manager -> 422", async () => {

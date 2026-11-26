@@ -200,6 +200,19 @@ describe("toMapView seatDevices", () => {
     expect(toMapView(body({ s1: many }))?.seatDevices.s1).toHaveLength(8);
   });
 
+  it("seatDevices: keeps a device with type null (SIM-052); a non-string, non-null type is still dropped", () => {
+    const good = { id: "t1", slot: "phone", hasImage: true, imageVersion: 2, sprite: null };
+    const view = toMapView(
+      body({
+        s1: [{ type: null, deviceType: good }, { type: null, deviceType: null }, { type: 5 }],
+      }),
+    );
+    expect(view?.seatDevices.s1).toEqual([
+      { type: null, deviceType: good },
+      { type: null, deviceType: null },
+    ]);
+  });
+
   it("seatDevices: keeps a valid deviceType and null; a bad shape becomes null; missing stays missing", () => {
     const good = { id: "t1", slot: "phone", hasImage: true, imageVersion: 2, sprite: null };
     const view = toMapView(

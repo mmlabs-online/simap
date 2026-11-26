@@ -30,7 +30,7 @@ import {
   type PlacementFilter,
 } from "@/lib/devices/types";
 import { encodeMyDevicesCursor } from "@/lib/devices/cursor";
-import { deviceVisibility } from "@/lib/devices/visibility";
+import { deviceVisibility, hiddenFromActor } from "@/lib/devices/visibility";
 import type { MyDevicesQuery } from "@/lib/validate/my-devices-query";
 import { todayUtc7 } from "@/lib/devices/holding";
 import type { PlacementPutValue } from "@/lib/validate/device";
@@ -332,6 +332,7 @@ export function placeDevice(
     );
     // the old seat it now sits on (if any) is not locked: answer as a stale view
     if (!cur[0]) throw new Abort(notFound); // deleted since the first read
+    if (hiddenFromActor(tier, cur[0].owner_id, me[0]?.id ?? null)) throw new Abort(notFound);
     if (cur[0].seat_id !== dev[0].seat_id) throw refuse(409, "placement_changed");
 
     let target: PlacementInput["target"] = null;
@@ -457,6 +458,7 @@ export function updateDevice(
     );
     const cur = rows[0];
     if (!cur) throw new Abort(notFound);
+    if (hiddenFromActor(tier, cur.owner_id, me)) throw new Abort(notFound);
     if (!canEdit(tier, cur.owner_id !== null && me === cur.owner_id))
       throw refuse(422, "not_allowed");
     const changed = COLUMNS.filter(

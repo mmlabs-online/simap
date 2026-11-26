@@ -218,7 +218,8 @@ describe("device visibility per tier (D69)", () => {
     await listMembers(u.db, scope, ACTOR, "user", { status: "active", limit: 1, q: "a" });
     const [usql, uvalues] = u.calls[0]!;
     expect(uvalues).toEqual([scope.orgId, ACTOR, "active", "%a%", 2]);
-    expect(usql.split(WRAP)).toHaveLength(3);
+    expect(usql.split(WRAP)).toHaveLength(4); // email, device_count, devices (MEM-02)
+    expect(usql).toContain("m.sub = $2::uuid, false))");
     expect(usql).toContain("like $4 escape");
     for (const tier of ["manager", "admin"] as const) {
       const t = fakeDb(() => []);

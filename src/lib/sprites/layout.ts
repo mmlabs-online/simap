@@ -52,7 +52,7 @@ export type SeatDeviceType = {
 };
 
 /** A device placed at a seat; only its type is public on the map. `deviceType` is null when the type is not in the org catalog. */
-export type SeatDevice = { type: string; deviceType?: SeatDeviceType | null };
+export type SeatDevice = { type: string | null; deviceType?: SeatDeviceType | null };
 
 /** A catalog item the layout uses, hidden ones included; the hidden flag is never sent here (D67 2). */
 export type LayoutItem = Omit<MapItemDto, "hidden">;

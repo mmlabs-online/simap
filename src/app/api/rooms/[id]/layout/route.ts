@@ -17,7 +17,7 @@ export const GET = withAuth<{ id: string }>(
     if (!isCanonicalUuid(id)) return apiError(404, "not_found");
     const pool = getPool();
     if (!pool) return apiError(503, "unavailable");
-    const r = await getRoomLayout(pool, ctx.scope, ctx.sub, id);
+    const r = await getRoomLayout(pool, ctx.scope, ctx.sub, id, ctx.tier);
     if (!r.ok) return apiError(r.status, r.code);
     return Response.json(r.value, { headers: NO_STORE });
   },

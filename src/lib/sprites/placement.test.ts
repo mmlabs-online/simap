@@ -308,6 +308,14 @@ describe("seat devices on desks (D61)", () => {
     expect(buildDrawList(room({ seats: [desk()] }), {}, manifest, {})).toEqual(without());
   });
 
+  it("placeDevices draws a device with type null (SIM-052): one frame per device", () => {
+    const list = buildDrawList(room({ seats: [desk()] }), {}, manifest, {
+      s1: [{ type: null }, { type: null, deviceType: null }],
+    });
+    expect(frames(list.ops).filter((k) => k === "device.other")).toHaveLength(2);
+    expect(frames(list.ops).filter((k) => k.startsWith("device."))).toHaveLength(2);
+  });
+
   it("two PC devices draw two device.pc frames", () => {
     expect(frames(draw(["PC", "PC"]).ops).filter((k) => k === "device.pc")).toHaveLength(2);
   });

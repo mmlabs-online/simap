@@ -66,7 +66,7 @@ async function inTx<T>(pool: Db, fn: (c: TxClient) => Promise<T>): Promise<Resul
 type MemberRow = {
   id: string;
   display_name: string;
-  email: string;
+  email: string | null;
   employee_code: string | null;
   status: MemberStatus;
   sort_key: string;
@@ -113,10 +113,8 @@ const toDto = (r: MemberRow): MemberDto => ({
  * Counts and capped ref lists are correlated subqueries (never one join fan-out); each repeats org_id = $1.
  * `visible` is a SQL boolean for the device count and refs (a User sees only their own, D69); null = always.
  */
-const memberSelect = (
-  refCap: number,
-  visible: string | null,
-) => `select m.id, m.display_name, m.email, m.employee_code, m.status,
+const memberSelect = (refCap: number, visible: string | null) => `select m.id, m.display_name,
+    ${visible ? `case when ${visible} then m.email end` : "m.email"} as email, m.employee_code, m.status,
     lower(m.display_name) as sort_key, g.id as group_id, g.name as group_name, g.color as group_color,
     (select count(*)::int from seats s where s.org_id = $1 and s.occupant_id = m.id) as seat_count,
     ${visible ? `case when ${visible} then ` : ""}(select count(*)::int from devices d where d.org_id = $1 and d.owner_id = m.id)${visible ? " end" : ""} as device_count,
@@ -160,7 +158,8 @@ export async function listMembers(
   if (f.q !== undefined) {
     const p = bind(`%${escapeLike(foldText(f.q))}%`);
     const like = (col: string) => `${foldSql(col)} like ${p} escape '\\'`;
-    conds.push(`(${like("m.display_name")} or ${like("m.email")} or ${like("m.employee_code")})`);
+    const email = visible ? `(${like("m.email")} and ${visible})` : like("m.email");
+    conds.push(`(${like("m.display_name")} or ${email} or ${like("m.employee_code")})`);
   }
   if (f.cursor) {
     conds.push(
