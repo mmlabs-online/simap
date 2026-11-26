@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -75,5 +75,6 @@ box (Ming, 2026-11-26, screenshot of `/` signed out: "thay đổi UI đăng nh�
   forgot password, create account and the org picker.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-4): "duyệt hết theo mặc định"; Q1 default: CSS pixel lettering, no new font; Q2: `data-variant` on src/ui/Button.tsx approved.
 
 ## Handoff
