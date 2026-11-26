@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -36,7 +36,7 @@ Dashboard stays home, My Portal is a nav entry), OQ-59 (badge moves to My Portal
 ## Acceptance criteria
 - [ ] My Portal is in the nav for every tier; three horizontal, keyboard-operable tabs, addressable by URL, default
   My seat; works at 390 px.
-- [ ] My seat lists the member's seats with "View on map" (opens `/rooms/<code>` with the seat selected), their requests
+- [ ] *(moved to SIM-045.1, plan split)* My seat lists the member's seats with "View on map" (opens `/rooms/<code>` with the seat selected), their requests
   with cancel for pending ones, release seat after confirmation, and an empty state linking to Rooms.
 - [ ] My devices lists held devices with placement, expiry and Overdue, offers only the actions the rules allow, and
   shows "Waiting for my confirmation" with Confirm / Decline.
