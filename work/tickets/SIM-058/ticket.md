@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, architecture, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T13:01Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -67,5 +67,12 @@ D79 (UTC+7 work day, D35), D81 (same-day reopen), D82 (losing the seat ends the 
 - `pnpm schema:check` against the local DB.
 
 ## Notes / answers from Ming
+Waiting for Ming: plan approval (High tier) — M-89
 
 ## Handoff
+
+### 2026-11-26 — claude — BLOCKED
+- Agent calls: 3, tokens ~214k total (database-optimizer×1 default 57k, api-platform-engineer×1 default 43k, planner×1 default 114k)
+- Done: consults (db, api) saved; plan.md READY (new `presence` table migration `20261126150000_presence.sql`, 4 routes, D82 hooks in seats.ts / manage.ts / rooms.ts; assumptions A1–A8).
+- In progress / next: Ming approves the plan (M-89), then `/run SIM-058` resumes at IMPLEMENT.
+- Gotchas: High path (migration); ~550 lines, top of M — fallback split is moving the room presence read to SIM-058.1.
