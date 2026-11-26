@@ -160,14 +160,25 @@ describe("other views", () => {
   });
 });
 
-describe("pixel surface (D52)", () => {
-  it("AuthLayout has the pixel classes and the scene slot; scene={false} drops the slot", () => {
+const w = authCopy.world;
+const landing = (props: Record<string, unknown> = {}) =>
+  html(<SignInView {...base} landing {...props} />);
+const plain = (props: Record<string, unknown> = {}) => html(<SignInView {...base} {...props} />);
+const count = (out: string, re: RegExp) => out.match(re)?.length ?? 0;
+const text = (out: string) => out.replace(/<[^>]*>/g, " ");
+
+describe("frame", () => {
+  it("AuthLayout has header, stage, frame, strip, card and footer", () => {
     const out = html(<AuthLayout title="T">x</AuthLayout>);
-    for (const c of ["px-stage", "px-frame", "px-strip", "px-card", "px-title", "px-heading"])
-      expect(out).toContain(c);
+    for (const t of ["<header", "<main", "<footer"]) expect(out).toContain(t);
+    for (const c of ["aw-stage", "aw-frame", "aw-strip", "aw-card"]) expect(out).toContain(c);
+    expect(out.match(/<div class="aw-strip">.*?<\/div>/)?.[0]).toContain(w.portalTitle);
+    const header = out.slice(out.indexOf("<header"), out.indexOf("</header>"));
+    expect(header).toContain(authCopy.brand);
+    expect(header).toContain(w.tagline);
+    const footer = out.slice(out.indexOf("<footer"));
+    for (const t of w.footer) expect(footer).toContain(t);
     expect(out).toContain("px-scene");
-    const strip = out.match(/<div class="px-strip">.*?<\/div>/)?.[0] ?? "";
-    expect(strip).toContain(authCopy.brand);
     expect(
       html(
         <AuthLayout title="T" scene={false}>
@@ -177,6 +188,93 @@ describe("pixel surface (D52)", () => {
     ).not.toContain("px-scene");
   });
 
+  it("plain screens keep the card title as the only h1", () => {
+    const outs = [html(<AuthLayout title="T">x</AuthLayout>), plain(), html(<CheckingView />)];
+    for (const out of outs) {
+      expect(count(out, /<h1/g)).toBe(1);
+      expect(out).not.toContain(w.eyebrow);
+      expect(out).not.toContain(w.headlineLead);
+    }
+    expect(outs[0]).toMatch(/<h1[^>]*>T<\/h1>/);
+  });
+
+  it("header logo is decorative and the header has no control", () => {
+    const out = html(<AuthLayout title="T">x</AuthLayout>);
+    expect(out).toMatch(/<div class="aw-logo" aria-hidden="true"/);
+    const header = out.slice(out.indexOf("<header"), out.indexOf("</header>"));
+    expect(header).not.toMatch(/<a |<button|<input|tabindex/);
+  });
+});
+
+describe("landing", () => {
+  it("renders header, hero, card intro and footer", () => {
+    const out = landing();
+    expect(out).toContain(w.eyebrow);
+    expect(out).toMatch(
+      new RegExp(
+        `<h1[^>]*>${w.headlineLead} <em class="[^"]*aw-serif[^"]*">${w.headlineEm}</em></h1>`,
+      ),
+    );
+    for (const t of [w.subline, w.portalTitle, w.introEyebrow, w.tagline, ...w.footer])
+      expect(out).toContain(t);
+    expect(out).toMatch(new RegExp(`<h2[^>]*>${w.introHeading}</h2>`));
+  });
+
+  it("exactly one h1, the headline", () => {
+    const out = landing();
+    expect(count(out, /<h1/g)).toBe(1);
+    expect(out.match(/<h1.*?<\/h1>/)?.[0]).toContain(w.headlineLead);
+    expect(out.match(/<h1.*?<\/h1>/)?.[0]).not.toContain(authCopy.signIn.title);
+  });
+
+  it("DOM order is header, hero, card, footer", () => {
+    const out = landing();
+    const at = (s: string) => out.indexOf(s);
+    expect(at("<header")).toBeLessThan(at(w.eyebrow));
+    expect(at(w.eyebrow)).toBeLessThan(at('id="signin-email"'));
+    expect(at('id="signin-email"')).toBeLessThan(at("<footer"));
+  });
+
+  it("has exactly the controls of the plain sign-in view", () => {
+    const slot = <div id="ts-slot" />;
+    const variants = [
+      { forgotHref: "/f", signUpHref: "/s" },
+      { forgotHref: "/f", signUpHref: "/s", accounts, onContinueAs: noop },
+      { turnstileRequired: true, turnstileSlot: slot },
+    ];
+    for (const v of variants) {
+      const l = landing(v);
+      const p = plain(v);
+      for (const re of [/<button/g, /<a /g, /<input/g, /<select/g, /<textarea/g, /tabindex=/g])
+        expect(count(l, re)).toBe(count(p, re));
+    }
+  });
+
+  it("ships no demo or out-of-scope strings", () => {
+    const t = text(landing());
+    for (const re of [
+      /demo/i,
+      /Explore/,
+      /no real authentication/,
+      /Need a hand/,
+      /Remember my email/,
+      /Find your vibe/,
+      /\[ 01 \]/,
+      /Work email/,
+    ])
+      expect(t).not.toMatch(re);
+    expect(landing()).toMatch(new RegExp(`<label[^>]*>${authCopy.fields.password}`));
+  });
+
+  it("the accept-invitation style sign-in stays plain", () => {
+    const out = plain({ intro: <p id="the-intro" />, footer: <p id="the-footer" /> });
+    expect(out).not.toContain(w.eyebrow);
+    expect(out).toContain("the-intro");
+    expect(out).toContain("the-footer");
+  });
+});
+
+describe("pixel surface (D52)", () => {
   it("SignInScene is aria-hidden with no text and no img", () => {
     const out = html(<SignInScene />);
     expect(out).toContain('aria-hidden="true"');
@@ -189,17 +287,17 @@ describe("pixel surface (D52)", () => {
     const page = html(<SignInView {...base} accounts={accounts} onContinueAs={noop} />);
     expect(page).not.toContain("font-pixel");
     for (const tag of page.match(/<(input|label|a)\b[^>]*>/g) ?? [])
-      expect(tag).not.toMatch(/px-title|px-heading|font-pixel/);
+      expect(tag).not.toMatch(/aw-strip-title|aw-heading|font-pixel/);
     for (const tag of page.match(/<[a-z0-9]+\b[^>]*role="status"[^>]*>/g) ?? [])
-      expect(tag).not.toMatch(/px-title|px-heading/);
-    expect(page).toMatch(/<p class="px-title"/);
-    expect(page).toMatch(/<h1 class="[^"]*px-heading/);
-    expect(page.match(/px-heading/g)).toHaveLength(1);
+      expect(tag).not.toMatch(/aw-strip-title|aw-heading/);
+    expect(page).toMatch(/<p class="aw-strip-title"/);
+    expect(page).toMatch(/<h1 class="[^"]*aw-heading/);
+    expect(page.match(/aw-heading/g)).toHaveLength(1);
   });
 
-  it("the submit button carries data-variant=filled inside the px-card", () => {
+  it("the submit button carries data-variant=filled inside the aw-card", () => {
     const page = html(<SignInView {...base} />);
-    const card = page.slice(page.indexOf("px-card"));
+    const card = page.slice(page.indexOf("aw-card"));
     expect(card).toMatch(/<button[^>]*data-variant="filled"/);
   });
 

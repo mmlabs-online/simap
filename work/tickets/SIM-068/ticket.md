@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/144 |
 
 ## Goal
 The signed-out sign-in page follows Ming's mockup (`mockup-sign-in.webp` in this folder): a calm "small world"
@@ -78,8 +78,21 @@ Builds on SIM-055 (game-style sign-in, merged). Request: Ming 2026-11-26 with th
 - Manual: 1440 px, 1280 px and 390 px; light/dark; sign in with a real Identity account.
 
 ## Notes / answers from Ming
+- 2026-11-26: "theo mặc định" — all 9 plan questions answered with the defaults: Q1 cream/green `--aw-*` palette on AuthLayout screens only (recorded as D85, not D73); Q2 Fraunces italic (OFL) via next/font, Georgia fallback (D85); Q3 hero headline is the landing h1, card intro h2, other screens keep their title h1; Q4 other screens get header/background/frame/footer/green button, no hero, keep today's office scene from md; Q5 390 px order header, hero, card, footer, rooms from 1280 px; Q6 café from existing sprites; Q7 drop "[ 01 ]"; Q8 keep "Sign in"; Q9 split accepted — slice 2 is SIM-068.1.
 - 2026-11-26: requested with the mockup image `mockup-sign-in.webp`.
 - 2026-11-26: "chỉ lấy idea như hình, còn các button tính năng giữ như hiện tại" — take only the visual idea; keep
   today's buttons and features. So: no "Need a hand?", "Remember my email", "Explore the demo" or vibe switcher.
 
 ## Handoff
+
+### 2026-11-26 — claude — BLOCKED
+- Agent calls: 3, ~185k tokens (frontend-developer×1 default 40k, ux-architect×1 default 36k, planner×1 default 109k).
+- Done: consults; plan (slice 1 of a proposed split; slice 2 = SIM-068.1 with the four canvas rooms, paths, avatars, notes).
+- In progress / next: Ming answers the 9 product questions in plan.md "Blocking questions" (defaults given); then `/run SIM-068` re-plans and builds.
+- Gotchas: the plan's palette note suggests "D73", which is already taken — use the next free D number; the real sign-in page can only be seen on a deployed build (DevGate replaces it under `pnpm dev`).
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 8, ~496k tokens (frontend-developer×1 default 40k, ux-architect×1 default 36k, planner×2 default 109k + sonnet 30k, implementer×1 default 53k, reviewer×1 default 57k, security-ai-generated-code-auditor×1 default 26k; plus the earlier blocked round).
+- Done: slice 1 — AuthLayout header/hero/card/footer, `--aw-*` palette (D85), Fraunces italic headline, landing on the signed-out sign-in only; review and security PASS attempt 1; PR #144.
+- In progress / next: Ming merges PR #144 and checks it on a deployed build; then SIM-068.1 (four rooms, paths, avatars, notes).
+- Gotchas: `pnpm dev` shows DevGate, not the sign-in page; `--font-serif` collides with Tailwind's default variable name.

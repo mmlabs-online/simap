@@ -38,6 +38,7 @@ export function SignInView({
   continuingId,
   intro,
   footer,
+  landing = false,
 }: {
   status: "idle" | "submitting";
   error?: AuthError | null;
@@ -57,6 +58,8 @@ export function SignInView({
   intro?: ReactNode;
   /** Rendered after the forgot and sign-up links. */
   footer?: ReactNode;
+  /** The signed-out landing: hero above the card. Off for the accept-invitation sign-in. */
+  landing?: boolean;
 }) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -77,7 +80,7 @@ export function SignInView({
   }
 
   return (
-    <AuthLayout title={copy.title}>
+    <AuthLayout title={copy.title} landing={landing}>
       {notice && (
         <Notice kind="info">
           {notice === "logout_unconfirmed" ? copy.logoutUnconfirmed : copy.signedOut}

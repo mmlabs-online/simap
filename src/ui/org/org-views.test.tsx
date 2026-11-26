@@ -23,7 +23,7 @@ describe("OrgPickerView", () => {
 
   it("has the pixel frame, floor and title but no scene", () => {
     const out = html(<OrgPickerView orgs={[A]} onPick={noop} onSignOut={noop} />);
-    for (const c of ["px-stage", "px-frame", "px-title"]) expect(out).toContain(c);
+    for (const c of ["aw-stage", "aw-frame", "aw-strip"]) expect(out).toContain(c);
     expect(out).not.toContain("px-scene");
   });
 

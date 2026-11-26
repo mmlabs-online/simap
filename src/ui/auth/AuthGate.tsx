@@ -690,6 +690,7 @@ function Gate({
     case "signedOut":
       return (
         <SignInView
+          landing
           status={status}
           error={tsFailed && needTurnstile ? { code: "turnstile_failed" } : view.error}
           notice={view.notice}

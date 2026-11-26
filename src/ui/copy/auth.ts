@@ -36,6 +36,21 @@ export const authCopy = {
     continuing: "Signing in...",
     otherAccount: "or sign in with another account",
   },
+  world: {
+    tagline: "A little world of better work",
+    eyebrow: "Not just a workplace. Your place.",
+    headlineLead: "A small world.",
+    headlineEm: "A better workday.",
+    subline: "Find your people. Pick your spot. Feel at home.",
+    portalTitle: "Your workspace portal",
+    introEyebrow: "Player, ready?",
+    introHeading: "Come on in.",
+    footer: [
+      "© 2026 simap. Make room for you.",
+      "Small pixels. Real connections.",
+      "Made for a better workday.",
+    ],
+  },
   join: {
     title: "Join simap",
     body: "Your account has not used simap yet. Press the button below to join.",
