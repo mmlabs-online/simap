@@ -26,21 +26,17 @@ scale, no game engine), D45/D66 (only licence-checked bundled art and fonts), D3
 Builds on SIM-055 (game-style sign-in, merged). Request: Ming 2026-11-26 with the mockup image.
 
 ## Scope
-- **Header:** simap logo and wordmark, tagline "A little world of better work", and a "Need a hand?" help link on the
-  right (target: the existing help/forgot-password route or Identity help; see open questions).
+- **Header:** simap logo and wordmark and the tagline "A little world of better work" (no new header controls).
 - **Hero:** eyebrow "Not just a workplace. Your place.", headline "A small world. *A better workday.*", subline
   "Find your people. Pick your spot. Feel at home."
-- **Central card** ("Your workspace portal" title bar): small avatar with "Player, ready?" and "Come on in.", the
-  existing sign-in form restyled (work email, password with Show, "Forgot password?" link, primary "Enter your
-  workspace →" button), keeping today's Identity flow, validation, Turnstile and error messages.
+- **Central card** ("Your workspace portal" title bar): small avatar with "Player, ready?" and "Come on in.", then
+  **today's sign-in form with exactly today's fields, links and buttons**, only restyled to the mockup's look
+  (Identity flow, validation, Turnstile and error messages unchanged).
 - **Four decorative pixel rooms** around the card, drawn from the bundled atlas with the existing map paint code at a
   whole-number scale: "The focus studio" (desks), "Good ideas live here" (meeting table), "The slow corner" (lounge),
   "Coffee & connection" (café); dotted paths join them to the card; a few idle avatars; two small note cards
   ("Your next great day starts with a little hello", "Big ideas. Small pixels."). All `aria-hidden`; hidden or
   simplified below `md`.
-- **"Find your vibe" switcher** under the card (Studio / Lounge / Café): highlights the matching room and swaps the
-  one-line caption (e.g. "The slow corner — take a breath, find a fresh perspective."). Purely decorative, keyboard
-  operable, remembers nothing.
 - **Footer:** "© 2026 simap. Make room for you.", "Small pixels. Real connections.", "Made for a better workday."
 - Same look carried to the other `AuthLayout` screens (forgot/reset password, sign-up, verify email, accept
   invitation) at least for header, background and card frame.
@@ -48,22 +44,25 @@ Builds on SIM-055 (game-style sign-in, merged). Request: Ming 2026-11-26 with th
 
 ## Out of scope
 - Any change to authentication: Identity calls, token handling, Turnstile, password rules (AUT-01, D4).
-- The mockup's **demo-only texts and controls** are not shipped as written: "Demo password", "Any 6+ characters for
+- **No new buttons or features** (Ming 2026-11-26: take only the visual idea; keep the current buttons and
+  features): no "Need a hand?", no "Remember my email", no "Explore the demo", no "Find your vibe" switcher.
+- The mockup's **demo-only texts** are not shipped as written: "Demo password", "Any 6+ characters for
   this demo", "Demo only · No real authentication…" and "Explore the demo". simap signs in with real mmlabs Identity
   accounts, so the copy says "Password" and no demo mode is added (see open questions).
 - New third-party art or fonts that are not licence-checked (D45); new libraries.
 
 ## Acceptance criteria
-- [ ] The signed-out page shows the header, hero, central card, four pixel rooms with paths, the vibe switcher and the
-  footer as in the mockup at desktop width; at 390 px the card comes first and the rooms are hidden or simplified.
+- [ ] The signed-out page shows the header, hero, central card, four pixel rooms with paths and the footer as in the
+  mockup at desktop width; at 390 px the card comes first and the rooms are hidden or simplified.
 - [ ] Sign-in still works exactly as before (same Identity requests, Turnstile, errors, redirect to `/`); existing
   sign-in tests pass unchanged or are updated only for markup.
 - [ ] No demo wording ships: the password field is "Password", there is no "Explore the demo" control and no
   "no real authentication" note.
 - [ ] Rooms and avatars come from the bundled atlas at a whole-number scale, are `aria-hidden`, and form text never
   uses a pixel font (style guide §1).
-- [ ] The vibe switcher is keyboard-operable, changes only the highlighted room and caption, and stores nothing.
-- [ ] Copy lives in `src/ui/copy/auth.ts`; render tests cover the layout regions and the switcher.
+- [ ] The sign-in card has the same fields, links and buttons as before the change, and no new interactive control is
+  added anywhere on the page.
+- [ ] Copy lives in `src/ui/copy/auth.ts`; render tests cover the layout regions.
 
 ## Technical notes
 - Files (expected): `src/ui/auth/AuthLayout.tsx`, `SignInScene.tsx`, `views.tsx`, `src/ui/copy/auth.ts`,
@@ -72,18 +71,15 @@ Builds on SIM-055 (game-style sign-in, merged). Request: Ming 2026-11-26 with th
   available, use the closest existing font and note it.
 - Security area: the page holds the password form; check no new script, font or image host is added to the CSP and
   nothing about the password leaves the existing flow.
-- Open questions (planner proposes a default, Ming confirms):
-  1. "Remember my email" checkbox: add it (stores the email in `localStorage` only, never the password), or leave it
-     out? Default proposal: leave it out (not in AUT-01).
-  2. "Need a hand?": where does it go (forgot password page, Identity help, a mailto)? Default proposal: forgot
-     password page.
-  3. "Explore the demo": drop (default), or does Ming want a real demo org/read-only tour later (new ticket)?
+- Open questions: none (answered by Ming 2026-11-26, see Notes).
 
 ## Test plan
-- Unit: render regions, switcher state, no demo strings, sign-in form unchanged behaviour.
+- Unit: render regions, no demo strings, no new controls, sign-in form unchanged behaviour.
 - Manual: 1440 px, 1280 px and 390 px; light/dark; sign in with a real Identity account.
 
 ## Notes / answers from Ming
 - 2026-11-26: requested with the mockup image `mockup-sign-in.webp`.
+- 2026-11-26: "chỉ lấy idea như hình, còn các button tính năng giữ như hiện tại" — take only the visual idea; keep
+  today's buttons and features. So: no "Need a hand?", "Remember my email", "Explore the demo" or vibe switcher.
 
 ## Handoff
