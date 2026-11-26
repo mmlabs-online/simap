@@ -534,8 +534,9 @@ org and a per-desk look choice are a later phase.
 - [ ] Rejecting marks the request rejected. Approving or rejecting a request that is not pending changes nothing.
 - [ ] Manager+ assign directly without a request (SEA-03). Only Users go through the approval flow.
 - [ ] The requester can cancel their own pending request (D24).
-- [ ] "My requests" lists the user's requests with their status; a badge counts requests decided since the user
-  last opened it. No email (D24).
+- [ ] The user's own requests and their status are listed in My Portal → My seat (POR-02); there is no separate
+  "My requests" nav entry or page (D74). Requests decided since the user last opened the My seat tab count in the My
+  Portal nav badge (SHL-01, OQ-59). No email (D24).
 
 **REG-03 Release own seat / device** (in v1, D22)
 - [ ] A user releases a seat they occupy without approval; the occupant is cleared and DEV-06 runs.
@@ -550,6 +551,9 @@ requests, device actions, display name). Clean UI kit (D52); copy in `src/ui/cop
 **POR-01 Page and tabs**
 - [ ] My Portal is in the nav for every tier (SHL-01). The three tabs are horizontal, keyboard-operable and
   addressable by URL (e.g. `?tab=seat|devices|profile`); the default tab is My seat. Works at 390 px.
+- [ ] The My Portal nav badge counts, for the caller only: transfers waiting for their confirmation, their overdue
+  devices, and their seat requests decided (approved or rejected) since they last opened the My seat tab (OQ-59, D74).
+- [ ] The old `/requests` URL redirects client-side to `/portal?tab=seat`, so old links keep working (D74).
 - [ ] Every tab reads only the caller's own member (token `sub` + `org`, R6); there is no way to open another
   member's portal.
 - [ ] A member with no linked member record, or a deactivated member, gets the same refusal as other org pages.
@@ -557,7 +561,11 @@ requests, device actions, display name). Clean UI kit (D52); copy in `src/ui/cop
 **POR-02 My seat**
 - [ ] Lists every seat the member occupies (one person may have several, invariant 2): seat code, room, group/project
   tags, and "View on map", which opens `/rooms/<code>` with that seat selected (SEA-05 URL).
-- [ ] Lists the member's seat requests with status, using "My requests" (REG-02): pending ones can be cancelled (D24).
+- [ ] Lists the member's seat requests with status (REG-02): pending ones can be cancelled (D24). This is the only
+  place a member sees their own requests (D74).
+- [ ] Opening the My seat tab (including landing on My Portal, whose default tab is My seat) marks the member's
+  request decisions as seen, using the existing mark-seen API; this clears the decision part of the My Portal badge
+  (D74). The other tabs do not mark decisions seen.
 - [ ] "Release seat" releases an occupied seat without approval after a confirmation (REG-03; DEV-06 runs).
 - [ ] With no seat and no request, an empty state links to Rooms to request a seat (REG-01).
 
@@ -649,8 +657,9 @@ requests, device actions, display name). Clean UI kit (D52); copy in `src/ui/cop
 - [ ] Nav rail on desktop and bottom bar on mobile, org name and switcher (AUT-06), room switcher, avatar and role
   badge, "refresh permissions", sign-out.
 - [ ] Pages: Dashboard, Rooms, Room detail, Room editor (Admin), Members (Users: OQ-58), Devices (Manager+, D69),
-  Approvals (Manager+), My Portal (every tier, D70). The home page stays the Dashboard unless OQ-54 changes it. The
-  device-count badge for Users: OQ-59.
+  Approvals (Manager+), My Portal (every tier, D70). There is no "My requests" entry for any tier; own requests live
+  in My Portal → My seat (D74). The home page stays the Dashboard unless OQ-54 changes it. The My Portal badge
+  (incoming transfers, overdue devices, unseen request decisions): OQ-59, POR-01.
 
 **SHL-02 Light/dark theme**
 - [ ] The user switches between light and dark, and the choice is kept on the device.
@@ -838,7 +847,9 @@ Still open (defaults stand until Ming answers; reversible):
   *Blocks: the device visibility ticket (MEM-02 API), the My Portal page ticket (nav).*
 - **OQ-59 Device badge in the nav for Users.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* Default: Users have no Devices entry; the badge moves to the My Portal
   entry and counts transfers waiting for their confirmation plus their overdue devices. Manager+ keep the Devices badge
-  (Admins: pending returns too) and get the same My Portal badge for their own items. *Blocks: the My Portal page
+  (Admins: pending returns too) and get the same My Portal badge for their own items. *Amended 2026-11-26 (D74):* the
+  My Portal badge also counts the caller's seat request decisions not yet seen (moved from the removed "My requests"
+  entry); opening My seat marks them seen. The Approvals badge (Manager+) is unchanged. *Blocks: the My Portal page
   ticket.*
 - **OQ-60 Dashboard device counts for Users.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* DSH-01 shows org-wide "devices placed vs. in inventory". Default: Users
   keep these counts (numbers only, no lists); device rows never appear. *Blocks: the device visibility ticket.*
@@ -852,6 +863,7 @@ New questions get the next free number (OQ-62).
 
 | Date | Change |
 |---|---|
+| 2026-11-26 | D74: "My requests" leaves the nav for every tier; own requests live only in My Portal → My seat, `/requests` redirects client-side to `/portal?tab=seat`, the request-decision badge joins the My Portal badge (incoming transfers + overdue devices + unseen decisions) and opening My seat marks decisions seen. Approvals unchanged, no new API. REG-02, POR-01, POR-02, SHL-01 and OQ-59 amended. |
 | 2026-11-26 | D69–D71: Users see only the devices they hold (API-enforced on the device list, detail, history and search; a "my devices" endpoint for every tier); new My Portal page for every tier with My seat, My devices and Profile tabs; profile photo upload and a customisable pixel character stored on the member. Roles table, Member entity, SEA-05, DEV intro, DEV-02/08/10/11, MEM-02, LAY-06, DSH-01/02, SHL-01 amended; DEV-12 and POR-01 to POR-06 added; OQ-54 to OQ-61 open. |
 | 2026-11-25 | D68 (SIM-040): device type images may be square PNGs from 24 × 24 to 100 × 100 px, at most 100 KB; the map scales them to the slot. |
 | 2026-11-25 | D66: map item catalog, phase 1. Per-org rows for the existing library items (keyed by library key, seeded per org; placed fixtures keep `sprite_key`) drive the editor palette: Admins rename, regroup, reorder, hide/show, resize (1–4 × 1–4 tiles, refused while placed) and set art per direction (package sprite or custom PNG, fallback chain). Desk (one look per org), chair (art only), walls, windows and floors included; device types can pick a package sprite; the licensed atlas is committed. Art-per-item paragraph, LAY-01/03/06 amended, LAY-07 added, DEV-01 amended, MapItem entity; OQ-46 to OQ-51 answered; OQ-52, OQ-53 open. |

@@ -70,7 +70,7 @@ supersedes these points (M-83) and Identity can mint such tokens (M-84). Raised 
   audit list.
 
 ## Notes / answers from Ming
-- 2026-11-26 Ming (M-83, D73): role key `admin:super-admin`; full Admin access (read and CRUD) in every org. Still open for the plan gate: member row on first visit, audit shape.
+- 2026-11-26 Ming (M-83, D75): role key `admin:super-admin`; full Admin access (read and CRUD) in every org. Still open for the plan gate: member row on first visit, audit shape.
 <Answers to blocking questions and "Plan approved (YYYY-MM-DD)" lines go here.>
 
 ## Handoff
