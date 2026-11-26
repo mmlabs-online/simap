@@ -82,7 +82,12 @@ export function resolveDeviceArt(
   imageReady: (t: SeatDeviceType) => boolean,
 ): ResolvedDevice {
   const t = device.deviceType;
-  if (t === undefined) return { kind: deviceKind(device.type), art: { type: "sprite" } };
+  if (t === undefined) {
+    return {
+      kind: device.type === null ? "other" : deviceKind(device.type),
+      art: { type: "sprite" },
+    };
+  }
   if (t === null) return { kind: "other", art: { type: "placeholder" } };
   if (!t.hasImage) {
     return {

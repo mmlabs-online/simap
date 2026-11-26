@@ -87,7 +87,7 @@ function toSeatDevices(raw: unknown): SeatDevice[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .flatMap((d): SeatDevice[] => {
-      if (!isObject(d) || !isStr(d.type)) return [];
+      if (!isObject(d) || (d.type !== null && !isStr(d.type))) return [];
       return "deviceType" in d && d.deviceType !== undefined
         ? [{ type: d.type, deviceType: toDeviceType(d.deviceType) }]
         : [{ type: d.type }];

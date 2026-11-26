@@ -1,5 +1,6 @@
 import "server-only";
 import type { DeviceKind } from "@/lib/sprites/device-slots";
+import type { Tier } from "@/lib/auth/tier";
 import { catalogFootprints } from "@/lib/map-items/footprints";
 import type { LayoutItem, LayoutResponse, SeatDevice, SeatView } from "@/lib/sprites/layout";
 import {
@@ -56,6 +57,7 @@ export async function readLayoutRows(
   scope: OrgScope,
   sub: string,
   roomId: string,
+  tier: Tier,
 ): Promise<LayoutResponse | null> {
   const { rows: rooms } = await orgQuery<RoomRow>(
     c,
@@ -127,6 +129,7 @@ export async function readLayoutRows(
     const { rows: deviceRows } = await orgQuery<{
       seat_id: string;
       type: string;
+      mine: boolean;
       type_id: string | null;
       slot: DeviceKind | null;
       has_image: boolean | null;
@@ -135,11 +138,13 @@ export async function readLayoutRows(
     }>(
       c,
       scope,
-      `select d.seat_id, left(d.type, 61) as type, t.id as type_id, t.slot,
+      `select d.seat_id, left(d.type, 61) as type, d.mine, t.id as type_id, t.slot,
               (t.image_drive_file_id is not null) as has_image, t.image_version,
               t.sprite_key
          from (
-           select seat_id, type, row_number() over (
+           select seat_id, type,
+                  coalesce(owner_id = (select id from members where org_id = $1 and sub = $3::uuid), false) as mine,
+                  row_number() over (
                     partition by seat_id order by (role = 'primary') desc, created_at, id) as n
              from devices
             where org_id = $1 and seat_id = any($2::uuid[])
@@ -148,11 +153,12 @@ export async function readLayoutRows(
            on t.org_id = $1 and device_type_key(t.name) = device_type_key(d.type)
         where d.n <= ${LAYOUT_LIMITS.devicesPerSeat}
         order by d.seat_id, d.n`,
-      [seatRows.slice(0, LAYOUT_LIMITS.seats).map((s) => s.id)],
+      [seatRows.slice(0, LAYOUT_LIMITS.seats).map((s) => s.id), sub],
     );
     for (const d of deviceRows) {
       (seatDevices[d.seat_id] ??= []).push({
-        type: d.type,
+        // SIM-052: a User sees the free-text type only on devices they hold
+        type: tier === "user" && !d.mine ? null : d.type,
         deviceType: d.type_id
           ? {
               id: d.type_id,
@@ -230,10 +236,11 @@ export async function getRoomLayout(
   scope: OrgScope,
   sub: string,
   roomId: string,
+  tier: Tier,
 ): Promise<LayoutResult<LayoutResponse>> {
   const out = await withTx(pool, async (c): Promise<LayoutResponse | null> => {
     await c.query("set transaction isolation level repeatable read, read only");
-    return readLayoutRows(c, scope, sub, roomId);
+    return readLayoutRows(c, scope, sub, roomId, tier);
   });
   return out ? { ok: true, value: out } : { ok: false, status: 404, code: "not_found" };
 }

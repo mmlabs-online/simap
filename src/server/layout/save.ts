@@ -190,7 +190,7 @@ export async function saveRoomLayout(
       },
     });
 
-    const out = await readLayoutRows(c, scope, sub, roomId);
+    const out = await readLayoutRows(c, scope, sub, roomId, "admin");
     if (!out) throw refuse(404, "not_found");
     return out;
   });

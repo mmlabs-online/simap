@@ -127,6 +127,20 @@ describe("resolveDeviceArt", () => {
     });
   });
 
+  it("null type (SIM-052): catalog type gives its slot; no catalog info gives other, no throw", () => {
+    expect(
+      resolveDeviceArt({ type: null, deviceType: t({ slot: "pc", hasImage: false }) }, ready),
+    ).toEqual({ kind: "pc", art: { type: "sprite" } });
+    expect(resolveDeviceArt({ type: null, deviceType: null }, ready)).toEqual({
+      kind: "other",
+      art: { type: "placeholder" },
+    });
+    expect(resolveDeviceArt({ type: null }, ready)).toEqual({
+      kind: "other",
+      art: { type: "sprite" },
+    });
+  });
+
   it("no image: built-in sprite of the slot", () => {
     expect(
       resolveDeviceArt({ type: "PC", deviceType: t({ slot: "pc", hasImage: false }) }, ready),

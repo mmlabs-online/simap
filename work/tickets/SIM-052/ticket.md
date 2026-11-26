@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | S |
 | Areas | api, ui, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/130 |
 
 ## Goal
 The room map no longer shows a User the free-text `type` of devices they do not hold, so identifying text typed there
@@ -42,5 +42,12 @@ The room map no longer shows a User the free-text `type` of devices they do not 
 - DB: `layout.db.test.ts` per tier. Unit: placement fallback.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-2): "duyệt hết theo mặc định".
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 4, ~184k tokens (planner×1 sonnet 41k, implementer×1 default 57k, reviewer×1 default 32k, security-ai-generated-code-auditor×1 default 55k; consult skipped, fast lane; batch 2026-11-26-2).
+- Done: layout GET hides free-text `type` from Users on non-held devices; required `tier` arg; client keeps null-type devices (draws as `other`); tests; review PASS attempt 1; PR #130.
+- In progress / next: Ming merges PR #130.
+- Gotchas: unowned devices cannot sit on seats (`devices_unowned_not_placed_check`), so that DB test was dropped.
