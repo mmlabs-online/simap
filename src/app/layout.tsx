@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Manrope } from "next/font/google";
+import { Fraunces, Manrope } from "next/font/google";
 import { iconFontHref } from "@/lib/icons";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import { shellCopy } from "@/ui/copy/shell";
@@ -12,13 +12,22 @@ const manrope = Manrope({
   display: "swap",
 });
 
+// Sign-in headline font (D85, SIL OFL 1.1); preload off so other routes do not fetch it.
+const serif = Fraunces({
+  subsets: ["latin"],
+  style: ["italic"],
+  display: "swap",
+  preload: false,
+  variable: "--font-serif",
+});
+
 export const metadata: Metadata = { title: shellCopy.brand };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Reading the request header makes every page render per request, so the nonce reaches Next's own scripts.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
-    <html lang="en" className={manrope.variable} suppressHydrationWarning>
+    <html lang="en" className={`${manrope.variable} ${serif.variable}`} suppressHydrationWarning>
       <head>
         {/* Sets data-theme before first paint (no flash). */}
         <script

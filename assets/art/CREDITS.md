@@ -24,3 +24,6 @@ sha256 `bac93deafbf82181262539fbf2339590f88c68ab16033dff37de2fffc1f3bfcd`): `Pro
 (D45, D60). The packed atlas in `public/sprites/` is built output that ships inside the app (D66 point 5), which the
 licence allows, so it is committed. That commit assumes a private repo: making the repo public would redistribute the
 pack, so ask Ming first.
+
+Fonts (D85): Fraunces (italic, sign-in headline), SIL Open Font License 1.1, https://github.com/undercasetype/Fraunces,
+bundled at build through `next/font/google`. The OFL needs no in-app attribution.
