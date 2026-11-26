@@ -22,6 +22,7 @@ import type { MemberPatchValue } from "@/lib/validate/member";
 import { writeAudit } from "@/server/audit/write";
 import { withTx, type TxClient, type TxPool } from "@/server/db/tx";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
+import { endPresenceForMember } from "@/server/presence/end";
 import { memberConflict } from "./pg-error";
 
 type Query = { query(text: string, values: unknown[]): Promise<{ rows: any[] }> };
@@ -420,6 +421,7 @@ export function deactivateMember(
         [id],
       );
     }
+    await endPresenceForMember(c, scope, actorSub, id, "member_deactivated");
     const { rows: actor } = await orgQuery<{ id: string }>(
       c,
       scope,

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, architecture, security |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/139 |
 
 ## Goal
 A member checks in to a room where they have a seat, moves to another of their seats there, and checks out; the
@@ -67,5 +67,12 @@ D79 (UTC+7 work day, D35), D81 (same-day reopen), D82 (losing the seat ends the 
 - `pnpm schema:check` against the local DB.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-5): "duyệt plan SIM-058 theo mặc định"; Q1 default: one PR (no SIM-058.1 split); Q2 default: forced room delete also ends presence (D82).
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 6, ~449k tokens (database-optimizer×1 default 44k, api-platform-engineer×1 default 40k, planner×1 default 119k, implementer×1 default 108k, reviewer×1 default 85k, security-ai-generated-code-auditor×1 default 54k; batch 2026-11-26-5).
+- Done: presence table (migration 20261126150000), /api/me/presence GET/PUT/PATCH/DELETE, /api/rooms/[id]/presence, D82 hooks (writeOccupant, releaseSeat, deactivateMember, forced deleteRoom), audits, schema-check section 14; review and security PASS attempt 1; PR #139.
+- In progress / next: High tier — Ming merges PR #139; SIM-059 / SIM-060 / SIM-063 can start after the merge.
+- Gotchas: the member row lock (`for no key update`) serialises every presence writer; SIM-063 must take it too.
