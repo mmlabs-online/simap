@@ -127,7 +127,7 @@ needs to show.
 |---|---|---|
 | Room | org, code (unique, e.g. `C302`), name, description, floor | Layout fixtures belong to the room (LAY-03); a placed fixture keeps its library `sprite_key`, which also names its map item (LAY-07). |
 | Seat | org, code (unique, `<room code>-NN`), sequence no. (unique within the room), room, occupant (member, optional), group tag, project tag, layout geometry (x, y, rotation, width, height) | Status is **not stored** (invariant 6). |
-| Member | org, Identity `sub` (unique in the org, required), email (from the token), display name, employee code (unique, optional), group (optional), profile photo (optional; stored file reference, POR-05), pixel character look (optional; preset part per layer: skin, hair colour, hair style, shirt colour, POR-06) | Profile of one org account (D12). No photo = fallback (OQ-57); no stored look = look derived from `sub` as before (D71). |
+| Member | org, Identity `sub` (unique in the org, required), email (from the token), display name, employee code (unique, optional), group (optional), profile photo (optional; stored file reference, POR-05), pixel character look (optional; preset part per layer: skin, hair colour, hair style, shirt colour, POR-06) | Profile of one org account (D12). No photo = fallback (OQ-57); no stored look = look derived from the member id as before (D71). |
 | Device | org, name, type, inventory number (unique), MAC (unique, optional), serial number (unique, optional), manufacturer, brand, owner (member, optional; empty = org inventory, D63), expiry date and note of the current holding, seat (optional; empty = not placed), role at the seat (primary / secondary) | Owner changes only through assign, transfer and return (DEV-07 to DEV-09). |
 | DeviceHandoff | org, device, kind (transfer / return / extension), from member, to member (transfer), requested by, note, new expiry (extension), status (pending / confirmed / declined / cancelled), decided by, decided at | At most one pending per device (DEV-08 to DEV-10). Device history (DEV-11) is read from these rows and the audit log. |
 | SeatRequest | org, seat, subject member (who will sit there), created by, status (pending / approved / rejected / cancelled), note, decided by, decided at | |
@@ -473,7 +473,7 @@ and are not chosen per item. Every bundled third-party package is credited on th
   its own size, bottom-left aligned in the footprint. A custom image that cannot be loaded falls back the same way.
   Art changes show at the next layout load (LAY-07, D64, D66).
 - [ ] Occupants are 32 px layered avatars (body/hair/shirt): the member's chosen pixel character when set (POR-06),
-  else colours derived from `sub`, stable per person (D51, amended by D71). The map never shows the profile photo
+  else colours derived from the member id, stable per person (D51, amended by D71). The map never shows the profile photo
   (D44 kept for the map; where the photo shows: OQ-57). Name tags appear only on hover or keyboard focus, at every
   zoom (D50).
 
@@ -593,7 +593,7 @@ requests, device actions, display name). Clean UI kit (D52); copy in `src/ui/cop
   skin, hair colour, hair style, shirt colour (the existing avatar ramps and frames; more parts only with new art). No
   free colour input and no upload.
 - [ ] A live preview shows the character front and back at 1× and 2× before saving. "Reset" goes back to the look
-  derived from `sub`.
+  derived from the member id.
 - [ ] The choice is stored on the member (Member entity). A member without a stored look keeps the derived look, so
   existing members change nothing until they choose. The server accepts only preset values (422 otherwise).
 - [ ] Open maps show the new look at the next layout load. Every change is audited (SYS-03).
@@ -770,7 +770,7 @@ Owner: Ming for all of them. Each blocks the tickets named after it. IDs are sta
 - **OQ-38** — answered D16 ((a) now + (b) request to org-admin-api). **OQ-39** — answered D17.
 
 **Behaviour (seatMGT 🟡 items and gaps found in its code)**
-- **OQ-8 Viewer tier.** Add a read-only `simap:viewer` tier (AUT-05)?
+- **OQ-8 Viewer tier.** *Answered D25: not v1 (later candidate, §10).* Add a read-only `simap:viewer` tier (AUT-05)?
 - **OQ-9 Request scope.** *Answered D21.* In which rooms may a User request a seat: any room, or a limited set (REG-01)?
 - **OQ-10 Self-release.** *Answered D22.* Is REG-03 in v1: can a User release their own seat and remove their own device from a seat?
 - **OQ-11 Request for someone else.** *Answered D23.* seatMGT lets any user file a request with another member as the subject. Keep
@@ -788,16 +788,16 @@ Owner: Ming for all of them. Each blocks the tickets named after it. IDs are sta
   **OQ-26** — D32. **OQ-29** — D33. **OQ-30** — D34. **OQ-8** — D25.
 
 **Device lifecycle (D63, 2026-11-25).** Each has a default the tickets follow until Ming answers (reversible).
-- **OQ-41 Who creates devices.** Ming: "khi admin thêm device". Default: Admin only; Users and Managers no longer
+- **OQ-41 Who creates devices.** *Answered D63 (default taken).* Ming: "khi admin thêm device". Default: Admin only; Users and Managers no longer
   create devices (supersedes D19 for create). *Blocks: SIM-037.1.*
-- **OQ-42 Extension.** Default: the owner requests a new date, an Admin or Manager approves or rejects; an Admin or
+- **OQ-42 Extension.** *Answered D63 (default taken).* Default: the owner requests a new date, an Admin or Manager approves or rejects; an Admin or
   Manager can also edit the expiry directly. *Blocks: SIM-037.5.*
-- **OQ-43 Expiry on transfer.** Default: the expiry date carries over to the recipient; an Admin or Manager can change
+- **OQ-43 Expiry on transfer.** *Answered D63 (default taken).* Default: the expiry date carries over to the recipient; an Admin or Manager can change
   it. *Blocks: SIM-037.3.*
-- **OQ-44 Owner deactivated or removed.** Default: the device stays assigned (deactivation already returns placed
+- **OQ-44 Owner deactivated or removed.** *Answered D63 (default taken).* Default: the device stays assigned (deactivation already returns placed
   devices to the owner's inventory, D34), pending handoffs to or from that member are cancelled, and an Admin can take
   the device back directly (DEV-09). *Blocks: SIM-037.4.*
-- **OQ-45 Existing devices.** simap is not live, so only dev/test data exists. Default: the migration keeps each
+- **OQ-45 Existing devices.** *Answered D63 (default taken).* simap is not live, so only dev/test data exists. Default: the migration keeps each
   device's owner with no expiry; no backfill. *Blocks: SIM-037.1.*
 
 **Map item catalog (LAY-07, D64, D66, 2026-11-25).**
@@ -819,30 +819,30 @@ Still open (defaults stand until Ming answers; reversible):
 
 **Device visibility and My Portal (D69–D71, 2026-11-26).** Each has a default the tickets follow until Ming answers
 (reversible).
-- **OQ-54 Home page.** Is My Portal the User's home page instead of the Dashboard? Default: the Dashboard stays the
+- **OQ-54 Home page.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* Is My Portal the User's home page instead of the Dashboard? Default: the Dashboard stays the
   home page for every tier; My Portal is a nav entry. *Blocks: the My Portal page ticket (nav only).*
-- **OQ-55 Devices at seats for Users.** Do room-map device sprites at seats still show to Users (sprite only, no
+- **OQ-55 Devices at seats for Users.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* Do room-map device sprites at seats still show to Users (sprite only, no
   details), and what does the seat panel show about devices a User does not hold? Default: sprites still draw for
   every tier, and for a User the layout API returns per such device only its type/slot (no id, name, inventory
   number, MAC or owner); the seat panel lists the User's own devices in full and only "N other devices" for the rest.
   *Blocks: the device visibility ticket (layout and seat APIs).*
-- **OQ-56 Profile photo limits.** Default: PNG or JPEG (no APNG or other animation), square, 64 × 64 to 512 × 512 px,
+- **OQ-56 Profile photo limits.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* Default: PNG or JPEG (no APNG or other animation), square, 64 × 64 to 512 × 512 px,
   at most 256 KB, stored and served like device type images (SIM-036.5); no server-side resizing (no image library,
   stack unchanged). *Blocks: the profile photo ticket.*
-- **OQ-57 Where the photo and the character show.** Default: the photo shows in the shell avatar, the Members list and
+- **OQ-57 Where the photo and the character show.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* Default: the photo shows in the shell avatar, the Members list and
   member card, the seat panel's occupant row and the Profile tab; without a photo those places show the pixel
   character's head (or initials). The pixel character shows only on the room map and in its Profile preview.
   *Blocks: the profile photo ticket.*
-- **OQ-58 Members list for Users.** Do Users still see the Members page? Default: yes (names, employee code, seats),
+- **OQ-58 Members list for Users.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* Do Users still see the Members page? Default: yes (names, employee code, seats),
   without other members' devices (MEM-02, D69); the member picker for transfers (DEV-08) stays either way.
   *Blocks: the device visibility ticket (MEM-02 API), the My Portal page ticket (nav).*
-- **OQ-59 Device badge in the nav for Users.** Default: Users have no Devices entry; the badge moves to the My Portal
+- **OQ-59 Device badge in the nav for Users.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* Default: Users have no Devices entry; the badge moves to the My Portal
   entry and counts transfers waiting for their confirmation plus their overdue devices. Manager+ keep the Devices badge
   (Admins: pending returns too) and get the same My Portal badge for their own items. *Blocks: the My Portal page
   ticket.*
-- **OQ-60 Dashboard device counts for Users.** DSH-01 shows org-wide "devices placed vs. in inventory". Default: Users
+- **OQ-60 Dashboard device counts for Users.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* DSH-01 shows org-wide "devices placed vs. in inventory". Default: Users
   keep these counts (numbers only, no lists); device rows never appear. *Blocks: the device visibility ticket.*
-- **OQ-61 Who may change a member's photo or character.** Default: only the member sets their own photo and
+- **OQ-61 Who may change a member's photo or character.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* Default: only the member sets their own photo and
   character; a Manager+ can remove another member's photo (audited) but not upload one; the character is the
   member's alone. *Blocks: the profile photo ticket.*
 
