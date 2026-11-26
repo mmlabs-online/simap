@@ -64,3 +64,34 @@ Fixes for `review.md` attempt 1 and `security-review.md` attempt 1 (docs only).
 
 ### Scope self-check
 - Could the diff be smaller? No; each change maps to a listed finding.
+
+## Attempt 3 — 2026-11-26
+
+Fixes for `review.md` attempt 2 (docs only).
+
+### Files touched
+| File | Required because |
+|---|---|
+| `work/tickets/SIM-021/flow-run.md` | Blocker: F6.14 is now "Admin opens D2's actions while placed", expecting no Delete action (DEV-01, D63; verified: `canDelete` needs `owner_id === null`, `decideDelete` refuses owned and placed devices). F6.18 assigns D1 (in org inventory after F6.12) to User A with an expiry of today (expiry today is valid; overdue is `holding_expires_on < today`). F4.7 cites spec §6 LAY. F7.6 cites REG-02. |
+| `docs/go-live.md` | Item 4 CONNECT query excludes templates and `postgres`. Recreate path is now `create database simap owner simap;` plus the revoke, with the `simap` container stopped first; `add-app-db.sh` only if known safe for an existing role. Lines 30 and 60 rewrapped. |
+| `work/tickets/SIM-021/impl-log.md` | This log |
+
+### Tests added / changed
+- None (docs only).
+
+### Checks (actual output summary)
+- `pnpm format` then `pnpm format:check`: all matched files use the correct format.
+- `pnpm typecheck`: exit 0. `pnpm check:layers`: 808 files, no violations.
+- `pnpm test`: 308 files passed, 1 skipped; 3126 tests passed, 7 skipped. `pnpm build`: compiled successfully.
+- Plan greps: tick boxes 15, `Owner:` 15, `Check:` 15; flow rows 76; no email or UUID patterns.
+- Walked F4 and F6 top to bottom; every row's precondition holds.
+
+### Out-of-plan files
+- None.
+
+### Follow-ups (noticed, not done)
+- Spec contradiction for Ming: DEV-01's last bullet and D31 (`docs/spec-v1.md:282-284`: placed-device delete warning, "Move to inventory", "then allow delete") cannot happen under D63 (a placed device always has an owner; Move to inventory goes to the owner's inventory; only org-inventory devices can be deleted). The spec needs a clean-up. Spec not edited here.
+- Carried: stale Turnstile comment in `src/lib/identity/config.ts` (High path, A2); remove test accounts' `simap:*` roles after A5.
+
+### Scope self-check
+- Could the diff be smaller? No; each change maps to a listed finding.

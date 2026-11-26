@@ -72,7 +72,7 @@ Result values: PASS, FAIL, BLOCKED, N-A.
 | F4.4 | Layout designer | Save and reload | Admin | LAY-01: the layout is the same after reload | | | |
 | F4.5 | Layout designer | Save a stale layout from a second tab | Admin | LAY-01: a conflict message, no overwrite | | | |
 | F4.6 | Layout designer | Map items: rename and hide an item | Admin | LAY-07: change shows in the editor palette | | | |
-| F4.7 | Layout designer | Open the room view at 390 px width | User A | Room view (spec §4 LAY), LAY-06: map is usable on a phone | | | |
+| F4.7 | Layout designer | Open the room view at 390 px width | User A | Room view (spec §6 LAY), LAY-06: map is usable on a phone | | | |
 
 ## F5 Manager assigns
 
@@ -104,11 +104,11 @@ through the placement, transfer and return rows; a second device D2 is created i
 | F6.11 | Devices | A starts a transfer of D1 to User B; B confirms | User A, then User B | DEV-08: D1 is in B's inventory, not placed | | | |
 | F6.12 | Devices | B starts a return of D1 to the org; the Admin confirms | User B, then Admin | DEV-09, D63: D1 moves to org inventory | | | |
 | F6.13 | Devices | Create device D2, assign it to User A, A places it as primary at own seat | Admin, then Manager, then User A | DEV-01, DEV-07, DEV-03: D2 is placed at A's seat | | | |
-| F6.14 | Devices | Delete D2 while it is placed | Admin | DEV-01, D31: refused; the warning offers Move to inventory | | | |
+| F6.14 | Devices | Admin opens D2's actions while placed | Admin | DEV-01, D63: no Delete action; only org-inventory devices can be deleted | | | |
 | F6.15 | Devices | Take D2 back directly, without a request | Admin | DEV-09, D63: D2 leaves the seat and is in org inventory | | | |
 | F6.16 | Devices | Delete D2 from org inventory | Admin | DEV-01: deleted | | | |
 | F6.17 | Devices | Open the D1 detail history | Admin | DEV-11: the events so far are listed | | | |
-| F6.18 | Devices | Overdue check (an expiry of today, check next day) | Manager | DEV-10: shows overdue; N-A on the run day | | | |
+| F6.18 | Devices | Manager assigns D1 (now in org inventory) to User A with an expiry of today; check the next day | Manager | DEV-07, DEV-10: D1 shows Overdue the next day; N-A on the run day | | | |
 
 ## F7 Seat request
 
@@ -119,7 +119,7 @@ through the placement, transfer and return rows; a second device D2 is created i
 | F7.3 | Seat request | Request an occupied seat | User A | REG-01: refused | | | |
 | F7.4 | Seat request | User B requests the same free seat | User B | REG-01: second pending request is accepted | | | |
 | F7.5 | Seat request | Manager approves A's request | Manager | REG-02, D23: A is seated; B's request is auto-rejected | | | |
-| F7.6 | Seat request | Check the My requests badge | User B | REG-01, D24: the badge shows the new status | | | |
+| F7.6 | Seat request | Check the My requests badge | User B | REG-02, D24: the badge shows the new status | | | |
 | F7.7 | Seat request | User A cancels a pending request | User A | REG-02, D24: the request is cancelled | | | |
 | F7.8 | Seat request | Manager rejects a request | Manager | REG-02: the request shows rejected | | | |
 | F7.9 | Seat request | User A releases own seat | User A | REG-03: the seat is free | | | |

@@ -27,9 +27,10 @@ Runbooks (this checklist links to them and does not repeat their steps):
 
 - [ ] **1. Identity app `simap`**
   - Owner: Ming (verifies; registered in M-1)
-  - Check: origin `https://simap.mmlabs.online`; `org_mode=required`; roles per D14 (`simap:member` app-scope default, `simap:admin` owner role,
-    `simap:manager`, `simap:user`; `simap:org:invite` on admin and manager); the email-link base for verify-email,
-    reset-password and accept-invitation is `https://simap.mmlabs.online` (A4). A forgot-password email for a test
+  - Check: origin `https://simap.mmlabs.online`; `org_mode=required`; roles per D14
+    (`simap:member` app-scope default, `simap:admin` owner role, `simap:manager`,
+    `simap:user`; `simap:org:invite` on admin and manager); the email-link base for verify-email, reset-password and
+    accept-invitation is `https://simap.mmlabs.online` (A4). A forgot-password email for a test
     account opens `https://simap.mmlabs.online/reset-password#token=...`.
   - Refs: M-1, D5, D14
 
@@ -51,16 +52,17 @@ Runbooks (this checklist links to them and does not repeat their steps):
     - `select rolsuper, rolcreatedb, rolcreaterole, rolbypassrls from pg_roles where rolname = 'simap';` returns all
       `false`;
     - `select datname from pg_database where datdba = 'simap'::regrole;` returns only `simap`;
-    - `select datname from pg_database where has_database_privilege('simap', datname, 'CONNECT');` returns only
-      `simap` (template databases aside), so the role cannot reach other apps' databases.
+    - `select datname from pg_database where not datistemplate and datname <> 'postgres' and has_database_privilege('simap', datname, 'CONNECT');`
+      returns only `simap`, so the role cannot reach other apps' databases (`postgres` and the templates hold no app
+      data).
   - Refs: M-3, M-6 (Postgres check)
 
 - [ ] **5. Secrets**
   - Owner: Ming
-  - Check: the release image repository on Docker Hub (see [README.md](../README.md#production-image)) exists. The simap repo has the secrets `DOCKERHUB_USERNAME`,
-    `DOCKERHUB_TOKEN` and `DEPLOY_REPO_TOKEN`; the deployment repo has the four Drive secrets `SIMAP_GOOGLE_CLIENT_ID`,
-    `SIMAP_GOOGLE_CLIENT_SECRET`, `SIMAP_GOOGLE_REFRESH_TOKEN` and `SIMAP_DRIVE_FOLDER_ID` (all or none). Check names
-    only; never paste values.
+  - Check: the release image repository on Docker Hub (see [README.md](../README.md#production-image)) exists.
+    The simap repo has the secrets `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` and `DEPLOY_REPO_TOKEN`; the deployment repo
+    has the four Drive secrets `SIMAP_GOOGLE_CLIENT_ID`, `SIMAP_GOOGLE_CLIENT_SECRET`,
+    `SIMAP_GOOGLE_REFRESH_TOKEN` and `SIMAP_DRIVE_FOLDER_ID` (all or none). Check names only; never paste values.
   - Refs: M-6 (Docker Hub and secrets), M-46
 
 - [ ] **6. Deployment repo**
@@ -136,10 +138,11 @@ shared `pgdata`. Spec §8: rollback is the previous image, or fix forward, or re
 - remove the tunnel route for `simap.mmlabs.online` so users see nothing while you fix it;
 - restore the `deploy-simap` dump (see `ops/backup/RESTORE.md` in `mmlabs-online/deployment`);
 - on the first release only, when the `simap` database holds no real data, drop and recreate the empty `simap`
-  database. Ming only, as an admin role on the shared Postgres, and only after the `deploy-simap` dump exists. The only
-  drop statement is `drop database simap;`. Recreate it through `bash postgres/scripts/add-app-db.sh simap` in
-  `mmlabs-online/deployment` (or `create database simap owner simap;` then
-  `revoke connect, temporary on database simap from public;`), then run item 4's checks again.
+  database. Ming only, as an admin role on the shared Postgres, and only after the `deploy-simap` dump exists. Stop the
+  `simap` container first, because `drop database` fails while sessions are connected. The only drop statement is
+  `drop database simap;`. Then recreate it with `create database simap owner simap;` followed by
+  `revoke connect, temporary on database simap from public;`, and run item 4's checks again. The `simap` role and its
+  password stay as they are. Use `add-app-db.sh` here only if it is known to be safe for an existing role.
 
 **`restore-failed`.** The new image failed its health check and restoring the previous image failed too. Nothing was
 pushed and simap may be down. Check the `deploy-simap` run log, then fix forward with a new release or take the tunnel
