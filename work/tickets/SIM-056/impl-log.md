@@ -39,3 +39,23 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No.
 - Diff size: about +480 / -90 lines including tests.
+
+## Attempt 2 — 2026-11-26 (REWORK)
+
+### Files touched
+- `src/ui/portal/ProfilePhoto.tsx` — required because review Issue 1: in `run`, the failure branch now calls `setNotice(null)` before `setError(...)`, so the "Processing your photo..." notice is gone when `preparePhoto` refuses a file (the `onUploading` callback never fires on that path).
+
+### Tests added
+- None. The repo has no DOM test environment (no jsdom/testing-library), so the `run` state transition cannot be exercised; the refusal path (no PUT, no `onUploading`) is already covered in `own-photo-store.test.ts`.
+
+### Checks
+- format:check, typecheck, check:layers, test, build: all exit=0. test:db not run (only `src/ui` touched).
+
+### Out-of-plan files
+- None.
+
+### Follow-ups
+- None.
+
+### Scope self-check
+- One 3-line change in one in-plan file; nothing else touched.

@@ -37,7 +37,10 @@ export function ProfilePhoto({ name }: { name: string }) {
     const r = await act();
     if (!mounted.current) return;
     if (r.ok) setNotice(done);
-    else setError(photoErrorMessage(r.code));
+    else {
+      setNotice(null);
+      setError(photoErrorMessage(r.code));
+    }
     setBusy(null);
   };
 
