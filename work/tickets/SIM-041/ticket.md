@@ -64,5 +64,6 @@ Give more library items real art instead of placeholders by adding a second lice
 - Manual: `/dev/roommap` and "Map items" art picker show the new sprites.
 
 ## Notes / answers from Ming
+- 2026-11-26 Ming: "bỏ M-81" — no screenshot needed; the CC0 `LICENSE.txt` from the zip, copied to `assets/art/licences/2dpig-pixel-office.txt`, is the licence evidence (D45). The CREDITS.md row names that file in the Screenshot column.
 
 ## Handoff
