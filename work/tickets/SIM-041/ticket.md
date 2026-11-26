@@ -11,8 +11,8 @@
 | Needs Ming | M-81 |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T02:39:09Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/117 |
 
 ## Goal
 Give more library items real art instead of placeholders by adding a second licence-checked pack, 2dPig
@@ -67,3 +67,9 @@ Give more library items real art instead of placeholders by adding a second lice
 - 2026-11-26 Ming: "bỏ M-81" — no screenshot needed; the CC0 `LICENSE.txt` from the zip, copied to `assets/art/licences/2dpig-pixel-office.txt`, is the licence evidence (D45). The CREDITS.md row names that file in the Screenshot column.
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 3, tokens ~176k total (planner×1 sonnet 71k, implementer×1 default 59k, reviewer×1 default 47k; consult skipped, fast lane).
+- Done: 2dPig source in sprite map; 5 keys mapped (window.double, door.s, door.n, sofa, table.coffee); CREDITS/licence/Credits page/asset-candidates; atlas repacked; review PASS attempt 1; PR #117.
+- In progress / next: Ming reviews and merges PR #117, checks the look in /dev/roommap. SIM-042 waits on M-82.
+- Gotchas: Imersa sheets are git-ignored, so repacking needs both packs locally; the 2dPig glass door is a single 16x31 leaf (not an elevator); no PC sprite in the pack.
