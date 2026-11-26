@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | architecture, security |
@@ -11,7 +11,7 @@
 | Needs Ming | M-1, M-2, M-3 |
 | Attempts | 0 |
 | Created | 2026-11-20 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-26T00:41Z |
 | PR | — |
 
 ## Goal
@@ -42,7 +42,7 @@ spec "v1 done means"; D6, D8.
 
 ## Notes / answers from Ming
 - 2026-11-25: M-1, M-2, M-3 done (Ming). Gate set to plan-approval (P1 policy `high-paths+P1`).
-- Waiting for Ming: plan approval (P1 gate), M-78. On approval the orchestrator creates SIM-021.1 (flow run + bugs).
+- 2026-11-26: Plan approved by Ming (all 7 gate questions take their defaults; A1-A10 as written). Earlier note (M-78): On approval the orchestrator creates SIM-021.1 (flow run + bugs).
 
 ## Handoff
 
