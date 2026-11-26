@@ -140,7 +140,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-055 | Give the sign-in screens a game-style look | MERGED | P2 | M | ui, ux | — | none | 0 | 2026-11-26 |
 | SIM-056 | Crop and resize the profile photo in the browser before upload | MERGED | P2 | M | ui, ux | SIM-046.1 | none | 1 | 2026-11-26 |
 | SIM-057 | Check-in room view and home page per role | MERGED | P0 | M | ui, ux | — | none | 0 | 2026-11-26 |
-| SIM-058 | Presence record and check-in, check-out and move-seat API | PLANNING | P1 | M | db, api, architecture, security | — | plan-approval | 0 | 2026-11-26 |
+| SIM-058 | Presence record and check-in, check-out and move-seat API | IN_PROGRESS | P1 | M | db, api, architecture, security | — | plan-approval | 0 | 2026-11-26 |
 | SIM-059 | Pixel check-in popup | BACKLOG | P1 | M | ui, ux | SIM-057, SIM-058 | plan-approval | 0 | 2026-11-26 |
 | SIM-060 | Present and away on the map, name tags, open desk tags, "Who's here" and polling | BACKLOG | P1 | M | ui, api | SIM-057, SIM-058 | plan-approval | 0 | 2026-11-26 |
 | SIM-061 | Simple walk-in and walk-out | BACKLOG | P1 | M | ui | SIM-060 | plan-approval | 0 | 2026-11-26 |
