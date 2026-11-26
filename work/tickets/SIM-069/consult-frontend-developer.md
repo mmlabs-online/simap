@@ -1,0 +1,36 @@
+## Findings
+- MyDevicesView.tsx (pure, props-driven) renders the h2, notice, banner and incoming slots, skeleton, error, empty, then the shared `DeviceTable` (src/ui/devices/DeviceTable.tsx), then load-more. The shared `DeviceTable` is also used by `DevicesView.tsx` (the Manager/Admin Devices page, out of scope). Do not restyle it in place; that would change the out-of-scope page.
+- `DeviceTable` already has all the target columns and reuses `DeviceNameLink`, `Mac`, `Details`, `OwnerLabel` (You, pending and Overdue chips, expiry, note) and `PlacementLabel` (with a Primary/Secondary `Chip`) from `device-labels.tsx`, plus `DeviceRowActions`, which calls `rowActions()` in `device-actions.ts`. That is where today's action rules live, including the pending-handoff behaviour.
+- Conflict with the AC: `DeviceTable` shows a table only at `md` and up and a stacked card list below. The ticket wants the same table at 390 px, scrolling horizontally inside its card. The mobile card list therefore has to be dropped for this tab. The `Card` with `overflow-x-auto` and a `min-w-[...]` table is enough.
+- Copy differences: the mockup says "In my inventory", but `devicesCopy.inInventory` is "In inventory". `OwnerLabel` shows the expiry as "Until <date>" / "Expired on <date>" / "No expiry" via `expiryText`, which already fits the mockup. The existing test asserts `2026-12-31` and the overdue chip, and "Until 2026-12-31" still contains the date.
+- `DeviceDto` has `type`, `inventoryNumber`, `mac` and `holding.expiresOn`. All of the tile and search/filter data is available, and the list is cursor-paged (`useMyDevices`, `nextCursor`), so "the loaded list" may be only the first page.
+- The existing test uses `renderToStaticMarkup`. Static rendering only shows initial `useState`, so search and filter must be tested through pure functions. Note the test fixture has `details: null` and no `serial`, `manufacturer` or `brand`; `Details` handles this today.
+- MyDevicesTab.tsx focus handling relies on `headingRef` (an h2 with `tabIndex=-1`) and the `requestFocus` calls from the overdue banner. If the page header changes, the heading ref must stay on the "My devices" h2.
+
+## Recommendations
+1. Add a pure, tested module, e.g. `src/ui/portal/my-devices-filter.ts`: `deviceTypeTiles(devices)` (total, then per type, sorted by count desc then name), `filterDevices(devices, query, type)` (case-insensitive, trimmed, matching name, inventoryNumber and mac), and `typeOptions`. Tests cover tile counts, search, filter, no match, and total vs shown (AC4).
+2. Create `MyDevicesTable.tsx` in `src/ui/portal/` rather than editing `DeviceTable`. It reuses the `device-labels` components and `DeviceRowActions` unchanged, so action rules, aria-labels and the pending-handoff rule stay identical (AC3, AC4). It has a single `<table>` at all widths, inside a `Card` with `overflow-x-auto` and a `min-w`. Keep the `<caption class="sr-only">` and the sr-only Actions header.
+3. Put the filter state (`useState` for query and type) in `MyDevicesView` or a small child, with the pure filter above. Keep `MyDevicesTab` unchanged except for any new props. Add `role="search"` or labelled inputs (`aria-label`), and a labelled `<select>`. Use `aria-live="polite"` on the "Showing N of M" footer so the count change is announced.
+4. Chips: the count chip is the total held (M), not the filtered count, so the "N of M" footer carries the filtered count. Decide and state this in the plan. The ticket's "count chip stays correct" is ambiguous.
+5. Copy in `portal.ts`: subtitle, tile labels (total "Assigned devices"; per type use the type string, or a plural helper, since types are free text), "Your assigned devices", a card subtitle (the mockup's "Equipment assigned to Ming. No expiry." is data-dependent, so keep a static line such as "Devices assigned to you."), search placeholder and aria-label, "All types", "Showing N of M" with the horizontal-scroll hint, and an empty-filter message ("No devices match."). Add a portal-specific "In my inventory" string only if the table passes a label prop to `PlacementLabel` (a small optional prop, default unchanged). Otherwise leave "In inventory" and flag it as a minor deviation. Do not change the Devices page text.
+6. Visual styles must follow SIM-066's shared card styles and tab bar. Wait for its plan and reuse its tokens or components. The tile icons in the mockup need existing icons or none; avoid adding an icon dependency (stack change).
+7. Empty and error states: when `devices` is empty, show no tiles or filter; keep the empty card. The loading skeleton stays. When a filter matches nothing but devices exist, show a "no match" row inside the table card and a "Clear filters" option. Keep banner and incoming above the tiles or between header and tiles, in card style.
+8. Load-more: with `hasMore`, tiles and the count show only loaded devices. Show the footer as "Showing N of M loaded" or similar, and keep the Load more button. Consider noting the truncation in the plan, since tile totals can undercount.
+9. Tests: update `MyDevicesView.test.tsx` only for markup. Add render tests for the header and tiles, for the rows (primary and secondary placement chips, in-inventory, overdue, pending handoff showing only cancel, "You"/expiry), and filter-function unit tests. Run `pnpm check:layers`, `typecheck` and `format:check`.
+
+## Risks
+- Restyling the shared `DeviceTable` would alter the out-of-scope Devices page, and the md breakpoint behaviour differs from the AC.
+- Search and filter state that resets on `refresh()`: `useMyDevices.refresh` replaces `items`, so if the filter state lives in the view it survives, but a stale selected type that no longer exists after an action (e.g. returning the last monitor) would leave an empty table. Reset the filter to "All types" when the selected type disappears.
+- Dependence on SIM-066 for card and tab styles; the conflict risk is in `portal.ts` and the shared styles. Sequence after SIM-066 merges.
+- Long free-text types or names in tiles may overflow, so use truncation and a wrapping grid (`grid-cols-1 sm:grid-cols-3`, or auto-fit).
+- Focus and `aria-live` regressions from the heading change.
+
+## Open questions
+1. Count chip: total held, or filtered count? (Recommend total.)
+2. "In my inventory" vs the existing "In inventory": is a portal-only label wanted (needs a small optional prop on `PlacementLabel`)?
+3. The mockup's card subtitle "Equipment assigned to Ming. No expiry." is data-dependent: static text, or derive it from the data?
+4. Tiles with more than a few types: wrap into a grid, or cap and add "Other"? And should the tile types be sorted by count or alphabetically?
+5. With paging, are tile totals acceptable as "loaded only", or should the plan fetch all pages (out of scope as it touches the API/hook)?
+6. Tile icons: any approved existing icon set, or none?
+
+Files read: /home/user/simap/work/tickets/SIM-069/ticket.md, mockup-my-devices.png, src/ui/portal/{MyDevicesView,MyDevicesTab,useMyDevices,MyDevicesView.test}.tsx/.ts, src/ui/devices/{DeviceTable,device-labels,DeviceRowActions,device-actions,devices-state}, src/ui/copy/{portal,devices}.ts, src/lib/devices/types.ts.
