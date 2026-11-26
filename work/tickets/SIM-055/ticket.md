@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -76,6 +76,7 @@ box (Ming, 2026-11-26, screenshot of `/` signed out: "thay đổi UI đăng nh�
 
 ## Notes / answers from Ming
 - Plan approved (2026-11-26, batch 2026-11-26-4): "duyệt hết theo mặc định"; Q1 default: CSS pixel lettering, no new font; Q2: `data-variant` on src/ui/Button.tsx approved.
+- Merge approved (2026-11-26, batch 2026-11-26-4): "merge #137 #138"; merged (PR #138).
 
 ## Handoff
 

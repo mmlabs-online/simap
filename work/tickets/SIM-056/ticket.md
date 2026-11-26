@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -81,6 +81,7 @@ crop và resize rồi lưu").
 
 ## Notes / answers from Ming
 - Plan approved (2026-11-26, batch 2026-11-26-4): "duyệt hết theo mặc định"; Q3 defaults: 20 MB / 50 MP input caps, JPEG quality floor 0.4, white fill for transparency, no preview step.
+- Merge approved (2026-11-26, batch 2026-11-26-4): "merge #137 #138"; squash-merged by claude.
 
 ## Handoff
 
