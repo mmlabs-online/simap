@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P3 |
 | Size | M |
 | Areas | ui |
@@ -38,6 +38,7 @@ A member sees, uploads, replaces and removes their own profile photo in the My P
 
 ## Notes / answers from Ming
 - Plan approved (2026-11-26, batch 2026-11-26-3): "duyệt hết theo mặc định"; Q3 default: no confirm on own photo removal.
+- Merge approved (2026-11-26, batch 2026-11-26-3): "merge #131 #132 #133"; squash-merged by claude.
 
 ## Handoff
 

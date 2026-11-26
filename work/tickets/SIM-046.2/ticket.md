@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P3 |
 | Size | M |
 | Areas | ui, api |
@@ -37,6 +37,7 @@ Other members' photos appear where people are listed (Members list, member card,
 
 ## Notes / answers from Ming
 - Plan approved (2026-11-26, batch 2026-11-26-3): "duyệt hết theo mặc định"; Q2 default: Remove photo stays visible on own card (F4 follow-up).
+- Merge approved (2026-11-26, batch 2026-11-26-3): "merge #131 #132 #133"; squash-merged by claude.
 
 ## Handoff
 

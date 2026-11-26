@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P3 |
 | Size | S |
 | Areas | ui |
@@ -48,6 +48,7 @@ Clear the small UX defects and test gaps the reviews of SIM-045, SIM-045.1 and S
 
 ## Notes / answers from Ming
 - Plan approved (2026-11-26, batch 2026-11-26-3): "duyệt hết theo mặc định".
+- Merge approved (2026-11-26, batch 2026-11-26-3): "merge #131 #132 #133"; squash-merged by claude.
 
 ## Handoff
 
