@@ -62,6 +62,7 @@ export const apiCopy = {
     name_taken: "Another device type already has this name.",
     type_limit: "This organization has reached the limit of 100 device types.",
     image_not_png: "This file is not a valid PNG image.",
+    image_not_supported: "Use a PNG or JPEG image that is not animated.",
     image_bad_size: `The image must be square, from ${IMAGE_LIMITS.minPx} x ${IMAGE_LIMITS.minPx} to ${IMAGE_LIMITS.maxPx} x ${IMAGE_LIMITS.maxPx} pixels.`,
     image_too_large: `The image is too large. The limit is ${IMAGE_LIMITS.maxBytes / 1024} KB.`,
     image_changed: "This image was changed by someone else. Reload and try again.",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { IMAGE_LIMITS } from "@/lib/validate/png";
+import { PHOTO_LIMITS } from "@/lib/validate/photo";
 import { DRIVE_MAX_BYTES, DriveError, createDriveClient, type DriveCode } from "./client";
 
 const CLIENT_SECRET = "SECRET-SENTINEL-client-secret";
@@ -215,6 +216,20 @@ describe("createFile", () => {
       name: "a",
       mimeType: "image/png",
       bytes: bytes(IMAGE_LIMITS.maxBytes),
+    });
+    expect(out.id).toBe("NEWFILE123456");
+  });
+
+  it("accepts PHOTO_LIMITS.maxBytes bytes; DRIVE_MAX_BYTES covers them", async () => {
+    expect(DRIVE_MAX_BYTES).toBeGreaterThanOrEqual(PHOTO_LIMITS.maxBytes);
+    const s = setup([
+      tokenOk(),
+      json({ id: "NEWFILE123456", size: String(PHOTO_LIMITS.maxBytes), mimeType: "image/jpeg" }),
+    ]);
+    const out = await s.client.createFile({
+      name: "a",
+      mimeType: "image/jpeg",
+      bytes: bytes(PHOTO_LIMITS.maxBytes),
     });
     expect(out.id).toBe("NEWFILE123456");
   });
