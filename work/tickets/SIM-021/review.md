@@ -128,3 +128,130 @@ None.
 
 ### Follow-ups (out of scope)
 - Stale Turnstile comment in `src/lib/identity/config.ts` (High path, A2). Already in impl-log.
+
+## Attempt 2 — 2026-11-26
+Verdict: REWORK
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format."
+- `pnpm typecheck`: exit 0, "Types generated successfully", tsc clean.
+- `pnpm check:layers`: exit 0, "check-layers: 808 files, no violations".
+- `pnpm test`: exit 0, "Test Files 308 passed | 1 skipped (309)", "Tests 3126 passed | 7 skipped (3133)".
+- `pnpm build`: exit 0, "Compiled successfully", 21 static pages.
+- Plan greps: tick boxes 15, `Owner:` 15, `Check:` 15; `^| F` rows 76; the email/UUID grep finds nothing in either
+  file; `down -v` appears once, as a "never" (`docs/go-live.md:130`); no Docker Hub account name or CODEOWNERS handle.
+- No changes under `src/`, `db/` or `.github/` in `origin/main...HEAD`.
+- The results match impl-log.md attempt 2. Attempt 2 did not record `check:layers` or `build`; both are green here.
+
+### Acceptance criteria
+- [x] AC1-AC6, AC8-AC11: still met (evidence as in attempt 1). Nothing regressed.
+- [x] Attempt-1 Issue 2 (citations): fixed as instructed, `flow-run.md:71-75, 94-108`. One citation I supplied in
+  attempt 1 is itself wrong, see Issue 3.
+- [x] Attempt-1 Issue 3: F10.3 now matches SYS-03 (`flow-run.md:150` vs `docs/spec-v1.md:548`).
+- [x] Attempt-1 Issue 4: `restore-failed` is covered at `docs/go-live.md:144-146`. It matches
+  `deploy-simap.yml:199-202, 236` ("Nothing was pushed").
+- [x] Attempt-1 nits applied: F1.3, F7.4, F7.7, F8.2, F8.4, `simap:member` in item 1, image repository linked via the README.
+- [x] Security items 5-8 and the 9/11 suggestions applied:
+  - item 7 check for the deployment repo (`go-live.md:76-78`);
+  - item 4 role and ownership/CONNECT SQL (`:50-55`), which is valid SQL;
+  - guarded drop-and-recreate (`:138-142`);
+  - the recovery SQL in a transaction (`:161-167`);
+  - recording rules (`flow-run.md:184-185`);
+  - F11.3 and F11.4.
+  No secret values or personal data in any of them. Two of the additions need a correction, see Issues 4 and 5.
+- [x] Every cited spec ID and D-number exists. I checked the D-numbers D11, D14, D16-D19, D23, D24, D27, D31, D33,
+  D34, D53, D56, D57, D60, D62, D63, D65 and D68, and the spec IDs LAY-07, DEV-01 to DEV-11, SYS-03 and the
+  "Room view (all roles)" heading (`docs/spec-v1.md:486`).
+- [ ] AC7 / attempt-1 Issue 1: F6 is mostly fixed but not fully. Walking F6 top to bottom against DEV-01 to DEV-11:
+  - The precondition (`flow-run.md:89`) holds.
+  - F6.1-F6.13 and F6.15-F6.17 each work in the state the earlier rows leave:
+    - after F6.8, A's seat has no primary, so F6.13 can place D2;
+    - take-back clears the seat (`src/server/devices/handoffs.ts:444-445`).
+  - F6.14 cannot be performed as written (Issue 1).
+  - F6.18 has no device to check (Issue 2).
+
+### Issues
+#### Issue 1 — 🔴 blocker — F6.14 expects a warning the app cannot show
+- **Where**: `work/tickets/SIM-021/flow-run.md:107`
+- **Expected**: Each F6 row is possible in sequence and its Expected is what the app does by spec.
+- **Actual**:
+  - D2 is placed, so it has an owner (DEV-03: an org-inventory device is never placed).
+  - The app offers Delete only for an unowned device with no pending handoff (`src/server/devices/devices.ts:106`,
+    `canDelete: tier === "admin" && r.owner_id === null && !pending`). The server refuses `device_owned` before
+    `device_placed` (`src/lib/devices/rules.ts:37-39`).
+  - So the Admin finds no Delete action for D2, and the "warning offers Move to inventory" never appears. The tester
+    would record a false FAIL or BLOCKED and could file a bogus bug. That is the same problem as attempt-1 Issue 1.
+  - My attempt-1 fix instruction prescribed this Expected text. That was my error, not the implementer's.
+- **Fix instruction**: Change F6.14 to:
+  - Step: "Admin opens D2's actions while D2 is placed at A's seat".
+  - Expected: "DEV-01, D63: no Delete action; only a device in the org inventory can be deleted".
+  - Keep F6.16 as the delete. Do not cite D31 here (see Follow-ups).
+
+#### Issue 2 — 🟡 should-fix — F6.18 has no device with an expiry at that point
+- **Where**: `work/tickets/SIM-021/flow-run.md:111`
+- **Expected**: The overdue check has an owned device with an expiry.
+- **Actual**:
+  - D1's expiry (F6.3) ends at the return in F6.12: a return clears the owner and `holding_expires_on`
+    (`src/server/devices/handoffs.ts:444-445`).
+  - D2 is deleted in F6.16.
+  - The next-day check therefore finds nothing overdue, and the tester would record a false FAIL.
+- **Fix instruction**: Change the F6.18 Step to "Manager assigns D1 (now in org inventory) to User A with an expiry of
+  today; check the next day". Change its Expected to "DEV-07, DEV-10: D1 shows Overdue the next day; N-A on the run
+  day". Keep the row after F6.17.
+
+#### Issue 3 — 🟡 should-fix — F4.7 names the wrong spec section
+- **Where**: `work/tickets/SIM-021/flow-run.md:75`
+- **Expected**: "Room view (all roles)" is under LAY in spec §6 (`docs/spec-v1.md:151, 384, 486`). §4 is the domain model.
+- **Actual**: "Room view (spec §4 LAY)". This was also my attempt-1 instruction.
+- **Fix instruction**: Change it to "Room view (spec §6 LAY), LAY-06".
+
+#### Issue 4 — 🟡 should-fix — the item 4 CONNECT check will also list `postgres`
+- **Where**: `docs/go-live.md:54-55`
+- **Expected**: The check passes on a correctly set-up server, so Ming does not chase a false alarm.
+- **Actual**:
+  - By default, Postgres grants `CONNECT` to `PUBLIC` on the `postgres` maintenance database as well as on the
+    templates.
+  - The query will return `postgres` too, unless the shared server revoked that grant. The text says "returns only
+    `simap` (template databases aside)".
+- **Fix instruction**: Use
+  `select datname from pg_database where not datistemplate and datname <> 'postgres' and has_database_privilege('simap', datname, 'CONNECT');`
+  with the expectation "returns only `simap`". Add one clause: "`postgres` and the templates hold no app data".
+
+#### Issue 5 — 🟡 should-fix — the recreate step relies on re-running `add-app-db.sh`
+- **Where**: `docs/go-live.md:140-142`
+- **Expected**: Recreating only the empty database must not touch the `simap` role or its password.
+- **Actual**:
+  - `drop database simap;` keeps the role. The deployed password file `postgres/secrets/apps/simap.password`
+    (`deploy-simap.yml:95-99`) must stay valid.
+  - `add-app-db.sh` is the one-time setup script whose two outputs are committed (`deploy/deployment-repo/README.md:11`).
+    Its code is not in this repo, so nothing here shows it is safe to re-run for an existing role. It may fail, or it
+    may rotate the password and produce new outputs to commit.
+- **Fix instruction**: Make the explicit SQL the primary path:
+  `create database simap owner simap;` then `revoke connect, temporary on database simap from public;`, run as the
+  admin role, then item 4's checks. Mention `add-app-db.sh` only as "if it is known to be safe for an existing role".
+
+### Rules (CLAUDE.md)
+- R3: no secret values, emails, UUIDs or quoted handles. The Docker Hub account name was removed.
+- R4: in scope. The attempt-2 commit touches only `docs/go-live.md`, `flow-run.md` and `impl-log.md`.
+- R1, R2, R6, R7: not affected (no code).
+- R5: checks green.
+
+### Blockers from review agents
+None. `security-review.md` attempt 1 had no 🔴. Its 🟡 items 5-8 are applied, with corrections in Issues 4 and 5.
+
+### Nits (do not block)
+- `flow-run.md:122`: F7.6, the "My requests" badge, is REG-02 (`docs/spec-v1.md:505-506`), not REG-01.
+- `docs/go-live.md:30, 60`: two lines are longer than the rest of the file (oxfmt does not wrap Markdown). Rewrap them
+  by hand.
+- `docs/go-live.md:139`: `drop database` fails while sessions are connected. One clause would help: "stop the
+  `simap` container first".
+
+### Follow-ups (out of scope)
+- Spec conflict for Ming: DEV-01's last bullet and D31 (`docs/spec-v1.md:282-284`: placed-device delete warning,
+  "Move to inventory", "then allow delete") cannot happen under D63:
+  - a placed device always has an owner;
+  - "Move to inventory" puts it in the owner's inventory;
+  - only org-inventory devices can be deleted.
+  A spec clean-up (`/solo` or a ticket) should amend DEV-01 and D31.
+- Carried from attempt 1: the stale Turnstile comment in `src/lib/identity/config.ts` (High path, A2).
+- Carried from the security review: remove the test accounts' `simap:*` roles after A5.
