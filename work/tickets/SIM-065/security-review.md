@@ -55,3 +55,42 @@ I did not run the checks or read the tests.
 - Put the release secrets in an Environment `release` with a `release/*` branch rule (finding 4).
 - Add a README sentence that the runner group, not SIMAP_RUNNER, is what keeps jobs off the Mac (finding 6).
 - Already in the plan: per-arch cache scope, a separate ci concurrency group for dispatch runs, and sending the risk-tier.yml runner change upstream to the kit.
+
+## Attempt 2
+
+## Security review: SIM-065, Attempt 2 (re-check of finding 1)
+
+**Verdict: finding 1 is fixed and covered by a test. Nothing new found. No blockers.**
+
+I read the files only. I did not run git diff or the checks.
+
+### Findings
+
+**🟢 1. Finding 1 from Attempt 1 is fixed: a release dispatched on a tag `release/X.Y.Z` now fails (/home/user/simap/.github/workflows/release.yml:61-63)**
+- `if [ "$GITHUB_REF_TYPE" != branch ]; then echo "::error::..."; exit 1; fi` is the first statement in the `guards` step.
+- It runs before the main-ancestry check (line 64) and the `GITHUB_REF_NAME` regex (line 70).
+- `guards` is the first step after checkout. Docker config, login, tag creation, build and the deployment PR all come after it, so the check happens before any side effect.
+- A dispatch on `refs/tags/release/1.2.3` has `GITHUB_REF_TYPE=tag`, so it now fails here.
+- The error line only puts `$GITHUB_REF` in a quoted shell string, not a `${{ }}` expression. Git ref names cannot contain newlines, so a ref name cannot inject a workflow command.
+
+**🟢 2. The test covers the fix (/home/user/simap/scripts/release-files.test.ts:89-91)**
+- The test "guards still run first ... (dispatch-safe)" checks that `[ "$GITHUB_REF_TYPE" != branch ]` is in the guards step and comes before `git merge-base`.
+- Lines 74-78 already check that guards is the first named step after checkout.
+- Small gap, no action needed: the test matches the text of the condition but does not check that it is followed by `exit 1`. Like the other tests in this file, it only checks the YAML's structure.
+
+**🟢 3. The docs now match the behaviour (/home/user/simap/README.md:179)**
+- The README now says "a dispatch from a tag or from any branch that is not `release/X.Y.Z` fails at the guards". This fixes the wording problem I raised in Attempt 1.
+
+**🟢 4. The change adds no new issue**
+- The rest of the guards step is unchanged: ancestry, already-released, the version regex, tag existence, monotonic order, the `sort -V` sanity check and the secret-presence checks (release.yml:64-91).
+- Permissions, triggers, the `runs-on` expression, credential handling and cleanup are the same as in Attempt 1. Findings 2, 3, 5, 6 and 7 from Attempt 1 still hold.
+
+### Follow-ups (out of scope, carried over from Attempt 1)
+- Move DOCKERHUB_USERNAME, DOCKERHUB_TOKEN and DEPLOY_REPO_TOKEN into a GitHub Environment `release` that only `release/*` branches can deploy to, and set `environment: release` on the job. Then a branch with an edited release.yml cannot skip the guards to read the secrets.
+- Add a README note that removing the repo from the macbook-runner runner group is what keeps jobs off the Mac. Leaving SIMAP_RUNNER unset does not.
+
+Files reviewed:
+- /home/user/simap/.github/workflows/release.yml
+- /home/user/simap/scripts/release-files.test.ts
+- /home/user/simap/README.md
+- /home/user/simap/work/tickets/SIM-065/security-review.md
