@@ -44,18 +44,18 @@ describe("map-items (db)", () => {
     const o = newOrg();
     const who = (n: string) => ({ sub: randomUUID(), email: `${n}@simap.example` });
     expect((await getOrCreateMember(pool, o.scope, who("a"))).ok).toBe(true);
-    expect(await itemCount(o.orgId)).toBe(53);
+    expect(await itemCount(o.orgId)).toBe(LIBRARY_ITEMS.length);
     expect(
       (await one("select count(*)::int as n from map_item_catalogs where org_id = $1", [o.orgId]))
         .n,
     ).toBe(1);
     await getOrCreateMember(pool, o.scope, who("b"));
-    expect(await itemCount(o.orgId)).toBe(53);
+    expect(await itemCount(o.orgId)).toBe(LIBRARY_ITEMS.length);
   });
 
-  it("list: 53 items with library defaults, hidden false, empty art", async () => {
+  it("list: all library items with library defaults, hidden false, empty art", async () => {
     const items = await list(await seeded());
-    expect(items).toHaveLength(53);
+    expect(items).toHaveLength(LIBRARY_ITEMS.length);
     for (const i of items) {
       const lib = LIBRARY_ITEMS.find((l) => l.builtinKey === i.builtinKey)!;
       expect([i.name, i.group, i.w, i.h]).toEqual([lib.name, lib.group, lib.w, lib.h]);
@@ -105,9 +105,9 @@ describe("map-items (db)", () => {
       [o.orgId],
     );
     expect((await list(o, false)).map((i) => i.builtinKey)).not.toContain("door");
-    expect(await list(o, false)).toHaveLength(52);
+    expect(await list(o, false)).toHaveLength(LIBRARY_ITEMS.length - 1);
     const all = await list(o, true);
-    expect(all).toHaveLength(53);
+    expect(all).toHaveLength(LIBRARY_ITEMS.length);
     expect(all.find((i) => i.builtinKey === "door")!.hidden).toBe(true);
   });
 
@@ -117,7 +117,7 @@ describe("map-items (db)", () => {
     await pool.query("delete from map_items where org_id = $1 and builtin_key = 'sofa'", [o.orgId]);
     await pool.query("select map_items_seed($1)", [o.orgId]);
     const items = await list(o);
-    expect(items).toHaveLength(52);
+    expect(items).toHaveLength(LIBRARY_ITEMS.length - 1);
     expect(items.find((i) => i.builtinKey === "door")!.name).toBe("Front door");
     expect(items.map((i) => i.builtinKey)).not.toContain("sofa");
   });
@@ -128,8 +128,8 @@ describe("map-items (db)", () => {
     await setName(a, "door", "Only in A");
     expect((await list(a)).find((i) => i.builtinKey === "door")!.name).toBe("Only in A");
     expect((await list(b)).find((i) => i.builtinKey === "door")!.name).toBe("door");
-    expect(await itemCount(a.orgId)).toBe(53);
-    expect(await itemCount(b.orgId)).toBe(53);
+    expect(await itemCount(a.orgId)).toBe(LIBRARY_ITEMS.length);
+    expect(await itemCount(b.orgId)).toBe(LIBRARY_ITEMS.length);
     expect((await list(newOrg())).length).toBe(0);
   });
 
@@ -152,9 +152,25 @@ describe("map-items (db)", () => {
       "insert into map_items (org_id, builtin_key, name, group_name, w, h) values ($1, 'future.thing', 'Future', 'prop', 1, 1)",
       [o.orgId],
     );
-    expect(await itemCount(o.orgId)).toBe(54);
+    expect(await itemCount(o.orgId)).toBe(LIBRARY_ITEMS.length + 1);
     const items = await list(o);
-    expect(items).toHaveLength(53);
+    expect(items).toHaveLength(LIBRARY_ITEMS.length);
     expect(items.map((i) => i.builtinKey)).not.toContain("future.thing");
+  });
+
+  it("a new org gets the SIM-042 rows with library name, group and size", async () => {
+    const items = await list(await seeded());
+    const want: Record<string, [string, string, number, number]> = {
+      "bin.trash": ["bin trash", "bin", 1, 1],
+      "chart.flip": ["chart flip", "chart", 1, 1],
+      "clock.wall": ["clock wall", "clock", 1, 1],
+      "cooler.water": ["cooler water", "cooler", 1, 1],
+      "lamp.desk": ["lamp desk", "lamp", 1, 1],
+      "screen.projector": ["screen projector", "screen", 2, 1],
+    };
+    for (const [key, [name, group, w, h]] of Object.entries(want)) {
+      const i = items.find((x) => x.builtinKey === key)!;
+      expect([i.name, i.group, i.w, i.h]).toEqual([name, group, w, h]);
+    }
   });
 });

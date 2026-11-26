@@ -498,3 +498,58 @@ describe("parseLayoutSave", () => {
     expect(code(save())).toBe("ok");
   });
 });
+
+describe("SIM-042 built-in items", () => {
+  const NEW_KEYS = [
+    "bin.trash",
+    "chart.flip",
+    "clock.wall",
+    "cooler.water",
+    "lamp.desk",
+    "screen.projector",
+  ];
+
+  it("every new key is accepted at 0/90/180/270 by checkLayoutRules", () => {
+    for (const key of NEW_KEYS) {
+      for (const rotation of [0, 90, 180, 270]) {
+        expect(rules({ fixtures: [fx(key, 4, 4, rotation)] }), `${key} ${rotation}`).toEqual({
+          ok: true,
+        });
+      }
+    }
+  });
+
+  it("screen.projector is 2x1 at 0/180 and 1x2 at 90/270; the others are 1x1", () => {
+    const at = (k: string, r: Rotation) => footprintAt(k, r, registryFootprints);
+    expect([0, 180].map((r) => at("screen.projector", r as Rotation))).toEqual([
+      [2, 1],
+      [2, 1],
+    ]);
+    expect([90, 270].map((r) => at("screen.projector", r as Rotation))).toEqual([
+      [1, 2],
+      [1, 2],
+    ]);
+    for (const key of NEW_KEYS.filter((k) => k !== "screen.projector")) {
+      expect(at(key, 0), key).toEqual([1, 1]);
+    }
+  });
+
+  it("clock.wall and screen.projector on wall.face cells give no overlap; cooler.water on one does", () => {
+    const wall = [fx("wall.face", 3, 3), fx("wall.face", 4, 3)];
+    expect(rules({ fixtures: [...wall, fx("clock.wall", 3, 3)] }).ok).toBe(true);
+    expect(rules({ fixtures: [...wall, fx("screen.projector", 3, 3)] }).ok).toBe(true);
+    expect(rules({ fixtures: [...wall, fx("cooler.water", 3, 3)] })).toEqual({
+      ok: false,
+      code: "layout_overlap",
+    });
+  });
+
+  it("lamp.desk beside a desk saves; on a desk tile gives layout_fixture_on_desk", () => {
+    const desk = seat(1, 2, 2);
+    expect(rules({ seats: [desk], fixtures: [fx("lamp.desk", 4, 2)] }).ok).toBe(true);
+    expect(rules({ seats: [desk], fixtures: [fx("lamp.desk", 2, 2)] })).toEqual({
+      ok: false,
+      code: "layout_fixture_on_desk",
+    });
+  });
+});

@@ -2,7 +2,7 @@
   "tile": 32,
   "frames": {
     "avatar.body.back": {
-      "x": 678,
+      "x": 991,
       "y": 111,
       "w": 32,
       "h": 32,
@@ -17,8 +17,8 @@
       "blocks": false
     },
     "avatar.body.front": {
-      "x": 711,
-      "y": 111,
+      "x": 0,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -32,8 +32,8 @@
       "blocks": false
     },
     "avatar.hair.1.back": {
-      "x": 744,
-      "y": 111,
+      "x": 33,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -47,8 +47,8 @@
       "blocks": false
     },
     "avatar.hair.1.front": {
-      "x": 777,
-      "y": 111,
+      "x": 66,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -62,8 +62,8 @@
       "blocks": false
     },
     "avatar.hair.2.back": {
-      "x": 810,
-      "y": 111,
+      "x": 99,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -77,8 +77,8 @@
       "blocks": false
     },
     "avatar.hair.2.front": {
-      "x": 843,
-      "y": 111,
+      "x": 132,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -92,8 +92,8 @@
       "blocks": false
     },
     "avatar.hair.3.back": {
-      "x": 876,
-      "y": 111,
+      "x": 165,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -107,8 +107,8 @@
       "blocks": false
     },
     "avatar.hair.3.front": {
-      "x": 909,
-      "y": 111,
+      "x": 198,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -122,8 +122,8 @@
       "blocks": false
     },
     "avatar.shirt.back": {
-      "x": 942,
-      "y": 111,
+      "x": 231,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -137,8 +137,8 @@
       "blocks": false
     },
     "avatar.shirt.front": {
-      "x": 975,
-      "y": 111,
+      "x": 264,
+      "y": 170,
       "w": 32,
       "h": 32,
       "anchor": [
@@ -151,8 +151,68 @@
       ],
       "blocks": false
     },
+    "bin.trash.e": {
+      "x": 627,
+      "y": 203,
+      "w": 20,
+      "h": 31,
+      "anchor": [
+        6,
+        -6
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "bin.trash.n": {
+      "x": 648,
+      "y": 203,
+      "w": 20,
+      "h": 31,
+      "anchor": [
+        6,
+        -6
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "bin.trash.s": {
+      "x": 669,
+      "y": 203,
+      "w": 20,
+      "h": 31,
+      "anchor": [
+        6,
+        -6
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "bin.trash.w": {
+      "x": 690,
+      "y": 203,
+      "w": 20,
+      "h": 31,
+      "anchor": [
+        6,
+        -6
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
     "cabinet.filing.e": {
-      "x": 963,
+      "x": 984,
       "y": 0,
       "w": 34,
       "h": 58,
@@ -167,7 +227,7 @@
       "blocks": true
     },
     "cabinet.filing.n": {
-      "x": 872,
+      "x": 893,
       "y": 0,
       "w": 31,
       "h": 59,
@@ -182,7 +242,7 @@
       "blocks": true
     },
     "cabinet.filing.s": {
-      "x": 904,
+      "x": 925,
       "y": 0,
       "w": 31,
       "h": 59,
@@ -212,7 +272,7 @@
       "blocks": true
     },
     "chair.office.e": {
-      "x": 105,
+      "x": 196,
       "y": 111,
       "w": 33,
       "h": 55,
@@ -227,7 +287,7 @@
       "blocks": false
     },
     "chair.office.n": {
-      "x": 557,
+      "x": 770,
       "y": 111,
       "w": 34,
       "h": 42,
@@ -257,7 +317,7 @@
       "blocks": false
     },
     "chair.office.w": {
-      "x": 139,
+      "x": 230,
       "y": 111,
       "w": 33,
       "h": 55,
@@ -271,8 +331,188 @@
       ],
       "blocks": false
     },
+    "chart.flip.e": {
+      "x": 98,
+      "y": 111,
+      "w": 30,
+      "h": 57,
+      "anchor": [
+        1,
+        -29
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "chart.flip.n": {
+      "x": 69,
+      "y": 111,
+      "w": 28,
+      "h": 58,
+      "anchor": [
+        2,
+        -29
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "chart.flip.s": {
+      "x": 858,
+      "y": 111,
+      "w": 28,
+      "h": 37,
+      "anchor": [
+        2,
+        -9
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "chart.flip.w": {
+      "x": 129,
+      "y": 111,
+      "w": 30,
+      "h": 57,
+      "anchor": [
+        1,
+        -29
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "clock.wall.e": {
+      "x": 752,
+      "y": 111,
+      "w": 8,
+      "h": 44,
+      "anchor": [
+        11,
+        -14
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": false
+    },
+    "clock.wall.n": {
+      "x": 0,
+      "y": 236,
+      "w": 32,
+      "h": 23,
+      "anchor": [
+        0,
+        -2
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": false
+    },
+    "clock.wall.s": {
+      "x": 33,
+      "y": 236,
+      "w": 32,
+      "h": 23,
+      "anchor": [
+        0,
+        -5
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": false
+    },
+    "clock.wall.w": {
+      "x": 761,
+      "y": 111,
+      "w": 8,
+      "h": 44,
+      "anchor": [
+        13,
+        -14
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": false
+    },
+    "cooler.water.e": {
+      "x": 264,
+      "y": 111,
+      "w": 26,
+      "h": 55,
+      "anchor": [
+        3,
+        -27
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "cooler.water.n": {
+      "x": 291,
+      "y": 111,
+      "w": 24,
+      "h": 55,
+      "anchor": [
+        4,
+        -26
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "cooler.water.s": {
+      "x": 316,
+      "y": 111,
+      "w": 24,
+      "h": 55,
+      "anchor": [
+        4,
+        -28
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "cooler.water.w": {
+      "x": 341,
+      "y": 111,
+      "w": 26,
+      "h": 55,
+      "anchor": [
+        3,
+        -27
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
     "desk.pair.e": {
-      "x": 214,
+      "x": 235,
       "y": 0,
       "w": 64,
       "h": 80,
@@ -287,7 +527,7 @@
       "blocks": true
     },
     "desk.pair.n": {
-      "x": 279,
+      "x": 300,
       "y": 0,
       "w": 64,
       "h": 80,
@@ -302,7 +542,7 @@
       "blocks": true
     },
     "desk.pair.s": {
-      "x": 344,
+      "x": 365,
       "y": 0,
       "w": 64,
       "h": 80,
@@ -317,7 +557,7 @@
       "blocks": true
     },
     "desk.pair.w": {
-      "x": 409,
+      "x": 430,
       "y": 0,
       "w": 64,
       "h": 80,
@@ -332,7 +572,7 @@
       "blocks": true
     },
     "desk.single.e": {
-      "x": 138,
+      "x": 159,
       "y": 0,
       "w": 37,
       "h": 84,
@@ -347,7 +587,7 @@
       "blocks": true
     },
     "desk.single.n": {
-      "x": 173,
+      "x": 368,
       "y": 111,
       "w": 68,
       "h": 53,
@@ -362,7 +602,7 @@
       "blocks": true
     },
     "desk.single.s": {
-      "x": 242,
+      "x": 437,
       "y": 111,
       "w": 68,
       "h": 53,
@@ -377,7 +617,7 @@
       "blocks": true
     },
     "desk.single.w": {
-      "x": 176,
+      "x": 197,
       "y": 0,
       "w": 37,
       "h": 83,
@@ -392,7 +632,7 @@
       "blocks": true
     },
     "device.laptop.e": {
-      "x": 0,
+      "x": 297,
       "y": 170,
       "w": 23,
       "h": 32,
@@ -407,8 +647,8 @@
       "blocks": false
     },
     "device.laptop.n": {
-      "x": 530,
-      "y": 203,
+      "x": 143,
+      "y": 236,
       "w": 24,
       "h": 19,
       "anchor": [
@@ -422,7 +662,7 @@
       "blocks": false
     },
     "device.laptop.s": {
-      "x": 297,
+      "x": 711,
       "y": 203,
       "w": 24,
       "h": 31,
@@ -437,7 +677,7 @@
       "blocks": false
     },
     "device.laptop.w": {
-      "x": 24,
+      "x": 321,
       "y": 170,
       "w": 23,
       "h": 32,
@@ -452,8 +692,8 @@
       "blocks": false
     },
     "device.monitor.dual": {
-      "x": 484,
-      "y": 203,
+      "x": 97,
+      "y": 236,
       "w": 32,
       "h": 20,
       "anchor": [
@@ -467,7 +707,7 @@
       "blocks": false
     },
     "device.monitor.e": {
-      "x": 311,
+      "x": 506,
       "y": 111,
       "w": 24,
       "h": 48,
@@ -482,7 +722,7 @@
       "blocks": false
     },
     "device.monitor.n": {
-      "x": 322,
+      "x": 878,
       "y": 203,
       "w": 32,
       "h": 30,
@@ -497,7 +737,7 @@
       "blocks": false
     },
     "device.monitor.s": {
-      "x": 645,
+      "x": 904,
       "y": 111,
       "w": 32,
       "h": 34,
@@ -512,7 +752,7 @@
       "blocks": false
     },
     "device.monitor.w": {
-      "x": 532,
+      "x": 727,
       "y": 111,
       "w": 24,
       "h": 47,
@@ -527,8 +767,8 @@
       "blocks": false
     },
     "device.other": {
-      "x": 607,
-      "y": 203,
+      "x": 220,
+      "y": 236,
       "w": 14,
       "h": 12,
       "anchor": [
@@ -542,8 +782,8 @@
       "blocks": false
     },
     "device.pc": {
-      "x": 517,
-      "y": 203,
+      "x": 130,
+      "y": 236,
       "w": 12,
       "h": 20,
       "anchor": [
@@ -557,8 +797,8 @@
       "blocks": false
     },
     "device.phone": {
-      "x": 622,
-      "y": 203,
+      "x": 235,
+      "y": 236,
       "w": 8,
       "h": 12,
       "anchor": [
@@ -572,7 +812,7 @@
       "blocks": false
     },
     "door.e": {
-      "x": 48,
+      "x": 345,
       "y": 170,
       "w": 64,
       "h": 32,
@@ -587,7 +827,7 @@
       "blocks": true
     },
     "door.n": {
-      "x": 806,
+      "x": 827,
       "y": 0,
       "w": 32,
       "h": 62,
@@ -602,7 +842,7 @@
       "blocks": true
     },
     "door.s": {
-      "x": 839,
+      "x": 860,
       "y": 0,
       "w": 32,
       "h": 62,
@@ -617,7 +857,7 @@
       "blocks": true
     },
     "door.w": {
-      "x": 113,
+      "x": 410,
       "y": 170,
       "w": 64,
       "h": 32,
@@ -632,7 +872,7 @@
       "blocks": true
     },
     "elevator": {
-      "x": 676,
+      "x": 697,
       "y": 0,
       "w": 64,
       "h": 64,
@@ -647,7 +887,7 @@
       "blocks": true
     },
     "floor.carpet": {
-      "x": 178,
+      "x": 475,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -662,7 +902,7 @@
       "blocks": false
     },
     "floor.carpet.alt": {
-      "x": 211,
+      "x": 508,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -677,7 +917,7 @@
       "blocks": false
     },
     "floor.lavender": {
-      "x": 244,
+      "x": 541,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -692,7 +932,7 @@
       "blocks": false
     },
     "floor.wood": {
-      "x": 277,
+      "x": 574,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -707,7 +947,7 @@
       "blocks": false
     },
     "label.sign": {
-      "x": 310,
+      "x": 607,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -721,8 +961,68 @@
       ],
       "blocks": false
     },
+    "lamp.desk.e": {
+      "x": 887,
+      "y": 111,
+      "w": 16,
+      "h": 37,
+      "anchor": [
+        8,
+        -11
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": false
+    },
+    "lamp.desk.n": {
+      "x": 937,
+      "y": 111,
+      "w": 26,
+      "h": 33,
+      "anchor": [
+        3,
+        -9
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": false
+    },
+    "lamp.desk.s": {
+      "x": 964,
+      "y": 111,
+      "w": 26,
+      "h": 33,
+      "anchor": [
+        3,
+        -9
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": false
+    },
+    "lamp.desk.w": {
+      "x": 640,
+      "y": 170,
+      "w": 16,
+      "h": 32,
+      "anchor": [
+        8,
+        -10
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": false
+    },
     "lamp.floor": {
-      "x": 336,
+      "x": 531,
       "y": 111,
       "w": 32,
       "h": 48,
@@ -737,7 +1037,7 @@
       "blocks": true
     },
     "marker.blocked": {
-      "x": 343,
+      "x": 657,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -752,7 +1052,7 @@
       "blocks": true
     },
     "partition.glass": {
-      "x": 376,
+      "x": 690,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -767,7 +1067,7 @@
       "blocks": true
     },
     "plant.large": {
-      "x": 936,
+      "x": 957,
       "y": 0,
       "w": 26,
       "h": 59,
@@ -782,7 +1082,7 @@
       "blocks": true
     },
     "plant.small": {
-      "x": 69,
+      "x": 160,
       "y": 111,
       "w": 35,
       "h": 57,
@@ -797,8 +1097,8 @@
       "blocks": true
     },
     "prop.keyboard": {
-      "x": 640,
-      "y": 203,
+      "x": 253,
+      "y": 236,
       "w": 18,
       "h": 8,
       "anchor": [
@@ -812,8 +1112,8 @@
       "blocks": false
     },
     "prop.mouse": {
-      "x": 631,
-      "y": 203,
+      "x": 244,
+      "y": 236,
       "w": 8,
       "h": 10,
       "anchor": [
@@ -827,8 +1127,8 @@
       "blocks": false
     },
     "prop.mug": {
-      "x": 574,
-      "y": 203,
+      "x": 187,
+      "y": 236,
       "w": 15,
       "h": 17,
       "anchor": [
@@ -842,7 +1142,7 @@
       "blocks": false
     },
     "prop.papers": {
-      "x": 355,
+      "x": 911,
       "y": 203,
       "w": 30,
       "h": 30,
@@ -857,7 +1157,7 @@
       "blocks": false
     },
     "rack.server": {
-      "x": 369,
+      "x": 564,
       "y": 111,
       "w": 32,
       "h": 48,
@@ -871,8 +1171,68 @@
       ],
       "blocks": true
     },
+    "screen.projector.e": {
+      "x": 138,
+      "y": 0,
+      "w": 9,
+      "h": 90,
+      "anchor": [
+        11,
+        -27
+      ],
+      "tiles": [
+        1,
+        2
+      ],
+      "blocks": false
+    },
+    "screen.projector.n": {
+      "x": 736,
+      "y": 203,
+      "w": 70,
+      "h": 31,
+      "anchor": [
+        -3,
+        -12
+      ],
+      "tiles": [
+        2,
+        1
+      ],
+      "blocks": false
+    },
+    "screen.projector.s": {
+      "x": 807,
+      "y": 203,
+      "w": 70,
+      "h": 31,
+      "anchor": [
+        -3,
+        -13
+      ],
+      "tiles": [
+        2,
+        1
+      ],
+      "blocks": false
+    },
+    "screen.projector.w": {
+      "x": 148,
+      "y": 0,
+      "w": 10,
+      "h": 90,
+      "anchor": [
+        11,
+        -27
+      ],
+      "tiles": [
+        1,
+        2
+      ],
+      "blocks": false
+    },
     "shelf.books": {
-      "x": 402,
+      "x": 597,
       "y": 111,
       "w": 64,
       "h": 48,
@@ -887,7 +1247,7 @@
       "blocks": true
     },
     "sofa": {
-      "x": 386,
+      "x": 942,
       "y": 203,
       "w": 66,
       "h": 30,
@@ -902,7 +1262,7 @@
       "blocks": true
     },
     "stairs": {
-      "x": 741,
+      "x": 762,
       "y": 0,
       "w": 64,
       "h": 64,
@@ -917,8 +1277,8 @@
       "blocks": true
     },
     "state.cannot": {
-      "x": 590,
-      "y": 203,
+      "x": 203,
+      "y": 236,
       "w": 16,
       "h": 16,
       "anchor": [
@@ -932,8 +1292,8 @@
       "blocks": false
     },
     "state.mine.tint": {
-      "x": 453,
-      "y": 203,
+      "x": 66,
+      "y": 236,
       "w": 30,
       "h": 22,
       "anchor": [
@@ -947,8 +1307,8 @@
       "blocks": false
     },
     "state.pending": {
-      "x": 555,
-      "y": 203,
+      "x": 168,
+      "y": 236,
       "w": 18,
       "h": 18,
       "anchor": [
@@ -962,7 +1322,7 @@
       "blocks": false
     },
     "table.coffee": {
-      "x": 409,
+      "x": 723,
       "y": 170,
       "w": 52,
       "h": 32,
@@ -992,7 +1352,7 @@
       "blocks": true
     },
     "table.meeting.n": {
-      "x": 474,
+      "x": 495,
       "y": 0,
       "w": 100,
       "h": 76,
@@ -1007,7 +1367,7 @@
       "blocks": true
     },
     "table.meeting.s": {
-      "x": 575,
+      "x": 596,
       "y": 0,
       "w": 100,
       "h": 76,
@@ -1037,7 +1397,7 @@
       "blocks": true
     },
     "wall.base": {
-      "x": 462,
+      "x": 776,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -1052,7 +1412,7 @@
       "blocks": true
     },
     "wall.corner.ne": {
-      "x": 495,
+      "x": 809,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -1067,7 +1427,7 @@
       "blocks": true
     },
     "wall.corner.ne.face": {
-      "x": 528,
+      "x": 842,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -1082,7 +1442,7 @@
       "blocks": true
     },
     "wall.corner.nw": {
-      "x": 561,
+      "x": 875,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -1097,7 +1457,7 @@
       "blocks": true
     },
     "wall.corner.nw.face": {
-      "x": 594,
+      "x": 908,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -1112,7 +1472,7 @@
       "blocks": true
     },
     "wall.corner.se": {
-      "x": 627,
+      "x": 941,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -1127,7 +1487,7 @@
       "blocks": true
     },
     "wall.corner.sw": {
-      "x": 660,
+      "x": 974,
       "y": 170,
       "w": 32,
       "h": 32,
@@ -1142,156 +1502,6 @@
       "blocks": true
     },
     "wall.face": {
-      "x": 693,
-      "y": 170,
-      "w": 32,
-      "h": 32,
-      "anchor": [
-        0,
-        0
-      ],
-      "tiles": [
-        1,
-        1
-      ],
-      "blocks": true
-    },
-    "wall.face.shade": {
-      "x": 726,
-      "y": 170,
-      "w": 32,
-      "h": 32,
-      "anchor": [
-        0,
-        0
-      ],
-      "tiles": [
-        1,
-        1
-      ],
-      "blocks": true
-    },
-    "wall.front": {
-      "x": 759,
-      "y": 170,
-      "w": 32,
-      "h": 32,
-      "anchor": [
-        0,
-        0
-      ],
-      "tiles": [
-        1,
-        1
-      ],
-      "blocks": true
-    },
-    "wall.front.end.e": {
-      "x": 792,
-      "y": 170,
-      "w": 32,
-      "h": 32,
-      "anchor": [
-        0,
-        0
-      ],
-      "tiles": [
-        1,
-        1
-      ],
-      "blocks": true
-    },
-    "wall.front.end.w": {
-      "x": 825,
-      "y": 170,
-      "w": 32,
-      "h": 32,
-      "anchor": [
-        0,
-        0
-      ],
-      "tiles": [
-        1,
-        1
-      ],
-      "blocks": true
-    },
-    "wall.inner.h.end.w": {
-      "x": 858,
-      "y": 170,
-      "w": 32,
-      "h": 32,
-      "anchor": [
-        0,
-        0
-      ],
-      "tiles": [
-        1,
-        1
-      ],
-      "blocks": true
-    },
-    "wall.inner.h.end.w.face": {
-      "x": 891,
-      "y": 170,
-      "w": 32,
-      "h": 32,
-      "anchor": [
-        0,
-        0
-      ],
-      "tiles": [
-        1,
-        1
-      ],
-      "blocks": true
-    },
-    "wall.inner.v": {
-      "x": 924,
-      "y": 170,
-      "w": 32,
-      "h": 32,
-      "anchor": [
-        0,
-        0
-      ],
-      "tiles": [
-        1,
-        1
-      ],
-      "blocks": true
-    },
-    "wall.inner.v.end": {
-      "x": 957,
-      "y": 170,
-      "w": 32,
-      "h": 32,
-      "anchor": [
-        0,
-        0
-      ],
-      "tiles": [
-        1,
-        1
-      ],
-      "blocks": true
-    },
-    "wall.side.e": {
-      "x": 990,
-      "y": 170,
-      "w": 32,
-      "h": 32,
-      "anchor": [
-        0,
-        0
-      ],
-      "tiles": [
-        1,
-        1
-      ],
-      "blocks": true
-    },
-    "wall.side.w": {
       "x": 0,
       "y": 203,
       "w": 32,
@@ -1306,7 +1516,7 @@
       ],
       "blocks": true
     },
-    "wall.side.w.end": {
+    "wall.face.shade": {
       "x": 33,
       "y": 203,
       "w": 32,
@@ -1321,7 +1531,7 @@
       ],
       "blocks": true
     },
-    "wall.side.w.start": {
+    "wall.front": {
       "x": 66,
       "y": 203,
       "w": 32,
@@ -1336,7 +1546,7 @@
       ],
       "blocks": true
     },
-    "wall.t.e": {
+    "wall.front.end.e": {
       "x": 99,
       "y": 203,
       "w": 32,
@@ -1351,7 +1561,7 @@
       ],
       "blocks": true
     },
-    "wall.t.s": {
+    "wall.front.end.w": {
       "x": 132,
       "y": 203,
       "w": 32,
@@ -1366,7 +1576,7 @@
       ],
       "blocks": true
     },
-    "wall.t.s.face": {
+    "wall.inner.h.end.w": {
       "x": 165,
       "y": 203,
       "w": 32,
@@ -1381,7 +1591,7 @@
       ],
       "blocks": true
     },
-    "wall.top": {
+    "wall.inner.h.end.w.face": {
       "x": 198,
       "y": 203,
       "w": 32,
@@ -1396,37 +1606,7 @@
       ],
       "blocks": true
     },
-    "whiteboard": {
-      "x": 467,
-      "y": 111,
-      "w": 64,
-      "h": 48,
-      "anchor": [
-        0,
-        -16
-      ],
-      "tiles": [
-        2,
-        1
-      ],
-      "blocks": true
-    },
-    "window.double": {
-      "x": 592,
-      "y": 111,
-      "w": 52,
-      "h": 42,
-      "anchor": [
-        6,
-        -10
-      ],
-      "tiles": [
-        2,
-        1
-      ],
-      "blocks": true
-    },
-    "window.single": {
+    "wall.inner.v": {
       "x": 231,
       "y": 203,
       "w": 32,
@@ -1441,8 +1621,188 @@
       ],
       "blocks": true
     },
-    "window.single.top": {
+    "wall.inner.v.end": {
       "x": 264,
+      "y": 203,
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0,
+        0
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "wall.side.e": {
+      "x": 297,
+      "y": 203,
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0,
+        0
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "wall.side.w": {
+      "x": 330,
+      "y": 203,
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0,
+        0
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "wall.side.w.end": {
+      "x": 363,
+      "y": 203,
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0,
+        0
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "wall.side.w.start": {
+      "x": 396,
+      "y": 203,
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0,
+        0
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "wall.t.e": {
+      "x": 429,
+      "y": 203,
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0,
+        0
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "wall.t.s": {
+      "x": 462,
+      "y": 203,
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0,
+        0
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "wall.t.s.face": {
+      "x": 495,
+      "y": 203,
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0,
+        0
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "wall.top": {
+      "x": 528,
+      "y": 203,
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0,
+        0
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "whiteboard": {
+      "x": 662,
+      "y": 111,
+      "w": 64,
+      "h": 48,
+      "anchor": [
+        0,
+        -16
+      ],
+      "tiles": [
+        2,
+        1
+      ],
+      "blocks": true
+    },
+    "window.double": {
+      "x": 805,
+      "y": 111,
+      "w": 52,
+      "h": 42,
+      "anchor": [
+        6,
+        -10
+      ],
+      "tiles": [
+        2,
+        1
+      ],
+      "blocks": true
+    },
+    "window.single": {
+      "x": 561,
+      "y": 203,
+      "w": 32,
+      "h": 32,
+      "anchor": [
+        0,
+        0
+      ],
+      "tiles": [
+        1,
+        1
+      ],
+      "blocks": true
+    },
+    "window.single.top": {
+      "x": 594,
       "y": 203,
       "w": 32,
       "h": 32,
@@ -1467,7 +1827,7 @@
   ],
   "meta": {
     "generator": "scripts/sprites-pack.mjs",
-    "version": "8245e17cdb49",
+    "version": "7793b817d5b7",
     "sources": {
       "avatar.body.back": "placeholder",
       "avatar.body.front": "placeholder",
@@ -1479,6 +1839,10 @@
       "avatar.hair.3.front": "placeholder",
       "avatar.shirt.back": "placeholder",
       "avatar.shirt.front": "placeholder",
+      "bin.trash.e": "map",
+      "bin.trash.n": "map",
+      "bin.trash.s": "map",
+      "bin.trash.w": "map",
       "cabinet.filing.e": "map",
       "cabinet.filing.n": "map",
       "cabinet.filing.s": "map",
@@ -1487,6 +1851,18 @@
       "chair.office.n": "map",
       "chair.office.s": "map",
       "chair.office.w": "map",
+      "chart.flip.e": "map",
+      "chart.flip.n": "map",
+      "chart.flip.s": "map",
+      "chart.flip.w": "map",
+      "clock.wall.e": "map",
+      "clock.wall.n": "map",
+      "clock.wall.s": "map",
+      "clock.wall.w": "map",
+      "cooler.water.e": "map",
+      "cooler.water.n": "map",
+      "cooler.water.s": "map",
+      "cooler.water.w": "map",
       "desk.pair.e": "placeholder",
       "desk.pair.n": "placeholder",
       "desk.pair.s": "placeholder",
@@ -1517,6 +1893,10 @@
       "floor.lavender": "placeholder",
       "floor.wood": "map",
       "label.sign": "placeholder",
+      "lamp.desk.e": "map",
+      "lamp.desk.n": "map",
+      "lamp.desk.s": "map",
+      "lamp.desk.w": "map",
       "lamp.floor": "placeholder",
       "marker.blocked": "placeholder",
       "partition.glass": "placeholder",
@@ -1527,6 +1907,10 @@
       "prop.mug": "map",
       "prop.papers": "map",
       "rack.server": "placeholder",
+      "screen.projector.e": "map",
+      "screen.projector.n": "map",
+      "screen.projector.s": "map",
+      "screen.projector.w": "map",
       "shelf.books": "placeholder",
       "sofa": "map",
       "stairs": "placeholder",

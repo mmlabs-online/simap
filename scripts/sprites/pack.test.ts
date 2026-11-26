@@ -132,7 +132,7 @@ describe("sprite packer", () => {
     const out = join(root, "out");
     const r = pack({ root, outDir: out });
     expect(r.ok).toBe(true);
-    expect(r.warnings).toHaveLength(10);
+    expect(r.warnings).toHaveLength(11);
     const png = readFileSync(join(out, "office.png"));
     const manifest = readManifest(out);
     const v = validateSpriteManifest(manifest, readPngSize(png));

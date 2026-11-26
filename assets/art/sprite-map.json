@@ -476,6 +476,228 @@
       "tiles": [1, 1],
       "note": "pack 'tall_plant' front; same 1x1 footprint as plant.small"
     },
+    "bin.trash.n": {
+      "source": "imersa-office",
+      "sheet": "kitchen",
+      "rect": [146, 0, 20, 31],
+      "anchor": [-6, 6],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'trash_bin' back"
+    },
+    "bin.trash.e": {
+      "source": "imersa-office",
+      "sheet": "kitchen",
+      "rect": [167, 0, 20, 31],
+      "anchor": [-6, 6],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'trash_bin' right"
+    },
+    "bin.trash.s": {
+      "source": "imersa-office",
+      "sheet": "kitchen",
+      "rect": [104, 0, 20, 31],
+      "anchor": [-6, 6],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'trash_bin' front"
+    },
+    "bin.trash.w": {
+      "source": "imersa-office",
+      "sheet": "kitchen",
+      "rect": [125, 0, 20, 31],
+      "anchor": [-6, 6],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'trash_bin' left"
+    },
+
+    "chart.flip.n": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [361, 0, 28, 58],
+      "anchor": [-2, 29],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'flip_chart' back"
+    },
+    "chart.flip.e": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [421, 0, 30, 57],
+      "anchor": [-1, 29],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'flip_chart' right"
+    },
+    "chart.flip.s": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [452, 0, 28, 37],
+      "anchor": [-2, 9],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'flip_chart' front"
+    },
+    "chart.flip.w": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [390, 0, 30, 57],
+      "anchor": [-1, 29],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'flip_chart' left"
+    },
+
+    "clock.wall.n": {
+      "source": "imersa-office",
+      "sheet": "decor",
+      "rect": [309, 0, 32, 23],
+      "anchor": [0, 2],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'wall_clock' back"
+    },
+    "clock.wall.e": {
+      "source": "imersa-office",
+      "sheet": "decor",
+      "rect": [267, 0, 8, 44],
+      "anchor": [-11, 14],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'wall_clock' right"
+    },
+    "clock.wall.s": {
+      "source": "imersa-office",
+      "sheet": "decor",
+      "rect": [276, 0, 32, 23],
+      "anchor": [0, 5],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'wall_clock' front"
+    },
+    "clock.wall.w": {
+      "source": "imersa-office",
+      "sheet": "decor",
+      "rect": [258, 0, 8, 44],
+      "anchor": [-13, 14],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'wall_clock' left"
+    },
+
+    "cooler.water.n": {
+      "source": "imersa-office",
+      "sheet": "kitchen",
+      "rect": [52, 0, 24, 55],
+      "anchor": [-4, 26],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'water_cooler' back"
+    },
+    "cooler.water.e": {
+      "source": "imersa-office",
+      "sheet": "kitchen",
+      "rect": [77, 0, 26, 55],
+      "anchor": [-3, 27],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'water_cooler' right"
+    },
+    "cooler.water.s": {
+      "source": "imersa-office",
+      "sheet": "kitchen",
+      "rect": [0, 0, 24, 55],
+      "anchor": [-4, 28],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'water_cooler' front"
+    },
+    "cooler.water.w": {
+      "source": "imersa-office",
+      "sheet": "kitchen",
+      "rect": [25, 0, 26, 55],
+      "anchor": [-3, 27],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'water_cooler' left"
+    },
+
+    "lamp.desk.n": {
+      "source": "imersa-office",
+      "sheet": "desk_items",
+      "rect": [44, 0, 26, 33],
+      "anchor": [-3, 9],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'desk_lamp' back"
+    },
+    "lamp.desk.e": {
+      "source": "imersa-office",
+      "sheet": "desk_items",
+      "rect": [0, 0, 16, 37],
+      "anchor": [-8, 11],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'desk_lamp' right"
+    },
+    "lamp.desk.s": {
+      "source": "imersa-office",
+      "sheet": "desk_items",
+      "rect": [17, 0, 26, 33],
+      "anchor": [-3, 9],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'desk_lamp' front"
+    },
+    "lamp.desk.w": {
+      "source": "imersa-office",
+      "sheet": "desk_items",
+      "rect": [129, 0, 16, 32],
+      "anchor": [-8, 10],
+      "scale": 1,
+      "tiles": [1, 1],
+      "note": "pack 'desk_lamp' left"
+    },
+
+    "screen.projector.n": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [71, 111, 70, 31],
+      "anchor": [3, 12],
+      "scale": 1,
+      "tiles": [2, 1],
+      "note": "pack 'projector_screen' back"
+    },
+    "screen.projector.e": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [149, 0, 9, 90],
+      "anchor": [-11, 27],
+      "scale": 1,
+      "tiles": [1, 2],
+      "note": "pack 'projector_screen' right"
+    },
+    "screen.projector.s": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [0, 111, 70, 31],
+      "anchor": [3, 13],
+      "scale": 1,
+      "tiles": [2, 1],
+      "note": "pack 'projector_screen' front"
+    },
+    "screen.projector.w": {
+      "source": "imersa-office",
+      "sheet": "meeting",
+      "rect": [138, 0, 10, 90],
+      "anchor": [-11, 27],
+      "scale": 1,
+      "tiles": [1, 2],
+      "note": "pack 'projector_screen' left"
+    },
+
     "window.double": {
       "source": "2dpig-office",
       "sheet": "assets",
@@ -524,12 +746,6 @@
   },
   "extras": {
     "_doc": "Pack sprites outside style guide §7, kept for later (not packed until a key is added to §7).",
-    "flip_chart": "meeting sheet, front [452,0,28,37]; possible stand-in for whiteboard",
-    "projector_screen": "meeting sheet, front [0,111,70,31]",
-    "water_cooler": "kitchen sheet, front [0,0,24,55]",
-    "trash_bin": "kitchen sheet, front [104,0,20,31]",
-    "wall_clock": "decor sheet, front [276,0,32,23]",
-    "desk_lamp": "desk_items sheet, front [17,0,26,33]",
     "office_worker": "office_worker.png, 32x32 walk/idle character, 4 directions (not a seated, layered avatar)"
   },
   "missing": [

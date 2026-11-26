@@ -67,5 +67,7 @@ The app never migrates.
   `on delete restrict`, so items are never deleted while placed and saved layouts follow renames and image changes.
   Floors stay keys inside `rooms.floor_zones` (jsonb, no FK). The migration first removes placements the layout read
   already drops (an undrawable fixture is deleted, an undrawable seat goes back to unplaced), so no room changes.
+  SIM-042 (D73) redefines `map_items_seed` with the six new built-in keys and backfills them for orgs already seeded
+  (a name clash gets a " (built-in)" suffix); new built-in keys are permanent once released.
 - Dev seed: `pnpm seed:dev` loads fake data (fixed UUIDs, `@simap.example` emails, invented names) into a local
   database only; it refuses non-local hosts and `NODE_ENV=production`. Never put real data in the seed.
