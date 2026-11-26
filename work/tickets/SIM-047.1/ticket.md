@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P3 |
 | Size | M |
 | Areas | ui |
@@ -38,6 +38,7 @@ A member picks their pixel character in the My Portal Profile tab with a live pr
 
 ## Notes / answers from Ming
 - Plan approved (2026-11-26, batch 2026-11-26-3): "duyệt hết theo mặc định"; Q1 default: build after SIM-046.1 is merged (rebase first).
+- Merge approved (2026-11-26, batch 2026-11-26-3): "merge #134"; squash-merged by claude.
 
 ## Handoff
 

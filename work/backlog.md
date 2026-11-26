@@ -130,7 +130,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-046.1 | Profile photo in the Profile tab and the shell avatar | MERGED | P3 | M | ui | SIM-046, SIM-045.1 | none | 0 | 2026-11-26 |
 | SIM-046.2 | Profile photos in member lists, member card and seat panel | MERGED | P3 | M | ui, api | SIM-046, SIM-044.1 | none | 0 | 2026-11-26 |
 | SIM-047 | Pixel character customisation | MERGED | P3 | M | db, api, ui, ux | SIM-045 | plan-approval | 0 | 2026-11-26 |
-| SIM-047.1 | Pixel character picker in the Profile tab | DONE | P3 | M | ui | SIM-047, SIM-045.1 | none | 0 | 2026-11-26 |
+| SIM-047.1 | Pixel character picker in the Profile tab | MERGED | P3 | M | ui | SIM-047, SIM-045.1 | none | 0 | 2026-11-26 |
 | SIM-048 | A User places devices only on seats they occupy | MERGED | P2 | S | api, security | — | none | 0 | 2026-11-26 |
 | SIM-050 | Hide other members' email from Users | MERGED | P2 | S | api, security | — | none | 0 | 2026-11-26 |
 | SIM-051 | Answer 404 for write actions on a device a User does not hold | MERGED | P2 | S | api, security | — | none | 0 | 2026-11-26 |
