@@ -31,6 +31,7 @@ export { CreditsPage } from "./credits/CreditsPage";
 export { ApprovalsPage } from "./requests/ApprovalsPage";
 export { MyRequestsPage } from "./requests/MyRequestsPage";
 export { DevicesPage } from "./devices/DevicesPage";
+export { PortalPage } from "./portal/PortalPage";
 export { DeviceDetailPage } from "./devices/DeviceDetailPage";
 export { SearchPage } from "./search/SearchPage";
 export { InvitePeople } from "./invitations/InvitePeople";

@@ -9,6 +9,7 @@ import type {
   HandoffDto,
   HandoffStartValue,
   HoldingPatchValue,
+  MyDevicesPage,
   PlacementFilter,
 } from "@/lib/devices/types";
 import type { DeviceCreateBody } from "./device-form";
@@ -218,6 +219,18 @@ export function createDevicesApi(fetcher: ApiFetch) {
           const strOrNull = (v: unknown) => typeof v === "string" || v === null;
           return Array.isArray(b?.items) && strOrNull(b.nextCursor) && strOrNull(b.holderSince)
             ? { ok: true, value: b as DeviceHistoryPage }
+            : fail("internal");
+        },
+      ),
+    listMine: (cursor?: string) =>
+      call<MyDevicesPage>(
+        `/api/devices/mine${cursor === undefined ? "" : `?cursor=${encodeURIComponent(cursor)}`}`,
+        { method: "GET" },
+        async (res) => {
+          const body = (await res.json()) as { items?: unknown; nextCursor?: unknown };
+          return Array.isArray(body?.items) &&
+            (typeof body.nextCursor === "string" || body.nextCursor === null)
+            ? { ok: true, value: { items: body.items as DeviceDto[], nextCursor: body.nextCursor } }
             : fail("internal");
         },
       ),

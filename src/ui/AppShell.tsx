@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { shellCopy } from "./copy/shell";
 import { AppShellView } from "./AppShellView";
 import { badgeTotal } from "./devices/incoming-transfer";
+import { portalBadgeTotal } from "./portal/portal-state";
 import { HandoffBadgeProvider, useHandoffBadge } from "./devices/useHandoffBadge";
 import { RequestBadgeProvider, useRequestBadge } from "./requests/useRequestBadge";
 import { RoomSwitcher } from "./RoomSwitcher";
@@ -21,9 +22,14 @@ function ShellWithBadge({ children }: { children: ReactNode }) {
       session={session}
       pathname={pathname}
       actions={actions}
-      badges={{ myRequests: count, devices: badgeTotal(handoffs) }}
+      badges={{
+        myRequests: count,
+        devices: badgeTotal(handoffs),
+        portal: portalBadgeTotal(handoffs),
+      }}
       badgeLabels={{
         devices: shellCopy.badge.devicesBreakdown(handoffs),
+        portal: shellCopy.badge.portalBreakdown(handoffs),
       }}
       roomSwitcher={session ? <RoomSwitcher pathname={pathname} /> : undefined}
     >

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { DeviceDto, HandoffBox, HandoffDto, PlacementFilter } from "@/lib/devices/types";
 import { atLeastTier } from "@/lib/tier";
@@ -40,12 +41,25 @@ import {
   type IncomingOutcome,
   type IncomingResult,
 } from "./incoming-transfer";
+import { devicesPageRedirect } from "../portal/portal-state";
 import { useDevices } from "./useDevices";
 import { useSetHandoffBadge } from "./useHandoffBadge";
 import { useHandoffList } from "./useIncomingHandoffs";
 
-/** Devices page: loads the list for the chosen filter. Renders only below `AuthGate`. */
+/** Devices page. Users have no org list: they go to My Portal before any data hook mounts. Renders only below `AuthGate`. */
 export function DevicesPage() {
+  const router = useRouter();
+  const session = useSession();
+  const target = devicesPageRedirect(session?.tier);
+  useEffect(() => {
+    if (target !== null) router.replace(target);
+  }, [router, target]);
+  if (session === null || target !== null) return null;
+  return <DevicesPageContent />;
+}
+
+/** Loads the list for the chosen filter. */
+function DevicesPageContent() {
   const apiFetch = useApiFetch();
   const api = useMemo(() => createDevicesApi(apiFetch), [apiFetch]);
   const roomsApi = useMemo(() => createRoomsApi(apiFetch), [apiFetch]);
