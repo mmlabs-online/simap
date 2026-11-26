@@ -5,7 +5,7 @@
 #   the Docker network named by CHECK_IMAGE_NETWORK. Enables the "db smoke" section (the app never migrates;
 #   migrate from inside the image).
 #   CHECK_IMAGE_NETWORK (env, default host): the network the db smoke containers join. The URL must be reachable
-#   from it. On macOS `host` is the Docker VM, so ci.yml passes a private network (SIM-034, D60).
+#   from it. On Docker Desktop (macOS) `host` is the VM, so ci.yml passes a private network (SIM-034, D60).
 set -uo pipefail
 
 if [ "$#" -ne 1 ]; then
@@ -79,7 +79,7 @@ echo "== start checks"
 # No network and a 30 s cap: must exit 2 straight away.
 expect_exit() { # <expected> <description> <docker run args...>
   local want="$1" what="$2"; shift 2
-  # Portable 30 s cap (macOS has no GNU timeout): detached run, poll, 124 if still running (as GNU timeout).
+  # Portable 30 s cap (BSD and GNU): detached run, poll, 124 if still running (as GNU timeout).
   docker run -d --label simap-ci=1 --name "$EXITNAME" --network none "$@" >/dev/null 2>&1
   local got=124 i
   for i in $(seq 1 30); do

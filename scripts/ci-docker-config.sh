@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# SIM-034 (D60): an isolated Docker client config for jobs on the self-hosted macOS runner, so docker login and a
+# SIM-034 (D60): an isolated Docker client config for jobs on either runner, so docker login and a
 # pinned buildx never touch the host's ~/.docker (production deploys use it). bash 3.2 compatible, never needs root.
-# Writes $RUNNER_TEMP/docker/config.json (a placeholder auths entry so the CLI never auto-detects the macOS keychain
-# store; plugin dirs found from the host CLI)
+# Writes $RUNNER_TEMP/docker/config.json (a placeholder auths entry so the CLI never auto-detects a host credential helper
+# (osxkeychain, pass, secretservice); plugin dirs found from the host CLI)
 # and exports DOCKER_CONFIG and DOCKER_HOST through $GITHUB_ENV.
 set -euo pipefail
 

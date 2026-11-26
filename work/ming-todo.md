@@ -27,7 +27,7 @@ Never write a secret value here: name the secret and where Ming puts it.
 - [x] M-5 (2026-11-20) Approve plan for SIM-002: `work/tickets/SIM-002/plan.md` (High tier; 8 decisions with defaults). Add a dated "Plan approved" line in the ticket's *Notes / answers from Ming*.
 - [ ] M-6 Before the first production `migrate` (SIM-021): run `select version();` on the shared Postgres and confirm it is 13 or newer (`gen_random_uuid()` is built in), and that the `simap` role owns the `simap` database (it creates tables, functions and triggers). (SIM-008)
 - [ ] M-6 First-deploy prerequisites for SIM-004: create the Docker Hub repository `mingming21400/simap` and an access
-  token; set repository secrets on `mmlabs-online/simap`: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `DEPLOY_REPO_TOKEN`
+  token; set repository secrets on `mmlabs-online/simap`: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `DEPLOY_REPO_TOKEN`; optional repository variable `SIMAP_RUNNER` (`github`/`macbook`, unset = GitHub-hosted)
   (fine-grained PAT on `mmlabs-online/deployment` only: Contents read/write, Pull requests read/write). Values go only
   into GitHub secrets, never into a file or chat. Before the first `release/X.Y.Z` push. (D8)
 - [ ] M-7 Deployment-repo setup PR for simap (not a `release/*` branch): copy `deploy/deployment-repo/**` from the simap

@@ -60,7 +60,7 @@ Runbooks (this checklist links to them and does not repeat their steps):
 - [ ] **5. Secrets**
   - Owner: Ming
   - Check: the release image repository on Docker Hub (see [README.md](../README.md#production-image)) exists.
-    The simap repo has the secrets `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` and `DEPLOY_REPO_TOKEN`; the deployment repo
+    The simap repo has the secrets `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` and `DEPLOY_REPO_TOKEN`, and optionally the repository variable `SIMAP_RUNNER` (`github`/`macbook`, unset = GitHub-hosted); the deployment repo
     has the four Drive secrets `SIMAP_GOOGLE_CLIENT_ID`, `SIMAP_GOOGLE_CLIENT_SECRET`,
     `SIMAP_GOOGLE_REFRESH_TOKEN` and `SIMAP_DRIVE_FOLDER_ID` (all or none). Check names only; never paste values.
   - Refs: M-6 (Docker Hub and secrets), M-46

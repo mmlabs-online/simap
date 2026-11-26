@@ -1,6 +1,6 @@
 // @vitest-environment node
-// SIM-034 (D60): static checks on the workflows that run on the self-hosted macOS runner. They cannot run locally;
-// the PR's own CI run is the end-to-end check.
+// SIM-034 (D60), SIM-065 (D84): static checks on the workflows that run on GitHub-hosted or the self-hosted runner
+// (SIMAP_RUNNER). They cannot run locally; the PR's own CI run is the end-to-end check.
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -30,14 +30,132 @@ const step = (s: string, name: string) => {
   return s.slice(i, next === -1 ? undefined : next);
 };
 
-describe("workflows on the self-hosted runner", () => {
-  it("every job runs on [self-hosted, macbook-runner]", () => {
+const RUNS_ON_DISPATCH =
+  "${{ ((inputs.runner != 'default' && inputs.runner) || vars.SIMAP_RUNNER) == 'macbook' && fromJSON('[\"self-hosted\",\"macbook-runner\"]') || 'ubuntu-latest' }}";
+const RUNS_ON_VARS =
+  "${{ vars.SIMAP_RUNNER == 'macbook' && fromJSON('[\"self-hosted\",\"macbook-runner\"]') || 'ubuntu-latest' }}";
+
+/** `runs-on:` expression texts of all jobs (a trailing ` # comment` is dropped). */
+const runsOn = (s: string) =>
+  [...s.matchAll(/^ {4}runs-on: (.+)$/gm)].map((m) => m[1].replace(/ # .*$/, ""));
+
+type Val = string | number | boolean | null | unknown[];
+const truthy = (v: Val) => !(v === null || v === "" || v === false || v === 0 || Number.isNaN(v));
+const num = (v: Val) =>
+  v === null || v === "" ? 0 : typeof v === "string" ? Number(v) : Number(v);
+const eq = (a: Val, b: Val) =>
+  typeof a === "string" && typeof b === "string"
+    ? a.toLowerCase() === b.toLowerCase()
+    : num(a) === num(b);
+
+/**
+ * Evaluates the subset of GitHub expressions used by runs-on: ( ) && || == !=, single-quoted strings,
+ * inputs.runner, vars.SIMAP_RUNNER, fromJSON('...'). Unknown tokens throw, so a changed expression fails loudly.
+ */
+function evalExpr(expr: string, ctx: { runner: string | null; variable: string | null }): Val {
+  const body = expr.match(/^\$\{\{ (.+) \}\}$/)?.[1];
+  if (!body) throw new Error(`not an expression: ${expr}`);
+  const toks = body.match(/\(|\)|&&|\|\||==|!=|'[^']*'|[\w.]+/g) ?? [];
+  let i = 0;
+  const peek = () => toks[i];
+  const primary = (): Val => {
+    const t = toks[i++];
+    if (t === "(") {
+      const v = or();
+      if (toks[i++] !== ")") throw new Error("missing )");
+      return v;
+    }
+    if (t?.startsWith("'")) return t.slice(1, -1);
+    if (t === "inputs.runner") return ctx.runner;
+    if (t === "vars.SIMAP_RUNNER") return ctx.variable;
+    if (t === "fromJSON") {
+      if (toks[i++] !== "(") throw new Error("fromJSON(");
+      const arg = toks[i++];
+      if (toks[i++] !== ")") throw new Error("fromJSON)");
+      return JSON.parse(arg.slice(1, -1));
+    }
+    throw new Error(`unknown token ${t}`);
+  };
+  const cmp = (): Val => {
+    let l = primary();
+    while (peek() === "==" || peek() === "!=") {
+      const op = toks[i++];
+      const r = primary();
+      l = op === "==" ? eq(l, r) : !eq(l, r);
+    }
+    return l;
+  };
+  const and = (): Val => {
+    let l = cmp();
+    while (peek() === "&&") {
+      i++;
+      const r = cmp();
+      l = truthy(l) ? r : l;
+    }
+    return l;
+  };
+  const or = (): Val => {
+    let l = and();
+    while (peek() === "||") {
+      i++;
+      const r = and();
+      l = truthy(l) ? l : r;
+    }
+    return l;
+  };
+  const v = or();
+  if (i !== toks.length) throw new Error(`trailing token ${toks[i]}`);
+  return v;
+}
+
+describe("workflows runner choice (D84)", () => {
+  const MAC = ["self-hosted", "macbook-runner"];
+  it("every job's runs-on is the D84 runner expression", () => {
     for (const [name, s] of Object.entries(workflows)) {
-      const runs = s.match(/^ {4}runs-on: \[self-hosted, macbook-runner\]/gm) ?? [];
+      const runs = runsOn(s);
       expect(runs.length, name).toBe(jobCount(s));
-      expect(s, name).not.toContain("ubuntu-latest");
+      for (const r of runs)
+        expect(r, name).toBe(name === "risk-tier.yml" ? RUNS_ON_VARS : RUNS_ON_DISPATCH);
+      expect(s, name).not.toMatch(/^ {4}runs-on: \[self-hosted/m);
     }
   });
+  it("runs-on resolves per SIMAP_RUNNER and the dispatch input", () => {
+    for (const [name, s] of Object.entries(workflows)) {
+      for (const expr of runsOn(s)) {
+        const at = (runner: string | null, variable: string | null) =>
+          evalExpr(expr, { runner, variable });
+        for (const v of [null, "", "github", "foo"])
+          expect(at(null, v), `${name} ${v}`).toBe("ubuntu-latest");
+        expect(at(null, "macbook"), name).toEqual(MAC);
+        expect(at(null, "MacBook"), name).toEqual(MAC); // == is case-insensitive in GitHub expressions
+        if (name === "risk-tier.yml") continue;
+        expect(at("github", "macbook"), name).toBe("ubuntu-latest");
+        expect(at("macbook", null), name).toEqual(MAC);
+        expect(at("default", "macbook"), name).toEqual(MAC);
+        expect(at("default", null), name).toBe("ubuntu-latest");
+      }
+    }
+  });
+  it("ci.yml and release.yml take a workflow_dispatch runner input", () => {
+    for (const name of ["ci.yml", "release.yml"]) {
+      expect(workflows[name], name).toMatch(
+        /^on:\n(?:.*\n)*? {2}workflow_dispatch:\n {4}inputs:\n {6}runner:\n(?: {8}description: .*\n)? {8}type: choice\n {8}options: \[default, github, macbook\]\n {8}default: default\n/m,
+      );
+    }
+    expect(workflows["risk-tier.yml"]).not.toContain("workflow_dispatch");
+  });
+  it("runner-neutral: no macOS-only commands or paths", () => {
+    const macOnly =
+      /\bbrew\b|\/opt\/homebrew|osascript|launchctl|\bsecurity (find|add|delete|unlock)-|stat -f|date -j|sed -i ''|colima|\.docker\/run/;
+    for (const s of all) expect(s).not.toMatch(macOnly);
+    const users = all.flatMap((s) => s.split("\n").filter((l) => l.includes("/Users/")));
+    expect(users).toHaveLength(1);
+    expect(users[0]).toMatch(/^ {10}prod=\/Users\/mingming\/\.config\/simap$/);
+    expect(ci).toContain(users[0]);
+  });
+});
+
+describe("workflows on either runner", () => {
   it("no services: containers", () => {
     for (const [name, s] of Object.entries(workflows))
       expect(s, name).not.toMatch(/^ {4}services:/m);
@@ -108,11 +226,14 @@ describe("workflows on the self-hosted runner", () => {
       expect((s.match(/^ {4}timeout-minutes: \d+$/gm) ?? []).length, name).toBe(jobCount(s));
     }
   });
-  it("PR-triggered jobs skip fork PRs", () => {
+  it("PR-triggered jobs skip fork PRs; dispatch runs are not skipped", () => {
     const guard = "github.event.pull_request.head.repo.full_name == github.repository";
     expect(
       ci.match(
-        new RegExp(`if: github.event_name == 'push' \\|\\| ${guard.replaceAll(".", "\\.")}`, "g"),
+        new RegExp(
+          `if: github.event_name == 'push' \\|\\| github.event_name == 'workflow_dispatch' \\|\\| ${guard.replaceAll(".", "\\.")}`,
+          "g",
+        ),
       ),
     ).toHaveLength(2);
     expect(workflows["risk-tier.yml"]).toContain(`if: ${guard}`);
@@ -139,7 +260,7 @@ describe("workflows on the self-hosted runner", () => {
       expect(workflows[name], name).not.toMatch(/rm -rf[^\n]*RUNNER_TEMP\/docker"/);
     }
   });
-  it("isolated docker config pins an auths entry (no macOS keychain auto-detect) and a private umask", () => {
+  it("isolated docker config pins an auths entry (no host credential helper auto-detect) and a private umask", () => {
     const sh = read("scripts/ci-docker-config.sh");
     expect(sh).toContain('{"auths":{"ci.invalid":{}},');
     expect(sh.indexOf("umask 077")).toBeGreaterThan(-1);
