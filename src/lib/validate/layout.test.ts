@@ -509,14 +509,35 @@ describe("SIM-042 built-in items", () => {
     "screen.projector",
   ];
 
-  it("every new key is accepted at 0/90/180/270 by checkLayoutRules", () => {
-    for (const key of NEW_KEYS) {
+  it("bin.trash, chart.flip, cooler.water, lamp.desk accept 0/90/180/270", () => {
+    for (const key of ["bin.trash", "chart.flip", "cooler.water", "lamp.desk"]) {
       for (const rotation of [0, 90, 180, 270]) {
         expect(rules({ fixtures: [fx(key, 4, 4, rotation)] }), `${key} ${rotation}`).toEqual({
           ok: true,
         });
       }
     }
+  });
+
+  it("n/s-only items refuse 90 and 270 with layout_bad_rotation, accept 0 and 180", () => {
+    for (const key of ["clock.wall", "screen.projector"]) {
+      for (const rotation of [0, 180]) {
+        expect(rules({ fixtures: [fx(key, 4, 4, rotation)] }), `${key} ${rotation}`).toEqual({
+          ok: true,
+        });
+      }
+      for (const rotation of [90, 270]) {
+        expect(rules({ fixtures: [fx(key, 4, 4, rotation)] }), `${key} ${rotation}`).toEqual({
+          ok: false,
+          code: "layout_bad_rotation",
+        });
+      }
+    }
+    // a mixed layout is refused whole
+    expect(rules({ fixtures: [fx("clock.wall", 1, 1, 180), fx("clock.wall", 5, 5, 90)] })).toEqual({
+      ok: false,
+      code: "layout_bad_rotation",
+    });
   });
 
   it("screen.projector is 2x1 at 0/180 and 1x2 at 90/270; the others are 1x1", () => {

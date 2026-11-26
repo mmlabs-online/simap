@@ -1,14 +1,16 @@
 import { sizeFor, spriteAllowedFor, spriteFits } from "@/lib/map-items/art";
-import { MAP_ITEM_DIRS, MAP_ITEM_LIMITS, type MapItemDto } from "@/lib/map-items/types";
+import { MAP_ITEM_LIMITS, type MapItemDto } from "@/lib/map-items/types";
 import { FRAME_KEYS, REGISTRY } from "@/lib/sprites/registry";
 import { itemImageId } from "@/lib/sprites/item-art";
 import { resolveFrameKey } from "@/lib/sprites/placement";
+import { allowedDirs } from "@/lib/sprites/rotations";
 import type { Direction } from "@/lib/sprites/types";
 import type { ImageEntry } from "../deviceTypes/image-url-cache";
 
-/** Directions an item has art for: n/e/s/w when directional, else `s` only (images are never rotated). */
-export const artDirs = (item: Pick<MapItemDto, "directional">): readonly Direction[] =>
-  item.directional ? MAP_ITEM_DIRS : ["s"];
+/** Directions an item has art for: n/e/s/w when directional (n/s for clock.wall, screen.projector), else `s` only. */
+export const artDirs = (
+  item: Pick<MapItemDto, "directional" | "builtinKey">,
+): readonly Direction[] => (item.directional ? allowedDirs(item.builtinKey) : ["s"]);
 
 export type ArtPanelView = {
   source: "image" | "sprite" | "library";

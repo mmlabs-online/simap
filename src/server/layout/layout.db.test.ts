@@ -365,11 +365,24 @@ describe("saveRoomLayout (db)", () => {
     expect(got.layout.fixtures.map(({ id: _i, ...f }) => f)).toEqual(v.fixtures);
   });
 
-  it("a SIM-042 item saves rotated and reads back", async () => {
+  it("90° clock.wall is refused 422 layout_bad_rotation and nothing is written", async () => {
+    const o = await room();
+    const v = val(0, [], {
+      fixtures: [{ sprite: "clock.wall", x: 8, y: 4, rotation: 90 as const }],
+    });
+    const r = await save(o, v);
+    expect(r.ok, refusal(r)).toBe(false);
+    expect(refusal(r)).toContain("layout_bad_rotation");
+    expect(
+      (await one("select count(*)::int as n from layout_fixtures where org_id = $1", [o.orgId])).n,
+    ).toBe(0);
+  });
+
+  it("180° clock.wall and screen.projector save and read back", async () => {
     const o = await room();
     const v = val(0, [], {
       fixtures: [
-        { sprite: "screen.projector", x: 2, y: 4, rotation: 90 as const },
+        { sprite: "screen.projector", x: 2, y: 4, rotation: 180 as const },
         { sprite: "clock.wall", x: 8, y: 4, rotation: 180 as const },
       ],
     });

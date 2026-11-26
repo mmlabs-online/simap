@@ -1,4 +1,5 @@
 import type { FloorZone, RoomLayout, Rotation } from "@/lib/sprites/layout";
+import { nextRotation } from "@/lib/sprites/rotations";
 import {
   LAYOUT_LIMITS,
   SEAT_SPRITES,
@@ -10,8 +11,6 @@ import {
   type LayoutRulesInput,
 } from "@/lib/validate/layout";
 import type { Draft, EditorItem, OpResult } from "./types";
-
-const NEXT_ROTATION: Record<Rotation, Rotation> = { 0: 90, 90: 180, 180: 270, 270: 0 };
 
 export function draftFromLayout(
   layout: RoomLayout,
@@ -185,7 +184,7 @@ export function rotateItems(
       ...draft,
       items: draft.items.map((i) => {
         if (!sel.has(i.key)) return i;
-        return { ...i, rotation: turnable(i) ? NEXT_ROTATION[i.rotation] : 0 };
+        return { ...i, rotation: turnable(i) ? nextRotation(i.sprite, i.rotation) : 0 };
       }),
     },
     lookup,
