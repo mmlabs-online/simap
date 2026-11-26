@@ -37,5 +37,6 @@ A member picks their pixel character in the My Portal Profile tab with a live pr
 - [ ] All Checks pass.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-3): "duyệt hết theo mặc định"; Q1 default: build after SIM-046.1 is merged (rebase first).
 
 ## Handoff
