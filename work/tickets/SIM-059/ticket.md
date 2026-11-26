@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -56,5 +56,6 @@ D76.
 - Manual: User with two rooms, check in, reload (no popup); 390 px; keyboard only.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-6): "duyệt hết theo mặc định"; Q1 default (SIM-060 after Ming merges SIM-059); Q2 one PR in two ordered commits (A, B); Q3 global `--px-wall` title bar, per-room colour as follow-up.
 
 ## Handoff
