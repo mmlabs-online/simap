@@ -133,7 +133,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-047.1 | Pixel character picker in the Profile tab | BACKLOG | P3 | M | ui | SIM-047, SIM-045.1 | none | 0 | 2026-11-26 |
 | SIM-048 | A User places devices only on seats they occupy | MERGED | P2 | S | api, security | — | none | 0 | 2026-11-26 |
 | SIM-050 | Hide other members' email from Users | DONE | P2 | S | api, security | — | none | 0 | 2026-11-26 |
-| SIM-051 | Answer 404 for write actions on a device a User does not hold | IN_PROGRESS | P2 | S | api, security | — | none | 0 | 2026-11-26 |
+| SIM-051 | Answer 404 for write actions on a device a User does not hold | DONE | P2 | S | api, security | — | none | 0 | 2026-11-26 |
 | SIM-052 | Send only the catalog device type to Users on the room map | IN_PROGRESS | P2 | S | api, ui, security | — | none | 0 | 2026-11-26 |
 | SIM-053 | My Portal and device dialog polish (SIM-045, SIM-045.1, SIM-048 follow-ups) | BACKLOG | P3 | S | ui | — | none | 0 | 2026-11-26 |
 | SIM-054 | Move "My requests" into My Portal → My seat | IN_PROGRESS | P2 | S | ui, ux | SIM-045.1 | none | 0 | 2026-11-26 |
