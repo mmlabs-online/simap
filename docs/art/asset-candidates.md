@@ -8,7 +8,7 @@ limited to games. If all three hold, screenshot the licence text to `assets/art/
 | # | Pack | Size | Hint from search | Status |
 |---|---|---|---|---|
 | 1 | [Office Pixel Art – Imersa Studios](https://imersastudios.itch.io/office-pixel-art) | 32×32 | commercial + apps + edit allowed, credit required (free tier), no redistribution | **accepted 2026-11-20** (free tier; proposed main pack, Ming to confirm) |
-| 2 | [Pixel Office – 2dPig](https://2dpig.itch.io/pixel-office) | ? | snippet says CC0 | to check |
+| 2 | [Pixel Office – 2dPig](https://2dpig.itch.io/pixel-office) | 16×16 | CC0 1.0 (LICENSE.txt in zip) | **accepted 2026-11-26** (CC0; `licences/2dpig-pixel-office.txt`) |
 | 3 | [Indoor office appliances – OpenGameArt](https://opengameart.org/content/indoor-office-appliances) | 32×32 | listed CC0; view angle unknown | to check |
 | 4 | [Modern Office Interior Tileset – comshadow](https://comshadow.itch.io/modern-office-interior-tileset) | ? (RPG Maker MV/MZ) | paid $3.99, "commercial use allowed in game projects", modify not stated, AI-assisted | **rejected 2026-11-20** (games only) |
 | 5 | [Little Bits: Office – adriccustoms](https://adriccustoms.itch.io/little-bits-office) | ? | no licence seen | to check |

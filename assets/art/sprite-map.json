@@ -3,7 +3,7 @@
     "Phase-1 sprite map (style guide §0, §8b; D54). rect = [x, y, w, h] in source pixels, verified by cropping on 2026-11-20.",
     "anchor = [x, y] inside rect of the pixel that sits on the top-left corner of the footprint (copied from the pack's own atlas JSON). Pack sprites overhang their footprint and are taller than the 16 px headroom of style guide §8, so the packing script must place them by this anchor, not by bottom-alignment.",
     "Directions: pack 'front' (faces the viewer) = .s, 'back' = .n, 'left' = .w, 'right' = .e. Checked against the pack's sample Meeting Room (a chair rotated 90 deg uses the 'right' view).",
-    "Sources are not committed: the pack licence forbids redistributing the asset files; the repo is private but the sheets still must not be committed. Copy the sheets from the downloaded pack into assets/art/sources/<pack-id>/ locally (see CREDITS.md)."
+    "Sources are not committed, except CC0 packs such as 2dpig-office: the Imersa licence forbids redistributing the asset files; the repo is private but those sheets still must not be committed. Copy the sheets from the downloaded pack into assets/art/sources/<pack-id>/ locally (see CREDITS.md)."
   ],
   "sources": {
     "imersa-office": {
@@ -21,6 +21,11 @@
       },
       "tile": 32,
       "pack": "Office Pixel Art (Free v1.0), Imersa Studios"
+    },
+    "2dpig-office": {
+      "files": { "assets": "assets/art/sources/2dpig-office/PixelOfficeAssets.png" },
+      "tile": 16,
+      "pack": "Pixel Office, 2dPig (CC0 1.0)"
     }
   },
   "sprites": {
@@ -470,6 +475,51 @@
       "scale": 1,
       "tiles": [1, 1],
       "note": "pack 'tall_plant' front; same 1x1 footprint as plant.small"
+    },
+    "window.double": {
+      "source": "2dpig-office",
+      "sheet": "assets",
+      "rect": [59, 96, 26, 21],
+      "anchor": [-3, 5],
+      "scale": 2,
+      "tiles": [2, 1],
+      "note": "2dPig two-pane window, front; 26x21 source px x2, centred in 64 px, bottom-aligned"
+    },
+    "door.s": {
+      "source": "2dpig-office",
+      "sheet": "assets",
+      "rect": [98, 120, 16, 31],
+      "anchor": [0, -1],
+      "scale": 2,
+      "tiles": [1, 2],
+      "note": "2dPig blue glass door leaf, front; 16x31 x2 = 32x62; no handed view, so the same cut serves .n"
+    },
+    "door.n": {
+      "source": "2dpig-office",
+      "sheet": "assets",
+      "rect": [98, 120, 16, 31],
+      "anchor": [0, -1],
+      "scale": 2,
+      "tiles": [1, 2],
+      "note": "same cut as door.s"
+    },
+    "sofa": {
+      "source": "2dpig-office",
+      "sheet": "assets",
+      "rect": [119, 66, 33, 15],
+      "anchor": [0, -1],
+      "scale": 2,
+      "tiles": [2, 1],
+      "note": "2dPig grey two-seat sofa, front; 33x15 x2 = 66x30 (2 px overhang right)"
+    },
+    "table.coffee": {
+      "source": "2dpig-office",
+      "sheet": "assets",
+      "rect": [85, 47, 26, 16],
+      "anchor": [-3, 0],
+      "scale": 2,
+      "tiles": [2, 1],
+      "note": "2dPig plain orange low table, front; 26x16 x2, centred in 64 px"
     }
   },
   "extras": {
@@ -485,22 +535,20 @@
   "missing": [
     "floor.lavender",
     "wall.face.shade",
-    "door (free tier has door gaps only; doors are in Premium)",
-    "window.double (free tier has a 1-tile window, mapped as window.single)",
     "partition.glass (Premium)",
     "desk.pair (compose two desk.single back to back)",
     "device.monitor.dual (paid tiers)",
-    "device.pc (no tower in the free tier)",
-    "device.phone (paid tiers)",
+    "door.e, door.w (2dPig has no side-view door; door.s/door.n use 2dPig)",
+    "elevator (the 2dPig glass door is one 16 px leaf, too narrow for 64x64)",
+    "device.pc (no tower in either pack)",
+    "device.phone (2dPig fax/phone is 30x38 at x2, larger than a 32x32 device slot)",
     "device.other",
     "prop.keyboard, prop.mouse (baked into device.monitor)",
     "shelf.books (paid tiers)",
     "rack.server",
-    "table.coffee (Premium)",
-    "sofa (paid tiers)",
     "whiteboard (Premium; flip_chart is a free stand-in)",
     "lamp.floor",
-    "stairs, elevator (Premium)",
+    "stairs",
     "marker.blocked, label.sign",
     "state.cannot, state.pending, state.mine.tint",
     "avatar.* layered avatars",

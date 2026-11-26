@@ -36,6 +36,9 @@ describe("CREDITS", () => {
     expect(imersa?.attribution).toBe(
       "Office Pixel Art by Imersa Studios (https://imersastudios.itch.io/office-pixel-art)",
     );
+    expect(CREDITS.find((c) => c.author === "2dPig")?.attribution).toBe(
+      "Pixel Office by 2dPig (https://2dpig.itch.io/pixel-office)",
+    );
     for (const c of CREDITS) {
       expect(c.url.startsWith("https://")).toBe(true);
       for (const v of Object.values(c)) expect(v.trim()).not.toBe("");
