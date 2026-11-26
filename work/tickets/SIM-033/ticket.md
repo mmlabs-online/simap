@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P1 |
 | Size | S |
 | Areas | ui, architecture |
-| Gate | none |
+| Gate | plan-approval |
 | Depends on | SIM-015.3 |
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-26T00:46:49Z |
 | PR | — |
 
 ## Goal
@@ -44,6 +44,7 @@ Production shows the real sprites of the bundled package (the library behind the
 - Manual: build the image and open a room map and the Credits page.
 
 ## Notes / answers from Ming
+- 2026-11-26: M-63 done (Ming: "Đồng ý, làm luôn"): the real Imersa atlas is packed (55 map frames) and committed on this branch. Gate set to plan-approval (P1 policy `high-paths+P1`, matching the board).
 - 2026-11-25: re-scoped to D66 (bundled package committed; per-item art moves to SIM-039.x).
 - 2026-11-25: D64 replaces the single-pack plan (M-9/M-10 not needed). Re-scope this ticket before running it: Admins pick art per item from a bundled package or a custom image.
 - 2026-11-22 (D58): created from the art review. Waits for M-10.
