@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T16:34Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -83,3 +83,9 @@ Builds on SIM-055 (game-style sign-in, merged). Request: Ming 2026-11-26 with th
   today's buttons and features. So: no "Need a hand?", "Remember my email", "Explore the demo" or vibe switcher.
 
 ## Handoff
+
+### 2026-11-26 — claude — BLOCKED
+- Agent calls: 3, ~116k tokens (frontend-developer×1 default 40k, ux-architect×1 default 36k, planner×1 default ~40k).
+- Done: consults; plan (slice 1 of a proposed split; slice 2 = SIM-068.1 with the four canvas rooms, paths, avatars, notes).
+- In progress / next: Ming answers the 9 product questions in plan.md "Blocking questions" (defaults given); then `/run SIM-068` re-plans and builds.
+- Gotchas: the plan's palette note suggests "D73", which is already taken — use the next free D number; the real sign-in page can only be seen on a deployed build (DevGate replaces it under `pnpm dev`).
