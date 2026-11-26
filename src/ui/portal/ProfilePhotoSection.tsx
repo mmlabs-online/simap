@@ -9,7 +9,7 @@ export type ProfilePhotoSectionProps = {
   name: string;
   url: string | null;
   status: "loading" | "ready" | "failed";
-  busy: "upload" | "remove" | null;
+  busy: "processing" | "upload" | "remove" | null;
   error: string | null;
   notice: string | null;
   onPick(file: File): void;
@@ -27,7 +27,14 @@ export function ProfilePhotoSection({
   onPick,
   onRemove,
 }: ProfilePhotoSectionProps) {
-  const label = busy === "upload" ? copy.uploading : url ? copy.replace : copy.upload;
+  const label =
+    busy === "processing"
+      ? copy.processing
+      : busy === "upload"
+        ? copy.uploading
+        : url
+          ? copy.replace
+          : copy.upload;
   return (
     <section className="flex flex-col gap-2">
       <h3 className="text-sm font-extrabold text-on-surface">{copy.heading}</h3>
@@ -38,7 +45,7 @@ export function ProfilePhotoSection({
             {label}
             <input
               type="file"
-              accept="image/png,image/jpeg"
+              accept="image/*"
               className="sr-only"
               disabled={busy !== null}
               onChange={(e) => {

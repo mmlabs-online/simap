@@ -10,7 +10,7 @@ import { useOwnPhoto } from "./useOwnPhoto";
 /** Connects the photo section to the shared own-photo store. */
 export function ProfilePhoto({ name }: { name: string }) {
   const photo = useOwnPhoto();
-  const [busy, setBusy] = useState<"upload" | "remove" | null>(null);
+  const [busy, setBusy] = useState<"processing" | "upload" | "remove" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const mounted = useRef(true);
@@ -24,15 +24,23 @@ export function ProfilePhoto({ name }: { name: string }) {
 
   if (!photo) return null;
 
-  const run = async (kind: "upload" | "remove", act: PhotoActor, done: string) => {
+  const run = async (
+    kind: "processing" | "remove",
+    act: PhotoActor,
+    done: string,
+    start: string | null = null,
+  ) => {
     if (busy) return;
     setBusy(kind);
     setError(null);
-    setNotice(null);
+    setNotice(start);
     const r = await act();
     if (!mounted.current) return;
     if (r.ok) setNotice(done);
-    else setError(photoErrorMessage(r.code));
+    else {
+      setNotice(null);
+      setError(photoErrorMessage(r.code));
+    }
     setBusy(null);
   };
 
@@ -45,7 +53,17 @@ export function ProfilePhoto({ name }: { name: string }) {
       error={error}
       notice={notice}
       onPick={(file) =>
-        void run("upload", () => photo.upload(file), portalCopy.profile.photo.saved)
+        void run(
+          "processing",
+          () =>
+            photo.upload(file, () => {
+              if (!mounted.current) return;
+              setBusy("upload");
+              setNotice(null);
+            }),
+          portalCopy.profile.photo.saved,
+          portalCopy.profile.photo.processingNotice,
+        )
       }
       onRemove={() => void run("remove", () => photo.remove(), portalCopy.profile.photo.removed)}
     />

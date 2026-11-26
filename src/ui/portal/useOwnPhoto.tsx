@@ -12,7 +12,7 @@ import {
 import { createPhotoApi } from "./photo-api";
 
 export type OwnPhoto = OwnPhotoSnapshot & {
-  upload(file: File): Promise<PhotoAction>;
+  upload(file: File, onUploading?: () => void): Promise<PhotoAction>;
   remove(): Promise<PhotoAction>;
 };
 
@@ -52,7 +52,7 @@ export function OwnPhotoProvider({ children }: { children: ReactNode }) {
     void version;
     return {
       ...(store.snapshot() ?? LOADING),
-      upload: (file) => store.upload(file),
+      upload: (file, onUploading) => store.upload(file, onUploading),
       remove: () => store.remove(),
     };
   }, [store, version]);
