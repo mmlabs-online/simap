@@ -45,3 +45,18 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No (new page, hook, views and tests are all in the plan).
 - Diff size: see `git show --stat`.
+
+## Attempt 2 — 2026-11-26 (REWORK)
+
+### Fixes
+- Issue 1: `MyDevicesTab.tsx` keeps one `shown` notice; `useEffect(() => setShown(notice), [notice])` takes each new host notice; `act` clears it at the start and sets the outcome notice after the call; `incomingNotice` removed. `useDeviceDetailActions` unchanged. Manual sequence (Transfer A, then Confirm an incoming transfer shows the Confirm result; a failed Confirm shows its error) not run in a browser; verified by code reading only.
+- Issue 2: `useMyDevices.refresh` no longer sets `status: "error"` on failure (returns `{ ok: false, code }`, rows stay); `MyDevicesView` shows the error card only when `devices.length === 0`.
+- Test: `MyDevicesView.test.tsx` "error with rows keeps the table and shows no error card".
+
+### Checks
+- format:check: All matched files use the correct format.
+- typecheck + check:layers: exit 0; "check-layers: 838 files, no violations"
+- test: Test Files 319 passed | 1 skipped; Tests 3204 passed | 7 skipped
+- build: exit 0
+
+Out-of-plan files: none. Follow-ups: the two-source notice follow-up from attempt 1 is resolved.

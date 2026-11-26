@@ -76,7 +76,7 @@ export function MyDevicesView({
         </div>
       )}
 
-      {status === "error" && (
+      {status === "error" && devices.length === 0 && (
         <Card className="flex flex-col items-start gap-3 p-4">
           <p role="alert" className="text-sm font-semibold text-error">
             {apiErrorMessage(errorCode ?? "internal")}

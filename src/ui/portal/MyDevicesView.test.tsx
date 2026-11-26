@@ -59,6 +59,11 @@ describe("MyDevicesView", () => {
     expect(html).toContain('role="alert"');
     expect(html).toContain(portalCopy.devices.retry);
   });
+  it("error with rows keeps the table and shows no error card", () => {
+    const html = render({ status: "error", errorCode: "internal" });
+    expect(html).toContain("INV-1");
+    expect(html).not.toContain('role="alert"');
+  });
   it("Load more only when hasMore", () => {
     expect(render({ hasMore: true })).toContain(portalCopy.devices.loadMore);
   });

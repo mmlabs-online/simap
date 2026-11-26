@@ -52,7 +52,9 @@ export function MyDevicesTab() {
 
   const acting = useRef(false);
   const [incomingBusyId, setIncomingBusyId] = useState<string | null>(null);
-  const [incomingNotice, setIncomingNotice] = useState<IncomingOutcome["notice"] | null>(null);
+  // The notice of the latest action: a host notice (row actions) or an incoming outcome (Confirm/Decline).
+  const [shown, setShown] = useState<IncomingOutcome["notice"] | null>(null);
+  useEffect(() => setShown(notice), [notice]);
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
 
   // Applied after the commit, so the node it points at is the new one, not the one the await replaced.
@@ -79,10 +81,10 @@ export function MyDevicesTab() {
     if (acting.current) return;
     acting.current = true;
     setIncomingBusyId(item.id);
-    setIncomingNotice(null);
+    setShown(null);
     const before = incoming.items;
     const outcome = outcomeOf(await call());
-    setIncomingNotice(outcome.notice);
+    setShown(outcome.notice);
     if (outcome.refresh) {
       const [inc, , count] = await Promise.all([
         incoming.refresh(),
@@ -109,7 +111,7 @@ export function MyDevicesTab() {
         errorCode={myDevices.errorCode}
         actions={rowHandlers}
         busyId={busyId}
-        notice={notice ?? incomingNotice}
+        notice={shown}
         headingRef={headingRef}
         onRetry={() => void myDevices.reload()}
         onLoadMore={() => void myDevices.loadMore()}

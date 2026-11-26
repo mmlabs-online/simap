@@ -55,7 +55,7 @@ export function useMyDevices(api: DevicesApi) {
       });
       return { ok: true };
     }
-    setState((s) => ({ ...s, status: "error", errorCode: r.code }));
+    // The host reports the failure; the rows and the ready status stay.
     return { ok: false, code: r.code };
   }, [api]);
 
