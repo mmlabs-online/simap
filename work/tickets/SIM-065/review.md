@@ -63,3 +63,54 @@ config; no secret values anywhere. R5: new logic (runner expression) has tests; 
 - Per-arch build cache scope (arm64 Mac vs amd64 hosted builds share gha scope `image`).
 - Separate ci concurrency group for dispatch runs.
 - Upstream runner selection in `risk-tier.yml` to spaceM project-kit.
+
+## Attempt 2 — 2026-11-26
+Verdict: PASS
+
+Scope of this attempt: rework of security-review.md finding 🟡 1 (Ming, ticket Notes 2026-11-26 "sửa luôn trong PR này"),
+commit 7f32594.
+
+### Checks (run by reviewer)
+- `pnpm format:check` — exit 0, "All matched files use the correct format." (979 files)
+- `pnpm typecheck && pnpm check:layers` — exit 0, "check-layers: 924 files, no violations"
+- `pnpm test` — exit 0, Test Files 352 passed | 1 skipped (353); Tests 3472 passed | 7 skipped (3479). Matches impl-log attempt 2.
+- `pnpm build` — exit 0
+- `pnpm test:db` — CI-only, not applicable (no DB code changed)
+
+### Acceptance criteria
+- [x] Security finding 1: a dispatch on a tag `refs/tags/release/X.Y.Z` no longer passes the guards — evidence:
+  `.github/workflows/release.yml:61-63` (`[ "$GITHUB_REF_TYPE" != branch ]` → `::error::` + exit 1) is the first command
+  of the `guards` step, which is the first step after checkout, so it runs before any side effect and before the
+  secrets are used. `GITHUB_REF_TYPE` is a default runner env var, `branch` on both `push` to `release/*` and a branch
+  dispatch, so the normal path is unchanged. Test `scripts/release-files.test.ts` › "guards still run first and check
+  the ref and main ancestry (dispatch-safe)" asserts the guard exists and precedes `git merge-base` — pass. Reviewer
+  scripted check of the guard body: `GITHUB_REF_TYPE=branch` → exit 0, `GITHUB_REF_TYPE=tag` → "refused", exit 1.
+- [x] README matches behaviour — `README.md:179` now says a dispatch from a tag or any non-`release/X.Y.Z` branch fails
+  at the guards.
+- [x] Attempt 1 criteria unchanged (only the lines above changed); all attempt 1 tests still green.
+
+Ming verification after merge (carry into the PR): same list as attempt 1, plus optionally: Actions → release → Run
+workflow on a tag ref fails at `guards` with "is not a branch" (only if a test tag exists; not required).
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations. R4: the rework touches only `release.yml` (High path, already approved in the plan), its test and the
+README sentence, all plan files, limited to finding 1. R3: no secret values; error message prints only `$GITHUB_REF`.
+R5: checks green, new guard has a test.
+
+### Blockers from review agents
+<To be filled by the orchestrator; security finding 1 is the item fixed here.>
+
+### Nits (do not block)
+- Attempt 1 nits still open (release.yml "any host credential helper never stores it" wording; redundant `num`
+  branch in ci-workflows.test.ts); not part of this rework.
+
+### Follow-ups (out of scope)
+- From security review: release secrets in a GitHub Environment `release` with a `release/*` branch rule; README
+  sentence that the runner group, not `SIMAP_RUNNER`, keeps jobs off the Mac.
+- Attempt 1 follow-ups unchanged.
+
+### Blockers from review agents
+- None: security-review.md Attempt 2 has no 🔴 (finding 1 fixed).

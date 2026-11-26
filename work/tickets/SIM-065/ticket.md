@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P2 |
 | Size | S |
 | Areas | architecture, security |
@@ -76,3 +76,9 @@ home server's `[self-hosted, macbook-runner]`, so work is not blocked when the M
 - Done: plan approved (M-89); implemented; review PASS attempt 1; security review no 🔴 (one 🟡: tag-ref dispatch passes the release guard); PR #140.
 - In progress / next: Ming decides on the 🟡 fix, merges #140, then runs CI once per runner.
 - Gotchas: with SIMAP_RUNNER unset every job uses GitHub-hosted minutes.
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 3 (implementer×1 23k, reviewer×1, security-ai-generated-code-auditor×1 27k; default models)
+- Done: REWORK attempt 2 per Ming: release guard refuses non-branch refs (tag dispatch); test + README; review PASS; security no 🔴. PR #140 updated.
+- In progress / next: Ming merges #140 and runs the manual checks.
+- Gotchas: none new.
