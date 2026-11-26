@@ -125,7 +125,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-044 | Restrict User device visibility and add a "my devices" API | MERGED | P1 | M | api, architecture, security | — | plan-approval | 1 | 2026-11-26 |
 | SIM-044.1 | Limit device data in seat, member and layout responses for Users | IN_PROGRESS | P1 | M | api, architecture, security | SIM-044 | plan-approval | 0 | 2026-11-26 |
 | SIM-045 | My Portal part 1: My seat, My devices, display name | MERGED | P2 | M | ui, ux | SIM-044 | none | 1 | 2026-11-26 |
-| SIM-045.1 | My Portal: My seat tab | BACKLOG | P2 | S | ui | SIM-045 | none | 0 | 2026-11-26 |
+| SIM-045.1 | My Portal: My seat tab | PLANNING | P2 | S | ui | SIM-045 | none | 0 | 2026-11-26 |
 | SIM-046 | Profile photo upload | BACKLOG | P3 | M | api, db, ui, security | SIM-045 | plan-approval | 0 | 2026-11-26 |
 | SIM-047 | Pixel character customisation | BACKLOG | P3 | M | db, api, ui, ux | SIM-045 | plan-approval | 0 | 2026-11-26 |
 | SIM-048 | A User places devices only on seats they occupy | MERGED | P2 | S | api, security | — | none | 0 | 2026-11-26 |
