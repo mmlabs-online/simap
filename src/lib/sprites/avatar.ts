@@ -1,3 +1,5 @@
+// Append-only: stored pixel looks (SIM-047) are indices into these ramps; widening also needs a migration that
+// replaces `members_pixel_look_check`.
 export const SKIN_RAMP = ["#f6d0b1", "#e8b48f", "#c98e66", "#8d5a3b"] as const;
 export const HAIR_RAMP = [
   "#2b2118",

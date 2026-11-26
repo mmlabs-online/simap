@@ -2,6 +2,7 @@ import { LAYOUT_LIMITS } from "@/lib/validate/layout";
 import { SPRITE_KEY_RE } from "@/lib/validate/map-item";
 import { DEVICE_KINDS } from "@/lib/device-types/types";
 import type { DeviceKind } from "./device-slots";
+import { parsePixelLook } from "./pixel-look";
 import type {
   LayoutItem,
   Placement,
@@ -67,7 +68,7 @@ const validItem = (i: unknown): i is LayoutItem =>
   typeof i.fixedSize === "boolean" &&
   isObject(i.art);
 
-const emptyView = (): SeatView => ({ state: "empty", avatarSeed: null, name: null });
+const emptyView = (): SeatView => ({ state: "empty", avatarSeed: null, name: null, look: null });
 
 function toDeviceType(raw: unknown): SeatDeviceType | null {
   if (!isObject(raw) || !isStr(raw.id) || !isStr(raw.slot)) return null;
@@ -100,6 +101,7 @@ function toSeatView(raw: unknown): SeatView {
     state: raw.state as SeatState,
     avatarSeed: isStr(raw.avatarSeed) ? raw.avatarSeed : null,
     name: isStr(raw.name) ? raw.name : null,
+    look: parsePixelLook(raw.look),
   };
 }
 

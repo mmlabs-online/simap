@@ -1137,6 +1137,45 @@ try {
     "12 valid id with version 1 accepted",
     (await tx(setPhoto("file_abcdefghij", 1), false)) === null,
   );
+  // 13. pixel look (SIM-047)
+  const setLook = (/** @type {string} */ json) =>
+    q(`update members set pixel_look = $1::jsonb where id = $2`, [json, m1.id]);
+  check(
+    "13 member without a look reads pixel_look null",
+    (await c.query(`select pixel_look from members where id = $1`, [m1.id])).rows[0].pixel_look ===
+      null,
+  );
+  check(
+    "13 valid looks (boundaries) accepted, null again accepted",
+    (await tx(async () => {
+      await setLook('{"skin":0,"hair":0,"style":1,"shirt":0}')();
+      await setLook('{"skin":3,"hair":5,"style":3,"shirt":6}')();
+      await q(`update members set pixel_look = null where id = $1`, [m1.id])();
+    }, false)) === null,
+  );
+  const badLooks = [
+    "{}",
+    '{"skin":0,"hair":0,"style":1}',
+    '{"skin":0,"hair":0,"style":1,"shirt":0,"x":1}',
+    '{"skin":4,"hair":0,"style":1,"shirt":0}',
+    '{"skin":0,"hair":6,"style":1,"shirt":0}',
+    '{"skin":0,"hair":0,"style":1,"shirt":7}',
+    '{"skin":0,"hair":0,"style":0,"shirt":0}',
+    '{"skin":0,"hair":0,"style":4,"shirt":0}',
+    '{"skin":-1,"hair":0,"style":1,"shirt":0}',
+    '{"skin":"2","hair":0,"style":1,"shirt":0}',
+    '{"skin":1.5,"hair":0,"style":1,"shirt":0}',
+    '{"skin":1.0,"hair":0,"style":1,"shirt":0}',
+    "[]",
+    "3",
+    '"x"',
+  ];
+  for (const bad of badLooks) {
+    check(
+      `13 bad look refused (23514 members_pixel_look_check): ${bad}`,
+      refused(await tx(setLook(bad)), "23514", "members_pixel_look_check"),
+    );
+  }
 
   // extras
   const reqIns = q(

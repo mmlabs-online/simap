@@ -180,15 +180,43 @@ describe("getRoomLayout (db)", () => {
       state: "occupied",
       avatarSeed: other,
       name: "Other Person",
+      look: null,
     });
     expect(res.seatViews[cannot]).toEqual({
       state: "cannot",
       avatarSeed: third,
       name: "Third Person",
+      look: null,
     });
-    expect(res.seatViews[empty]).toEqual({ state: "empty", avatarSeed: null, name: null });
+    expect(res.seatViews[empty]).toEqual({
+      state: "empty",
+      avatarSeed: null,
+      name: null,
+      look: null,
+    });
     const json = JSON.stringify(res);
     for (const m of [me, other, third]) expect(json).not.toContain(await subOf(m));
+  });
+
+  it("stored pixel look is returned for every viewer", async () => {
+    const o = await room();
+    const viewer = await addMember(pool, o.orgId);
+    const dressed = await addMember(pool, o.orgId);
+    const plain = await addMember(pool, o.orgId);
+    const look = { skin: 3, hair: 4, style: 2, shirt: 5 };
+    await run("update members set pixel_look = $2::jsonb where id = $1", [
+      dressed,
+      JSON.stringify(look),
+    ]);
+    const sd = await addSeat(pool, o.orgId, o.roomId, "C302", 1, { occupantId: dressed });
+    const sp = await addSeat(pool, o.orgId, o.roomId, "C302", 2, { occupantId: plain });
+    const se = await addSeat(pool, o.orgId, o.roomId, "C302", 3);
+    for (const who of [await subOf(viewer), await subOf(plain), await subOf(dressed)]) {
+      const res = await value(o, who);
+      expect(res.seatViews[sd]!.look).toEqual(look);
+      expect(res.seatViews[sp]!.look).toBeNull();
+      expect(res.seatViews[se]!.look).toBeNull();
+    }
   });
 
   it("foreign org room is 404; random uuid is 404", async () => {

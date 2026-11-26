@@ -50,10 +50,15 @@ export const DEMO_DEVICES: Record<string, SeatDevice[]> = {
 
 /** One seat per state, with three different people (a Vietnamese name among them). */
 export const DEMO_VIEWS: Record<string, SeatView> = {
-  "seat-a1": { state: "occupied", avatarSeed: "sub-ann", name: "Nguyễn Thị Ánh" },
-  "seat-a2": { state: "mine", avatarSeed: "sub-me", name: "You" },
-  "seat-a3": { state: "pending", avatarSeed: null, name: null },
-  "seat-b1": { state: "cannot", avatarSeed: null, name: null },
-  "seat-b2": { state: "occupied", avatarSeed: "sub-bao", name: "Trần Bảo" },
-  "seat-b3": { state: "empty", avatarSeed: null, name: null },
+  "seat-a1": { state: "occupied", avatarSeed: "sub-ann", name: "Nguyễn Thị Ánh", look: null },
+  "seat-a2": { state: "mine", avatarSeed: "sub-me", name: "You", look: null },
+  "seat-a3": { state: "pending", avatarSeed: null, name: null, look: null },
+  "seat-b1": { state: "cannot", avatarSeed: null, name: null, look: null },
+  "seat-b2": {
+    state: "occupied",
+    avatarSeed: "sub-bao",
+    name: "Trần Bảo",
+    look: { skin: 3, hair: 4, style: 2, shirt: 5 },
+  },
+  "seat-b3": { state: "empty", avatarSeed: null, name: null, look: null },
 };

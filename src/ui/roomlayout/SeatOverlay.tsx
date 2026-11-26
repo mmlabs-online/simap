@@ -3,7 +3,7 @@ import { STATUS_DOT, tagPlacement } from "@/lib/sprites/overlay";
 import type { DrawList } from "@/lib/sprites/placement";
 import { roomlayoutCopy } from "../copy/roomlayout";
 
-const EMPTY: SeatView = { state: "empty", avatarSeed: null, name: null };
+const EMPTY: SeatView = { state: "empty", avatarSeed: null, name: null, look: null };
 
 const SIDE = { above: "bottom-full mb-1", below: "top-full mt-1" } as const;
 const ALIGN = {

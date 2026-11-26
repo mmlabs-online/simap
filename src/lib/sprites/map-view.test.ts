@@ -46,7 +46,12 @@ describe("toMapView", () => {
   it("seat state comes from seatViews, missing entry defaults to empty", () => {
     const view = toMapView(body());
     expect(view?.seatViews.s1.state).toBe("occupied");
-    expect(view?.seatViews.s2).toEqual({ state: "empty", avatarSeed: null, name: null });
+    expect(view?.seatViews.s2).toEqual({
+      state: "empty",
+      avatarSeed: null,
+      name: null,
+      look: null,
+    });
     expect(Object.keys(view?.seatViews ?? {})).toEqual(["s1", "s2"]);
   });
 
@@ -83,12 +88,33 @@ describe("toMapView", () => {
         },
       }),
     );
-    expect(view?.seatViews.s1).toEqual({ state: "empty", avatarSeed: null, name: null });
-    expect(view?.seatViews.s2).toEqual({ state: "occupied", avatarSeed: null, name: null });
+    expect(view?.seatViews.s1).toEqual({
+      state: "empty",
+      avatarSeed: null,
+      name: null,
+      look: null,
+    });
+    expect(view?.seatViews.s2).toEqual({
+      state: "occupied",
+      avatarSeed: null,
+      name: null,
+      look: null,
+    });
   });
 
   it("keeps Vietnamese names unchanged", () => {
     expect(toMapView(body())?.seatViews.s1.name).toBe("Nguyễn Thị Ánh");
+  });
+
+  it("look is parsed; a bad look becomes null; a missing look (old server) becomes null", () => {
+    const L = { skin: 1, hair: 2, style: 3, shirt: 4 };
+    const seats = (look: unknown) => ({
+      s1: { state: "occupied", avatarSeed: "u1", name: "A", look },
+    });
+    expect(toMapView(body({ seatViews: seats(L) }))?.seatViews.s1.look).toEqual(L);
+    expect(toMapView(body({ seatViews: seats({ ...L, skin: 9 }) }))?.seatViews.s1.look).toBeNull();
+    expect(toMapView(body({ seatViews: seats("x") }))?.seatViews.s1.look).toBeNull();
+    expect(toMapView(body())?.seatViews.s1.look).toBeNull();
   });
 
   it("unplaced seats are listed in server order and are not in layout.seats", () => {

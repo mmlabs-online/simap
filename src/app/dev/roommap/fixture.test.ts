@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { avatarFor } from "@/lib/sprites/avatar";
+import { resolveLook } from "@/lib/sprites/pixel-look";
 import { buildDrawList, resolveFrameKey } from "@/lib/sprites/placement";
 import type { SpriteManifest } from "@/lib/sprites/types";
 import { checkLayoutRules, fixturesOnDesks } from "@/lib/validate/layout";
@@ -34,7 +34,7 @@ describe("demo fixture", () => {
 
   it("sample subs have pairwise different looks", () => {
     const looks = Object.values(DEMO_VIEWS).flatMap((v) =>
-      v.avatarSeed ? [JSON.stringify(avatarFor(v.avatarSeed))] : [],
+      v.avatarSeed ? [JSON.stringify(resolveLook(v.look, v.avatarSeed))] : [],
     );
     expect(looks.length).toBeGreaterThanOrEqual(3);
     expect(new Set(looks).size).toBe(looks.length);

@@ -38,6 +38,7 @@ type SeatRow = Tile & {
   cannot_seat: boolean;
   occupant_id: string | null;
   display_name: string | null;
+  pixel_look: unknown;
   mine: boolean;
 };
 type FixtureRow = Tile & { id: string };
@@ -74,7 +75,7 @@ export async function readLayoutRows(
   const { rows: seatRows } = await orgQuery<SeatRow>(
     c,
     scope,
-    `select s.id, s.code, s.cannot_seat, s.occupant_id, o.display_name,
+    `select s.id, s.code, s.cannot_seat, s.occupant_id, o.display_name, o.pixel_look,
          coalesce(o.sub = $3::uuid, false) as mine,
          s.tile_x, s.tile_y, s.tile_rotation, left(s.sprite_key, 129) as sprite_key
        from seats s
@@ -204,6 +205,7 @@ export async function readLayoutRows(
       mine: s.mine,
       occupantId: s.occupant_id,
       occupantName: s.display_name,
+      occupantLook: s.pixel_look,
     });
   }
   return {
