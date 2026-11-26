@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T15:42Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -60,3 +60,9 @@ D80 (name tags always shown, amends D50 for this view), D78.
 - Plan approved (2026-11-26, batch 2026-11-26-6): "duyệt hết theo mặc định"; Q1 default (built after SIM-059 is merged); Q2 one PR in two ordered commits (A, B); Q4 static seated pose + monitor-on, typing animation moves to SIM-061; Q5 polling 45 s / 60 s after failure, stale notice after 2 failures, Who's here lists checked-in only.
 
 ## Handoff
+
+### 2026-11-26 — claude — PLANNING (waiting)
+- Agent calls: 3, ~212k tokens (frontend-developer×1 default 49k, api-platform-engineer×1 default 22k, planner×1 default 140k; batch 2026-11-26-6).
+- Done: consults and plan (READY, approved 2026-11-26).
+- In progress / next: waits for Ming to merge PR #141 (SIM-059); then rebase onto main and implement (`/run-batch --resume`).
+- Gotchas: uses SIM-059's hooks; `useRoomPresence` stays "loading" for a null roomId; typing animation moved to SIM-061 (add to its notes).
