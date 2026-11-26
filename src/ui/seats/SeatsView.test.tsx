@@ -38,7 +38,7 @@ const seats: SeatDto[] = [
     id: "s1",
     code: "C302-01",
     status: "occupied",
-    occupant: { id: "m1", displayName: "Nguyễn Văn Ân" },
+    occupant: { id: "m1", displayName: "Nguyễn Văn Ân", hasPhoto: false, photoVersion: 0 },
     deviceCount: 25,
     devices: [
       {

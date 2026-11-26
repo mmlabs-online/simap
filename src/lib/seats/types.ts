@@ -1,3 +1,5 @@
+import type { MemberPhotoDto } from "@/lib/members/photo";
+
 export const SEAT_LIMITS = {
   addMax: 50,
   list: 500,
@@ -26,7 +28,7 @@ export type SeatDto = {
   status: SeatStatus;
   cannotSeat: boolean;
   cannotSeatReason: string | null;
-  occupant: { id: string; displayName: string } | null;
+  occupant: ({ id: string; displayName: string } & MemberPhotoDto) | null;
   /** True when the caller is the occupant (computed on the server from the token's sub). */
   mine: boolean;
   group: { id: string; name: string; color: string } | null;

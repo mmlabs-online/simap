@@ -193,7 +193,12 @@ describe("seats (db): list and detail", () => {
     expect(r.value.items.map((s) => s.code)).toEqual(["C302-01", "C302-02"]);
     const [a, b] = r.value.items;
     expect(a!.status).toBe("occupied");
-    expect(a!.occupant).toEqual({ id: w.x, displayName: "Test Member" });
+    expect(a!.occupant).toEqual({
+      id: w.x,
+      displayName: "Test Member",
+      hasPhoto: false,
+      photoVersion: 0,
+    });
     expect(a!.mine).toBe(true);
     expect(a!.group).toMatchObject({ id: group, name: "Ops" });
     expect(a!.deviceCount).toBe(SEAT_LIMITS.listDevices + 3);
@@ -552,5 +557,38 @@ describe("seats (db): device visibility", () => {
     if (!l.ok) throw new Error("list failed");
     expect(l.value.items[0]!.devices).toHaveLength(SEAT_LIMITS.listDevices);
     expect(l.value.items[0]!.deviceCount).toBe(25);
+  });
+});
+
+describe("seats (db): occupant photo (SIM-046.2)", () => {
+  it("occupant photo fields; JSON has no Drive id", async () => {
+    const w = await world({ occupied: true });
+    const vacant = await addSeat(pool, w.orgId, w.roomId, "C302", 2);
+    await pool.query(
+      "update members set photo_drive_file_id = 'file_abcdefghij', photo_version = 4 where id = $1",
+      [w.x],
+    );
+    const r = await listRoomSeats(pool, w.scope, await subOf(w.y), "user", w.roomId);
+    if (!r.ok) throw new Error("list failed");
+    expect(r.value.items[0]!.occupant).toEqual({
+      id: w.x,
+      displayName: "Test Member",
+      hasPhoto: true,
+      photoVersion: 4,
+    });
+    expect(r.value.items.find((s) => s.id === vacant)!.occupant).toBeNull();
+    const d = await getSeat(pool, w.scope, await subOf(w.y), "user", w.seatId);
+    if (!d.ok) throw new Error("detail failed");
+    expect(d.value.occupant).toEqual({
+      id: w.x,
+      displayName: "Test Member",
+      hasPhoto: true,
+      photoVersion: 4,
+    });
+    for (const v of [r.value, d.value]) {
+      const json = JSON.stringify(v);
+      expect(json).not.toContain("file_abcdefghij");
+      expect(json.toLowerCase()).not.toContain("drive");
+    }
   });
 });

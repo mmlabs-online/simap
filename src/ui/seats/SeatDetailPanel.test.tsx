@@ -16,7 +16,7 @@ const seat: SeatDto = {
   status: "occupied",
   cannotSeat: true,
   cannotSeatReason: "Sàn đang sửa",
-  occupant: owner,
+  occupant: { ...owner, hasPhoto: false, photoVersion: 0 },
   mine: false,
   group: { id: "g1", name: "Nhóm Mạng", color: "#fff" },
   project: { id: "p1", code: "P1", name: "Dự án" },
@@ -40,7 +40,7 @@ const seat: SeatDto = {
     },
   ],
 };
-const render = (view: PanelView, actions?: React.ReactNode) =>
+const render = (view: PanelView, actions?: React.ReactNode, occupantPhoto?: string | null) =>
   renderToStaticMarkup(
     <SeatDetailPanel
       view={view}
@@ -48,6 +48,7 @@ const render = (view: PanelView, actions?: React.ReactNode) =>
       onClose={() => {}}
       onRetry={() => {}}
       actions={actions}
+      occupantPhoto={occupantPhoto}
     />,
   );
 
@@ -135,5 +136,22 @@ describe("SeatDetailPanel", () => {
     expect(returnFocusTarget(null, null)).toBeNull();
     const body = el(false);
     expect(returnFocusTarget(null, body, body)).toBeNull();
+  });
+});
+
+describe("SeatDetailPanel occupant photo (SIM-046.2)", () => {
+  it("occupant row shows the photo img when occupantPhoto is set; initials otherwise; vacant seat shows no avatar", () => {
+    const withPhoto = render({ kind: "ready", seat }, undefined, "blob:photo-1");
+    expect(withPhoto).toContain('src="blob:photo-1"');
+    expect(withPhoto).toContain('alt=""');
+    const without = render({ kind: "ready", seat });
+    expect(without).not.toContain("<img");
+    const vacant = render(
+      { kind: "ready", seat: { ...seat, occupant: null, status: "empty" } },
+      undefined,
+      "blob:photo-1",
+    );
+    expect(vacant).not.toContain("blob:photo-1");
+    expect(vacant).toContain(seatsCopy.noOccupant);
   });
 });

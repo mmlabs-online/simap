@@ -59,8 +59,8 @@ const seat = (over: Partial<SeatDto> = {}): SeatDto => ({
   devices: [],
   ...over,
 });
-const owner = { id: "u1", displayName: "Ha" };
-const other = { id: "u2", displayName: "Binh" };
+const owner = { id: "u1", displayName: "Ha", hasPhoto: false, photoVersion: 0 };
+const other = { id: "u2", displayName: "Binh", hasPhoto: false, photoVersion: 0 };
 const primaryDev = (id: string) => ({
   id,
   name: "x",

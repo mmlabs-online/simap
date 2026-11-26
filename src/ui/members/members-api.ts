@@ -80,6 +80,18 @@ export function createMembersApi(fetcher: ApiFetch) {
       call<MemberDto>(`${memberPath(id)}/deactivate`, withBody({ release }), json<MemberDto>),
     reactivate: (id: string) =>
       call<MemberDto>(`${memberPath(id)}/reactivate`, { method: "POST" }, json<MemberDto>),
+    getPhoto: (id: string) =>
+      call<Blob>(`${memberPath(id)}/photo`, { method: "GET" }, async (res) => {
+        const blob = await res.blob();
+        return blob.type.startsWith("image/png") || blob.type.startsWith("image/jpeg")
+          ? { ok: true, value: blob }
+          : fail("internal");
+      }),
+    removePhoto: (id: string) =>
+      call<null>(`${memberPath(id)}/photo`, { method: "DELETE" }, async () => ({
+        ok: true,
+        value: null,
+      })),
     invitations: () =>
       call<PendingInvitationDto[]>("/api/members/invitations", { method: "GET" }, async (res) => {
         const b = (await res.json()) as { items?: unknown } | null;

@@ -12,7 +12,7 @@ import type { PlaceSeats } from "./usePlaceTargets";
 
 const noop = () => {};
 const copy = devicesCopy.place;
-const owner = { id: "u1", displayName: "Ha" };
+const owner = { id: "u1", displayName: "Ha", hasPhoto: false, photoVersion: 0 };
 const device: DeviceDto = {
   id: "d1",
   name: "Laptop",
@@ -98,7 +98,11 @@ const render = (p: Props = {}) =>
 describe("PlaceDeviceFields picker", () => {
   it("user sees only own seats, message when none (D72)", () => {
     const mine = seat({ id: "s1", code: "C-01", occupant: owner });
-    const theirs = seat({ id: "s2", code: "C-02", occupant: { id: "u2", displayName: "Binh" } });
+    const theirs = seat({
+      id: "s2",
+      code: "C-02",
+      occupant: { id: "u2", displayName: "Binh", hasPhoto: false, photoVersion: 0 },
+    });
     const empty = seat({ id: "s3", code: "C-03" });
     const html = render({ tier: "user", seats: ready([mine, theirs, empty]) });
     expect(html).toContain("C-01 · Ha");
@@ -158,7 +162,9 @@ describe("PlaceDeviceFields picker", () => {
 
   it("lend label when the chosen seat's occupant is not the owner", () => {
     const html = render({
-      seats: ready([seat({ occupant: { id: "u2", displayName: "Binh" } })]),
+      seats: ready([
+        seat({ occupant: { id: "u2", displayName: "Binh", hasPhoto: false, photoVersion: 0 } }),
+      ]),
       seatId: "s1",
     });
     expect(html).toContain("Lent to Binh&#x27;s seat as secondary.");

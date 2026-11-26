@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P3 |
 | Size | M |
 | Areas | ui, api |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/132 |
 
 ## Goal
 Other members' photos appear where people are listed (Members list, member card, seat panel occupant row), and a Manager+ can remove a member's photo from the member card (SIM-046 slice 3).
@@ -36,5 +36,12 @@ Other members' photos appear where people are listed (Members list, member card,
 - [ ] All Checks pass.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-3): "duyệt hết theo mặc định"; Q2 default: Remove photo stays visible on own card (F4 follow-up).
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 6, ~375k tokens (frontend-developer×1 default 40k, api-platform-engineer×1 default 38k, planner×1 default 94k, implementer×1 default 101k, reviewer×1 default 55k, security-ai-generated-code-auditor×1 default 48k; batch 2026-11-26-3).
+- Done: hasPhoto/photoVersion on MemberDto and seat occupant; photos in Members list, member card (Remove photo, Manager+) and seat panel; review and security PASS attempt 1; PR #132.
+- In progress / next: Ming merges #131 first, then this PR (rebase; Avatar.tsx identical).
+- Gotchas: no jsdom, so the Avatar onError fallback is not DOM-tested.

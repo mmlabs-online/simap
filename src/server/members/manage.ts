@@ -73,6 +73,8 @@ type MemberRow = {
   group_id: string | null;
   group_name: string | null;
   group_color: string | null;
+  has_photo: boolean;
+  photo_version: number;
   seat_count: number;
   device_count: number | null;
   seats: MemberSeatRef[];
@@ -96,6 +98,8 @@ const toDto = (r: MemberRow): MemberDto => ({
       ? null
       : { id: r.group_id, name: r.group_name as string, color: r.group_color as string },
   status: r.status,
+  hasPhoto: r.has_photo,
+  photoVersion: r.photo_version,
   seatCount: r.seat_count,
   deviceCount: r.device_count,
   seats: r.seats,
@@ -116,6 +120,7 @@ const toDto = (r: MemberRow): MemberDto => ({
 const memberSelect = (refCap: number, visible: string | null) => `select m.id, m.display_name,
     ${visible ? `case when ${visible} then m.email end` : "m.email"} as email, m.employee_code, m.status,
     lower(m.display_name) as sort_key, g.id as group_id, g.name as group_name, g.color as group_color,
+    m.photo_drive_file_id is not null as has_photo, m.photo_version,
     (select count(*)::int from seats s where s.org_id = $1 and s.occupant_id = m.id) as seat_count,
     ${visible ? `case when ${visible} then ` : ""}(select count(*)::int from devices d where d.org_id = $1 and d.owner_id = m.id)${visible ? " end" : ""} as device_count,
     coalesce((select json_agg(x) from (
