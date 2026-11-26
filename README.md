@@ -176,7 +176,7 @@ the variable for that run. CI starts its own throwaway Postgres containers (`scr
    `RUNNER_TEMP` (the host's `~/.docker` is untouched) and a cleanup step that logs out and removes the clone. The workflow passes the tag as
    build arg `SIMAP_VERSION`, and the app header shows it (`dev` for a build without it). If the run is stuck in the
    queue (Mac offline), cancel it and use Actions, release, Run workflow on the `release/X.Y.Z` branch with
-   `runner=github`; a dispatch from any other branch fails at the guards.
+   `runner=github`; a dispatch from a tag or from any branch that is not `release/X.Y.Z` fails at the guards.
 3. Ming reviews and merges that PR; `deploy-simap` on the home server backs up the databases, runs the one-shot
    `migrate` service, then replaces the app and waits for `/api/readyz`.
 4. Rollback restores the previous image; migrations are forward-only (expand, then contract).

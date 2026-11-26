@@ -21,3 +21,11 @@ Follow-ups:
 - Upstream runner selection in `risk-tier.yml` to spaceM project-kit.
 
 Scope self-check: only plan files; steps and run bodies unchanged.
+
+## Attempt 2 (REWORK: security-review finding 1)
+- `.github/workflows/release.yml`: first command of the guards step now refuses `$GITHUB_REF_TYPE` other than `branch` (before any side effect). Required: finding 1.
+- `scripts/release-files.test.ts`: "guards still run first" test asserts the ref-type guard exists and precedes the merge-base check.
+- `README.md`: dispatch sentence now says a dispatch from a tag or any branch other than `release/X.Y.Z` fails at the guards.
+
+Checks: format:check, typecheck, check:layers, test all exit 0 (Test Files 352 passed | 1 skipped; Tests 3472 passed | 7 skipped).
+Out-of-plan files: none. Scope self-check: only finding 1.

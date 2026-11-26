@@ -86,6 +86,9 @@ describe("release.yml", () => {
     );
     expect(guards.indexOf('"$GITHUB_REF_NAME" =~')).toBeGreaterThan(-1);
     expect(guards.indexOf('"$GITHUB_REF_NAME" =~')).toBeLessThan(tag);
+    const refType = guards.indexOf('[ "$GITHUB_REF_TYPE" != branch ]');
+    expect(refType).toBeGreaterThan(-1);
+    expect(refType).toBeLessThan(guards.indexOf("git merge-base"));
   });
   it("release steps are unconditional on runner (no runner.os branching)", () => {
     expect(release).not.toMatch(/runner\.os|RUNNER_OS/i);
