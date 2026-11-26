@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T16:48Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/144 |
 
 ## Goal
 The signed-out sign-in page follows Ming's mockup (`mockup-sign-in.webp` in this folder): a calm "small world"
@@ -90,3 +90,9 @@ Builds on SIM-055 (game-style sign-in, merged). Request: Ming 2026-11-26 with th
 - Done: consults; plan (slice 1 of a proposed split; slice 2 = SIM-068.1 with the four canvas rooms, paths, avatars, notes).
 - In progress / next: Ming answers the 9 product questions in plan.md "Blocking questions" (defaults given); then `/run SIM-068` re-plans and builds.
 - Gotchas: the plan's palette note suggests "D73", which is already taken — use the next free D number; the real sign-in page can only be seen on a deployed build (DevGate replaces it under `pnpm dev`).
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 8, ~496k tokens (frontend-developer×1 default 40k, ux-architect×1 default 36k, planner×2 default 109k + sonnet 30k, implementer×1 default 53k, reviewer×1 default 57k, security-ai-generated-code-auditor×1 default 26k; plus the earlier blocked round).
+- Done: slice 1 — AuthLayout header/hero/card/footer, `--aw-*` palette (D85), Fraunces italic headline, landing on the signed-out sign-in only; review and security PASS attempt 1; PR #144.
+- In progress / next: Ming merges PR #144 and checks it on a deployed build; then SIM-068.1 (four rooms, paths, avatars, notes).
+- Gotchas: `pnpm dev` shows DevGate, not the sign-in page; `--font-serif` collides with Tailwind's default variable name.
