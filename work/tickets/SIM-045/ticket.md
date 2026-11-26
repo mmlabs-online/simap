@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T04:21Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/121 |
 
 ## Goal
 Every member has one page, My Portal, with three horizontal tabs showing their own seat, the devices they hold and
@@ -57,3 +57,9 @@ Dashboard stays home, My Portal is a nav entry), OQ-59 (badge moves to My Portal
 ## Notes / answers from Ming
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 7 (frontend-developer×1 59k, ux-architect×1 53k, planner×1 128k, implementer×2 102k+26k, reviewer×2 83k+45k; default models)
+- Done: slice A — /portal with My devices + Profile tabs, nav entry + badge, Devices nav Manager+, /devices redirect for Users. REWORK attempt 1 (notice latest-wins, failed refresh), PASS attempt 2. PR #121. Slice B is SIM-045.1.
+- In progress / next: Ming merges PR #121 and runs the signed-in manual checks; then SIM-045.1.
+- Gotchas: no DOM test env (Vitest node) — component behaviour was checked with a scratch harness outside the repo.
