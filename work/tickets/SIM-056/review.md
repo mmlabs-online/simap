@@ -54,3 +54,28 @@ Run `pnpm dev`, open the Profile tab, and keep the DevTools Network tab open:
 
 ### Follow-ups (out of scope)
 - The memory guard runs only after a full decode. A heavily compressed file under 20 MB with a huge pixel count (for example a 30000x30000 PNG) is fully decoded by `createImageBitmap` before the 50 MP check, which can still run the tab out of memory. A follow-up could read the dimensions from the PNG/JPEG header first, or pass `resizeWidth`/`resizeHeight` to `createImageBitmap`. The approved plan chose decode-then-check, so this is not a REWORK item.
+
+## Attempt 2 — 2026-11-26
+Verdict: PASS
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format." (950 files)
+- `pnpm typecheck`: exit 0 (typegen + tsc clean). `pnpm check:layers`: exit 0, "check-layers: 895 files, no violations"
+- `pnpm test`: exit 0, "Test Files 342 passed | 1 skipped (343)", "Tests 3394 passed | 9 skipped (3403)"
+- `pnpm build`: exit 0
+- `pnpm test:db` (local Postgres): exit 0
+
+### Attempt-1 blocker
+Issue 1 fixed. `git diff d6f03ae..HEAD -- src` is a single hunk in `src/ui/portal/ProfilePhoto.tsx`: the failure branch of `run` now calls `setNotice(null)` before `setError(...)`. The "Processing your photo..." status can no longer sit next to the refusal alert. No other source change. No DOM test (no jsdom); verified by code reading and covered by manual check 7.
+
+### Acceptance criteria
+AC1-AC4 and AC6 unchanged from attempt 1 (still met; checks green). AC5 now met: logic and tests as before, and the UI clears the notice on refusal.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations. R4: attempt 2 touches only ProfilePhoto.tsx (in the plan's file list) plus work files.
+
+### Nits and follow-ups
+Unchanged from attempt 1. Manual checks for Ming (list in attempt 1, items 1-11) carry into the PR; item 7 should now show no lingering "Processing" text.
