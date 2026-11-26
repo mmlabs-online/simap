@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | db, ui |
@@ -11,7 +11,7 @@
 | Needs Ming | M-82, M-86 |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-26T03:48:33Z |
 | PR | — |
 
 ## Goal
@@ -56,7 +56,7 @@ into new built-in library items with real art.
 - Manual: place each new item in `/dev/roommap` in all four directions.
 
 ## Notes / answers from Ming
-Waiting for Ming: plan approval (High tier)
+- Plan approved (2026-11-26, Ming: "duyệt SIM-042"; assumptions A1-A14 accepted as written).
 - 2026-11-26 Ming (M-82): "M-82 đồng ý" — adding new built-in library items is in scope; recorded as D73 (amends D66 (1)).
 
 ## Handoff
