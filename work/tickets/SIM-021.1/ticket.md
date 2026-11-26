@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | MERGED |
 | Priority | P1 |
 | Size | XS |
 | Areas | architecture |
@@ -28,14 +28,21 @@ After the first production release, the manual flow run is recorded in `work/tic
 - The release and the run itself (Ming's steps). Fixing the bugs (their own BUG tickets).
 
 ## Acceptance criteria
-- [ ] The manual flow run is recorded with results and a summary.
-- [ ] Every FAIL row has a BUG id; no personal data in the files.
+- [x] The manual flow run is recorded with results and a summary.
+- [x] Every FAIL row has a BUG id (no FAIL rows); no personal data in the files.
 
 ## Test plan
 - Manual: none beyond the run (docs only).
 
 ## Notes / answers from Ming
 - 2026-11-26: Ming asked Claude to run what it can. Claude ran the signed-out automated checks (A1–A10 in `work/tickets/SIM-021/flow-run.md`): all PASS, one transient edge 503 noted. The signed-in F1–F11 run still needs Ming (accounts, Turnstile); send the results per row and Claude records them and files bugs.
+- 2026-11-26 Ming: "PASS all" — all 74 F rows PASS; recorded with a Go summary.
 - 2026-11-26: created on SIM-021 plan approval (Ming approved the split).
 
 ## Handoff
+
+### 2026-11-26 — claude — MERGED
+- Agent calls: 0 (docs-only record; no plan/implement/review loop needed).
+- Done: signed-out automated checks A1–A10 (all PASS, one transient edge 503 noted) and Ming's signed-in results (74/74 PASS) recorded in `work/tickets/SIM-021/flow-run.md`; summary: 0 FAIL, Go. No bugs to file. Committed directly on `main` (work/ files only, no PR).
+- In progress / next: Ming ticks M-77 once the rest of `docs/go-live.md` is done.
+- Gotchas: header fields "Version" and "Browser and device" were not reported.

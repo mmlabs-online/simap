@@ -115,7 +115,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-027 | Security headers, CSP and apiFetch hardening before go-live | MERGED | P1 | M | security, architecture | SIM-006.2 | plan-approval | 0 | 2026-11-20 |
 | SIM-038 | Sync the deploy-simap draft with the deployment repo (Drive secrets) | MERGED | P2 | XS | security | — | plan-approval | 0 | 2026-11-25 |
 | SIM-021 | Go-live checklist and first production deploy | MERGED | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | plan-approval | 2 | 2026-11-26 |
-| SIM-021.1 | Record the production flow run and file bugs | BACKLOG | P1 | XS | architecture | SIM-021 | none | 0 | 2026-11-26 |
+| SIM-021.1 | Record the production flow run and file bugs | MERGED | P1 | XS | architecture | SIM-021 | none | 2026-11-26 | 2026-11-26 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
 | BUG-003 | devices.db test violates device_handoffs_decided_check (return flags test) | MERGED | P1 | XS | db | — | none | 0 | 2026-11-26 |
 | BUG-004 | manage.db deactivate test expects the old audit meta (no cancelledHandoffs) | MERGED | P1 | XS | db | — | none | 0 | 2026-11-26 |
