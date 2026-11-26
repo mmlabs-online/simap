@@ -28,10 +28,13 @@ export function CheckinView({
   state,
   switcher,
   button,
+  whosHere,
 }: {
   state: CheckinViewState;
   switcher: ReactNode;
   button?: ReactNode;
+  /** The "Who's here" list (SIM-060); without it the card shows the placeholder. */
+  whosHere?: ReactNode;
 }) {
   const headingId = useId();
   let body: ReactNode;
@@ -72,9 +75,11 @@ export function CheckinView({
               <h2 id={headingId} className="text-base font-bold text-on-surface">
                 {checkinCopy.whosHereTitle}
               </h2>
-              <p className="mt-2 text-sm text-on-surface-variant">
-                {checkinCopy.whosHerePlaceholder}
-              </p>
+              {whosHere ?? (
+                <p className="mt-2 text-sm text-on-surface-variant">
+                  {checkinCopy.whosHerePlaceholder}
+                </p>
+              )}
             </Card>
           </section>
         </div>

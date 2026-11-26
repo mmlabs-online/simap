@@ -11,7 +11,7 @@ type State = {
 };
 const INITIAL: State = { status: "loading", data: null, errorCode: null };
 
-/** Who is checked in to one room today. Stale answers (older request, other room) are dropped. SIM-060 adds polling via `refresh`. */
+/** Who is checked in to one room today. Stale answers (older request, other room) are dropped. `refresh` refetches without a skeleton, keeps the data on failure and resolves to true when the read worked (polling, SIM-060). */
 export function useRoomPresence(api: PresenceApi, roomId: string | null) {
   const [state, setState] = useState<State>(INITIAL);
   const counter = useRef(0);
@@ -25,17 +25,18 @@ export function useRoomPresence(api: PresenceApi, roomId: string | null) {
   }, []);
 
   const load = useCallback(
-    async (quiet: boolean) => {
+    async (quiet: boolean): Promise<boolean> => {
       const id = ++counter.current;
       if (roomId === null) {
         setState(INITIAL);
-        return;
+        return false;
       }
       if (!quiet) setState(INITIAL);
       const r = await api.room(roomId);
-      if (!mounted.current || id !== counter.current) return;
+      if (!mounted.current || id !== counter.current) return r.ok;
       if (r.ok) setState({ status: "ready", data: r.value, errorCode: null });
       else if (!quiet) setState({ status: "error", data: null, errorCode: r.code });
+      return r.ok;
     },
     [api, roomId],
   );
