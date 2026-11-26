@@ -191,13 +191,28 @@ describe("readMeResult", () => {
     ).toEqual({
       status: 200,
       code: undefined,
-      me: { tier: "user", email: "a@b.co", member: { displayName: "a", needsProfile: true } },
+      me: {
+        tier: "user",
+        email: "a@b.co",
+        member: { id: "m", displayName: "a", needsProfile: true },
+      },
     });
     for (const bad of [{ displayName: "a" }, { displayName: 1, needsProfile: true }, "x", null]) {
       const out = await readMeResult(
         json({ sub: "s", email: "a@b.co", org: "o", tier: "user", member: bad }, 200),
       );
       expect(out).toMatchObject({ me: { tier: "user", member: undefined } });
+    }
+  });
+
+  it("readMeResult keeps member.id only when it is a string; a member without id is still kept", async () => {
+    for (const id of [7, undefined]) {
+      const member = { id, displayName: "a", needsProfile: false };
+      const out = await readMeResult(
+        json({ sub: "s", email: "a@b.co", org: "o", tier: "user", member }, 200),
+      );
+      expect(out).toMatchObject({ me: { member: { displayName: "a", needsProfile: false } } });
+      expect("id" in ((out as { me: { member: object } }).me.member as object)).toBe(false);
     }
   });
 
