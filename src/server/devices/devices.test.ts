@@ -147,7 +147,7 @@ describe("placeDevice refusals", () => {
       DEV,
       put({ seatId: SEAT_A, role: "secondary", expectedSeatId: null }),
     );
-    expect(r1).toEqual({ ok: false, status: 422, code: "not_allowed" });
+    expect(r1).toEqual({ ok: false, status: 404, code: "not_found" });
     const notOcc = fakeDb(base({ occupant: OTHER }));
     const r2 = await placeDevice(
       notOcc.db,
@@ -373,12 +373,12 @@ describe("createDevice", () => {
 });
 
 describe("updateDevice", () => {
-  it("an unowned device with no linked member is not editable by a User (null is not an owner)", async () => {
+  it("an unowned device with no linked member is hidden from a User: 404 (null is not an owner)", async () => {
     const t = fakeDb(writes({ me: null, owner: null }));
     expect(await updateDevice(t.db, scope, ACTOR, "user", DEV, { name: "x" })).toEqual({
       ok: false,
-      status: 422,
-      code: "not_allowed",
+      status: 404,
+      code: "not_found",
     });
     expect(writeSql(t.sqls())).toEqual([]);
   });
@@ -411,13 +411,12 @@ describe("updateDevice", () => {
     expect(writeSql(noop.sqls())).toEqual([]);
   });
 
-  it("another member's device as User -> 422 not_allowed, nothing written; Admin ok; missing -> 404", async () => {
+  it("another member's device as User -> 404 not_found like an unknown id, nothing written; Admin ok; missing -> 404", async () => {
     const t = fakeDb(writes({ owner: OTHER }));
-    expect(await updateDevice(t.db, scope, ACTOR, "user", DEV, { name: "x" })).toEqual({
-      ok: false,
-      status: 422,
-      code: "not_allowed",
-    });
+    const gone0 = fakeDb((sql, v) => (sql.startsWith("select id, name") ? [] : writes()(sql, v)));
+    const unknown = await updateDevice(gone0.db, scope, ACTOR, "user", DEV, { name: "x" });
+    expect(await updateDevice(t.db, scope, ACTOR, "user", DEV, { name: "x" })).toEqual(unknown);
+    expect(unknown).toEqual({ ok: false, status: 404, code: "not_found" });
     expect(writeSql(t.sqls())).toEqual([]);
     const admin = fakeDb(writes({ owner: OTHER }));
     expect((await updateDevice(admin.db, scope, ACTOR, "admin", DEV, { name: "x" })).ok).toBe(true);
