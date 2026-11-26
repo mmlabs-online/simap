@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/140 |
 
 ## Goal
 simap's CI, image, risk-tier and release jobs can run either on GitHub-hosted runners (`ubuntu-latest`) or on the
@@ -69,3 +69,9 @@ home server's `[self-hosted, macbook-runner]`, so work is not blocked when the M
 - Done: consult and plan (READY); plan gate (High path `.github/workflows/release.yml`); M-89 added.
 - In progress / next: Ming approves the plan (A1–A4) → implement.
 - Gotchas: ci.yml job `if:` guards must allow workflow_dispatch or a manual run shows green with all jobs skipped.
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 3 this run (implementer×1 55k, reviewer×1 52k, security-ai-generated-code-auditor×1 41k; default models)
+- Done: plan approved (M-89); implemented; review PASS attempt 1; security review no 🔴 (one 🟡: tag-ref dispatch passes the release guard); PR #140.
+- In progress / next: Ming decides on the 🟡 fix, merges #140, then runs CI once per runner.
+- Gotchas: with SIMAP_RUNNER unset every job uses GitHub-hosted minutes.
