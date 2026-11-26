@@ -56,7 +56,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-015.9 | Layout editor palette, tray placement and room resize | MERGED | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
 | SIM-015.10 | Layout editor drag, marquee and keyboard shortcuts | MERGED | P1 | M | ui, ux | SIM-015.7 | plan-approval | 0 | 2026-11-23 |
 | SIM-015.8 | Layout editor desk add and delete | MERGED | P1 | S | ui | SIM-015.7, SIM-015.9 | plan-approval | 0 | 2026-11-23 |
-| SIM-033 | Ship the bundled art package and the in-app Credits page | PLANNING | P1 | S | ui, architecture | SIM-015.3 | plan-approval | 0 | 2026-11-25 |
+| SIM-033 | Ship the bundled art package and the in-app Credits page | IN_PROGRESS | P1 | S | ui, architecture | SIM-015.3 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.1 | Map item catalog: schema, per-org seed and read API | MERGED | P1 | M | db, api, security | — | plan-approval | 0 | 2026-11-25 |
 | SIM-039.2 | Map item catalog admin API | MERGED | P1 | M | api, security | SIM-039.1 | plan-approval | 0 | 2026-11-25 |
 | SIM-039.3 | Catalog footprints in the layout validator, resolver and save | MERGED | P1 | M | api, architecture | SIM-039.1 | plan-approval | 0 | 2026-11-25 |
@@ -111,7 +111,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-018 | CSV export | MERGED | P2 | S | api, ui | SIM-017 | none | 0 | 2026-11-24 |
 | SIM-027 | Security headers, CSP and apiFetch hardening before go-live | MERGED | P1 | M | security, architecture | SIM-006.2 | plan-approval | 0 | 2026-11-20 |
 | SIM-038 | Sync the deploy-simap draft with the deployment repo (Drive secrets) | MERGED | P2 | XS | security | — | plan-approval | 0 | 2026-11-25 |
-| SIM-021 | Go-live checklist and first production deploy | IN_PROGRESS | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | plan-approval | 0 | 2026-11-20 |
+| SIM-021 | Go-live checklist and first production deploy | DONE | P1 | S | architecture, security | SIM-004, SIM-009, SIM-015.2, SIM-016, SIM-017, SIM-018, SIM-019.2, SIM-027 | plan-approval | 2 | 2026-11-26 |
 | SIM-021.1 | Record the production flow run and file bugs | BACKLOG | P1 | XS | architecture | SIM-021 | none | 0 | 2026-11-26 |
 | SIM-020 | Sync members from Identity and remove from org | BACKLOG | P3 | M | api, security | SIM-011 | plan-approval | 0 | 2026-11-20 |
 | BUG-003 | devices.db test violates device_handoffs_decided_check (return flags test) | MERGED | P1 | XS | db | — | none | 0 | 2026-11-26 |

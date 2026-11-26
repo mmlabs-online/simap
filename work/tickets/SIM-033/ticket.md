@@ -45,9 +45,9 @@ Production shows the real sprites of the bundled package (the library behind the
 
 ## Notes / answers from Ming
 - 2026-11-26: M-63 done (Ming: "Đồng ý, làm luôn"): the real Imersa atlas is packed (55 map frames) and committed on this branch. Gate set to plan-approval (P1 policy `high-paths+P1`, matching the board).
-- 2026-11-26: The repo is PUBLIC (gh repo view), contrary to D45/D60; CREDITS.md:16 also says public. Ming: "Anh sẽ chuyển repo sang private" (M-77). The atlas commit (4383539) was already pushed while the repo was public. The PR must not open until the repo is private.
-- 2026-11-26: Ming: "ignore đi tôi chuyển private sau. hãy làm như thể repo đã private" — proceed as if the repo is private; M-77 stays open for Ming and does not block the PR.
-Waiting for Ming: plan approval (High tier) — M-78.
+- 2026-11-26: The repo is PUBLIC (gh repo view), contrary to D45/D60; CREDITS.md:16 also says public. Ming: "Anh sẽ chuyển repo sang private" (M-79). The atlas commit (4383539) was already pushed while the repo was public. The PR must not open until the repo is private.
+- 2026-11-26: Ming: "ignore đi tôi chuyển private sau. hãy làm như thể repo đã private" — proceed as if the repo is private; M-79 stays open for Ming and does not block the PR.
+Waiting for Ming: plan approval (High tier) — M-80 (filed as M-78; renumbered because main took M-77/M-78 for SIM-021). Repo-private item: M-79 (filed as M-77).
 Plan approved (2026-11-26, Ming: "duyệt SIM-033" — assumptions A1–A8 as written).
 - 2026-11-25: re-scoped to D66 (bundled package committed; per-item art moves to SIM-039.x).
 - 2026-11-25: D64 replaces the single-pack plan (M-9/M-10 not needed). Re-scope this ticket before running it: Admins pick art per item from a bundled package or a custom image.
@@ -58,5 +58,5 @@ Plan approved (2026-11-26, Ming: "duyệt SIM-033" — assumptions A1–A8 as wr
 ### 2026-11-26 — claude — BLOCKED
 - Agent calls: 3, tokens ~100k+ (in/out split not reported): frontend-developer×1 41k, software-architect×1 59k, planner×1 (tokens not reported); all on default models.
 - Done: M-63. The real atlas was packed on Ming's PC (55 map frames) and committed on this branch, with Ming's OK. Consult and plan are done: `Status: READY`, no High path, about 300 lines.
-- In progress / next: Ming approves the plan (M-78), then `/run SIM-033` resumes at IMPLEMENT. M-77 (make the repo private) stays open; by Ming's instruction it does not block the PR.
+- In progress / next: Ming approves the plan (M-80), then `/run SIM-033` resumes at IMPLEMENT. M-79 (make the repo private) stays open; by Ming's instruction it does not block the PR.
 - Gotchas: the repo is PUBLIC, although D45 and D60 say private. The atlas commit 4383539 was pushed while it was public. `committed-atlas.test.ts` "placeholder-only" fails on this branch until the plan's test change lands.
