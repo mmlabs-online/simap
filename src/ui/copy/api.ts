@@ -41,6 +41,7 @@ export const apiCopy = {
     seat_has_no_occupant: "Only a seat with an occupant can have a primary device.",
     owner_not_occupant: "A primary device must belong to the person at the seat.",
     seat_has_primary: "This seat already has a primary device.",
+    seat_not_yours: "You can only place your devices on a seat you occupy.",
     device_placed: "This device is at a seat. Move it to inventory before deleting it.",
     device_unowned: "A device in the org inventory can't be placed at a seat.",
     device_owned: "This device has an owner, so it is no longer in the org inventory.",

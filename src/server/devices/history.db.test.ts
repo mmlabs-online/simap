@@ -317,7 +317,7 @@ describe("device history (db)", () => {
       }),
     );
     okv(
-      await placeDevice(pool, w.scope, w.sx, "user", d, {
+      await placeDevice(pool, w.scope, w.sx, "manager", d, {
         seatId: a2,
         role: "secondary",
         expectedSeatId: null,

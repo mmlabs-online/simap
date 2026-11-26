@@ -378,6 +378,7 @@ export function DevicesPage() {
         open={placing !== null}
         device={placing?.device ?? null}
         mode={placing?.mode ?? "place"}
+        tier={session?.tier ?? "user"}
         devicesApi={api}
         roomsApi={roomsApi}
         seatsApi={seatsApi}

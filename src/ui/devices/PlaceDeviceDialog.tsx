@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Tier } from "@/lib/auth/tier";
 import type { RoomDto } from "@/lib/rooms/types";
 import type { DeviceDto, DeviceRole } from "@/lib/devices/types";
 import { SEAT_LIMITS, type SeatDto } from "@/lib/seats/types";
@@ -11,6 +12,7 @@ import type { SeatsApi } from "../seats/seats-api";
 import type { DevicesApi } from "./devices-api";
 import {
   offeredRoles,
+  ownSeats,
   placeModes,
   placeVerb,
   planSubmit,
@@ -28,6 +30,7 @@ type RoomsState = { status: "loading" | "error" | "ready"; rooms: RoomDto[] };
 export function PlaceDeviceFields({
   device,
   mode,
+  tier,
   rooms,
   roomId,
   seats,
@@ -41,6 +44,7 @@ export function PlaceDeviceFields({
 }: {
   device: DeviceDto;
   mode: PlaceMode;
+  tier: Tier;
   rooms: RoomsState;
   roomId: string | null;
   seats: PlaceSeats;
@@ -59,8 +63,9 @@ export function PlaceDeviceFields({
       </p>
     );
   }
-  const seat = seats.seats.find((s) => s.id === seatId) ?? null;
-  const roles: DeviceRole[] = seat ? offeredRoles(device, seat) : ["secondary"];
+  const offered = ownSeats(device, seats.seats, tier);
+  const seat = offered.find((s) => s.id === seatId) ?? null;
+  const roles: DeviceRole[] = seat ? offeredRoles(device, seat, tier) : ["secondary"];
   const verb = placeVerb(device, seat);
   return (
     <>
@@ -98,7 +103,7 @@ export function PlaceDeviceFields({
           aria-busy={seats.status === "loading"}
           className="max-h-[35dvh] overflow-y-auto flex flex-col gap-1"
         >
-          {seats.seats.map((s) => (
+          {offered.map((s) => (
             <label
               key={s.id}
               className="flex items-center gap-3 rounded-md3 px-2 py-1.5 text-sm font-medium text-on-surface"
@@ -125,6 +130,9 @@ export function PlaceDeviceFields({
           {seats.status === "loading" && <p className={`text-sm ${HINT}`}>{copy.seatsLoading}</p>}
           {seats.status === "ready" && seats.seats.length === 0 && (
             <p className={`text-sm ${HINT}`}>{copy.seatsEmpty}</p>
+          )}
+          {seats.status === "ready" && seats.seats.length > 0 && offered.length === 0 && (
+            <p className={`text-sm ${HINT}`}>{copy.noOwnSeats}</p>
           )}
           {seats.status === "error" && (
             <div role="alert" className="text-sm font-semibold text-error">
@@ -168,6 +176,7 @@ export function PlaceDeviceFields({
 
 type DialogProps = {
   mode: PlaceMode;
+  tier: Tier;
   devicesApi: DevicesApi;
   roomsApi: RoomsApi;
   seatsApi: SeatsApi;
@@ -189,6 +198,7 @@ export function PlaceDeviceDialog({
 function PlaceDeviceInner({
   device,
   mode,
+  tier,
   devicesApi,
   roomsApi,
   seatsApi,
@@ -202,12 +212,13 @@ function PlaceDeviceInner({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const targets = usePlaceTargets(roomsApi, seatsApi, device.placement?.roomId ?? null);
-  const seat: SeatDto | null = targets.seats.seats.find((s) => s.id === seatId) ?? null;
+  const seat: SeatDto | null =
+    ownSeats(device, targets.seats.seats, tier).find((s) => s.id === seatId) ?? null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    const plan = planSubmit(current, mode, seat, role);
+    const plan = planSubmit(current, mode, seat, role, tier);
     if (plan.kind === "invalid") return setError(plan.message);
     if (plan.kind === "noop") return onClose();
     setSubmitting(true);
@@ -238,6 +249,7 @@ function PlaceDeviceInner({
       <PlaceDeviceFields
         device={current}
         mode={mode}
+        tier={tier}
         rooms={targets.rooms}
         roomId={targets.roomId}
         seats={targets.seats}

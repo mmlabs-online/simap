@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { createRoomsApi } from "../rooms/rooms-api";
+import { useSession } from "../session";
 import { createSeatsApi } from "../seats/seats-api";
 import { DeviceDetailView } from "./DeviceDetailView";
 import { DeviceHistory } from "./DeviceHistory";
@@ -14,6 +15,7 @@ import { useDeviceDetailActions } from "./useDeviceDetailActions";
 /** Device detail page: the device, where it is, the holder, any pending handoff and its history. Renders only below `AuthGate`. */
 export function DeviceDetailPage({ deviceId }: { deviceId: string }) {
   const apiFetch = useApiFetch();
+  const session = useSession();
   const api = useMemo(() => createDevicesApi(apiFetch), [apiFetch]);
   const roomsApi = useMemo(() => createRoomsApi(apiFetch), [apiFetch]);
   const seatsApi = useMemo(() => createSeatsApi(apiFetch), [apiFetch]);
@@ -29,6 +31,7 @@ export function DeviceDetailPage({ deviceId }: { deviceId: string }) {
     api,
     roomsApi,
     seatsApi,
+    tier: session?.tier ?? "user",
     refresh,
     requestFocus,
   });

@@ -47,7 +47,8 @@ export type PlacementRefusalCode =
   | "placement_changed"
   | "seat_has_no_occupant"
   | "owner_not_occupant"
-  | "seat_has_primary";
+  | "seat_has_primary"
+  | "seat_not_yours";
 
 export type PlacementDecision =
   | { kind: "noop" | "place" | "move" | "return" }
@@ -56,6 +57,8 @@ export type PlacementDecision =
 export type PlacementInput = {
   tier: Tier;
   isOwner: boolean;
+  /** The caller's member id (null when the caller has no member row). D72 compares it with the seat occupant. */
+  callerId: string | null;
   deviceId: string;
   /** Null = org inventory (D63). Callers compute isOwner as `ownerId !== null && me === ownerId`. */
   ownerId: string | null;
@@ -72,13 +75,16 @@ const refuse = (status: 409 | 422, code: PlacementRefusalCode): PlacementDecisio
   code,
 });
 
-/** DEV-03/04/05, REG-03. Permission first (R7 order), then the stale-view guard, then the invariants. */
+/** DEV-03/04/05, REG-03, D72: a User places only on a seat they occupy. Permission first (R7 order), then the stale-view guard, then the invariants. */
 export function decidePlacement(a: PlacementInput): PlacementDecision {
   if (!canPlace(a.tier, a.isOwner)) return refuse(422, "not_allowed");
   if (a.current.seatId !== a.expectedSeatId) return refuse(409, "placement_changed");
   if (a.target === null) return { kind: a.current.seatId === null ? "noop" : "return" };
   if (a.ownerId === null) return refuse(422, "device_unowned"); // invariant 5
   if (a.current.seatId === a.target.seatId && a.current.role === a.role) return { kind: "noop" };
+  if (a.tier === "user" && (a.target.occupantId === null || a.target.occupantId !== a.callerId)) {
+    return refuse(422, "seat_not_yours");
+  }
   if (a.role === "primary") {
     if (a.target.occupantId === null) return refuse(409, "seat_has_no_occupant");
     if (a.target.occupantId !== a.ownerId) return refuse(409, "owner_not_occupant");

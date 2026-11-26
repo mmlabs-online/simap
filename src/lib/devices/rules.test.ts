@@ -21,6 +21,7 @@ const OTHER_DEV = "d0000000-0000-4000-8000-000000000002";
 const input = (o: Partial<PlacementInput> = {}): PlacementInput => ({
   tier: "user",
   isOwner: true,
+  callerId: OWNER,
   deviceId: D,
   ownerId: OWNER,
   current: { seatId: null, role: "secondary" },
@@ -150,10 +151,11 @@ describe("decidePlacement", () => {
 
   it("primary: no occupant -> seat_has_no_occupant; occupant != owner -> owner_not_occupant; another primary -> seat_has_primary; the device itself is not 'another'", () => {
     const t = { seatId: A, occupantId: OWNER, primaryId: null as string | null };
-    expect(decidePlacement(input({ target: { ...t, occupantId: null } }))).toEqual(
+    const m = { tier: "manager" as const };
+    expect(decidePlacement(input({ ...m, target: { ...t, occupantId: null } }))).toEqual(
       refuse(409, "seat_has_no_occupant"),
     );
-    expect(decidePlacement(input({ target: { ...t, occupantId: OTHER } }))).toEqual(
+    expect(decidePlacement(input({ ...m, target: { ...t, occupantId: OTHER } }))).toEqual(
       refuse(409, "owner_not_occupant"),
     );
     expect(decidePlacement(input({ target: { ...t, primaryId: OTHER_DEV } }))).toEqual(
@@ -163,20 +165,83 @@ describe("decidePlacement", () => {
     expect(decidePlacement(input())).toEqual({ kind: "place" });
   });
 
-  it("secondary: no ownership check (empty seat, other occupant, seat with a primary all OK)", () => {
+  it("manager/admin secondary: no ownership check (empty seat, other occupant, seat with a primary all OK; D19)", () => {
     const t = { seatId: A, occupantId: null as string | null, primaryId: null as string | null };
     for (const target of [
       t,
       { ...t, occupantId: OTHER },
       { ...t, occupantId: OTHER, primaryId: OTHER_DEV },
     ]) {
-      expect(decidePlacement(input({ role: "secondary", target }))).toEqual({ kind: "place" });
+      for (const tier of ["manager", "admin"] as const) {
+        expect(decidePlacement(input({ tier, role: "secondary", target }))).toEqual({
+          kind: "place",
+        });
+      }
     }
+  });
+
+  describe("user places only on a seat they occupy (D72)", () => {
+    const own = { seatId: A, occupantId: OWNER, primaryId: null as string | null };
+    const here = { current: { seatId: B, role: "secondary" as const }, expectedSeatId: B };
+    const notYours = refuse(422, "seat_not_yours");
+
+    it("own seat places and moves; primary rules still apply (seat_has_primary)", () => {
+      expect(decidePlacement(input({ role: "secondary", target: own }))).toEqual({
+        kind: "place",
+      });
+      expect(decidePlacement(input({ ...here, role: "primary", target: own }))).toEqual({
+        kind: "move",
+      });
+      expect(
+        decidePlacement(input({ role: "primary", target: { ...own, primaryId: OTHER_DEV } })),
+      ).toEqual(refuse(409, "seat_has_primary"));
+    });
+
+    it("other's seat refuses 422 seat_not_yours (secondary, primary, move)", () => {
+      const target = { ...own, occupantId: OTHER };
+      for (const role of ["secondary", "primary"] as const) {
+        expect(decidePlacement(input({ role, target }))).toEqual(notYours);
+        expect(decidePlacement(input({ ...here, role, target }))).toEqual(notYours);
+      }
+    });
+
+    it("empty seat refuses 422 seat_not_yours, also when the caller has no member", () => {
+      const target = { ...own, occupantId: null };
+      expect(decidePlacement(input({ role: "secondary", target }))).toEqual(notYours);
+      expect(decidePlacement(input({ role: "secondary", target, callerId: null }))).toEqual(
+        notYours,
+      );
+    });
+
+    it("target null returns from another's seat", () => {
+      expect(decidePlacement(input({ ...here, target: null, role: "secondary" }))).toEqual({
+        kind: "return",
+      });
+    });
+
+    it("a legacy lent device re-submitted unchanged is a noop", () => {
+      const lent = { seatId: A, occupantId: OTHER, primaryId: null };
+      const cur = { current: { seatId: A, role: "secondary" as const }, expectedSeatId: A };
+      expect(decidePlacement(input({ ...cur, role: "secondary", target: lent }))).toEqual({
+        kind: "noop",
+      });
+    });
+
+    it("not_allowed and placement_changed come before seat_not_yours", () => {
+      const target = { ...own, occupantId: OTHER };
+      expect(decidePlacement(input({ isOwner: false, role: "secondary", target }))).toEqual(
+        refuse(422, "not_allowed"),
+      );
+      expect(decidePlacement(input({ expectedSeatId: A, role: "secondary", target }))).toEqual(
+        refuse(409, "placement_changed"),
+      );
+    });
   });
 
   it("manager places another member's device as primary only when that member is the occupant", () => {
     const m = { tier: "manager" as const, isOwner: false };
     expect(decidePlacement(input(m))).toEqual({ kind: "place" });
+    expect(decidePlacement(input({ ...m, tier: "admin" }))).toEqual({ kind: "place" });
     expect(
       decidePlacement(input({ ...m, target: { seatId: A, occupantId: OTHER, primaryId: null } })),
     ).toEqual(refuse(409, "owner_not_occupant"));

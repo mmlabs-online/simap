@@ -162,7 +162,7 @@ describe("handoffs (db): start", () => {
     const before = await dev(d);
     await start(w, w.sx, "user", d, w.y);
     expect(await dev(d)).toEqual(before);
-    const moved = await placeDevice(pool, w.scope, w.sx, "user", d, {
+    const moved = await placeDevice(pool, w.scope, w.sx, "manager", d, {
       seatId: w.a2,
       role: "secondary",
       expectedSeatId: w.a1,
@@ -337,7 +337,7 @@ describe("handoffs (db): confirm", () => {
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
     const [c, p] = await Promise.all([
       confirmHandoff(pool, w.scope, w.sy, "user", h, TODAY),
-      placeDevice(pool, w.scope, w.sx, "user", d, {
+      placeDevice(pool, w.scope, w.sx, "manager", d, {
         seatId: w.a2,
         role: "secondary",
         expectedSeatId: w.a1,

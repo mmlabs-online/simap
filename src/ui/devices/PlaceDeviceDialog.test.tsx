@@ -80,6 +80,7 @@ const render = (p: Props = {}) =>
     <PlaceDeviceFields
       device={device}
       mode="place"
+      tier="manager"
       rooms={{ status: "ready", rooms: [room("r1", "C302"), room("r2", "C303")] }}
       roomId="r1"
       seats={ready([seat({})])}
@@ -95,6 +96,20 @@ const render = (p: Props = {}) =>
   );
 
 describe("PlaceDeviceFields picker", () => {
+  it("user sees only own seats, message when none (D72)", () => {
+    const mine = seat({ id: "s1", code: "C-01", occupant: owner });
+    const theirs = seat({ id: "s2", code: "C-02", occupant: { id: "u2", displayName: "Binh" } });
+    const empty = seat({ id: "s3", code: "C-03" });
+    const html = render({ tier: "user", seats: ready([mine, theirs, empty]) });
+    expect(html).toContain("C-01 · Ha");
+    expect(html).not.toContain("C-02");
+    expect(html).not.toContain("C-03");
+    expect(html).not.toContain(copy.noOwnSeats);
+    const none = render({ tier: "user", seats: ready([theirs, empty]) });
+    expect(none).toContain(copy.noOwnSeats.replace("'", "&#x27;"));
+    expect(render({ tier: "manager", seats: ready([theirs, empty]) })).toContain("C-02 · Binh");
+  });
+
   it("room select lists rooms; seats show code, occupant or Empty, and hints", () => {
     const html = render({
       device: placedDevice,

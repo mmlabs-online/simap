@@ -300,15 +300,19 @@ devices in My Portal (POR-03).
 - [ ] A device in the org inventory (no owner) is never placed at a seat; the app and the DB refuse it.
 - [ ] Placing a device as primary is refused unless the seat has an occupant, that occupant owns the device, and the
   seat has no primary yet (invariant 3). The check runs in the app and again in the DB.
-- [ ] Secondary placement has no ownership check beyond the device having an owner.
+- [ ] A Manager+ placing an owned device as secondary has no ownership check beyond the device having an owner (D19).
+  A User may place a device only on a seat they occupy (D72); an empty seat or another member's seat is refused 422
+  `seat_not_yours`, before any write.
 
 **DEV-04 Lend a device to another seat**
-- [ ] The device's owner places it as secondary on any seat. A borrowed device is never primary.
-- [ ] A Manager+ may do this for any owned device of the org (D19).
+- [ ] Lending to a seat someone else occupies, or to an empty seat, is Manager+ only (D19, D72): a Manager+ places any
+  owned device of the org as secondary on any seat. A borrowed device is never primary.
+- [ ] A User places their own device only on a seat they occupy (D72). Devices a User lent before D72 stay where they are.
 
 **DEV-05 Move device**
 - [ ] A device moves seat to seat (it takes the chosen role; the DEV-03 rules apply) or back to its owner's inventory.
-- [ ] The owner moves their own devices; a Manager+ moves any owned device of the org (D19).
+- [ ] The owner moves their own devices, seat to seat only onto a seat they occupy (D72); back to inventory is always
+  allowed. A Manager+ moves any owned device of the org to any seat (D19).
 
 **DEV-06 Auto-demote when the occupant leaves**
 - [ ] Every path that removes or replaces an occupant turns the seat's primary device into secondary, in the same

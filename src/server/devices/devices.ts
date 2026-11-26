@@ -298,6 +298,7 @@ export function placeDevice(
     const decision = decidePlacement({
       tier,
       isOwner: cur[0].owner_id !== null && me[0]?.id === cur[0].owner_id,
+      callerId: me[0]?.id ?? null,
       deviceId,
       ownerId: cur[0].owner_id,
       current: { seatId: cur[0].seat_id, role: cur[0].role },

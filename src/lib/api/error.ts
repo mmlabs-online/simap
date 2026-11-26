@@ -32,6 +32,7 @@ export const API_ERROR_CODES = [
   "seat_has_no_occupant",
   "owner_not_occupant",
   "seat_has_primary",
+  "seat_not_yours",
   "device_placed",
   "device_unowned",
   "device_owned",

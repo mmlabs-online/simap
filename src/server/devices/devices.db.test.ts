@@ -178,9 +178,16 @@ describe("devices (db): placement", () => {
     const w = await world();
     const sub = await subOf(w.x);
     const dev = await addDevice(pool, w.orgId, w.x, null, "secondary");
-    const empty = await placeDevice(pool, w.scope, sub, "user", dev, put(w.a2, "primary", null));
+    const empty = await placeDevice(pool, w.scope, sub, "manager", dev, put(w.a2, "primary", null));
     expect(empty).toEqual({ ok: false, status: 409, code: "seat_has_no_occupant" });
-    const notOcc = await placeDevice(pool, w.scope, sub, "user", dev, put(w.b1, "primary", null));
+    const notOcc = await placeDevice(
+      pool,
+      w.scope,
+      sub,
+      "manager",
+      dev,
+      put(w.b1, "primary", null),
+    );
     expect(notOcc).toEqual({ ok: false, status: 409, code: "owner_not_occupant" });
     await addDevice(pool, w.orgId, w.x, w.a1, "primary");
     const taken = await placeDevice(pool, w.scope, sub, "user", dev, put(w.a1, "primary", null));
@@ -189,14 +196,31 @@ describe("devices (db): placement", () => {
     expect(await auditCount(w.orgId, "device.place")).toBe(0);
   });
 
-  it("owner lends own device as secondary to another member's seat", async () => {
+  it("user placing on another member's seat or an empty seat -> 422 seat_not_yours, device unchanged, no audit (D72)", async () => {
+    const w = await world();
+    const dev = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const sub = await subOf(w.x);
+    for (const seat of [w.b1, w.a2]) {
+      expect(
+        await placeDevice(pool, w.scope, sub, "user", dev, put(seat, "secondary", null)),
+      ).toEqual({
+        ok: false,
+        status: 422,
+        code: "seat_not_yours",
+      });
+    }
+    expect(await devRow(dev)).toEqual({ seat_id: null, role: "secondary" });
+    expect(await auditCount(w.orgId, "device.place")).toBe(0);
+  });
+
+  it("a Manager+ owner lends own device as secondary to another member's seat (D19)", async () => {
     const w = await world();
     const dev = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const r = await placeDevice(
       pool,
       w.scope,
       await subOf(w.x),
-      "user",
+      "manager",
       dev,
       put(w.b1, "secondary", null),
     );
@@ -282,7 +306,7 @@ describe("devices (db): placement", () => {
       pool,
       w.scope,
       await subOf(w.x),
-      "user",
+      "manager",
       prim,
       put(w.a2, "secondary", w.a1),
     );
@@ -345,7 +369,7 @@ describe("devices (db): placement", () => {
         pool,
         w.scope,
         await subOf(w.x),
-        "user",
+        "manager",
         dev,
         put(w.a1, "primary", null),
       );
