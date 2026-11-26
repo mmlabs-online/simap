@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | S |
 | Areas | api, ui, security |
@@ -42,5 +42,6 @@ The room map no longer shows a User the free-text `type` of devices they do not 
 - DB: `layout.db.test.ts` per tier. Unit: placement fallback.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-2): "duyệt hết theo mặc định".
 
 ## Handoff
