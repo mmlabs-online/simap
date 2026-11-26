@@ -56,3 +56,21 @@ No anchor was adjusted. Visual check was only the packed atlas image; I did not 
 ### Scope self-check
 - Could the diff be smaller? No; mostly declarative data plus the listed tests.
 - Diff size: see `git diff --stat` of the commit (about +1000 lines incl. atlas JSON and 24 registry/sprite-map entries).
+
+## Attempt 2 (rework 2) — 2026-11-26
+
+### Fixed
+- Review Issue 1: `src/server/layout/layout.db.test.ts` "a SIM-042 item saves rotated and reads back" compared fixtures in input order, but the read orders by random uuid `id`. Both sides are now stripped of `id` and sorted by `sprite` before `toEqual`. Read query untouched.
+
+### Checks (actual)
+- typecheck: exit 0
+- format:check: ran clean on 871 files (oxfmt prints "No config found, using defaults", same as before)
+- test:db (3 runs; `scripts/test-db.mjs` ignores the file filter so each run was the whole suite): 3x Test Files 20 passed; Tests 300 passed
+- test:db (full, 4th run): Test Files 20 passed; Tests 300 passed
+- test: Test Files 311 passed | 1 skipped; Tests 3155 passed | 9 skipped
+
+### Out-of-plan files
+- None.
+
+### Scope self-check
+- Only the one test assertion changed.

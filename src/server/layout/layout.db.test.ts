@@ -375,7 +375,10 @@ describe("saveRoomLayout (db)", () => {
     });
     expect((await save(o, v)).ok).toBe(true);
     const got = await value(o);
-    expect(got.layout.fixtures.map(({ id: _i, ...f }) => f)).toEqual(v.fixtures);
+    // the read orders by random uuid id, so compare order-independently
+    const strip = (fs: { id?: string; sprite: string }[]) =>
+      fs.map(({ id: _i, ...f }) => f).sort((a, b) => a.sprite.localeCompare(b.sprite));
+    expect(strip(got.layout.fixtures)).toEqual(strip(v.fixtures));
   });
 
   it("a save in an org with no member seeds the catalog and stores the fixtures", async () => {
