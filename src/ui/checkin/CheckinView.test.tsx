@@ -30,6 +30,12 @@ describe("CheckinView", () => {
     expect(html).not.toContain("map-marker");
     expect(html).toContain("switcher-marker");
   });
+  it("button prop renders inside data-slot=checkin-button", () => {
+    const html = renderToStaticMarkup(
+      <CheckinView state={room} switcher={<p>s</p>} button={<b>btn-marker</b>} />,
+    );
+    expect(html).toMatch(/data-slot="checkin-button"[^>]*><b>btn-marker<\/b>/);
+  });
   it("loading shows aria-busy skeleton; error shows message and retry", () => {
     expect(render({ kind: "loading" })).toContain('aria-busy="true"');
     const html = render({ kind: "error", code: "internal", onRetry: () => {} });
