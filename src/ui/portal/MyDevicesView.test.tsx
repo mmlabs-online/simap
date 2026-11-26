@@ -84,4 +84,24 @@ describe("MyDevicesView", () => {
     expect(render({ notice: { tone: "status", text: "Done" } })).toContain('role="status"');
     expect(render({ notice: { tone: "error", text: "Bad" } })).toContain('role="alert"');
   });
+  it("header has the h2 heading (tabIndex -1) and subtitle; tiles and card render below banner and incoming", () => {
+    const html = render({ banner: <p>BANNER</p>, incoming: <p>INCOMING</p>, headingRef: () => {} });
+    expect(html).toMatch(/<h2[^>]*tabindex="-1"[^>]*>My devices<\/h2>/);
+    expect(html).toContain(portalCopy.devices.subtitle);
+    const tiles = html.indexOf(portalCopy.devices.totalTile);
+    expect(html.indexOf("INCOMING")).toBeLessThan(tiles);
+    expect(tiles).toBeLessThan(html.indexOf(portalCopy.devices.cardTitle));
+  });
+  it("no tiles, search or table when empty, loading, or error without rows", () => {
+    for (const p of [
+      { devices: [] },
+      { status: "loading" as const, devices: [] },
+      { status: "error" as const, devices: [], errorCode: "internal" },
+    ]) {
+      const html = render(p);
+      expect(html).not.toContain(portalCopy.devices.tilesLabel);
+      expect(html).not.toContain(portalCopy.devices.searchLabel);
+      expect(html).not.toContain("<table");
+    }
+  });
 });

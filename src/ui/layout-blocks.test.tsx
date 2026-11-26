@@ -64,6 +64,28 @@ describe("PageHeader", () => {
   });
 });
 
+describe("PageHeader headingRef", () => {
+  it("makes the heading focusable only when a ref is given", () => {
+    expect(renderToStaticMarkup(<PageHeader title="T" headingRef={() => {}} />)).toMatch(
+      /<h2[^>]*tabindex="-1"[^>]*outline-none/,
+    );
+    expect(renderToStaticMarkup(<PageHeader title="T" />)).not.toContain("tabindex");
+  });
+});
+
+describe("SectionCard flush", () => {
+  it("flush body has no padding", () => {
+    const r = (flush: boolean) =>
+      renderToStaticMarkup(
+        <SectionCard headingId="h" title="T" flush={flush}>
+          body-m
+        </SectionCard>,
+      );
+    expect(r(true)).toContain('<div class="">body-m</div>');
+    expect(r(false)).toContain('<div class="p-4 sm:p-5">body-m</div>');
+  });
+});
+
 describe("SectionCard", () => {
   it("is a section labelled by its h3; subtitle, aside and footer slots render only when given", () => {
     const full = renderToStaticMarkup(

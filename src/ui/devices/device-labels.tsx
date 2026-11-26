@@ -14,9 +14,15 @@ export function DeviceNameLink({ device }: { device: DeviceDto }) {
   );
 }
 
-export function PlacementLabel({ device }: { device: DeviceDto }) {
+export function PlacementLabel({
+  device,
+  inventoryLabel = devicesCopy.inInventory,
+}: {
+  device: DeviceDto;
+  inventoryLabel?: string;
+}) {
   const p = device.placement;
-  if (!p) return <span className="text-on-surface-variant">{devicesCopy.inInventory}</span>;
+  if (!p) return <span className="text-on-surface-variant">{inventoryLabel}</span>;
   const href = roomDetailHref(p.roomCode);
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">

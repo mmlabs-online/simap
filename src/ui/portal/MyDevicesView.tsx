@@ -1,10 +1,13 @@
+import { useState } from "react";
 import type { DeviceDto } from "@/lib/devices/types";
 import { Button } from "../Button";
 import { Card } from "../Card";
 import { apiErrorMessage } from "../copy/api";
 import { portalCopy } from "../copy/portal";
 import type { DeviceRowHandlers } from "../devices/device-actions";
-import { DeviceTable } from "../devices/DeviceTable";
+import { PageHeader } from "../PageHeader";
+import { MyDevicesTable } from "./MyDevicesTable";
+import { MyDevicesTiles } from "./MyDevicesTiles";
 
 export type MyDevicesViewProps = {
   status: "loading" | "error" | "ready";
@@ -40,15 +43,15 @@ export function MyDevicesView({
   onRetry,
   onLoadMore,
 }: MyDevicesViewProps) {
+  const [query, setQuery] = useState("");
+  const [typeKey, setTypeKey] = useState("");
   return (
     <div className="flex flex-col gap-4">
-      <h2
-        ref={headingRef}
-        tabIndex={-1}
-        className="text-lg font-extrabold text-on-surface outline-none"
-      >
-        {portalCopy.devices.heading}
-      </h2>
+      <PageHeader
+        title={portalCopy.devices.heading}
+        subtitle={portalCopy.devices.subtitle}
+        headingRef={headingRef}
+      />
 
       <div aria-live="polite">
         {notice &&
@@ -94,21 +97,26 @@ export function MyDevicesView({
       )}
 
       {devices.length > 0 && status !== "loading" && (
-        <DeviceTable devices={devices} actions={actions} busyId={busyId} />
-      )}
-
-      {status === "ready" && errorCode !== null && devices.length > 0 && (
-        <p role="alert" className="text-sm font-semibold text-error">
-          {portalCopy.devices.loadMoreFailed} {apiErrorMessage(errorCode)}
-        </p>
-      )}
-
-      {status === "ready" && hasMore && (
-        <div>
-          <Button variant="tonal" size="sm" disabled={loadingMore} onClick={onLoadMore}>
-            {portalCopy.devices.loadMore}
-          </Button>
-        </div>
+        <>
+          <MyDevicesTiles devices={devices} hasMore={status === "ready" && hasMore} />
+          <MyDevicesTable
+            devices={devices}
+            hasMore={status === "ready" && hasMore}
+            loadingMore={loadingMore}
+            errorCode={status === "ready" ? errorCode : null}
+            actions={actions}
+            busyId={busyId}
+            query={query}
+            typeKey={typeKey}
+            onQueryChange={setQuery}
+            onTypeChange={setTypeKey}
+            onClear={() => {
+              setQuery("");
+              setTypeKey("");
+            }}
+            onLoadMore={onLoadMore}
+          />
+        </>
       )}
     </div>
   );
