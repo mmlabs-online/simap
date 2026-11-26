@@ -57,5 +57,6 @@ D80 (name tags always shown, amends D50 for this view), D78.
 - Manual: two browsers, one checks in/out/moves, the other sees it within 60 s; hidden tab stops requests.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-6): "duyệt hết theo mặc định"; Q1 default (built after SIM-059 is merged); Q2 one PR in two ordered commits (A, B); Q4 static seated pose + monitor-on, typing animation moves to SIM-061; Q5 polling 45 s / 60 s after failure, stale notice after 2 failures, Who's here lists checked-in only.
 
 ## Handoff
