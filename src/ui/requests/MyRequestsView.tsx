@@ -1,5 +1,6 @@
 import type { MyRequestDto } from "@/lib/requests/types";
 import { apiErrorMessage } from "../copy/api";
+import { portalCopy } from "../copy/portal";
 import { requestsCopy } from "../copy/requests";
 import { shellCopy } from "../copy/shell";
 import { Button } from "../Button";
@@ -20,6 +21,8 @@ export type MyRequestsViewProps = {
   onRetry: () => void;
   onLoadMore: () => void;
   onCancel: (item: MyRequestDto) => void;
+  /** Inside a tab: an h2 and no page padding. */
+  embedded?: boolean;
 };
 
 /** The My requests page body. Pure: data and handlers come from props. */
@@ -35,10 +38,19 @@ export function MyRequestsView({
   onRetry,
   onLoadMore,
   onCancel,
+  embedded = false,
 }: MyRequestsViewProps) {
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-4">
-      <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.myRequests.title}</h1>
+    <div className={embedded ? "flex flex-col gap-4" : "p-4 lg:p-6 flex flex-col gap-4"}>
+      {embedded ? (
+        <h2 className="text-lg font-extrabold text-on-surface">
+          {portalCopy.seat.requestsHeading}
+        </h2>
+      ) : (
+        <h1 className="text-h2 font-extrabold text-on-surface">
+          {shellCopy.pages.myRequests.title}
+        </h1>
+      )}
 
       {notice &&
         (notice.tone === "error" ? (

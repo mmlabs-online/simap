@@ -5,7 +5,7 @@ import { portalCopy } from "../copy/portal";
 import type { DeviceRowHandlers } from "../devices/device-actions";
 import type { PatchOutcome } from "../org/profile-form";
 
-export const PORTAL_TABS = ["devices", "profile"] as const;
+export const PORTAL_TABS = ["seat", "devices", "profile"] as const;
 export type PortalTab = (typeof PORTAL_TABS)[number];
 export const DEFAULT_PORTAL_TAB: PortalTab = PORTAL_TABS[0];
 

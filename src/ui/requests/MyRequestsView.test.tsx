@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { REQUEST_STATUSES, type MyRequestDto } from "@/lib/requests/types";
 import { apiErrorMessage } from "../copy/api";
+import { portalCopy } from "../copy/portal";
 import { requestsCopy } from "../copy/requests";
 import { MyRequestsView, type MyRequestsViewProps } from "./MyRequestsView";
 import { formatRequestTime } from "./requests-state";
@@ -117,5 +118,18 @@ describe("MyRequestsView", () => {
     expect(render({ hasMore: true, loadingMore: true })).toMatch(
       new RegExp(`<button[^>]*\\sdisabled=""[^>]*>${requestsCopy.loadingMore}<`),
     );
+  });
+  it("embedded: h2 not h1, no page padding, Cancel only on pending rows; default mode unchanged", () => {
+    const items = [req({ id: "1" }), req({ id: "2", status: "approved" })];
+    const html = render({ embedded: true, items });
+    expect(html).toContain("<h2");
+    expect(html).toContain(portalCopy.seat.requestsHeading);
+    expect(html).not.toContain("<h1");
+    expect(html).not.toContain("p-4 lg:p-6");
+    expect(html.match(/<button/g)).toHaveLength(1);
+    const page = render({ items });
+    expect(page).toContain("<h1");
+    expect(page).not.toContain("<h2");
+    expect(page).toContain("p-4 lg:p-6");
   });
 });

@@ -2,8 +2,24 @@
 export const portalCopy = {
   tablistLabel: "My Portal sections",
   tabs: {
+    seat: "My seat",
     devices: "My devices",
     profile: "Profile",
+  },
+  seat: {
+    heading: "My seat",
+    viewOnMap: "View on map",
+    release: "Release",
+    room: "Room",
+    group: "Group",
+    project: "Project",
+    noTag: "None",
+    requestsHeading: "My requests",
+    empty: "You do not have a seat yet.",
+    emptyAction: "Browse rooms",
+    loadFailed: "Could not load your seats.",
+    retry: "Try again",
+    released: "Seat released.",
   },
   devices: {
     heading: "My devices",
