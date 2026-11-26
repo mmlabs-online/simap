@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P3 |
 | Size | S |
 | Areas | ui |
@@ -47,5 +47,6 @@ Clear the small UX defects and test gaps the reviews of SIM-045, SIM-045.1 and S
 - Unit / view tests for each item.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-3): "duyệt hết theo mặc định".
 
 ## Handoff
