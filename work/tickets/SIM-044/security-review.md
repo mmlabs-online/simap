@@ -16,3 +16,12 @@ Verdict: PASS — no 🔴, no 🟡 (code read only; checks not run by the audito
 - 💭 NUL in cursor `k` → unhandled 500 (`cursor.ts:25`), same as existing cursors; optional fix for all cursors.
 
 Follow-ups (already in plan): Q10 write-action existence oracle; SIM-044.1 slice B; Q6 other members' email.
+
+## Attempt 2
+
+Verdict: PASS — no 🔴, no 🟡 (code read only). Rework commit ec0bb73 changes test data/assertions only.
+
+- 🟢 `src/server/devices/devices.db.test.ts:108` Manager-only assertion `!d.mine && d.canPlace`, matches `canPlace`; User assertions `:86-103` unchanged.
+- 🟢 `src/server/search/search.db.test.ts:278,281` lowercase stored MACs; User-tier search assertions `:290-295` unchanged and now executed; positive result at `:290` rules out vacuous `?? []`.
+- 🟢 `devices.db.test.ts:122-126` (unowned detail 404 for User), `:936-995` visibility block (list per tier, no member row, 404 = cross-org 404, pending recipient, former holder), `:889-890`, `:916` intact.
+- 💭 `search.db.test.ts:292`: add a positive User-tier MAC check (`q("AA:BB:CC:00:00:01")` → `[mine]`) so the empty MAC result stands on its own (optional).
