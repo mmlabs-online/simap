@@ -61,7 +61,10 @@ refused. Role keys registered in org-admin-api (D14):
 |---|---|---|---|
 | Admin | `simap:admin` | Super Admin, admin portal | Everything a Manager can do, plus create/edit/delete rooms and seats and edit layouts. Manages any device in the org. |
 | Manager | `simap:manager` | Invitation (admin) or admin portal | Approves or rejects seat requests. Assigns and removes occupants directly. Manages members, groups/projects and seat tags. Sees the Approvals page. Places, moves and returns any device of the org (D19). |
-| User | `simap:user` | Invitation (admin, manager) or admin portal | Views all rooms, seats, members and devices of the org. Requests an empty seat. Places, edits, transfers and returns own devices (D63). |
+| User | `simap:user` | Invitation (admin, manager) or admin portal | Views all rooms, seats and members of the org (members list: OQ-58). Sees only the devices they hold (owner = their member), never the org's device list (D69, DEV-12). Requests an empty seat. Places, edits, transfers and returns own devices (D63). Uses My Portal (POR, D70). |
+
+- Every tier has My Portal (POR) for its own seats, devices and profile; Manager and Admin also keep the full Devices
+  page (D70).
 
 - Roles are per org; there are no per-room roles (seatMGT decision, kept).
 - A token without `org`, or with no simap role in `org_roles`, cannot read or write org data (403). Such a token is
@@ -124,7 +127,7 @@ needs to show.
 |---|---|---|
 | Room | org, code (unique, e.g. `C302`), name, description, floor | Layout fixtures belong to the room (LAY-03); a placed fixture keeps its library `sprite_key`, which also names its map item (LAY-07). |
 | Seat | org, code (unique, `<room code>-NN`), sequence no. (unique within the room), room, occupant (member, optional), group tag, project tag, layout geometry (x, y, rotation, width, height) | Status is **not stored** (invariant 6). |
-| Member | org, Identity `sub` (unique in the org, required), email (from the token), display name, employee code (unique, optional), group (optional) | Profile of one org account (D12). |
+| Member | org, Identity `sub` (unique in the org, required), email (from the token), display name, employee code (unique, optional), group (optional), profile photo (optional; stored file reference, POR-05), pixel character look (optional; preset part per layer: skin, hair colour, hair style, shirt colour, POR-06) | Profile of one org account (D12). No photo = fallback (OQ-57); no stored look = look derived from `sub` as before (D71). |
 | Device | org, name, type, inventory number (unique), MAC (unique, optional), serial number (unique, optional), manufacturer, brand, owner (member, optional; empty = org inventory, D63), expiry date and note of the current holding, seat (optional; empty = not placed), role at the seat (primary / secondary) | Owner changes only through assign, transfer and return (DEV-07 to DEV-09). |
 | DeviceHandoff | org, device, kind (transfer / return / extension), from member, to member (transfer), requested by, note, new expiry (extension), status (pending / confirmed / declined / cancelled), decided by, decided at | At most one pending per device (DEV-08 to DEV-10). Device history (DEV-11) is read from these rows and the audit log. |
 | SeatRequest | org, seat, subject member (who will sit there), created by, status (pending / approved / rejected / cancelled), note, decided by, decided at | |
@@ -253,7 +256,8 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 
 **SEA-05 Seat detail**
 - [ ] Any user opens a seat's detail: code, room, status, occupant, primary device, secondary devices with their
-  owners, group/project tags.
+  owners, group/project tags. For a User, device details at the seat follow DEV-12: only the devices they hold are
+  shown in full; what the panel shows about other devices is OQ-55.
 - [ ] The detail is addressable by URL (seatMGT `?seat=<code>` drawer) and always shows current data.
 - [ ] Actions in the panel show only to roles allowed to use them.
 
@@ -263,6 +267,10 @@ Device lifecycle (D63, Ming 2026-11-25; replaces seatMGT's fixed owner). Two pla
 at a seat: the **org inventory** (no owner; Admins hold it) and a **member's inventory** (owned by that member, not
 placed). "Return to inventory" from a seat (DEV-05, REG-03) moves a device into its owner's inventory; only DEV-09
 gives it back to the org inventory.
+
+Device visibility (D69, Ming 2026-11-26): Admins and Managers see every device of the org; a User sees only the
+devices they hold (owner = their member). "Devices page" below means the Manager+ page; a User works with their own
+devices in My Portal (POR-03).
 
 **DEV-01 Manage devices**
 - [ ] A device type is picked from the org's device type catalog or typed freely (D37, D61). Each org starts with PC,
@@ -285,8 +293,8 @@ gives it back to the org inventory.
 
 **DEV-02 Placement and custody status**
 - [ ] Every device list and device detail shows where the device is ("at seat X", "in <member>'s inventory" or "in org
-  inventory") and any pending transfer or return. The Devices page filters by all / placed / not placed / org
-  inventory / overdue.
+  inventory") and any pending transfer or return. The Devices page (Manager+, D69) filters by all / placed / not
+  placed / org inventory / overdue.
 
 **DEV-03 Role at seat**
 - [ ] A device in the org inventory (no owner) is never placed at a seat; the app and the DB refuse it.
@@ -322,7 +330,9 @@ gives it back to the org inventory.
   (or a Manager+) can cancel; the recipient can decline.
 - [ ] When the recipient confirms receipt, in one transaction the device leaves its seat (if placed) and lands in the
   recipient's inventory, not placed; the recipient places it themselves. The expiry date carries over (OQ-43).
-- [ ] The recipient sees pending transfers to them (badge in the nav, list on the Devices page).
+- [ ] The recipient sees pending transfers to them (badge in the nav, OQ-59; list in My Portal → My devices for
+  every tier, POR-03, and on the Devices page for Manager+). A pending transfer shows the recipient the device's name,
+  type and inventory number, the sender and the note, so they can confirm or decline before they hold it (D69).
 
 **DEV-09 Return to the org inventory**
 - [ ] The owner (or a Manager+) starts a return of an owned device to the org inventory, with an optional note.
@@ -335,16 +345,30 @@ gives it back to the org inventory.
 **DEV-10 Overdue and reminder**
 - [ ] A device whose expiry date has passed (UTC+7 calendar day, D35) shows **Overdue** wherever it is listed.
   Overdue is computed when read, never stored.
-- [ ] Its owner sees an in-app reminder (nav badge and a banner on the Devices page) to ask for an extension or
-  return it; no email in v1. The owner can request an extension (new date, optional note); an Admin or Manager
+- [ ] Its owner sees an in-app reminder (nav badge, OQ-59, and a banner in My Portal → My devices, POR-03; Manager+
+  also on the Devices page) to ask for an extension or return it; no email in v1. The owner can request an extension (new date, optional note); an Admin or Manager
   approves (sets the new expiry) or rejects it (OQ-42).
 
 **DEV-11 Device detail and history**
-- [ ] Every member can open a device detail page: all fields, where it is, the current holder (since, note, expiry,
-  overdue), any pending handoff, and its history.
+- [ ] A Manager+ can open the detail page of any device of the org; a User only of a device they hold (D69): all
+  fields, where it is, the current holder (since, note, expiry, overdue), any pending handoff, and its history. For a
+  device a User does not hold, the detail and history API answer 404, as for an id from another org (SYS-01).
 - [ ] The history lists, newest first, every create, assign, transfer (started, cancelled, declined, confirmed),
   return (started, cancelled, confirmed, Admin return), extension and expiry change: who did it, from and to member,
   when, note, expiry date, and who confirmed. History is kept when members are deactivated or removed.
+
+**DEV-12 Device visibility by tier and "my devices"** (D69, Ming 2026-11-26)
+- [ ] The server enforces visibility; the UI only hides what the API already withholds. For a User: the device list
+  (`GET /api/devices`) returns only devices they hold; device detail and history (`/api/devices/[id]`,
+  `/api/devices/[id]/history`) answer 404 for any device they do not hold; device results in search (DSH-02) contain
+  only devices they hold. Other device data a User reaches through seats, members or the room map is limited as
+  SEA-05, MEM-02 and LAY-06 say.
+- [ ] A "my devices" endpoint returns the devices held by the caller's member, for every tier: name, type, inventory
+  number, placement (seat code and role, or "in my inventory"), expiry date and overdue flag, and any pending handoff.
+  It is bounded (paged) and scoped by the token's `org` (R6).
+- [ ] Admins and Managers keep the full org list and detail (DEV-01 to DEV-11) and also get their own list from the
+  same "my devices" endpoint.
+- [ ] Unit tests cover the visibility rule per tier (list, detail, history, search).
 
 ### MEM — Member
 
@@ -369,7 +393,8 @@ gives it back to the org inventory.
 
 **MEM-02 Member overview**
 - [ ] The member page or card lists every seat the member occupies and every device they own, with counts. It is
-  searchable.
+  searchable. For a User the API omits the devices (and device counts) of other members (D69); whether Users see the
+  members list at all is OQ-58.
 
 ### GRP — Group / Project
 
@@ -436,14 +461,17 @@ and are not chosen per item. Every bundled third-party package is credited on th
   mine (highlight), cannot-seat (blocked sign), pending request (marker).
 - [ ] Every device placed at a seat is drawn on its desk, one sprite per device, at its catalog type's slot and
   image (built-in sprite when the type has no image); a device whose type is not in the catalog draws as the square
-  placeholder (D37, D61, D62).
+  placeholder (D37, D61, D62). Whether Users still see the sprites of devices they do not hold (sprite only, no
+  details) is OQ-55; the layout API never gives a User more about such a device than that answer allows (D69).
 - [ ] Every placed fixture, desk, chair and floor tile is drawn with its map item's current art for the placed
   direction, using the fallback order of "Art per item": a custom image is drawn 1:1 in room pixels with
   nearest-neighbour zoom and is never rotated; a package or built-in sprite smaller than the item's size is drawn at
   its own size, bottom-left aligned in the footprint. A custom image that cannot be loaded falls back the same way.
   Art changes show at the next layout load (LAY-07, D64, D66).
-- [ ] Occupants are generated 32 px layered avatars (body/hair/shirt colours derived from `sub`, stable per person);
-  no real photos (D44, D51). Name tags appear only on hover or keyboard focus, at every zoom (D50).
+- [ ] Occupants are 32 px layered avatars (body/hair/shirt): the member's chosen pixel character when set (POR-06),
+  else colours derived from `sub`, stable per person (D51, amended by D71). The map never shows the profile photo
+  (D44 kept for the map; where the photo shows: OQ-57). Name tags appear only on hover or keyboard focus, at every
+  zoom (D50).
 
 **LAY-07 Map item catalog (Admin)** (D64; Ming 2026-11-25: "admin có thêm nơi setup và lựa chọn các item được add
 vào sơ đồ phòng kèm ảnh cho item đó"; "idea là để admin có quyền điều chỉnh list items này và cách nó hiển thị (ảnh)
@@ -509,17 +537,76 @@ org and a per-desk look choice are a later phase.
 - [ ] A user releases a seat they occupy without approval; the occupant is cleared and DEV-06 runs.
 - [ ] A user returns their own device from a seat to inventory.
 
+### POR — My Portal (every tier)
+
+D70 (Ming 2026-11-26). One page, "My Portal", for every tier, with three horizontal tabs: **My seat**, **My devices**,
+**Profile**. It shows only the caller's own data and reuses the existing APIs and components (seat detail, map view,
+requests, device actions, display name). Clean UI kit (D52); copy in `src/ui/copy/<feature>.ts` (D36).
+
+**POR-01 Page and tabs**
+- [ ] My Portal is in the nav for every tier (SHL-01). The three tabs are horizontal, keyboard-operable and
+  addressable by URL (e.g. `?tab=seat|devices|profile`); the default tab is My seat. Works at 390 px.
+- [ ] Every tab reads only the caller's own member (token `sub` + `org`, R6); there is no way to open another
+  member's portal.
+- [ ] A member with no linked member record, or a deactivated member, gets the same refusal as other org pages.
+
+**POR-02 My seat**
+- [ ] Lists every seat the member occupies (one person may have several, invariant 2): seat code, room, group/project
+  tags, and "View on map", which opens `/rooms/<code>` with that seat selected (SEA-05 URL).
+- [ ] Lists the member's seat requests with status, using "My requests" (REG-02): pending ones can be cancelled (D24).
+- [ ] "Release seat" releases an occupied seat without approval after a confirmation (REG-03; DEV-06 runs).
+- [ ] With no seat and no request, an empty state links to Rooms to request a seat (REG-01).
+
+**POR-03 My devices**
+- [ ] Lists the devices the member holds, from the "my devices" endpoint (DEV-12): name, type, inventory number,
+  placement (seat code and role, or "in my inventory"), expiry date and **Overdue** (DEV-10).
+- [ ] Per device, the owner actions that already exist: move / place at a seat or back to my inventory (DEV-03 to
+  DEV-05), transfer to a member (DEV-08), return to the org inventory (DEV-09), request an extension (DEV-10), and
+  cancel a pending handoff they started. Each action shows only when the rules allow it (e.g. none while a handoff is
+  pending, except cancel).
+- [ ] A "Waiting for my confirmation" list shows transfers to the member (device name, type, inventory number,
+  sender, note) with Confirm and Decline (DEV-08).
+- [ ] The overdue banner of DEV-10 shows here.
+- [ ] Manager and Admin see their own devices here; the full org list stays on the Devices page (D70).
+
+**POR-04 Profile: display name, email, role**
+- [ ] The member edits their own display name (existing own-display-name API, D17; same validation).
+- [ ] Email and simap role are shown read-only with "managed in mmlabs" (AUT-04).
+- [ ] The profile photo (POR-05) and pixel character (POR-06) are edited here once those tickets ship.
+
+**POR-05 Profile photo** (D71)
+- [ ] The member uploads a real image as their profile photo, replaces it or removes it. Who else may remove it:
+  OQ-61.
+- [ ] Format and size limits: OQ-56 (precedent: device type images, D68, and SIM-036.5 storage: header checked on
+  the server before any DB or Drive call, server-chosen file name, org-scoped, served behind the bearer with ETag and
+  `private, no-cache`).
+- [ ] Where the photo shows (shell avatar, member list, seat panel, ...) and the fallback without a photo: OQ-57. The
+  photo is never drawn on the room map (LAY-06).
+- [ ] Every change is audited (SYS-03) without the image bytes.
+
+**POR-06 Pixel character** (D71)
+- [ ] The member customises the 32 px layered avatar used on the room map (LAY-06) from preset choices per layer:
+  skin, hair colour, hair style, shirt colour (the existing avatar ramps and frames; more parts only with new art). No
+  free colour input and no upload.
+- [ ] A live preview shows the character front and back at 1× and 2× before saving. "Reset" goes back to the look
+  derived from `sub`.
+- [ ] The choice is stored on the member (Member entity). A member without a stored look keeps the derived look, so
+  existing members change nothing until they choose. The server accepts only preset values (422 otherwise).
+- [ ] Open maps show the new look at the next layout load. Every change is audited (SYS-03).
+
 ### DSH — Dashboard
 
 **DSH-01 Overview numbers**
-- [ ] The dashboard shows rooms, seats, occupied seats, occupancy rate, and devices placed vs. in inventory.
+- [ ] The dashboard shows rooms, seats, occupied seats, occupancy rate, and devices placed vs. in inventory
+  (counts only; whether Users still get the org device counts is OQ-60).
   Everything is computed from the database when the page loads, with no cached counters (seatMGT's
   `layoutMeta.seatCount` is not carried over).
 - [ ] It breaks occupancy down per room, with room cards and an occupancy ring as in seatMGT.
 
 **DSH-02 Search and filter** (all roles)
 - [ ] Search runs on the server across seats (code, occupant), devices (name, inventory no., MAC, owner) and members
-  (name, employee code). Results are always current.
+  (name, employee code). Results are always current. For a User, device results contain only devices they hold
+  (D69, DEV-12).
 - [ ] Search ignores case and Vietnamese diacritics: "nguyen" finds "Nguyễn".
 - [ ] Result lists have bounded page sizes.
 - [ ] Manager+ export CSV (opens in Excel, UTF-8 with BOM for Vietnamese) of seats with occupants, devices and
@@ -557,7 +644,9 @@ org and a per-desk look choice are a later phase.
 **SHL-01 App shell with role-aware nav**
 - [ ] Nav rail on desktop and bottom bar on mobile, org name and switcher (AUT-06), room switcher, avatar and role
   badge, "refresh permissions", sign-out.
-- [ ] Pages: Dashboard, Rooms, Room detail, Room editor (Admin), Members, Devices, Approvals (Manager+).
+- [ ] Pages: Dashboard, Rooms, Room detail, Room editor (Admin), Members (Users: OQ-58), Devices (Manager+, D69),
+  Approvals (Manager+), My Portal (every tier, D70). The home page stays the Dashboard unless OQ-54 changes it. The
+  device-count badge for Users: OQ-59.
 
 **SHL-02 Light/dark theme**
 - [ ] The user switches between light and dark, and the choice is kept on the device.
@@ -724,12 +813,42 @@ Still open (defaults stand until Ming answers; reversible):
   sprite draws at its own size, bottom-left aligned in the footprint, and the whole footprint blocks; the Admin page
   suggests uploading fitted art. Alternative: nearest-neighbour stretch by whole tiles. *Blocks: SIM-039.4.*
 
-New questions get the next free number (OQ-54).
+**Device visibility and My Portal (D69–D71, 2026-11-26).** Each has a default the tickets follow until Ming answers
+(reversible).
+- **OQ-54 Home page.** Is My Portal the User's home page instead of the Dashboard? Default: the Dashboard stays the
+  home page for every tier; My Portal is a nav entry. *Blocks: the My Portal page ticket (nav only).*
+- **OQ-55 Devices at seats for Users.** Do room-map device sprites at seats still show to Users (sprite only, no
+  details), and what does the seat panel show about devices a User does not hold? Default: sprites still draw for
+  every tier, and for a User the layout API returns per such device only its type/slot (no id, name, inventory
+  number, MAC or owner); the seat panel lists the User's own devices in full and only "N other devices" for the rest.
+  *Blocks: the device visibility ticket (layout and seat APIs).*
+- **OQ-56 Profile photo limits.** Default: PNG or JPEG (no APNG or other animation), square, 64 × 64 to 512 × 512 px,
+  at most 256 KB, stored and served like device type images (SIM-036.5); no server-side resizing (no image library,
+  stack unchanged). *Blocks: the profile photo ticket.*
+- **OQ-57 Where the photo and the character show.** Default: the photo shows in the shell avatar, the Members list and
+  member card, the seat panel's occupant row and the Profile tab; without a photo those places show the pixel
+  character's head (or initials). The pixel character shows only on the room map and in its Profile preview.
+  *Blocks: the profile photo ticket.*
+- **OQ-58 Members list for Users.** Do Users still see the Members page? Default: yes (names, employee code, seats),
+  without other members' devices (MEM-02, D69); the member picker for transfers (DEV-08) stays either way.
+  *Blocks: the device visibility ticket (MEM-02 API), the My Portal page ticket (nav).*
+- **OQ-59 Device badge in the nav for Users.** Default: Users have no Devices entry; the badge moves to the My Portal
+  entry and counts transfers waiting for their confirmation plus their overdue devices. Manager+ keep the Devices badge
+  (Admins: pending returns too) and get the same My Portal badge for their own items. *Blocks: the My Portal page
+  ticket.*
+- **OQ-60 Dashboard device counts for Users.** DSH-01 shows org-wide "devices placed vs. in inventory". Default: Users
+  keep these counts (numbers only, no lists); device rows never appear. *Blocks: the device visibility ticket.*
+- **OQ-61 Who may change a member's photo or character.** Default: only the member sets their own photo and
+  character; a Manager+ can remove another member's photo (audited) but not upload one; the character is the
+  member's alone. *Blocks: the profile photo ticket.*
+
+New questions get the next free number (OQ-62).
 
 ## 12. Change log
 
 | Date | Change |
 |---|---|
+| 2026-11-26 | D69–D71: Users see only the devices they hold (API-enforced on the device list, detail, history and search; a "my devices" endpoint for every tier); new My Portal page for every tier with My seat, My devices and Profile tabs; profile photo upload and a customisable pixel character stored on the member. Roles table, Member entity, SEA-05, DEV intro, DEV-02/08/10/11, MEM-02, LAY-06, DSH-01/02, SHL-01 amended; DEV-12 and POR-01 to POR-06 added; OQ-54 to OQ-61 open. |
 | 2026-11-25 | D68 (SIM-040): device type images may be square PNGs from 24 × 24 to 100 × 100 px, at most 100 KB; the map scales them to the slot. |
 | 2026-11-25 | D66: map item catalog, phase 1. Per-org rows for the existing library items (keyed by library key, seeded per org; placed fixtures keep `sprite_key`) drive the editor palette: Admins rename, regroup, reorder, hide/show, resize (1–4 × 1–4 tiles, refused while placed) and set art per direction (package sprite or custom PNG, fallback chain). Desk (one look per org), chair (art only), walls, windows and floors included; device types can pick a package sprite; the licensed atlas is committed. Art-per-item paragraph, LAY-01/03/06 amended, LAY-07 added, DEV-01 amended, MapItem entity; OQ-46 to OQ-51 answered; OQ-52, OQ-53 open. |
 | 2026-11-25 | D63: device lifecycle. Devices start unowned in the org inventory (Admin creates); Admin/Manager assigns with note and optional expiry; owners transfer to a member who confirms (device lands unplaced in their inventory); owners return to the org inventory and an Admin confirms; unowned devices are never placed; overdue, in-app reminder and extension request; optional serial, manufacturer, brand; device detail page with history (DEV-01 to DEV-03, DEV-07 to DEV-11; OQ-41 to OQ-45). |
