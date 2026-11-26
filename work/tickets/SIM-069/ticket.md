@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | claude@2026-11-26T17:14:13Z |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/146 |
 
 ## Goal
 The My devices tab of My Portal follows the look of Ming's mockup (`mockup-my-devices.png` in this folder): a page
@@ -71,3 +71,9 @@ header, summary tiles and one clean table of the member's devices, with the same
 - Merge approved (2026-11-26, batch 2026-11-26-7): Ming "cho merge SIM-066, SIM-067, SIM-069".
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 5 (frontend-developer×1 37k, ux-architect×1 49k, planner×1 103k, implementer×1 72k, reviewer×1 55k; default models)
+- Done: implemented on top of merged SIM-066/SIM-067; review PASS attempt 1; PR #146.
+- In progress / next: wait for CI, merge (Merge approved, batch 2026-11-26-7); batch DONE.
+- Gotchas: none.
