@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T04:37:39Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/122 |
 
 ## Goal
 The side views (e/w) of the new `clock.wall` and `screen.projector` items are thin slivers that read badly on the map
@@ -63,3 +63,9 @@ The side views (e/w) of the new `clock.wall` and `screen.projector` items are th
 ## Notes / answers from Ming
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 4, ~187k tokens (planner×1 sonnet 58k, implementer×1 default 50k, reviewer×1 default 42k, security-ai-generated-code-auditor×1 default 38k; consult skipped, fast lane).
+- Done: per-key rotation rule (clock.wall, screen.projector → 0/180, n/s art only); validator, editor rotate, Map items art client and server; tests; review PASS attempt 1; PR #122.
+- In progress / next: Ming merges PR #122 before the release that ships SIM-042.
+- Gotchas: tags now reach v0.1.12 but SIM-042 is in none; e/w frames stay in the atlas unused.
