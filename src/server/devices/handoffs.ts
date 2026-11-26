@@ -19,6 +19,7 @@ import type {
 } from "@/lib/devices/types";
 import { writeAudit } from "@/server/audit/write";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
+import { hiddenFromActor, hiddenHandoffFromActor } from "@/lib/devices/visibility";
 import { reload } from "./devices";
 import {
   Abort,
@@ -156,6 +157,7 @@ export function startTransfer(
       [deviceId],
     );
     if (!dev[0]) throw new Abort(notFound);
+    if (hiddenFromActor(tier, dev[0].owner_id, me)) throw new Abort(notFound);
     // read under the device lock, which every pending-handoff check and insert shares
     const { rows: pending } = await orgQuery(
       c,
@@ -217,6 +219,7 @@ export function startReturn(
       [deviceId],
     );
     if (!dev[0]) throw new Abort(notFound);
+    if (hiddenFromActor(tier, dev[0].owner_id, me)) throw new Abort(notFound);
     const { rows: pending } = await orgQuery(
       c,
       scope,
@@ -273,6 +276,7 @@ export function startExtension(
       [deviceId],
     );
     if (!dev[0]) throw new Abort(notFound);
+    if (hiddenFromActor(tier, dev[0].owner_id, me)) throw new Abort(notFound);
     const { rows: pending } = await orgQuery(
       c,
       scope,
@@ -345,6 +349,8 @@ function closeHandoff(action: "cancel" | "decline") {
         });
       const { rows: first } = await orgQuery<Lite>(c, scope, LITE, [id]);
       if (!first[0]) throw new Abort(notFound);
+      if (hiddenHandoffFromActor(tier, me, first[0].from_member_id, first[0].to_member_id))
+        throw new Abort(notFound);
       const early = decide(first[0]);
       if (early.kind === "refuse") throw refuse(early.status, early.code);
       const { rows: locked } = await orgQuery<Lite>(c, scope, `${LITE} for update`, [id]);
@@ -625,6 +631,7 @@ export async function confirmHandoff(
   );
   const h0 = first[0];
   if (!h0) return notFound;
+  if (hiddenHandoffFromActor(tier, me, h0.from_member_id, h0.to_member_id)) return notFound;
   const early = decideHandoffAction({
     kind: h0.kind,
     action: "confirm",

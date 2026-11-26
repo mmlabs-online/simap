@@ -99,10 +99,10 @@ describe("handoffs (db): start", () => {
     expect(rows[0].meta).toMatchObject({ fromMemberId: w.x, toMemberId: w.y, note: "for Huong" });
   });
 
-  it("a user on another's device: 422, no row, no audit", async () => {
+  it("a user on another's device: 404, no row, no audit", async () => {
     const w = await world();
     const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
-    expect(await start(w, w.sy, "user", d, w.z)).toEqual(refusal(422, "not_allowed"));
+    expect(await start(w, w.sy, "user", d, w.z)).toEqual(refusal(404, "not_found"));
     expect(
       await count("select count(*)::int as n from device_handoffs where org_id = $1", [w.orgId]),
     ).toBe(0);
@@ -202,6 +202,20 @@ describe("handoffs (db): cancel and decline", () => {
     );
     expect((await handoff(h)).status).toBe("pending");
     expect(await auditRows(w.orgId, "device.transfer_cancel")).toHaveLength(0);
+  });
+
+  it("a user who is neither sender nor recipient gets 404 on cancel, decline and confirm; nothing written; a manager gets 422", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
+    const gone = refusal(404, "not_found");
+    expect(await cancelHandoff(pool, w.scope, w.sz, "user", h)).toEqual(gone);
+    expect(await declineHandoff(pool, w.scope, w.sz, "user", h)).toEqual(gone);
+    expect(await confirmHandoff(pool, w.scope, w.sz, "user", h, TODAY)).toEqual(gone);
+    expect(await cancelHandoff(pool, w.scope, w.sz, "manager", h)).toMatchObject({ ok: true });
+    expect((await handoff(h)).status).toBe("cancelled");
+    expect(await auditRows(w.orgId, "device.transfer_decline")).toHaveLength(0);
+    expect(await auditRows(w.orgId, "device.transfer_confirm")).toHaveLength(0);
   });
 
   it("the recipient declines: declined, device unchanged, second call 409", async () => {
@@ -433,7 +447,7 @@ describe("handoffs (db): return", () => {
     const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const free = await addDevice(pool, w.orgId, null, null, "secondary");
     expect(await startReturn(pool, w.scope, w.sy, "user", d, ret())).toEqual(
-      refusal(422, "not_allowed"),
+      refusal(404, "not_found"),
     );
     expect(await startReturn(pool, w.scope, w.sz, "manager", free, ret())).toEqual(
       refusal(422, "device_unowned"),
@@ -455,9 +469,7 @@ describe("handoffs (db): return", () => {
     expect(await declineHandoff(pool, w.scope, w.sx, "user", h)).toEqual(
       refusal(422, "not_allowed"),
     );
-    expect(await cancelHandoff(pool, w.scope, w.sy, "user", h)).toEqual(
-      refusal(422, "not_allowed"),
-    );
+    expect(await cancelHandoff(pool, w.scope, w.sy, "user", h)).toEqual(refusal(404, "not_found"));
     const c = await cancelHandoff(pool, w.scope, w.sz, "manager", h);
     expect(c.ok && c.value).toMatchObject({ status: "cancelled", decidedBy: { id: w.z } });
     const rows = await auditRows(w.orgId, "device.return_cancel");
@@ -653,18 +665,18 @@ describe("handoffs (db): extension", () => {
     expect(rows[0].meta).toMatchObject({ newExpiresOn: "2026-12-31", note: "need it" });
   });
 
-  it("refusals: another user and a Manager 422, unowned 422, second pending 409, transfer pending 409; no rows", async () => {
+  it("refusals: another user 404, a Manager 422, unowned (User) 404, second pending 409, transfer pending 409; no rows", async () => {
     const w = await world();
     const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
     expect(await startExtension(pool, w.scope, w.sy, "user", d, ext("2026-12-31"))).toEqual(
-      refusal(422, "not_allowed"),
+      refusal(404, "not_found"),
     );
     expect(await startExtension(pool, w.scope, w.sz, "manager", d, ext("2026-12-31"))).toEqual(
       refusal(422, "not_allowed"),
     );
     const free = await addDevice(pool, w.orgId, null, null, "secondary");
     expect(await startExtension(pool, w.scope, w.sx, "user", free, ext("2026-12-31"))).toEqual(
-      refusal(422, "device_unowned"),
+      refusal(404, "not_found"),
     );
     expect(
       await count("select count(*)::int as n from device_handoffs where org_id = $1", [w.orgId]),
@@ -696,19 +708,18 @@ describe("handoffs (db): extension", () => {
     expect(rows[0].meta).toMatchObject({ fromExpiresOn: "2026-11-20", toExpiresOn: "2026-12-31" });
   });
 
-  it("approve or reject by the owner or another user: 422, nothing written", async () => {
+  it("approve or reject by the owner: 422; by another user: 404; nothing written", async () => {
     const w = await world();
     const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
     await setExpiry(d, "2026-11-20");
     const s = await startExtension(pool, w.scope, w.sx, "user", d, ext("2026-12-31"));
     const h = s.ok ? s.value.id : "";
-    for (const sub of [w.sx, w.sy]) {
-      expect(await confirmHandoff(pool, w.scope, sub, "user", h, TODAY)).toEqual(
-        refusal(422, "not_allowed"),
-      );
-      expect(await declineHandoff(pool, w.scope, sub, "user", h)).toEqual(
-        refusal(422, "not_allowed"),
-      );
+    for (const [sub, expected] of [
+      [w.sx, refusal(422, "not_allowed")],
+      [w.sy, refusal(404, "not_found")],
+    ] as const) {
+      expect(await confirmHandoff(pool, w.scope, sub, "user", h, TODAY)).toEqual(expected);
+      expect(await declineHandoff(pool, w.scope, sub, "user", h)).toEqual(expected);
     }
     expect((await handoff(h)).status).toBe("pending");
     expect(await auditRows(w.orgId, "device.extension_confirm")).toHaveLength(0);
