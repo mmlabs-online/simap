@@ -49,6 +49,11 @@ describe("MySeatView", () => {
     expect(html).toContain(portalCopy.seat.empty);
     expect(html).toContain('href="/rooms"');
   });
+  it("requests but no seat shows the no-seat line, not the empty card", () => {
+    const html = render({ seats: [], empty: false });
+    expect(html).toContain(portalCopy.seat.noSeat);
+    expect(html).not.toContain(portalCopy.seat.empty);
+  });
   it("error state shows message and Retry", () => {
     const html = render({ status: "error", seats: [], errorCode: "unavailable" });
     expect(html).toContain('role="alert"');

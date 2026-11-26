@@ -110,6 +110,23 @@ describe("PlaceDeviceFields picker", () => {
     expect(render({ tier: "manager", seats: ready([theirs, empty]) })).toContain("C-02 · Binh");
   });
 
+  it("user moving a device lent before D72 sees its current seat and the hint", () => {
+    const lent = seat({
+      id: "s9",
+      code: "C-09",
+      occupant: { id: "u2", displayName: "Nguyễn Bình" },
+    });
+    const html = render({ tier: "user", mode: "move", device: placedDevice, seats: ready([lent]) });
+    expect(html).toContain(copy.lentCurrent("C-09", "Nguyễn Bình"));
+    expect(html).toContain(copy.lentMoveHint);
+    const manager = render({ tier: "manager", device: placedDevice, seats: ready([lent]) });
+    expect(manager).not.toContain(copy.lentMoveHint);
+    const own = seat({ id: "s9", code: "C-09", occupant: owner });
+    expect(render({ tier: "user", device: placedDevice, seats: ready([own]) })).not.toContain(
+      copy.lentMoveHint,
+    );
+  });
+
   it("room select lists rooms; seats show code, occupant or Empty, and hints", () => {
     const html = render({
       device: placedDevice,

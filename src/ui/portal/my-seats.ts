@@ -1,8 +1,8 @@
-import type { ApiFetch } from "@/lib/api/fetch";
+import { ApiAccessError, type ApiFetch } from "@/lib/api/fetch";
 import type { MemberSeatRef } from "@/lib/members/types";
 import type { SeatDto } from "@/lib/seats/types";
 import { seatsCopy } from "../copy/seats";
-import type { SeatsResult } from "../seats/seats-api";
+import { errorCode, type SeatsResult } from "../seats/seats-api";
 import { actionOutcome, type ActionResult, type Outcome } from "../seats/seat-actions";
 
 type RequestsStatus = "loading" | "error" | "ready";
@@ -46,11 +46,11 @@ export async function loadMySeats(
 ): Promise<SeatsLoad> {
   try {
     const me = await apiFetch("/api/me", { method: "GET" });
-    if (!me.ok) return fail("internal");
+    if (!me.ok) return fail(await errorCode(me));
     const id = await readOwnMemberId(me);
     if (id === null) return fail("internal");
     const res = await apiFetch(`/api/members/${encodeURIComponent(id)}`, { method: "GET" });
-    if (!res.ok) return fail("internal");
+    if (!res.ok) return fail(await errorCode(res));
     const refs = ((await res.json()) as { seats?: unknown } | null)?.seats;
     if (!Array.isArray(refs)) return fail("internal");
     const list = refs as MemberSeatRef[];
@@ -59,7 +59,9 @@ export async function loadMySeats(
       results.push(...(await Promise.all(list.slice(i, i + BATCH).map((r) => seatsApi.get(r.id)))));
     }
     return composeSeats(list, results);
-  } catch {
+  } catch (e) {
+    if (e instanceof ApiAccessError)
+      return fail(e.code === "signed_out" ? "unauthenticated" : e.code);
     return fail("unavailable");
   }
 }

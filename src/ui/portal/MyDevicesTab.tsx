@@ -24,7 +24,12 @@ import { createRoomsApi } from "../rooms/rooms-api";
 import { createSeatsApi } from "../seats/seats-api";
 import { useSession } from "../session";
 import { MyDevicesView } from "./MyDevicesView";
-import { portalHandlers } from "./portal-state";
+import {
+  latestNotice,
+  portalHandlers,
+  refreshFailureNotice,
+  type StampedNotice,
+} from "./portal-state";
 import { useMyDevices } from "./useMyDevices";
 
 /** The My devices tab: the caller's held devices, owner actions, incoming transfers and the overdue banner. */
@@ -53,8 +58,13 @@ export function MyDevicesTab() {
   const acting = useRef(false);
   const [incomingBusyId, setIncomingBusyId] = useState<string | null>(null);
   // The notice of the latest action: a host notice (row actions) or an incoming outcome (Confirm/Decline).
-  const [shown, setShown] = useState<IncomingOutcome["notice"] | null>(null);
-  useEffect(() => setShown(notice), [notice]);
+  const seq = useRef(0);
+  const [hostStamp, setHostStamp] = useState<StampedNotice>({ seq: 0, notice: null });
+  const [incomingStamp, setIncomingStamp] = useState<StampedNotice>({ seq: 0, notice: null });
+  useEffect(() => setHostStamp({ seq: ++seq.current, notice }), [notice]);
+  const setShown = (n: IncomingOutcome["notice"] | null) =>
+    setIncomingStamp({ seq: ++seq.current, notice: n });
+  const shown = latestNotice(hostStamp, incomingStamp);
   const [focusTarget, setFocusTarget] = useState<FocusTarget | null>(null);
 
   // Applied after the commit, so the node it points at is the new one, not the one the await replaced.
@@ -86,11 +96,13 @@ export function MyDevicesTab() {
     const outcome = outcomeOf(await call());
     setShown(outcome.notice);
     if (outcome.refresh) {
-      const [inc, , count] = await Promise.all([
+      const [inc, devicesRefresh, count] = await Promise.all([
         incoming.refresh(),
         myDevices.refresh(),
         api.handoffCount(),
       ]);
+      const failure = refreshFailureNotice(inc, devicesRefresh);
+      if (failure !== null) setShown(failure);
       const next = badgeCountAfter(count, inc, [], []);
       if (next !== null) setBadge(next);
       setFocusTarget(

@@ -36,6 +36,13 @@ export function ownSeats(d: DeviceDto, seats: SeatDto[], tier: Tier): SeatDto[] 
   return seats.filter((s) => s.occupant !== null && s.occupant.id === d.owner?.id);
 }
 
+/** A device lent before D72 (a User's device on another member's seat): that seat, so the dialog can explain it. */
+export function lentSeat(d: DeviceDto, seats: SeatDto[], tier: Tier): SeatDto | null {
+  if (tier !== "user" || !d.placement) return null;
+  const seat = seats.find((s) => s.id === d.placement?.seatId);
+  return seat?.occupant && seat.occupant.id !== d.owner?.id ? seat : null;
+}
+
 /** Why the device cannot be primary on this seat, or null. One rule (lib); the server stays the guard. */
 export function primaryRefusal(
   d: DeviceDto,
