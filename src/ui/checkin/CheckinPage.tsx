@@ -1,10 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { firstRoomInputs } from "@/lib/checkin-popup";
 import { firstRoom, shownRoom, type FirstRoom } from "@/lib/checkin-room";
+import { openTagSeats } from "@/lib/presence/open-tags";
+import { seatPresenceMap } from "@/lib/presence/seat-presence";
+import { whosHereRows } from "@/lib/presence/whos-here";
 import { roomDetailHref } from "@/lib/nav";
 import {
   checkinGoTarget,
@@ -18,6 +21,7 @@ import { placedArtEntries } from "@/lib/sprites/item-art";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { Card } from "../Card";
 import { checkinCopy } from "../copy/checkin";
+import { presenceCopy } from "../copy/presence";
 import { createMembersApi } from "../members/members-api";
 import { useMemberPhotos } from "../members/useMemberPhotos";
 import { useMySeats } from "../portal/useMySeats";
@@ -25,6 +29,7 @@ import { createRoomsApi } from "../rooms/rooms-api";
 import { useRooms } from "../rooms/useRooms";
 import { RoomSwitcherView } from "../RoomSwitcher";
 import { RoomMapSection } from "../roomlayout";
+import { useAtlas } from "../roomlayout/useAtlas";
 import { useCatalogImages } from "../roomlayout/useCatalogImages";
 import { SeatDetailPanel } from "../seats/SeatDetailPanel";
 import { panelView, parseSeatParam } from "../seats/seat-view";
@@ -37,6 +42,10 @@ import { CheckinView, type CheckinViewState } from "./CheckinView";
 import { createPresenceApi } from "./presence-api";
 import { useCheckinFlow } from "./useCheckinFlow";
 import { useMyPresence } from "./useMyPresence";
+import { usePresenceMove } from "./usePresenceMove";
+import { usePresencePoll } from "./usePresencePoll";
+import { useRoomPresence } from "./useRoomPresence";
+import { WhosHere } from "./WhosHere";
 
 function CheckinPageInner() {
   const apiFetch = useApiFetch();
@@ -88,6 +97,57 @@ function CheckinPageInner() {
     [mapView],
   );
   const catalogImages = useCatalogImages(mapView?.seatDevices, art);
+
+  // Presence (PRE-06): the room's check-ins, polled; own changes refresh at once.
+  const roomPresence = useRoomPresence(presenceApi, roomId);
+  const poll = usePresencePoll(roomId, roomPresence, myPresence);
+  const mover = usePresenceMove({
+    api: presenceApi,
+    apply: myPresence.apply,
+    refreshMine: myPresence.refresh,
+    reloadLayout: () => void map.reload(),
+  });
+  const { atlas } = useAtlas();
+  const [focus, setFocus] = useState<{ code: string; n: number } | null>(null);
+  const mySeatId = myPresence.data?.presence?.seatId ?? "none";
+  const firstRun = useRef(true);
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
+    void poll.refreshNow();
+    // Own check-in, check-out or move: show it now, not at the next poll.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mySeatId]);
+  const members =
+    roomPresence.data && roomPresence.data.roomId === roomId ? roomPresence.data.members : null;
+  // Keyed by value so a poll with the same answer does not redraw the map.
+  const memberKey = members?.map((m) => `${m.seatId}|${m.memberId}`).join(",") ?? null;
+  const presence = useMemo(
+    () => (mapView && members ? seatPresenceMap(mapView.seatViews, members) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mapView?.seatViews, memberKey],
+  );
+  const presenceView =
+    mapView && roomId !== null
+      ? {
+          presence,
+          openTags: openTagSeats({
+            layout: mapView.layout,
+            seatViews: mapView.seatViews,
+            my: myPresence.data?.presence ?? null,
+            roomId,
+          }),
+          onOpenTag: (seatId: string) => void mover.move(seatId),
+          busy: mover.busy,
+          focusSeat: focus,
+        }
+      : undefined;
+  // `useRoomPresence` stays "loading" for a null room id, so a room that did not resolve shows the error here.
+  let listStatus: "loading" | "ready" | "error" = roomPresence.status;
+  if (roomId === null) listStatus = resolution.kind === "loading" ? "loading" : "error";
+  else if (listStatus === "ready" && members === null) listStatus = "loading";
 
   const [selected, setSelected] = useState(shownCode ?? "");
   useEffect(() => {
@@ -145,6 +205,14 @@ function CheckinPageInner() {
           onRetry={() => void map.reload()}
           onSelect={openSeat}
           catalogImages={catalogImages}
+          presenceView={presenceView}
+          notice={
+            mover.errorCode ? (
+              <p role="alert" className="text-sm font-semibold text-error">
+                {presenceCopy.moveError(mover.errorCode)}
+              </p>
+            ) : null
+          }
         />
       ),
     };
@@ -155,6 +223,20 @@ function CheckinPageInner() {
       <CheckinView
         state={state}
         button={<CheckinButton {...flow.button} />}
+        whosHere={
+          <WhosHere
+            status={listStatus}
+            rows={whosHereRows({
+              members: members ?? [],
+              seatViews: mapView?.seatViews ?? {},
+              placedCodes: new Set(mapView?.layout.seats.map((s) => s.code)),
+            })}
+            stale={poll.stale}
+            atlas={atlas}
+            onFocus={(code) => setFocus((f) => ({ code, n: (f?.n ?? 0) + 1 }))}
+            onRetry={() => (roomId === null ? void reloadRooms() : void roomPresence.refresh())}
+          />
+        }
         switcher={
           <RoomSwitcherView
             rooms={goodRooms}

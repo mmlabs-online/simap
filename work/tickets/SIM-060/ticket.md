@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, api |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/142 |
 
 ## Goal
 Everyone in the org sees who is in the office today on the room map and in "Who's here", kept fresh by polling, and a
@@ -57,5 +57,18 @@ D80 (name tags always shown, amends D50 for this view), D78.
 - Manual: two browsers, one checks in/out/moves, the other sees it within 60 s; hidden tab stops requests.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-6): "duyệt hết theo mặc định"; Q1 default (built after SIM-059 is merged); Q2 one PR in two ordered commits (A, B); Q4 static seated pose + monitor-on, typing animation moves to SIM-061; Q5 polling 45 s / 60 s after failure, stale notice after 2 failures, Who's here lists checked-in only.
 
 ## Handoff
+
+### 2026-11-26 — claude — PLANNING (waiting)
+- Agent calls: 3, ~212k tokens (frontend-developer×1 default 49k, api-platform-engineer×1 default 22k, planner×1 default 140k; batch 2026-11-26-6).
+- Done: consults and plan (READY, approved 2026-11-26).
+- In progress / next: waits for Ming to merge PR #141 (SIM-059); then rebase onto main and implement (`/run-batch --resume`).
+- Gotchas: uses SIM-059's hooks; `useRoomPresence` stays "loading" for a null roomId; typing animation moved to SIM-061 (add to its notes).
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 5, ~466k tokens (frontend-developer×1 default 49k, api-platform-engineer×1 default 22k, planner×1 default 140k, implementer×1 default 167k, reviewer×1 default 87k; batch 2026-11-26-6).
+- Done: present/away on the map, always-visible tags with layout (check-in view only), open desk tags + move, "Who's here", polling; commit A + commit B; review PASS attempt 1; PR #142.
+- In progress / next: Ming merges PR #142; two should-fix items (unknown presence drawn as "present"; dot fallback not reserved in tag layout) can go with SIM-061, which edits the same files.
+- Gotchas: SIM-059 hooks' refresh() now returns boolean; typing animation belongs to SIM-061.

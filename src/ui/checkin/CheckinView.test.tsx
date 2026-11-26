@@ -43,3 +43,14 @@ describe("CheckinView", () => {
     expect(html).toContain(checkinCopy.retry);
   });
 });
+
+describe("CheckinView whosHere slot", () => {
+  it("whosHere prop replaces the placeholder inside the Who's here card", () => {
+    const html = renderToStaticMarkup(
+      <CheckinView state={room} switcher={<p>s</p>} whosHere={<ul>list-marker</ul>} />,
+    );
+    expect(html).toContain("list-marker");
+    expect(html).not.toContain(checkinCopy.whosHerePlaceholder);
+    expect(render(room)).toContain(checkinCopy.whosHerePlaceholder);
+  });
+});

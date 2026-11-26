@@ -1,5 +1,6 @@
 import type { ShortcutId } from "@/lib/layout-editor/shortcuts";
 import type { SaveDetail } from "@/lib/layout-editor/save-run";
+import type { SeatPresence } from "@/lib/presence/seat-presence";
 
 /** English strings of the room map (D36). Seat codes and names come from data and are not translated here. */
 export const roomlayoutCopy = {
@@ -26,6 +27,14 @@ export const roomlayoutCopy = {
   },
   seatLabel: (code: string, state: string, name: string | null) =>
     name ? `Seat ${code}, ${state}, ${name}` : `Seat ${code}, ${state}`,
+  /** The presence view (PRE-06): always-visible name tags, present/away and the open tag. */
+  presence: {
+    unnamed: "Unnamed",
+    moveHere: "Move here",
+    moveHereLabel: (code: string) => `Move here, seat ${code}`,
+    seatLabel: (code: string, state: string, name: string | null, presence: SeatPresence) =>
+      `${name ? `Seat ${code}, ${state}, ${name}` : `Seat ${code}, ${state}`}, ${presence === "present" ? "here" : "away"}`,
+  },
   zoomLabel: "Zoom",
   zoomOption: (z: number) => `${z}x`,
   editLayout: "Edit layout",

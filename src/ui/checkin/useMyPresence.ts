@@ -36,12 +36,13 @@ export function useMyPresence(api: PresenceApi) {
     );
   }, [api]);
 
-  /** Refetches without a skeleton; a failed refresh keeps the data. Polling (SIM-060) calls this. */
-  const refresh = useCallback(async () => {
+  /** Refetches without a skeleton; a failed refresh keeps the data. Resolves to true when the read worked. Polling (SIM-060) calls this. */
+  const refresh = useCallback(async (): Promise<boolean> => {
     const id = ++counter.current;
     const r = await api.mine();
-    if (!mounted.current || id !== counter.current) return;
+    if (!mounted.current || id !== counter.current) return r.ok;
     if (r.ok) setState({ status: "ready", data: r.value, errorCode: null });
+    return r.ok;
   }, [api]);
 
   /** Writes a PUT/DELETE/PATCH result into the data without a refetch. */

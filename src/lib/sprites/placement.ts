@@ -9,6 +9,7 @@ import type {
   SeatDeviceType,
   SeatView,
 } from "./layout";
+import type { SeatPresence } from "@/lib/presence/seat-presence";
 import { overlayFor } from "./overlay";
 import { resolveLook } from "./pixel-look";
 import { REGISTRY } from "./registry";
@@ -23,6 +24,7 @@ export type Rect = { x: number; y: number; w: number; h: number };
 export type DrawOp =
   | ({ type: "frame"; layer: Layer; key: string; tint: string | null } & Rect)
   | ({ type: "shadow"; layer: "shadow" } & Rect)
+  | ({ type: "screen"; layer: "overlay" } & Rect)
   | ({ type: "image"; layer: Layer; src: string; version: number } & Rect)
   | ({ type: "placeholder"; layer: Layer } & Rect);
 
@@ -104,12 +106,36 @@ type SeatItem = {
   chairKey: string;
   chairX: number;
   chairY: number;
+  /** Drawn rects of the seat's monitors (frame art or image box), for the presence screen glow. */
+  monitors: Rect[];
 };
 
 function union(a: Rect, b: Rect): Rect {
   const x = Math.min(a.x, b.x);
   const y = Math.min(a.y, b.y);
   return { x, y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y };
+}
+
+/** Screen glow insets (px), tunable until dedicated monitor-on art exists. */
+const SCREEN_INSET = 2;
+const SCREEN_STRIP = 2;
+
+/** Where a lit monitor shows: facing the viewer (back view) the upper half of the screen; facing away, a strip of light on the desk side. */
+function screenRect(m: Rect, view: "front" | "back"): Rect {
+  if (view === "back") {
+    return {
+      x: m.x + SCREEN_INSET,
+      y: m.y + SCREEN_INSET,
+      w: Math.max(1, m.w - 2 * SCREEN_INSET),
+      h: Math.max(1, Math.floor((m.h - 2 * SCREEN_INSET) / 2)),
+    };
+  }
+  return {
+    x: m.x + SCREEN_INSET,
+    y: m.y + m.h - SCREEN_STRIP,
+    w: Math.max(1, m.w - 2 * SCREEN_INSET),
+    h: SCREEN_STRIP,
+  };
 }
 
 /** Ordered draw ops for a room. Unknown sprites are listed in `unknown` and skipped. */
@@ -122,6 +148,8 @@ export function buildDrawList(
   art: {
     items?: readonly LayoutItem[];
     image?: (key: string, dir: Direction, version: number) => ItemImageSize | null;
+    /** Presence view only: `away` seats draw no character, `present` seats get the monitor screen on. Undefined = as always. */
+    presence?: Readonly<Record<string, SeatPresence>>;
   } = {},
 ): DrawList {
   const unknown: string[] = [];
@@ -349,6 +377,7 @@ export function buildDrawList(
       );
     } else if (manifest.frames[chair.key]) addItem(`${seat.id}:chair`, chair.key, chair.x, chair.y);
     else unknown.push(chair.key);
+    const monitors: Rect[] = [];
     seatItems.push({
       id: seat.id,
       x: seat.x,
@@ -357,6 +386,7 @@ export function buildDrawList(
       chairKey: chair.key,
       chairX: chair.x,
       chairY: chair.y,
+      monitors,
     });
     const types = (seatDevices[seat.id] ?? []).map((d) => resolveDeviceArt(d, imageReady));
     placeDevices(seat, footprint, dir, types).forEach((d, n) => {
@@ -371,6 +401,21 @@ export function buildDrawList(
         hostRow: seat.y + footprint[1] - 1,
         image: d.art.type === "image" ? { src: d.art.typeId, version: d.art.version } : null,
       });
+      if (d.kind === "monitor" && d.art.type !== "placeholder") {
+        const f = manifest.frames[d.key];
+        const fx = d.x * TILE + f.anchor[0] + d.offset[0];
+        const fy = d.y * TILE + f.anchor[1] + d.offset[1];
+        monitors.push(
+          d.art.type === "image"
+            ? {
+                x: fx + Math.floor((f.w - DEVICE_IMAGE) / 2),
+                y: fy + Math.floor((f.h - DEVICE_IMAGE) / 2),
+                w: DEVICE_IMAGE,
+                h: DEVICE_IMAGE,
+              }
+            : { x: fx, y: fy, w: f.w, h: f.h },
+        );
+      }
     });
     seatBoxes.push({
       id: seat.id,
@@ -444,12 +489,16 @@ export function buildDrawList(
 
   for (const s of seatItems) {
     const view = seatViews[s.id] ?? EMPTY_VIEW;
-    if (view.avatarSeed !== null) {
-      for (const f of avatarFrames(
-        resolveLook(view.look, view.avatarSeed),
-        avatarView(s.chairKey),
-      )) {
+    const presence = art.presence?.[s.id];
+    if (view.avatarSeed !== null && presence !== "away") {
+      const avatar = avatarView(s.chairKey);
+      for (const f of avatarFrames(resolveLook(view.look, view.avatarSeed), avatar)) {
         emitFrame("avatar", f.key, s.chairX, s.chairY, [0, 0], f.tint);
+      }
+      if (presence === "present") {
+        for (const m of s.monitors) {
+          emit({ type: "screen", layer: "overlay", ...screenRect(m, avatar) });
+        }
       }
     }
     for (const o of overlayFor(view.state, s.footprint)) {

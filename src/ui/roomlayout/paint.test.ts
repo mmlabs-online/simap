@@ -224,3 +224,16 @@ describe("tintedFrame", () => {
     expect(tintedFrame(a, "nope", "#000000", make)).toBeNull();
   });
 });
+
+describe("paintRoom screen op", () => {
+  it("screen op fills its rect and draws no atlas frame", () => {
+    const log: Call[] = [];
+    const list = buildDrawList(layout, {}, manifest);
+    list.ops.push({ type: "screen", layer: "overlay", x: 5, y: 6, w: 7, h: 8 });
+    expect(paintRoom(fakeCanvas(log), atlas(), list, 2)).toBe(true);
+    const at = log.findIndex((c) => c[0] === "fillRect" && c[1] === 5 && c[4] === 8);
+    expect(at).toBeGreaterThan(0);
+    expect(log[at - 1]).toEqual(["set fillStyle", "rgba(125,211,252,.7)"]);
+    expect(log.some((c) => c[0] === "drawImage" && c[6] === 5)).toBe(false);
+  });
+});

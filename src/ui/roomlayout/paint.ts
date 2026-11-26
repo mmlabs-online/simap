@@ -3,6 +3,7 @@ import { fitsCanvas } from "@/lib/sprites/zoom";
 import type { Atlas } from "./loadAtlas";
 
 const SHADOW_FILL = "rgba(32,42,58,.18)";
+const SCREEN_FILL = "rgba(125,211,252,.7)";
 const PLACEHOLDER_FILL = "#c9ccd1";
 const PLACEHOLDER_LINE = "#8a8f98";
 
@@ -76,6 +77,11 @@ export function paintRoom(
   for (const op of list.ops) {
     if (op.type === "shadow") {
       ctx.fillStyle = SHADOW_FILL;
+      ctx.fillRect(op.x, op.y, op.w, op.h);
+      continue;
+    }
+    if (op.type === "screen") {
+      ctx.fillStyle = SCREEN_FILL;
       ctx.fillRect(op.x, op.y, op.w, op.h);
       continue;
     }
