@@ -4,15 +4,8 @@ import { deviceDetailHref, isActive, navItemsFor, roomDetailHref, roomEditorHref
 const ids = (tier: Parameters<typeof navItemsFor>[0]) => navItemsFor(tier).map((i) => i.id);
 
 describe("navItemsFor", () => {
-  it("user sees dashboard, search, rooms, members, myRequests, portal (no devices)", () => {
-    expect(ids("user")).toEqual([
-      "dashboard",
-      "search",
-      "rooms",
-      "members",
-      "myRequests",
-      "portal",
-    ]);
+  it("user sees dashboard, search, rooms, members, portal (no devices)", () => {
+    expect(ids("user")).toEqual(["dashboard", "search", "rooms", "members", "portal"]);
   });
   it("manager adds approvals but not the editor", () => {
     expect(ids("manager")).toEqual([
@@ -21,7 +14,6 @@ describe("navItemsFor", () => {
       "rooms",
       "devices",
       "members",
-      "myRequests",
       "portal",
       "approvals",
     ]);
@@ -31,7 +23,7 @@ describe("navItemsFor", () => {
       expect(ids(tier)).not.toContain("groups");
   });
   it("admin sees all items incl. roomEditor", () => {
-    expect(ids("admin")).toHaveLength(12);
+    expect(ids("admin")).toHaveLength(11);
     expect(ids("admin")).toContain("roomEditor");
   });
   it("audit is admin only", () => {
@@ -57,7 +49,6 @@ describe("navItemsFor", () => {
       "rooms",
       "devices",
       "members",
-      "myRequests",
       "portal",
       "approvals",
       "audit",
@@ -78,11 +69,9 @@ describe("isActive", () => {
     }
     expect(isActive(item("rooms"), "/roomsx")).toBe(false);
   });
-  it("isActive: /requests and /requests/x are active for myRequests; /approvals and /requestsx are not", () => {
-    expect(isActive(item("myRequests"), "/requests")).toBe(true);
-    expect(isActive(item("myRequests"), "/requests/x")).toBe(true);
-    expect(isActive(item("myRequests"), "/approvals")).toBe(false);
-    expect(isActive(item("myRequests"), "/requestsx")).toBe(false);
+  it("there is no My requests entry for any tier (REG-02, D74)", () => {
+    for (const tier of ["user", "manager", "admin"] as const)
+      expect(navItemsFor(tier).some((i) => i.href === "/requests")).toBe(false);
   });
   it("isActive: /search and /search/x active, /searchx not", () => {
     expect(isActive(item("search"), "/search")).toBe(true);

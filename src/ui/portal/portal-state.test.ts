@@ -5,12 +5,14 @@ import { portalCopy } from "../copy/portal";
 import { rowActions } from "../devices/device-actions";
 import {
   devicesPageRedirect,
+  marksDecisionsSeen,
   nextTabIndex,
   parsePortalTab,
   portalBadgeTotal,
   portalHandlers,
   portalTabHref,
   profileOutcome,
+  requestsPageRedirect,
 } from "./portal-state";
 import { ApiAccessError } from "@/lib/api/fetch";
 
@@ -126,20 +128,41 @@ describe("portalHandlers", () => {
 });
 
 describe("portalBadgeTotal", () => {
-  it("is incoming + overdue; returns and extensions are ignored", () => {
-    expect(portalBadgeTotal({ incoming: 2, returns: 5, extensions: 4, overdue: 3 })).toBe(5);
-    expect(portalBadgeTotal({ incoming: 0, returns: 0, extensions: 0, overdue: 0 })).toBe(0);
+  it("is incoming + overdue + decisions; returns and extensions are ignored", () => {
+    expect(portalBadgeTotal({ incoming: 2, returns: 5, extensions: 4, overdue: 3 }, 4)).toBe(9);
+    expect(portalBadgeTotal({ incoming: 0, returns: 0, extensions: 0, overdue: 0 }, 0)).toBe(0);
+    expect(portalBadgeTotal({ incoming: 0, returns: 7, extensions: 7, overdue: 0 }, 3)).toBe(3);
+  });
+});
+
+describe("marksDecisionsSeen", () => {
+  it("only the My seat tab marks decisions seen; landing on /portal is My seat", () => {
+    expect(marksDecisionsSeen("seat")).toBe(true);
+    expect(marksDecisionsSeen("devices")).toBe(false);
+    expect(marksDecisionsSeen("profile")).toBe(false);
+    expect(marksDecisionsSeen(parsePortalTab([]))).toBe(true);
+  });
+});
+
+describe("requestsPageRedirect", () => {
+  it("sends /requests to My seat", () => {
+    expect(requestsPageRedirect).toBe("/portal?tab=seat");
   });
 });
 
 describe("portalBreakdown", () => {
   it("0, only incoming, only overdue, both", () => {
-    const c = (incoming: number, overdue: number) =>
-      shellCopy.badge.portalBreakdown({ incoming, returns: 9, extensions: 9, overdue });
+    const c = (incoming: number, overdue: number, decisions = 0) =>
+      shellCopy.badge.portalBreakdown({ incoming, returns: 9, extensions: 9, overdue }, decisions);
     expect(c(0, 0)).toBe("0 incoming transfers");
     expect(c(1, 0)).toBe("1 incoming transfer");
     expect(c(0, 2)).toBe("2 overdue devices");
     expect(c(2, 1)).toBe("3 pending items: 2 incoming transfers, 1 overdue device");
+    expect(c(0, 0, 1)).toBe("1 new decision");
+    expect(c(0, 0, 3)).toBe("3 new decisions");
+    expect(c(2, 1, 4)).toBe(
+      "7 pending items: 2 incoming transfers, 1 overdue device, 4 new decisions",
+    );
   });
 });
 

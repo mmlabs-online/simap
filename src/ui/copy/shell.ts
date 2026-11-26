@@ -24,16 +24,18 @@ const devicesBreakdown = (c: HandoffCountDto) => {
   return `${total} pending items: ${shown.map(([, text]) => text).join(", ")}`;
 };
 
-/** The My Portal badge text: incoming transfers and the caller's overdue devices, zero parts left out. */
-const portalBreakdown = (c: HandoffCountDto) => {
+/** The My Portal badge text: incoming transfers, the caller's overdue devices and unseen decisions, zero parts left out. */
+const portalBreakdown = (c: HandoffCountDto, decisions: number) => {
   const parts: [number, string][] = [
     [c.incoming, incomingTransfers(c.incoming)],
     [c.overdue, overdueDevices(c.overdue)],
+    [decisions, newDecisions(decisions)],
   ];
   const shown = parts.filter(([n]) => n > 0);
   if (shown.length === 0) return incomingTransfers(0);
   if (shown.length === 1) return shown[0][1];
-  return `${c.incoming + c.overdue} pending items: ${shown.map(([, text]) => text).join(", ")}`;
+  const total = shown.reduce((sum, [n]) => sum + n, 0);
+  return `${total} pending items: ${shown.map(([, text]) => text).join(", ")}`;
 };
 
 /** English strings for the app shell and the route skeletons (D36). */
@@ -53,7 +55,6 @@ export const shellCopy = {
     rooms: "Rooms",
     devices: "Devices",
     members: "Members",
-    myRequests: "My requests",
     portal: "My Portal",
     approvals: "Approvals",
     groups: "Groups",
@@ -89,7 +90,6 @@ export const shellCopy = {
     portalBreakdown,
     /** Screen-reader text per nav entry; an entry not listed falls back to `newDecisions`. */
     byNav: {
-      myRequests: newDecisions,
       devices: incomingTransfers,
       portal: incomingTransfers,
     } as Partial<Record<NavId, (n: number) => string>>,

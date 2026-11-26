@@ -43,8 +43,15 @@ export const portalHandlers = (h: DeviceRowHandlers): DeviceRowHandlers => ({
   onCancelHandoff: h.onCancelHandoff,
 });
 
-/** The My Portal badge (OQ-59): transfers waiting for me plus my overdue devices. */
-export const portalBadgeTotal = (c: HandoffCountDto): number => c.incoming + c.overdue;
+/** The My Portal badge (OQ-59): transfers waiting for me, my overdue devices and my unseen request decisions. */
+export const portalBadgeTotal = (c: HandoffCountDto, decisions: number): number =>
+  c.incoming + c.overdue + decisions;
+
+/** Only opening the My seat tab marks request decisions seen (POR-02). */
+export const marksDecisionsSeen = (tab: PortalTab): boolean => tab === "seat";
+
+/** `/requests` has no page of its own any more (REG-02, D74). */
+export const requestsPageRedirect = "/portal?tab=seat";
 
 /** Users have no Devices list; `/devices` sends them to My devices. */
 export const devicesPageRedirect = (tier: Tier | undefined): string | null =>

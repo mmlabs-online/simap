@@ -1,5 +1,5 @@
-import { MyRequestsPage } from "@/ui";
+import { RequestsRedirect } from "@/ui";
 
 export default function Page() {
-  return <MyRequestsPage />;
+  return <RequestsRedirect />;
 }
