@@ -44,3 +44,18 @@ None (`my-devices-query`, search route and test files are listed in the plan's "
 ### Scope self-check
 - Could the diff be smaller? No.
 - Diff size: see `git show --stat HEAD`.
+
+## Attempt 2 (REWORK) - 2026-11-26
+
+### Fixed (review attempt 1 issues)
+- Issue 1: `src/server/devices/devices.db.test.ts:108` now asserts `!d.mine && d.canPlace` (Manager can place a device they do not own).
+- Issue 2: `src/server/search/search.db.test.ts:278,281` store lowercase MACs (`aa:bb:cc:00:00:01/02`); the query stays uppercase, so case-insensitive MAC search is still proved.
+
+### Checks
+- test:db (local Postgres 16 on 127.0.0.1:54329, no Docker): exit 0, Test Files 20 passed (20); Tests 307 passed (307). Postgres stopped afterwards.
+- format:check: exit 0, all files correctly formatted.
+- typecheck: exit 0.
+- test: exit 0 (see Vitest summary, all passing).
+
+### Out-of-plan files
+None. Follow-ups: none new.

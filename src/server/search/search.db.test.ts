@@ -275,10 +275,10 @@ describe("search (db): device group per tier", () => {
     const y = await member(o.orgId, "Yen Holder");
     const mine = await addDevice(pool, o.orgId, x, null, "secondary");
     const theirs = await addDevice(pool, o.orgId, y, null, "secondary");
-    await run("update devices set name = 'Zebra mine', mac = 'AA:BB:CC:00:00:01' where id = $1", [
+    await run("update devices set name = 'Zebra mine', mac = 'aa:bb:cc:00:00:01' where id = $1", [
       mine,
     ]);
-    await run("update devices set name = 'Zebra theirs', mac = 'AA:BB:CC:00:00:02' where id = $1", [
+    await run("update devices set name = 'Zebra theirs', mac = 'aa:bb:cc:00:00:02' where id = $1", [
       theirs,
     ]);
     const subX = (await run("select sub from members where id = $1", [x])).rows[0].sub as string;

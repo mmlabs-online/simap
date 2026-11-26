@@ -105,7 +105,7 @@ describe("devices (db): reads", () => {
     expect(asManager.ok && asManager.value.items.map((d) => d.id).sort()).toEqual(
       [inv, placed].sort(),
     );
-    expect(asManager.ok && asManager.value.items.every((d) => !d.mine && !d.canPlace)).toBe(true);
+    expect(asManager.ok && asManager.value.items.every((d) => !d.mine && d.canPlace)).toBe(true);
   });
 
   it("list/get include an unowned device with owner null, mine false, canPlace false; canEdit/canDelete only for Admin; filter unowned returns only unowned", async () => {
