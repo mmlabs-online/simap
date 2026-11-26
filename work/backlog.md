@@ -137,6 +137,14 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-052 | Send only the catalog device type to Users on the room map | MERGED | P2 | S | api, ui, security | — | none | 0 | 2026-11-26 |
 | SIM-053 | My Portal and device dialog polish (SIM-045, SIM-045.1, SIM-048 follow-ups) | MERGED | P3 | S | ui | — | none | 0 | 2026-11-26 |
 | SIM-054 | Move "My requests" into My Portal → My seat | MERGED | P2 | S | ui, ux | SIM-045.1 | none | 0 | 2026-11-26 |
+| SIM-055 | Check-in room view and home page per role | BACKLOG | P0 | M | ui, ux | — | none | 0 | 2026-11-26 |
+| SIM-056 | Presence record and check-in, check-out and move-seat API | BACKLOG | P1 | M | db, api, architecture, security | — | plan-approval | 0 | 2026-11-26 |
+| SIM-057 | Pixel check-in popup | BACKLOG | P1 | M | ui, ux | SIM-055, SIM-056 | plan-approval | 0 | 2026-11-26 |
+| SIM-058 | Present and away on the map, name tags, open desk tags, "Who's here" and polling | BACKLOG | P1 | M | ui, api | SIM-055, SIM-056 | plan-approval | 0 | 2026-11-26 |
+| SIM-059 | Simple walk-in and walk-out | BACKLOG | P1 | M | ui | SIM-058 | plan-approval | 0 | 2026-11-26 |
+| SIM-060 | Multi-direction walking avatar frames | BACKLOG | P2 | M | ui | SIM-059 | none | 0 | 2026-11-26 |
+| SIM-061 | Third-party check-in provider: REST pull adapter and mock | BACKLOG | P2 | M | architecture, api, security | SIM-056 | plan-approval | 0 | 2026-11-26 |
+| SIM-062 | Layout editor warning for unreachable chairs | BACKLOG | P2 | S | ui, ux | SIM-059 | none | 0 | 2026-11-26 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.
 

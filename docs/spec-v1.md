@@ -136,6 +136,7 @@ needs to show.
 | Group | org, name (unique), colour | Label only. |
 | Project | org, code (unique), name | Label only. |
 | AuditLog | org, actor (Identity `sub`), action, entity, entity id, meta, time | One row per change (SYS-03). |
+| Presence (PRE, D76) | org, member, seat, work date (UTC+7 day, D35/D79), checked-in at, source (`self` / `provider`), checked-out at (optional), checked-out by (`self` / `provider` / `day_end` / `system`, optional) | One row per member per work date (unique (org, member, work date)); a second check-in that day reopens it (D81). Active = checked in today and not checked out; at most one active per member (PRE-03). A row of an earlier work date counts as ended (PRE-05). Display only, never an attendance record (D78); retention: OQ-70. |
 
 ## 5. Locked invariants (seatMGT, kept unchanged)
 
@@ -476,6 +477,9 @@ and are not chosen per item. Every bundled third-party package is credited on th
   else colours derived from the member id, stable per person (D51, amended by D71). The map never shows the profile photo
   (D44 kept for the map; where the photo shows: OQ-57). Name tags appear only on hover or keyboard focus, at every
   zoom (D50).
+- [ ] In the presence view (PRE-06, D76), an occupied seat also shows **present** (the occupant's character seated,
+  typing idle, monitor on) or **away** (empty chair, grey name tag). Present/away is never shown by colour alone.
+  There, name tags are always visible and stay readable when seats are adjacent (D80 amends D50 for that view only).
 
 **LAY-07 Map item catalog (Admin)** (D64; Ming 2026-11-25: "admin có thêm nơi setup và lựa chọn các item được add
 vào sơ đồ phòng kèm ảnh cho item đó"; "idea là để admin có quyền điều chỉnh list items này và cách nó hiển thị (ảnh)
@@ -660,12 +664,130 @@ requests, device actions, display name). Clean UI kit (D52); copy in `src/ui/cop
   Approvals (Manager+), My Portal (every tier, D70). There is no "My requests" entry for any tier; own requests live
   in My Portal → My seat (D74). The home page stays the Dashboard unless OQ-54 changes it. The My Portal badge
   (incoming transfers, overdue devices, unseen request decisions): OQ-59, POR-01.
+- [ ] A User's home is the check-in room view instead of the Dashboard (PRE-01; D76 amends the OQ-54 answer);
+  Manager and Admin keep the Dashboard as home and get an extra nav entry, "Check in", for the same view.
 
 **SHL-02 Light/dark theme**
 - [ ] The user switches between light and dark, and the choice is kept on the device.
 
 **Visual style:** follow seatMGT's look: its UI kit (Card, Button, Chip, Avatar, RoleBadge, FilledInput,
 EntityFormDialog), seat tiles, room cards, fonts and icons. UI copy is English by default (D36).
+
+### PRE — Presence and check-in room view
+
+**Status: approved by Ming, 2026-11-26 (D76–D83).** Shaped in a brainstorm on 2026-11-26 from an approved interactive
+mockup. D76 brings it into scope: it changes the §9 non-goal "QR check-in", amends the OQ-54 answer (a User's home)
+and, for the presence view only, D24 (the view polls). D79 keeps D35 (UTC+7 for every org); D80 amends D50 for the
+presence view only (name tags always visible). Still open: OQ-69 (provider details), OQ-70 (retention).
+
+**Problem.** The room map shows who *owns* each seat, not who is *in the office today*. A member who walks in has no
+quick way to say "I'm here", and colleagues cannot see who is around before walking over. PRE adds a light,
+game-style presence layer on the existing pixel room map (D41, D46): members check in to the room where they have a
+seat, their character walks to their chair, and everyone in the org sees who is here.
+
+**What it is not.** Not booking, hot-desking or reservations (no seat is taken by checking in; seats still come only
+from assignment and REG-01). Presence is display-only: never used for attendance, time tracking, reporting or exports (D78). No location proof, no QR code, no
+notifications.
+
+**PRE-01 Home and navigation per role** (amends SHL-01; D76)
+- [ ] A User lands on the check-in room view after sign-in and org choice (instead of the Dashboard).
+- [ ] Manager and Admin keep the Dashboard as home and get a "Check in" nav entry that opens the same view with the
+  same behaviour.
+- [ ] The view is a pixel end-user surface (D52): the room map (LAY-06 overlays, zoom, pan, seat detail on click),
+  a "Who's here" list beside the map (below it at 390 px), a room switcher, and a floating "Check in" or "Check out"
+  button.
+- [ ] The room shown first: the room of today's active check-in; else the room of the member's most recent check-in
+  where they still have a seat; else their first assigned room by room code; a member with no seat sees the empty
+  state of PRE-02.
+
+**PRE-02 Check-in popup**
+- [ ] A member with no check-in today (from any source, PRE-04) sees a modal popup over the room view on arrival. It
+  uses the room's pixel style: pixel frame, title bar in the room's wall colour, 3D pixel buttons; body text in the
+  normal (non-pixel) font (D52).
+- [ ] It lists every room where the member has an assigned seat. Each entry shows a small layout thumbnail, the room
+  name and code, the member's seat code there, how many members are checked in there now, and the member's last
+  check-in to that room (date and time in UTC+7, D35, or "never").
+- [ ] Rooms where the member has no seat are listed below, locked, with "Request a seat", which opens that room's map
+  for the REG-01 flow. No hot-desking: a member never checks in to a seat they do not occupy.
+- [ ] Changing the selected room switches the room shown behind the popup.
+- [ ] "Check in to <room>" checks in (PRE-03) and closes the popup; the walk-in (PRE-07) plays. "Just look" closes the
+  popup without checking in; the floating "Check in" button stays. The popup shows once per page load; it does not
+  return after "Just look" until the next visit.
+- [ ] A member with no assigned seat at all sees an empty state: "You don't have a seat yet" with "Request a seat"
+  (Rooms page). Nothing can be checked in.
+- [ ] Keyboard-operable and screen-reader labelled (focus trap, Escape = "Just look"); works at 390 px.
+
+**PRE-03 Self check-in and check-out** (any member with a linked, active member record)
+- [ ] Check-in names a room. The server checks that the member occupies a seat in that room (422 `no_seat_in_room`
+  otherwise) and records presence with source `self` and the server time. The client never sends a time. When the
+  member has several seats in that room, the check-in uses the lowest seat code (D77).
+- [ ] **Move seat** (D77): while checked in, the member moves their presence to another of their own seats in the same
+  room (PRE-06 open tag). The server refuses a seat that is not theirs or not in the room of the active check-in
+  (422 `seat_not_yours`), or a move with no active check-in (409 `not_checked_in`). Moving to the seat already used
+  returns 200 and writes nothing (idempotent). Every move is audited.
+- [ ] **Idempotent** (R7: `apiFetch` re-sends once on 401/403): checking in again to the same room while checked in
+  there returns the existing record with 200 and writes nothing new.
+- [ ] **One active check-in at a time:** checking in to another room while checked in is refused with 409
+  `already_checked_in` (naming the current room); the member checks out first.
+- [ ] Check-out ends the active check-in (checked-out at = server time, by `self`). Checking out with no active
+  check-in changes nothing and returns 200.
+- [ ] Checking in again the same day after checking out (same or another room) reopens that day's row with the new
+  seat, source and time and clears checked-out; the audit log keeps the earlier check-in (D81).
+- [ ] Every check-in and check-out is audited (SYS-03) and scoped by the token's `org` (R6). Auth refusals come only
+  from the auth wrapper, before any write (R7); domain refusals use 409/422.
+
+**PRE-04 Third-party check-in source** (D83)
+- [ ] A server-side adapter behind a provider interface (`src/server/**`) **pulls** check-ins from the third-party
+  system's REST API; there is no webhook into simap (D83). When and how often it pulls is a plan choice. The first
+  version ships only a **mock provider** for dev and tests; a real provider waits for OQ-69a–c.
+- [ ] A provider check-in counts exactly like a self check-in, with source `provider`. If the member is already
+  checked in, nothing changes (first source wins).
+- [ ] If the member is already checked in by the provider when they open simap, the popup is skipped and their
+  character is shown seated, without the walk-in.
+- [ ] Provider credentials and endpoints come from env only (R3), unless Ming decides otherwise for per-org
+  credentials (OQ-69c). No provider payload, token or personal data is logged.
+
+**PRE-05 End of presence**
+- [ ] Presence ends by "Check out" (the character walks back out the door, PRE-07) or automatically at the end of
+  the work day in UTC+7 (Asia/Ho_Chi_Minh) for every org (D35, D79; no per-org time zone).
+- [ ] The day boundary needs no background job: a record whose work date is before "today" (UTC+7) counts as ended
+  when read. Check-in always writes today's UTC+7 work date.
+- [ ] If the member loses the checked-in seat (released, reassigned) or is deactivated while checked in, the check-in
+  ends in the same transaction (checked out by `system`) and is audited (D82).
+
+**PRE-06 Presence on the map and "Who's here"** (amends LAY-06; D76, D77, D80)
+- [ ] Every member of the org sees presence in every room: who is here, check-in time and source (self /
+  third-party). There is no hidden presence.
+- [ ] Checked in: the character sits at their chair with a typing idle animation and the monitor on. Assigned but
+  away: empty chair and a grey name tag. Unassigned seats look as today (LAY-06).
+- [ ] "Who's here" lists the members checked in to the shown room: pixel character head, display name, seat code,
+  check-in time, source. Selecting an entry focuses their seat on the map.
+- [ ] While checked in, each of the member's other seats in the same room shows an **open tag** on the desk; clicking
+  it (or activating it by keyboard) moves their presence there (PRE-03 move seat) and the character walks to that
+  chair (D77).
+- [ ] Other members' check-ins, moves and check-outs appear by **polling** every 30–60 s (no websockets; stack
+  unchanged), with their walk-in or walk-out. This amends D24 for the presence view only (D76). Polling pauses while
+  the tab is hidden.
+- [ ] Name tags are **always visible** in the presence view (D80 amends D50 for this view only) and stay readable
+  when seats are adjacent (no overlap: offset, stack or truncate, with the full name on hover/focus).
+
+**PRE-07 Walk-in and walk-out**
+- [ ] On check-in the member's character appears at the room's door and walks along a path on the tile grid that
+  avoids blocking items (LAY-01 block rules) to their chair and sits. Check-out plays the reverse.
+- [ ] A click or any key skips to the end state. With `prefers-reduced-motion`, the character is shown seated (or
+  gone) with no walk.
+- [ ] A room with no door, or a chair with no path from a door, falls back to a short fade-in (fade-out) at the chair.
+- [ ] Phase 1 walks with the existing avatar frames; multi-direction walking frames for each POR-06 layer are new art
+  (D45 asset rules, atlas + manifest, no code change to swap art).
+- [ ] The layout editor (LAY-05) may warn the Admin when a chair cannot be reached from any door, or a room with
+  seats has no door (warning only, never blocks a save).
+
+**Phasing**
+- P0: role-based home and the room view with "Who's here" shell (PRE-01).
+- P1: presence record, self check-in/check-out/move-seat API, popup, present/away on the map, polling,
+  simple walk (PRE-02, PRE-03, PRE-05, PRE-06, PRE-07 phase 1).
+- P2: multi-direction walking sprites, third-party provider interface with mock (PRE-04), unreachable-chair warning.
+- P3: social extras, later candidates only (§10).
 
 ### v1 done means
 - Every acceptance criterion above passes, except those waiting on an open question that Ming has deferred.
@@ -707,6 +829,7 @@ EntityFormDialog), seat tiles, room cards, fonts and icons. UI copy is English b
   components) so another language can be added later. People's names and data stay as entered: Vietnamese diacritics
   must display, sort and search correctly. Text is stored as Unicode NFC. Code, comments, docs and commits in English.
 - **Time (D35):** stored in UTC, shown in Asia/Ho_Chi_Minh (UTC+7) for every org in v1; a per-org time zone is a later candidate.
+  The presence work day (PRE-05) uses the same UTC+7 day for every org (D79).
 - **Security:**
   - Role checks run on the server for every route handler, server action and protected page (SYS-01). The UI only
     hides what the server already refuses.
@@ -735,7 +858,10 @@ EntityFormDialog), seat tiles, room cards, fonts and icons. UI copy is English b
 
 - Local accounts, passwords or SSO/AD inside simap. Identity owns accounts and passwords; simap only hosts the
   Identity sign-up and password-reset screens (D53).
-- Time-based booking, reservations, QR check-in, auto-release, waitlists, meeting-room booking.
+- Time-based booking, reservations, hot-desking, QR check-in, seat auto-release, waitlists, meeting-room booking.
+  **Presence check-in is in scope** (PRE, D76): self check-in in the app or through a third-party check-in system, only
+  to a seat the member already occupies, ended by check-out or the end of the UTC+7 day. The end-of-day check-out ends
+  presence only; the seat stays assigned. Presence is display-only and never used for attendance or reporting (D78).
 - Buildings/floors/zones as separate entities (a room has a `floor` text field only). Multi-org **is** in scope
   (D5); several sites inside one org are modelled only through room names and the `floor` field.
 - Creating orgs, appointing org admins, billing or plans inside simap (the admin portal owns these). Entitlements
@@ -755,6 +881,8 @@ EntityFormDialog), seat tiles, room cards, fonts and icons. UI copy is English b
 - From the non-authoritative draft PRD: bulk import of seats from CSV/Excel; in-app notification centre (for example
   when a request is decided); building/floor hierarchy; time-based booking with QR check-in and auto-release. None of
   these is in seatMGT, and none is in v1.
+- Presence social extras (PRE phase P3, from the 2026-11-26 brainstorm; only after PRE ships). Not specified yet;
+  each needs its own scope and Ming's decision.
 
 ## 11. Open questions
 
@@ -828,7 +956,8 @@ Still open (defaults stand until Ming answers; reversible):
 
 **Device visibility and My Portal (D69–D71, 2026-11-26).** Each has a default the tickets follow until Ming answers
 (reversible).
-- **OQ-54 Home page.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* Is My Portal the User's home page instead of the Dashboard? Default: the Dashboard stays the
+- **OQ-54 Home page.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans). Amended
+  2026-11-26 by D76: a User's home is the check-in room view; Manager/Admin keep the Dashboard plus a "Check in" entry.* Is My Portal the User's home page instead of the Dashboard? Default: the Dashboard stays the
   home page for every tier; My Portal is a nav entry. *Blocks: the My Portal page ticket (nav only).*
 - **OQ-55 Devices at seats for Users.** *Answered 2026-11-26: default approved by Ming (SIM-044/044.1/045/046/047 plans).* Do room-map device sprites at seats still show to Users (sprite only, no
   details), and what does the seat panel show about devices a User does not hold? Default: sprites still draw for
@@ -857,12 +986,54 @@ Still open (defaults stand until Ming answers; reversible):
   character; a Manager+ can remove another member's photo (audited) but not upload one; the character is the
   member's alone. *Blocks: the profile photo ticket.*
 
-New questions get the next free number (OQ-62).
+**Presence and check-in (PRE, raised in a brainstorm on 2026-11-26; answered by Ming 2026-11-26).**
+- **OQ-62 Approve PRE scope.** *Answered D76: approved; §9 changed, OQ-54 answer amended, polling amends D24 for the
+  presence view only.* Does Ming accept PRE? Accepting it changes the §9 non-goal "QR check-in" (presence
+  check-in allowed; booking, hot-desking, QR and seat auto-release stay out), reopens the OQ-54 answer (a User's home
+  becomes the check-in room view; Manager/Admin keep the Dashboard plus a "Check in" entry) and is subject to OQ-65
+  and OQ-66. *Blocks: every PRE ticket.*
+- **OQ-63 Several seats in one room.** *Answered D77: lowest seat code; an open tag on each other own desk in the room
+  moves presence there.* A member may occupy several seats in the same room (invariant 2). Which seat
+  does a check-in use? Default: the lowest seat code in that room, with a seat picker in the popup only when there
+  are several. *Blocks: the self check-in API and popup tickets.*
+- **OQ-64 Display-only presence.** *Answered D78: yes, display-only, never for attendance, reporting or exports;
+  retention moved to OQ-70.* Is self check-in display-only (no location proof) and never used for attendance,
+  time tracking or reporting? Default: yes; no presence reports or exports, presence is not in CSV export or DSH,
+  and old presence rows are kept only as long as needed (retention period to decide, e.g. a fixed number of days;
+  audit rows follow D38). *Blocks: the presence record ticket (retention), any reporting request.*
+- **OQ-65 Org time zone.** *Answered D79: keep D35, UTC+7 for every org; no per-org time zone.* PRE-05 ends presence at the end of the day in the org's time zone, but D35 fixes UTC+7
+  for every org in v1. Add a per-org time zone setting now (Admin, default `Asia/Ho_Chi_Minh`; amends D35), or use
+  UTC+7 for every org until a later ticket? *Blocks: the presence record ticket.*
+- **OQ-66 Name tags in the presence view.** *Answered D80: always visible in the presence view (amends D50 there
+  only).* The mockup shows tags on the map (grey for away) and needs them readable
+  when seats are adjacent; D50 says tags appear only on hover or focus. Keep D50 (presence shown by the character /
+  empty chair and the "Who's here" list), or show tags always in the presence view (amends D50)? *Blocks: the
+  present/away map ticket.*
+- **OQ-67 Check in again the same day.** *Answered D81: default taken (reopen the day's row).* With one presence row per member per day, what happens on a second check-in
+  after a check-out (same or another room)? Default: the day's row is reopened with the new seat, source and time and
+  checked-out cleared; the audit log keeps the earlier check-in. Alternative: one row per check-in, with at most one
+  active per member. *Blocks: the presence record ticket.*
+- **OQ-68 Seat lost while checked in.** *Answered D82: default taken.* The member's seat is released or reassigned, or the member is deactivated,
+  while they are checked in. Default: the check-in ends in the same transaction (checked out by the system, audited).
+  *Blocks: the presence record ticket.*
+Still open:
+- **OQ-69 Third-party check-in API details.** *Partly answered D83: a REST API that simap pulls; no webhook.* Open:
+  (a) Does the provider report per person or per seat? (b) Which identifier matches a member: email, employee code,
+  or the provider's own id stored on the member? (c) One provider for all orgs, or per-org credentials, and how do
+  per-org credentials fit R3 (config from env only; storing secrets in the DB would need Ming's decision)? *Blocks:
+  the real provider adapter (the mock adapter can start).*
+- **OQ-70 Presence retention.** How long are old presence rows kept (presence is display-only, D78)? Proposal for
+  Ming: delete rows older than a fixed number of days; audit rows still follow D38. *Blocks: nothing in P0/P1 (rows
+  are small); a cleanup step once answered.*
+
+New questions get the next free number (OQ-71).
 
 ## 12. Change log
 
 | Date | Change |
 |---|---|
+| 2026-11-26 | D76–D83 (Ming's answers to OQ-62 to OQ-69): PRE approved and in scope (D76; §9 non-goal changed, OQ-54 answer amended, polling amends D24 for the presence view); several seats in one room: lowest seat code plus open desk tags to move seat (D77, new move-seat call); presence display-only (D78); D35 kept, UTC+7 for every org, Org settings entity and per-org time zone removed (D79); name tags always visible in the presence view (D80, amends D50 there); same-day re-check-in reopens the row (D81); losing the seat ends the check-in (D82); provider is a pulled REST API, no webhook (D83). "Proposed" markers removed from §4, LAY-06, SHL-01, PRE, §10 and "v1 done means"; §8 and §9 updated. OQ-62 to OQ-68 answered, OQ-69 narrowed, OQ-70 (retention) added. |
+| 2026-11-26 | PRE — presence and check-in room view drafted from a brainstorm on 2026-11-26 and an approved mockup (User home = check-in room view, "Check in" nav entry for Manager/Admin; pixel check-in popup; self check-in/out, idempotent, one active per member; third-party source behind a provider interface with a mock; end-of-day check-out; present/away on the map, "Who's here", polling; walk-in/out on the tile grid with skip, reduced-motion and fade fallbacks). Presence entity, LAY-06, SHL-01, §9, §10 touched; OQ-62 to OQ-69 opened. |
 | 2026-11-26 | D74: "My requests" leaves the nav for every tier; own requests live only in My Portal → My seat, `/requests` redirects client-side to `/portal?tab=seat`, the request-decision badge joins the My Portal badge (incoming transfers + overdue devices + unseen decisions) and opening My seat marks decisions seen. Approvals unchanged, no new API. REG-02, POR-01, POR-02, SHL-01 and OQ-59 amended. |
 | 2026-11-26 | D69–D71: Users see only the devices they hold (API-enforced on the device list, detail, history and search; a "my devices" endpoint for every tier); new My Portal page for every tier with My seat, My devices and Profile tabs; profile photo upload and a customisable pixel character stored on the member. Roles table, Member entity, SEA-05, DEV intro, DEV-02/08/10/11, MEM-02, LAY-06, DSH-01/02, SHL-01 amended; DEV-12 and POR-01 to POR-06 added; OQ-54 to OQ-61 open. |
 | 2026-11-25 | D68 (SIM-040): device type images may be square PNGs from 24 × 24 to 100 × 100 px, at most 100 KB; the map scales them to the slot. |
