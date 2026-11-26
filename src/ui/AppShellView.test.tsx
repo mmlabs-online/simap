@@ -41,6 +41,24 @@ describe("AppShellView", () => {
     expect(without).not.toContain(shellCopy.actions.switchOrg);
   });
 
+  it("photoUrl renders the header avatar as an img; no photoUrl keeps the initials", () => {
+    const shell = (photoUrl?: string | null) =>
+      renderToStaticMarkup(
+        <AppShellView
+          session={{ tier: "user", email: "an.nguyen@example.invalid", orgName: "Tổ chức" }}
+          pathname="/"
+          actions={{}}
+          photoUrl={photoUrl}
+        >
+          <p>x</p>
+        </AppShellView>,
+      );
+    expect(shell("blob:me")).toContain('src="blob:me"');
+    const plain = shell(null);
+    expect(plain).not.toContain('src="blob:');
+    expect(plain).toContain("AN");
+  });
+
   it("devToken: badge shown, sign-out and switch absent; prod variant is red and says so", () => {
     const shell = (devToken?: DevBadge) =>
       renderToStaticMarkup(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { DISPLAY_NAME_MAX } from "@/lib/validate/member";
 import { Button } from "../Button";
 import { portalCopy } from "../copy/portal";
@@ -20,6 +20,8 @@ export type ProfileTabViewProps = {
   error?: "invalid" | null;
   notice: { tone: "status" | "error"; text: string } | null;
   onSubmit: (name: string) => void;
+  /** Self-contained sections rendered above the name form (photo; SIM-047.1 adds the character picker). */
+  sections?: ReactNode;
 };
 
 /** The Profile tab form. Pure: no autofocus; the typed value survives a failed save. */
@@ -31,6 +33,7 @@ export function ProfileTabView({
   error,
   notice,
   onSubmit,
+  sections,
 }: ProfileTabViewProps) {
   const [name, setName] = useState(initialName);
   const [local, setLocal] = useState<"required" | "invalid" | null>(null);
@@ -51,6 +54,7 @@ export function ProfileTabView({
   return (
     <div className="flex flex-col gap-4 max-w-md">
       <h2 className="text-lg font-extrabold text-on-surface">{copy.heading}</h2>
+      {sections}
       <form method="post" noValidate onSubmit={submit} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
           <label htmlFor="portal-name" className="text-xs font-semibold text-on-surface-variant">
