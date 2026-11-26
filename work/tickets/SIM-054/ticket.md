@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T08:28Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/129 |
 
 ## Goal
 A member finds their seat requests only in My Portal → My seat: the sidebar loses its "My requests" entry, old links
@@ -50,3 +50,9 @@ still work, and the request-decision badge moves to My Portal (D74).
 - 2026-11-26 Ming: spec D74 accepted; create and run ("2").
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 4 (product-manager×1 44k for the spec, planner×1 sonnet 49k, implementer×1 44k, reviewer×1 43k)
+- Done: nav entry removed, /requests redirect, My Portal badge includes unseen decisions, My seat marks seen. Review PASS attempt 1. PR #129.
+- In progress / next: Ming merges PR #129; then SIM-053 (same files).
+- Gotchas: decision log had two D73 rows (parallel sessions); super-admin decision renumbered to D75.
