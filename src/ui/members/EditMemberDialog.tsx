@@ -8,18 +8,23 @@ import { membersCopy } from "../copy/members";
 import { DialogField, DialogSelect, EntityFormDialog } from "../EntityFormDialog";
 import { formFromMember, submitErrorAction, toPatchBody, type MemberForm } from "./member-form";
 import type { MembersApi } from "./members-api";
+import { MemberPhotoSection } from "./MemberPhotoSection";
 
 /** Edit one member's simap fields. Closes itself through `onDone` after a saved change. */
 export function EditMemberDialog({
   member,
   groups,
   api,
+  photoUrl,
+  onPhotoRemoved,
   onClose,
   onDone,
 }: {
   member: MemberDto | null;
   groups: MemberGroupRef[];
   api: MembersApi;
+  photoUrl: string | null;
+  onPhotoRemoved: () => void;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -30,6 +35,8 @@ export function EditMemberDialog({
       member={member}
       groups={groups}
       api={api}
+      photoUrl={photoUrl}
+      onPhotoRemoved={onPhotoRemoved}
       onClose={onClose}
       onDone={onDone}
     />
@@ -40,12 +47,16 @@ function EditInner({
   member,
   groups,
   api,
+  photoUrl,
+  onPhotoRemoved,
   onClose,
   onDone,
 }: {
   member: MemberDto;
   groups: MemberGroupRef[];
   api: MembersApi;
+  photoUrl: string | null;
+  onPhotoRemoved: () => void;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -81,6 +92,12 @@ function EditInner({
       onClose={onClose}
       onSubmit={submit}
     >
+      <MemberPhotoSection
+        member={member}
+        photoUrl={photoUrl}
+        api={api}
+        onRemoved={onPhotoRemoved}
+      />
       <DialogField
         label={fields.displayName}
         icon="person"

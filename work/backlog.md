@@ -127,15 +127,15 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-045 | My Portal part 1: My seat, My devices, display name | MERGED | P2 | M | ui, ux | SIM-044 | none | 1 | 2026-11-26 |
 | SIM-045.1 | My Portal: My seat tab | MERGED | P2 | S | ui | SIM-045 | none | 0 | 2026-11-26 |
 | SIM-046 | Profile photo upload | MERGED | P3 | M | api, db, ui, security | SIM-045 | plan-approval | 0 | 2026-11-26 |
-| SIM-046.1 | Profile photo in the Profile tab and the shell avatar | PLANNING | P3 | M | ui | SIM-046, SIM-045.1 | none | 0 | 2026-11-26 |
-| SIM-046.2 | Profile photos in member lists, member card and seat panel | PLANNING | P3 | M | ui, api | SIM-046, SIM-044.1 | none | 0 | 2026-11-26 |
+| SIM-046.1 | Profile photo in the Profile tab and the shell avatar | MERGED | P3 | M | ui | SIM-046, SIM-045.1 | none | 0 | 2026-11-26 |
+| SIM-046.2 | Profile photos in member lists, member card and seat panel | MERGED | P3 | M | ui, api | SIM-046, SIM-044.1 | none | 0 | 2026-11-26 |
 | SIM-047 | Pixel character customisation | MERGED | P3 | M | db, api, ui, ux | SIM-045 | plan-approval | 0 | 2026-11-26 |
-| SIM-047.1 | Pixel character picker in the Profile tab | PLANNING | P3 | M | ui | SIM-047, SIM-045.1 | none | 0 | 2026-11-26 |
+| SIM-047.1 | Pixel character picker in the Profile tab | MERGED | P3 | M | ui | SIM-047, SIM-045.1 | none | 0 | 2026-11-26 |
 | SIM-048 | A User places devices only on seats they occupy | MERGED | P2 | S | api, security | — | none | 0 | 2026-11-26 |
 | SIM-050 | Hide other members' email from Users | MERGED | P2 | S | api, security | — | none | 0 | 2026-11-26 |
 | SIM-051 | Answer 404 for write actions on a device a User does not hold | MERGED | P2 | S | api, security | — | none | 0 | 2026-11-26 |
 | SIM-052 | Send only the catalog device type to Users on the room map | MERGED | P2 | S | api, ui, security | — | none | 0 | 2026-11-26 |
-| SIM-053 | My Portal and device dialog polish (SIM-045, SIM-045.1, SIM-048 follow-ups) | PLANNING | P3 | S | ui | — | none | 0 | 2026-11-26 |
+| SIM-053 | My Portal and device dialog polish (SIM-045, SIM-045.1, SIM-048 follow-ups) | MERGED | P3 | S | ui | — | none | 0 | 2026-11-26 |
 | SIM-054 | Move "My requests" into My Portal → My seat | MERGED | P2 | S | ui, ux | SIM-045.1 | none | 0 | 2026-11-26 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.

@@ -47,7 +47,11 @@ export type MeResult =
       network?: false;
       status: number;
       code?: ApiErrorCode | string;
-      me?: { tier: Tier; email: string; member?: { displayName: string; needsProfile: boolean } };
+      me?: {
+        tier: Tier;
+        email: string;
+        member?: { id?: string; displayName: string; needsProfile: boolean };
+      };
     };
 
 export type MeView =
@@ -113,11 +117,15 @@ export async function readMeResult(res: Response): Promise<MeResult> {
   const tier = TIERS.find((t) => t === obj.tier);
   const m =
     typeof obj.member === "object" && obj.member !== null
-      ? (obj.member as { displayName?: unknown; needsProfile?: unknown })
+      ? (obj.member as { id?: unknown; displayName?: unknown; needsProfile?: unknown })
       : null;
   const member =
     m && typeof m.displayName === "string" && typeof m.needsProfile === "boolean"
-      ? { displayName: m.displayName, needsProfile: m.needsProfile }
+      ? {
+          ...(typeof m.id === "string" ? { id: m.id } : {}),
+          displayName: m.displayName,
+          needsProfile: m.needsProfile,
+        }
       : undefined;
   const me =
     res.status === 200 && tier && typeof obj.email === "string"

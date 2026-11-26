@@ -7,6 +7,8 @@ import { placedArtEntries } from "@/lib/sprites/item-art";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { Card } from "../Card";
 import { seatsCopy } from "../copy/seats";
+import { createMembersApi } from "../members/members-api";
+import { useMemberPhotos } from "../members/useMemberPhotos";
 import { createRequestsApi } from "../requests/requests-api";
 import { createGroupsApi } from "../groups/groups-api";
 import { createRoomsApi } from "../rooms/rooms-api";
@@ -41,6 +43,7 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
   const seatsApi = useMemo(() => createSeatsApi(apiFetch), [apiFetch]);
   const requestsApi = useMemo(() => createRequestsApi(apiFetch), [apiFetch]);
   const groupsApi = useMemo(() => createGroupsApi(apiFetch), [apiFetch]);
+  const membersApi = useMemo(() => createMembersApi(apiFetch), [apiFetch]);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -149,6 +152,13 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
   };
 
   const view = panelView(param, resolution, list, detail);
+  const occupant = view.kind === "ready" ? view.seat.occupant : null;
+  const occupantItems = useMemo(
+    () => (occupant ? [occupant] : []),
+    // Keyed by value so a reload keeps the cache entry.
+    [occupant?.id, occupant?.hasPhoto, occupant?.photoVersion],
+  );
+  const photoUrl = useMemberPhotos(membersApi, occupantItems);
   const { notice, dialog } = actions;
   const { panel: panelNotice, page: pageNotice } = routeNotice(notice, openCode);
   const assign = dialog?.kind === "assign" ? dialog : null;
@@ -215,6 +225,7 @@ function SeatsPageInner({ roomCode }: { roomCode: string }) {
         onClose={() => router.replace(seatHref(pathname, null), { scroll: false })}
         onRetry={onPanelRetry}
         focusSignal={actions.focusSignal}
+        occupantPhoto={occupant ? photoUrl(occupant) : null}
         actions={
           <SeatActions
             tier={tier}

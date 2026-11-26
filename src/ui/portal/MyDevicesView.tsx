@@ -97,6 +97,12 @@ export function MyDevicesView({
         <DeviceTable devices={devices} actions={actions} busyId={busyId} />
       )}
 
+      {status === "ready" && errorCode !== null && devices.length > 0 && (
+        <p role="alert" className="text-sm font-semibold text-error">
+          {portalCopy.devices.loadMoreFailed} {apiErrorMessage(errorCode)}
+        </p>
+      )}
+
       {status === "ready" && hasMore && (
         <div>
           <Button variant="tonal" size="sm" disabled={loadingMore} onClick={onLoadMore}>

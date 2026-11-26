@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | MERGED |
 | Priority | P3 |
 | Size | M |
 | Areas | ui |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/134 |
 
 ## Goal
 A member picks their pixel character in the My Portal Profile tab with a live preview, saves it, or resets to the derived look (SIM-047 slice B, AC3).
@@ -37,5 +37,19 @@ A member picks their pixel character in the My Portal Profile tab with a live pr
 - [ ] All Checks pass.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-3): "duyệt hết theo mặc định"; Q1 default: build after SIM-046.1 is merged (rebase first).
+- Merge approved (2026-11-26, batch 2026-11-26-3): "merge #134"; squash-merged by claude.
 
 ## Handoff
+
+### 2026-11-26 — claude — PLANNING (waiting)
+- Agent calls: 2, ~131k tokens (frontend-developer×1 default 39k, planner×1 default 93k; batch 2026-11-26-3).
+- Done: consult and plan (READY, approved 2026-11-26).
+- In progress / next: waits for Ming to merge PR #131 (SIM-046.1); then rebase this branch onto main and implement (`/run-batch --resume`).
+- Gotchas: picker mounts in SIM-046.1's `sections` slot; Reset seed is `members.id` via `readMeResult` (`src/lib/identity/flow.ts`, not a High path).
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 4, ~264k tokens (frontend-developer×1 default 39k, planner×1 default 93k, implementer×1 default 80k, reviewer×1 default 53k; batch 2026-11-26-3).
+- Done: pixel character picker (swatches, previews 1x/2x front/back, Save, Reset) in Profile `sections` slot; `readMeResult` keeps `member.id` for the seed; review PASS attempt 1; PR #134.
+- In progress / next: Ming merges PR #134; manual canvas checks after deploy.
+- Gotchas: no canvas in Vitest, so painting is checked by hand.

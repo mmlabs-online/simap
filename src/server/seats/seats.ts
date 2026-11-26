@@ -72,6 +72,8 @@ type SeatRow = {
   cannot_seat_reason: string | null;
   occupant_id: string | null;
   occupant_name: string | null;
+  occupant_has_photo: boolean | null;
+  occupant_photo_version: number | null;
   mine: boolean;
   group_id: string | null;
   group_name: string | null;
@@ -92,7 +94,14 @@ const toDto = (r: SeatRow): SeatDto => ({
   status: seatStatus(r.occupant_id),
   cannotSeat: r.cannot_seat,
   cannotSeatReason: r.cannot_seat_reason,
-  occupant: r.occupant_id ? { id: r.occupant_id, displayName: r.occupant_name! } : null,
+  occupant: r.occupant_id
+    ? {
+        id: r.occupant_id,
+        displayName: r.occupant_name!,
+        hasPhoto: r.occupant_has_photo!,
+        photoVersion: r.occupant_photo_version!,
+      }
+    : null,
   mine: r.mine,
   group: r.group_id ? { id: r.group_id, name: r.group_name!, color: r.group_color! } : null,
   project: r.project_id ? { id: r.project_id, code: r.project_code!, name: r.project_name! } : null,
@@ -118,7 +127,9 @@ async function seatRows(
     db,
     scope,
     `select s.id, s.code, s.seq, s.room_id, r.code as room_code, s.cannot_seat, s.cannot_seat_reason,
-       s.occupant_id, o.display_name as occupant_name, coalesce(o.sub = $2::uuid, false) as mine,
+       s.occupant_id, o.display_name as occupant_name,
+       o.photo_drive_file_id is not null as occupant_has_photo, o.photo_version as occupant_photo_version,
+       coalesce(o.sub = $2::uuid, false) as mine,
        g.id as group_id, g.name as group_name, g.color as group_color,
        p.id as project_id, p.code as project_code, p.name as project_name,
        (select count(*)::int from devices d where d.org_id = s.org_id and d.seat_id = s.id) as device_count,

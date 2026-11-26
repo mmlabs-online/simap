@@ -3,6 +3,7 @@ import type { MemberDto, MemberStatusFilter } from "@/lib/members/types";
 import { apiErrorMessage } from "../copy/api";
 import { membersCopy } from "../copy/members";
 import { shellCopy } from "../copy/shell";
+import { Avatar } from "../Avatar";
 import { Button } from "../Button";
 import { Card } from "../Card";
 import { FilterChips } from "../Chip";
@@ -24,6 +25,8 @@ export type MembersViewProps = {
   loadingMore: boolean;
   invitations: InvitationsState | null;
   headerAction?: ReactNode;
+  /** Blob URL of a member's loaded photo, or null (initials). */
+  photoUrl?: (m: MemberDto) => string | null;
   onSearch: (value: string) => void;
   onSearchCommit: () => void;
   onStatusFilter: (value: MemberStatusFilter) => void;
@@ -140,7 +143,12 @@ function MemberRow({ m, p }: { m: MemberDto; p: MembersViewProps }) {
     <tr
       className={`border-b border-outline-variant last:border-b-0 ${deactivated ? "opacity-60" : ""}`}
     >
-      <td className={`${CELL} font-bold`}>{m.displayName}</td>
+      <td className={`${CELL} font-bold`}>
+        <span className="flex items-center gap-2">
+          <Avatar name={m.displayName} src={p.photoUrl?.(m) ?? null} size={32} />
+          {m.displayName}
+        </span>
+      </td>
       <td className={`${CELL} break-all`}>{m.email ?? membersCopy.hiddenEmail}</td>
       <td className={CELL}>{m.employeeCode ?? membersCopy.noCode}</td>
       <td className={CELL}>

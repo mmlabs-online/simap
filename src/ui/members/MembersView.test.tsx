@@ -14,6 +14,8 @@ const base: MemberDto = {
   employeeCode: "E1",
   group: { id: "g1", name: "Dev", color: "#336699" },
   status: "active",
+  hasPhoto: false,
+  photoVersion: 0,
   seatCount: 1,
   deviceCount: 1,
   seats: [{ id: "s1", code: "C302-01" }],
@@ -175,5 +177,22 @@ describe("MembersView", () => {
     });
     expect(err).toContain(apiCopy.errors.unavailable);
     expect(err).toContain(membersCopy.invitations.retry);
+  });
+});
+
+describe("MembersView photos (SIM-046.2)", () => {
+  it("row shows the photo img when photoUrl returns a url, initials otherwise", () => {
+    const html = render({
+      items: [{ ...base, hasPhoto: true, photoVersion: 1 }, gone],
+      photoUrl: (m) => (m.id === base.id ? "blob:ph-1" : null),
+    });
+    expect(html.split("<img")).toHaveLength(2);
+    expect(html).toContain('src="blob:ph-1"');
+    expect(render()).not.toContain("<img");
+  });
+  it("canManage=false: no Edit action, so no member card with Remove photo", () => {
+    const html = render({ items: [{ ...base, hasPhoto: true, photoVersion: 1 }] });
+    expect(html).not.toContain(`>${membersCopy.edit}<`);
+    expect(html).not.toContain(membersCopy.photo.remove);
   });
 });

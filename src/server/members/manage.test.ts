@@ -34,6 +34,8 @@ const memberRow = {
   group_id: null,
   group_name: null,
   group_color: null,
+  has_photo: false,
+  photo_version: 0,
   seat_count: 0,
   device_count: 0,
   seats: [],
@@ -239,5 +241,20 @@ describe("device visibility per tier (D69)", () => {
     await getMember(m.db, scope, ACTOR, "manager", MID);
     expect(m.calls[0]![1]).toEqual([scope.orgId, MID]);
     expect(m.calls[0]![0]).not.toContain("m.sub");
+  });
+});
+
+describe("photo fields (SIM-046.2)", () => {
+  it("memberSelect projects has_photo and photo_version, never the Drive file id column", async () => {
+    const t = fakeDb(() => [{ ...memberRow, has_photo: true, photo_version: 3 }]);
+    const r = await getMember(t.db, scope, ACTOR, "manager", MID);
+    const sql = t.calls[0]![0];
+    expect(sql).toContain("photo_drive_file_id is not null as has_photo");
+    expect(sql).toContain("m.photo_version");
+    expect(sql.replace("photo_drive_file_id is not null as has_photo", "")).not.toContain(
+      "photo_drive_file_id",
+    );
+    expect(r).toMatchObject({ ok: true, value: { hasPhoto: true, photoVersion: 3 } });
+    expect(JSON.stringify(r).toLowerCase()).not.toContain("drive");
   });
 });

@@ -55,6 +55,8 @@ const dtoRow = {
   cannot_seat_reason: null,
   occupant_id: null,
   occupant_name: null,
+  occupant_has_photo: null,
+  occupant_photo_version: null,
   mine: false,
   group_id: null,
   group_name: null,
@@ -287,5 +289,33 @@ describe("seat reads per tier (D69)", () => {
     const sqls = t.sqls().filter((q) => q.includes("json_agg"));
     expect(sqls.length).toBeGreaterThan(0);
     for (const q of sqls) expect(q).not.toContain("m.sub = $2");
+  });
+});
+
+describe("occupant photo fields (SIM-046.2)", () => {
+  it("seatRows projects occupant photo fields, never the Drive file id column", async () => {
+    const occupied = {
+      ...dtoRow,
+      occupant_id: X,
+      occupant_name: "A",
+      occupant_has_photo: true,
+      occupant_photo_version: 4,
+    };
+    const t = fakeDb((sql) => (sql.includes("json_agg") ? [occupied, dtoRow] : withRoom(sql, [])));
+    const r = await listRoomSeats(t.db, scope, X, "manager", ROOM);
+    const sql = t.sqls().find((q) => q.includes("json_agg"))!;
+    expect(sql).toContain("o.photo_drive_file_id is not null as occupant_has_photo");
+    expect(sql).toContain("o.photo_version as occupant_photo_version");
+    expect(
+      sql.replace("o.photo_drive_file_id is not null as occupant_has_photo", ""),
+    ).not.toContain("photo_drive_file_id");
+    expect(r.ok && r.value.items[0]?.occupant).toEqual({
+      id: X,
+      displayName: "A",
+      hasPhoto: true,
+      photoVersion: 4,
+    });
+    expect(r.ok && r.value.items[1]?.occupant).toBeNull();
+    expect(JSON.stringify(r).toLowerCase()).not.toContain("drive");
   });
 });

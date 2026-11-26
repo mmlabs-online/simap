@@ -93,3 +93,29 @@ describe("members-api", () => {
     expect(await bad.api.invitations()).toEqual({ ok: false, code: "internal" });
   });
 });
+
+describe("members-api photos (SIM-046.2)", () => {
+  const img = (type: string) => () =>
+    new Response(new Uint8Array([1, 2]), { headers: { "content-type": type } });
+  it("getPhoto GETs /api/members/<encoded id>/photo; png and jpeg ok; text/html -> internal; 404 -> not_found", async () => {
+    const a = fake(img("image/png"));
+    const r = await a.api.getPhoto("a/b");
+    expect(r.ok && r.value.size).toBe(2);
+    expect(a.calls[0].path).toBe("/api/members/a%2Fb/photo");
+    expect((await fake(img("image/jpeg")).api.getPhoto("a")).ok).toBe(true);
+    expect(await fake(img("text/html")).api.getPhoto("a")).toEqual({
+      ok: false,
+      code: "internal",
+    });
+    const nf = fake(() => jsonRes({ error: { code: "not_found" } }, 404));
+    expect(await nf.api.getPhoto("a")).toEqual({ ok: false, code: "not_found" });
+  });
+  it("removePhoto sends DELETE /api/members/<id>/photo; 204 -> ok; 403 -> forbidden", async () => {
+    const a = fake(() => new Response(null, { status: 204 }));
+    expect(await a.api.removePhoto("a/b")).toEqual({ ok: true, value: null });
+    expect(a.calls[0].path).toBe("/api/members/a%2Fb/photo");
+    expect(a.calls[0].init.method).toBe("DELETE");
+    const f = fake(() => jsonRes({ error: { code: "forbidden" } }, 403));
+    expect(await f.api.removePhoto("a")).toEqual({ ok: false, code: "forbidden" });
+  });
+});

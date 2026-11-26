@@ -1,3 +1,5 @@
+import { PHOTO_LIMITS } from "@/lib/validate/photo";
+
 /** English strings for My Portal (D36). */
 export const portalCopy = {
   tablistLabel: "My Portal sections",
@@ -9,7 +11,7 @@ export const portalCopy = {
   seat: {
     heading: "My seat",
     viewOnMap: "View on map",
-    release: "Release",
+    release: "Release seat",
     room: "Room",
     group: "Group",
     project: "Project",
@@ -17,6 +19,7 @@ export const portalCopy = {
     requestsHeading: "My requests",
     empty: "You do not have a seat yet.",
     emptyAction: "Browse rooms",
+    noSeat: "You do not have a seat.",
     loadFailed: "Could not load your seats.",
     retry: "Try again",
     released: "Seat released.",
@@ -27,6 +30,8 @@ export const portalCopy = {
     loadMore: "Load more",
     retry: "Try again",
     waiting: "Waiting for my confirmation",
+    loadMoreFailed: "Could not load more devices.",
+    refreshFailed: "Could not refresh the lists. Reload to see the latest.",
   },
   profile: {
     heading: "Profile",
@@ -44,6 +49,48 @@ export const portalCopy = {
       required: "Enter a display name.",
       invalid: "That name cannot be used. Use letters or numbers, up to 80 characters.",
       retry: "Could not save your name. Try again.",
+    },
+    photo: {
+      heading: "Photo",
+      hint: `PNG or JPEG, square, ${PHOTO_LIMITS.minPx} x ${PHOTO_LIMITS.minPx} to ${PHOTO_LIMITS.maxPx} x ${PHOTO_LIMITS.maxPx} pixels, up to ${PHOTO_LIMITS.maxBytes / 1024} KB.`,
+      upload: "Upload photo",
+      replace: "Replace photo",
+      remove: "Remove photo",
+      uploading: "Uploading...",
+      removing: "Removing...",
+      saved: "Photo saved.",
+      removed: "Photo removed.",
+      loadFailed: "Could not load your photo. You can still upload a new one.",
+      errors: {
+        image_too_large: `The photo is too large. The limit is ${PHOTO_LIMITS.maxBytes / 1024} KB.`,
+        image_bad_size: `The photo must be square, from ${PHOTO_LIMITS.minPx} x ${PHOTO_LIMITS.minPx} to ${PHOTO_LIMITS.maxPx} x ${PHOTO_LIMITS.maxPx} pixels. Crop or resize it and try again.`,
+        image_not_supported:
+          "Use a PNG or JPEG photo that is not animated. Photos from a phone camera often carry extra data: re-save or crop the image and try again.",
+        image_changed: "Your photo was changed in another window. Reload and try again.",
+        read_failed: "Could not read this file. Try another one.",
+      },
+    },
+    character: {
+      heading: "Pixel character",
+      hint: "Your character on room maps. Pick one option for each part.",
+      layers: { skin: "Skin", hair: "Hair colour", style: "Hair style", shirt: "Shirt" },
+      option: (layer: string, n: number, total: number) => `${layer} ${n} of ${total}`,
+      styleName: (n: number) => `Style ${n}`,
+      views: { front: "Front", back: "Back" },
+      previewLabel: (view: string, scale: number) => `Preview, ${view}, ${scale}x`,
+      previewUnavailable: "Preview not available. You can still choose and save.",
+      automatic: "Automatic look, picked for you. Reset returns here.",
+      save: "Save character",
+      saving: "Saving...",
+      reset: "Reset",
+      resetting: "Resetting...",
+      saved: "Character saved. Room maps show it the next time they load.",
+      resetDone: "Back to the automatic look.",
+      loadFailed: "Could not load your saved character. You can still choose and save one.",
+      errors: {
+        invalidLook: "That choice is not available. Pick one of the offered options.",
+        retry: "Could not save your character. Try again.",
+      },
     },
   },
 } as const;

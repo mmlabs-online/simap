@@ -68,7 +68,10 @@ describe("SeatActions", () => {
   it("assign role matrix; Replace when occupied", () => {
     for (const tier of ["user", "manager", "admin"] as const) {
       const empty = render(tier, seat(false));
-      const full = render(tier, { ...seat(false), occupant: { id: "o", displayName: "O" } });
+      const full = render(tier, {
+        ...seat(false),
+        occupant: { id: "o", displayName: "O", hasPhoto: false, photoVersion: 0 },
+      });
       const can = tier !== "user";
       expect(empty.includes(">Assign<")).toBe(can);
       expect(full.includes(">Replace<")).toBe(can);
@@ -79,7 +82,10 @@ describe("SeatActions", () => {
   it("cannot-seat disables assign and replace", () => {
     const blocked = { ...seat(false), cannotSeat: true, cannotSeatReason: "Broken" };
     expect(render("manager", blocked)).toMatch(/<button[^>]*disabled[^>]*>Assign</);
-    const withOccupant = { ...blocked, occupant: { id: "o", displayName: "O" } };
+    const withOccupant = {
+      ...blocked,
+      occupant: { id: "o", displayName: "O", hasPhoto: false, photoVersion: 0 },
+    };
     expect(render("admin", withOccupant)).toMatch(/<button[^>]*disabled[^>]*>Replace</);
   });
   it("no buttons unless the seat is ready", () => {
@@ -94,7 +100,7 @@ describe("SeatActions remove and cannot-seat buttons", () => {
   const occupied = (over: Partial<SeatDto> = {}): SeatDto => ({
     ...seat(false),
     status: "occupied",
-    occupant: { id: "o", displayName: "O" },
+    occupant: { id: "o", displayName: "O", hasPhoto: false, photoVersion: 0 },
     ...over,
   });
   const renderWith = (tier: Tier | null, s: SeatDto, busy = false) =>
@@ -148,7 +154,10 @@ describe("SeatActions request button", () => {
   const a = seatsCopy.actions;
   it("user sees Request this seat on an empty seat; not on occupied or cannot-seat; manager and admin never", () => {
     expect(render("user", seat(false))).toContain(`>${a.request}<`);
-    const occupied = { ...seat(false), occupant: { id: "o", displayName: "O" } };
+    const occupied = {
+      ...seat(false),
+      occupant: { id: "o", displayName: "O", hasPhoto: false, photoVersion: 0 },
+    };
     expect(render("user", occupied)).not.toContain(a.request);
     const blocked = { ...seat(false), cannotSeat: true, cannotSeatReason: "x" };
     expect(render("user", blocked)).not.toContain(a.request);

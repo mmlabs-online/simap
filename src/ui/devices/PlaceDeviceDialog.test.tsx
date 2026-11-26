@@ -12,7 +12,7 @@ import type { PlaceSeats } from "./usePlaceTargets";
 
 const noop = () => {};
 const copy = devicesCopy.place;
-const owner = { id: "u1", displayName: "Ha" };
+const owner = { id: "u1", displayName: "Ha", hasPhoto: false, photoVersion: 0 };
 const device: DeviceDto = {
   id: "d1",
   name: "Laptop",
@@ -98,7 +98,11 @@ const render = (p: Props = {}) =>
 describe("PlaceDeviceFields picker", () => {
   it("user sees only own seats, message when none (D72)", () => {
     const mine = seat({ id: "s1", code: "C-01", occupant: owner });
-    const theirs = seat({ id: "s2", code: "C-02", occupant: { id: "u2", displayName: "Binh" } });
+    const theirs = seat({
+      id: "s2",
+      code: "C-02",
+      occupant: { id: "u2", displayName: "Binh", hasPhoto: false, photoVersion: 0 },
+    });
     const empty = seat({ id: "s3", code: "C-03" });
     const html = render({ tier: "user", seats: ready([mine, theirs, empty]) });
     expect(html).toContain("C-01 · Ha");
@@ -108,6 +112,23 @@ describe("PlaceDeviceFields picker", () => {
     const none = render({ tier: "user", seats: ready([theirs, empty]) });
     expect(none).toContain(copy.noOwnSeats.replace("'", "&#x27;"));
     expect(render({ tier: "manager", seats: ready([theirs, empty]) })).toContain("C-02 · Binh");
+  });
+
+  it("user moving a device lent before D72 sees its current seat and the hint", () => {
+    const lent = seat({
+      id: "s9",
+      code: "C-09",
+      occupant: { id: "u2", displayName: "Nguyễn Bình", hasPhoto: false, photoVersion: 0 },
+    });
+    const html = render({ tier: "user", mode: "move", device: placedDevice, seats: ready([lent]) });
+    expect(html).toContain(copy.lentCurrent("C-09", "Nguyễn Bình"));
+    expect(html).toContain(copy.lentMoveHint);
+    const manager = render({ tier: "manager", device: placedDevice, seats: ready([lent]) });
+    expect(manager).not.toContain(copy.lentMoveHint);
+    const own = seat({ id: "s9", code: "C-09", occupant: owner });
+    expect(render({ tier: "user", device: placedDevice, seats: ready([own]) })).not.toContain(
+      copy.lentMoveHint,
+    );
   });
 
   it("room select lists rooms; seats show code, occupant or Empty, and hints", () => {
@@ -158,7 +179,9 @@ describe("PlaceDeviceFields picker", () => {
 
   it("lend label when the chosen seat's occupant is not the owner", () => {
     const html = render({
-      seats: ready([seat({ occupant: { id: "u2", displayName: "Binh" } })]),
+      seats: ready([
+        seat({ occupant: { id: "u2", displayName: "Binh", hasPhoto: false, photoVersion: 0 } }),
+      ]),
       seatId: "s1",
     });
     expect(html).toContain("Lent to Binh&#x27;s seat as secondary.");

@@ -63,7 +63,7 @@ export function useMyDevices(api: DevicesApi) {
     const at = cursor.current;
     if (at === null) return;
     const id = ++counter.current;
-    setState((s) => ({ ...s, loadingMore: true }));
+    setState((s) => ({ ...s, loadingMore: true, errorCode: null }));
     const r = await api.listMine(at);
     if (!mounted.current || id !== counter.current) return;
     setState((s) =>

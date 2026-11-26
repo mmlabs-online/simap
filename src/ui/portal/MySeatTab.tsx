@@ -90,16 +90,15 @@ export function MySeatTab({ markSeen }: { markSeen: boolean }) {
   }
 
   const view = releasing ? releaseView(releasing) : null;
+  const empty =
+    seats.status === "ready" && seatTabEmpty(seats.seats, requests.status, requests.items.length);
   return (
     <>
       <MySeatView
         status={seats.status}
         seats={seats.seats}
         errorCode={seats.errorCode}
-        empty={
-          seats.status === "ready" &&
-          seatTabEmpty(seats.seats, requests.status, requests.items.length)
-        }
+        empty={empty}
         busy={submitting || cancellingId !== null}
         notice={notice}
         onRetry={() => void seats.reload()}
@@ -107,6 +106,7 @@ export function MySeatTab({ markSeen }: { markSeen: boolean }) {
         requests={
           <MyRequestsView
             embedded
+            hideEmpty={empty}
             state={requests.status}
             items={requests.items}
             newIds={newIds}

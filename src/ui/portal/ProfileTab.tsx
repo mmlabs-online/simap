@@ -9,9 +9,14 @@ import { portalCopy } from "../copy/portal";
 import { mapPatchResult, profilePatchInit } from "../org/profile-form";
 import { useSession } from "../session";
 import { profileOutcome, type ProfileOutcomeView } from "./portal-state";
+import { PixelLookSection } from "./PixelLookSection";
+import { ProfilePhoto } from "./ProfilePhoto";
 import { ProfileTabView } from "./ProfileTabView";
 
-type Load = { status: "loading" } | { status: "error" } | { status: "ready"; name: string };
+type Load =
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "ready"; name: string; memberId: string | null };
 
 /** The Profile tab: reads and saves the caller's own display name through `/api/me`. */
 export function ProfileTab() {
@@ -32,14 +37,16 @@ export function ProfileTab() {
   const read = useCallback(async () => {
     setLoad({ status: "loading" });
     let name: string | undefined;
+    let memberId: string | null = null;
     try {
       const read = await readMeResult(await apiFetch("/api/me"));
       name = read.network ? undefined : read.me?.member?.displayName;
+      memberId = read.network ? null : (read.me?.member?.id ?? null);
     } catch {
       name = undefined;
     }
     if (mounted.current)
-      setLoad(name === undefined ? { status: "error" } : { status: "ready", name });
+      setLoad(name === undefined ? { status: "error" } : { status: "ready", name, memberId });
   }, [apiFetch]);
 
   useEffect(() => {
@@ -91,6 +98,12 @@ export function ProfileTab() {
       error={result.fieldError}
       notice={result.notice}
       onSubmit={(name) => void save(name)}
+      sections={
+        <>
+          <ProfilePhoto name={load.name} />
+          {load.memberId !== null && <PixelLookSection memberId={load.memberId} />}
+        </>
+      }
     />
   );
 }

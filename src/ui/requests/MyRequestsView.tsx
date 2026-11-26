@@ -23,6 +23,8 @@ export type MyRequestsViewProps = {
   onCancel: (item: MyRequestDto) => void;
   /** Inside a tab: an h2 and no page padding. */
   embedded?: boolean;
+  /** Render nothing while ready and empty (the parent shows the one empty state). */
+  hideEmpty?: boolean;
 };
 
 /** The My requests page body. Pure: data and handlers come from props. */
@@ -39,7 +41,9 @@ export function MyRequestsView({
   onLoadMore,
   onCancel,
   embedded = false,
+  hideEmpty = false,
 }: MyRequestsViewProps) {
+  if (hideEmpty && state === "ready" && items.length === 0) return null;
   return (
     <div className={embedded ? "flex flex-col gap-4" : "p-4 lg:p-6 flex flex-col gap-4"}>
       {embedded ? (
