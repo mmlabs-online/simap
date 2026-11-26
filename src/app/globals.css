@@ -45,6 +45,12 @@
   --error-container: #fdecec;
   --on-error-container: #7f1d1d;
 
+  /* ---- success = green, warning = amber (status chips) ---- */
+  --success-container: #e7f5ec;
+  --on-success-container: #166534;
+  --warning-container: #fdf4dc;
+  --on-warning-container: #854d0e;
+
   /* ---- base + surfaces ---- */
   --background: #f6f6f5;
   --on-background: #1c1c1c;
@@ -115,6 +121,11 @@
   --error-container: #3b1414;
   --on-error-container: #fecaca;
 
+  --success-container: #12301d;
+  --on-success-container: #a7e3b9;
+  --warning-container: #3a2c0c;
+  --on-warning-container: #f5d58a;
+
   --background: #0f0f0f;
   --on-background: #ececec;
   --surface: #161616;
@@ -168,6 +179,10 @@
   --color-error: var(--error);
   --color-error-container: var(--error-container);
   --color-on-error-container: var(--on-error-container);
+  --color-success-container: var(--success-container);
+  --color-on-success-container: var(--on-success-container);
+  --color-warning-container: var(--warning-container);
+  --color-on-warning-container: var(--on-warning-container);
   --color-background: var(--background);
   --color-on-background: var(--on-background);
   --color-surface: var(--surface);

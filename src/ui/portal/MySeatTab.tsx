@@ -6,13 +6,13 @@ import type { MyRequestDto } from "@/lib/requests/types";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { portalCopy } from "../copy/portal";
 import { mergeNewIds, newestDecidedAt } from "../requests/request-badge";
-import { MyRequestsView } from "../requests/MyRequestsView";
 import { createRequestsApi } from "../requests/requests-api";
 import { cancelOutcome } from "../requests/requests-state";
 import { useMyRequests } from "../requests/useMyRequests";
 import { useSetRequestBadge } from "../requests/useRequestBadge";
 import { ConfirmSeatDialog } from "../seats/ConfirmSeatDialog";
 import { createSeatsApi } from "../seats/seats-api";
+import { MyRequestsPanel } from "./MyRequestsPanel";
 import { MySeatView } from "./MySeatView";
 import { releaseOutcome, releaseView, seatTabEmpty } from "./my-seats";
 import { useMySeats } from "./useMySeats";
@@ -104,8 +104,7 @@ export function MySeatTab({ markSeen }: { markSeen: boolean }) {
         onRetry={() => void seats.reload()}
         onRelease={setReleasing}
         requests={
-          <MyRequestsView
-            embedded
+          <MyRequestsPanel
             hideEmpty={empty}
             state={requests.status}
             items={requests.items}
@@ -114,7 +113,6 @@ export function MySeatTab({ markSeen }: { markSeen: boolean }) {
             loadingMore={requests.loadingMore}
             errorCode={requests.errorCode}
             cancellingId={cancellingId}
-            notice={null}
             onRetry={() => void requests.reload()}
             onLoadMore={() => void requests.loadMore()}
             onCancel={(item) => void cancel(item)}

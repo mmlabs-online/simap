@@ -2,6 +2,7 @@ export { Icon } from "./Icon";
 export { Button, IconButton } from "./Button";
 export { FilterChips, Chip, Pill, type ChipOption } from "./Chip";
 export { FilledInput } from "./FilledInput";
+export { SegmentedFilter } from "./SegmentedFilter";
 export { Card } from "./Card";
 export { TabBar, type TabBarItem } from "./TabBar";
 export { PageHeader } from "./PageHeader";

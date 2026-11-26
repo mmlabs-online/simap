@@ -4,6 +4,7 @@
  */
 export const ICON_NAMES = [
   "add",
+  "arrow_forward",
   "auto_awesome",
   "block",
   "category",

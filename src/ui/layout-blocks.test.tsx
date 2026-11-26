@@ -57,6 +57,10 @@ describe("PageHeader", () => {
     expect(html).toContain("aside-marker");
     expect(renderToStaticMarkup(<PageHeader title="T" level={3} />)).toMatch(/<h3[^>]*>T<\/h3>/);
     expect(renderToStaticMarkup(<PageHeader title="T" />)).not.toContain("<p");
+    expect(renderToStaticMarkup(<PageHeader title="T" />)).not.toContain("adorn-m");
+    expect(renderToStaticMarkup(<PageHeader title="T" titleAdornment={<i>adorn-m</i>} />)).toMatch(
+      /<\/h2><i>adorn-m<\/i>/,
+    );
   });
 });
 
@@ -94,8 +98,14 @@ describe("Pill", () => {
     const r = (p: Parameters<typeof Pill>[0]) => renderToStaticMarkup(<Pill {...p} />);
     expect(r({ label: "x", tone: "accent" })).toContain("bg-primary-container");
     expect(r({ label: "x", tone: "neutral" })).toContain("bg-surface-high");
-    expect(r({ label: "x", tone: "success" })).toContain("bg-tertiary-container");
+    expect(r({ label: "x", tone: "success" })).toContain("bg-success-container");
+    expect(r({ label: "x", tone: "warning" })).toContain("bg-warning-container");
+    expect(r({ label: "x", tone: "danger" })).toContain("bg-error-container");
     expect(r({ label: "x" })).toContain("bg-surface-high");
+    expect(r({ label: "x" })).not.toContain("rounded-full bg-current");
+    expect(r({ label: "x", dot: true })).toMatch(
+      /<span aria-hidden="true"[^>]*bg-current"><\/span>/,
+    );
     expect(r({ label: "x" })).not.toContain("aria-hidden");
     expect(r({ label: "x", decorative: true })).toContain('aria-hidden="true"');
   });
