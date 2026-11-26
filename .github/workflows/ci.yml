@@ -1,13 +1,22 @@
 name: ci
 
-# SIM-034 (D60): both jobs run on the home server's self-hosted runner (macOS). Postgres is a throwaway `docker run`
-# container (scripts/ci-postgres.sh); nothing here touches the production compose project `simap`, its containers,
-# networks, volumes or ~/.config/simap. Jobs queue behind one runner: cancel a CI run to deploy sooner.
+# SIM-034 (D60), SIM-065 (D84): both jobs run on GitHub-hosted `ubuntu-latest` by default, or on the home server's
+# [self-hosted, macbook-runner] when the repository variable SIMAP_RUNNER is `macbook` or a manual run picks it.
+# Postgres is a throwaway `docker run` container (scripts/ci-postgres.sh); nothing here touches the production compose
+# project `simap`, its containers, networks, volumes or ~/.config/simap. On macbook-runner jobs queue behind deploys:
+# cancel a CI run to deploy sooner.
 on:
   pull_request:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "Runner for this run: default follows the SIMAP_RUNNER variable (D84)"
+        type: choice
+        options: [default, github, macbook]
+        default: default
 
 permissions:
   contents: read
@@ -18,9 +27,9 @@ concurrency:
 
 jobs:
   ci:
-    runs-on: [self-hosted, macbook-runner]
+    runs-on: ${{ ((inputs.runner != 'default' && inputs.runner) || vars.SIMAP_RUNNER) == 'macbook' && fromJSON('["self-hosted","macbook-runner"]') || 'ubuntu-latest' }}
     timeout-minutes: 20
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,9 +69,9 @@ jobs:
   # deployment compose draft on a temp copy. Never pushes, no registry login.
   image:
     needs: ci
-    runs-on: [self-hosted, macbook-runner]
+    runs-on: ${{ ((inputs.runner != 'default' && inputs.runner) || vars.SIMAP_RUNNER) == 'macbook' && fromJSON('["self-hosted","macbook-runner"]') || 'ubuntu-latest' }}
     timeout-minutes: 25
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - uses: actions/checkout@v4
         with:

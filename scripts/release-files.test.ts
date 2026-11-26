@@ -60,9 +60,41 @@ describe("release.yml", () => {
     const next = release.indexOf("\n      - ", i + 1);
     return release.slice(i, next === -1 ? undefined : next);
   };
-  it("triggers only on push to release/[0-9]* (branch release/X.Y.Z, D57)", () => {
+  it("triggers only on push to release/[0-9]* and workflow_dispatch with the runner input (D57, D84)", () => {
     expect(release).toMatch(/^on:\n {2}push:\n {4}branches: \["release\/\[0-9\]\*"\]\n/m);
-    expect(release).not.toMatch(/pull_request|workflow_dispatch|schedule/);
+    const on = release.match(/^on:\n((?:[ #].*\n|\n)+)/m)![1];
+    expect([...on.matchAll(/^ {2}(\w+):/gm)].map((m) => m[1])).toEqual([
+      "push",
+      "workflow_dispatch",
+    ]);
+    expect([...on.matchAll(/^ {6}(\w+):/gm)].map((m) => m[1])).toEqual(["runner"]);
+    expect(release).not.toMatch(/pull_request|schedule/);
+  });
+  it("guards still run first and check the ref and main ancestry (dispatch-safe)", () => {
+    const afterCheckout = release.slice(release.indexOf("- uses: actions/checkout@v4"));
+    expect(afterCheckout.indexOf("- name: guards")).toBeGreaterThan(-1);
+    expect(afterCheckout.indexOf("\n      - name:")).toBe(
+      afterCheckout.indexOf("\n      - name: guards"),
+    );
+    const guards = stepRun("guards");
+    const tag = guards.indexOf('echo "tag=');
+    expect(
+      guards.indexOf('git merge-base --is-ancestor "$GITHUB_SHA" origin/main'),
+    ).toBeGreaterThan(-1);
+    expect(guards.indexOf('git merge-base --is-ancestor "$GITHUB_SHA" origin/main')).toBeLessThan(
+      tag,
+    );
+    expect(guards.indexOf('"$GITHUB_REF_NAME" =~')).toBeGreaterThan(-1);
+    expect(guards.indexOf('"$GITHUB_REF_NAME" =~')).toBeLessThan(tag);
+    const refType = guards.indexOf('[ "$GITHUB_REF_TYPE" != branch ]');
+    expect(refType).toBeGreaterThan(-1);
+    expect(refType).toBeLessThan(guards.indexOf("git merge-base"));
+  });
+  it("release steps are unconditional on runner (no runner.os branching)", () => {
+    expect(release).not.toMatch(/runner\.os|RUNNER_OS/i);
+    expect(read(".github/workflows/ci.yml")).not.toMatch(/runner\.os|RUNNER_OS/i);
+    expect(stepRun("docker config")).toContain("bash scripts/ci-docker-config.sh");
+    expect(stepRun("cleanup")).toContain("if: always()");
   });
   it("accepts only release/X.Y.Z branches and tags them vX.Y.Z (D57)", () => {
     const guards = stepRun("guards");
@@ -112,9 +144,11 @@ describe("release.yml", () => {
       expect(m[1]).not.toContain("${{");
     }
   });
-  it("deploys nothing itself: macbook-runner (D60), no docker compose, no ssh", () => {
-    expect(release).toContain("runs-on: [self-hosted, macbook-runner]");
-    expect(release).not.toContain("ubuntu-latest");
+  it("deploys nothing itself: runner from D84, no docker compose, no ssh", () => {
+    const runsOn = release.match(/^ {4}runs-on: (.+?)(?: # .*)?$/m)![1];
+    expect(runsOn).toBe(
+      "${{ ((inputs.runner != 'default' && inputs.runner) || vars.SIMAP_RUNNER) == 'macbook' && fromJSON('[\"self-hosted\",\"macbook-runner\"]') || 'ubuntu-latest' }}",
+    );
     expect(release).not.toMatch(/docker compose|\bssh\b/);
   });
   it("deployment clone lives in RUNNER_TEMP and keeps no token", () => {

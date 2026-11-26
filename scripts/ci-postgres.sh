@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# SIM-034 (D60): throwaway Postgres for CI jobs on the self-hosted macOS runner (no `services:` there).
+# SIM-034 (D60): throwaway Postgres for CI jobs on either runner (D84; the self-hosted one has no `services:`).
 # usage: ci-postgres.sh sweep | start host | start network | stop     (bash 3.2 compatible, never needs root)
 #   sweep          remove leftovers of earlier CI runs (everything labelled simap-ci=1)
 #   start host     Postgres on a free 127.0.0.1 port; appends DATABASE_URL to $GITHUB_ENV (job `ci`)

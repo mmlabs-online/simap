@@ -157,19 +157,26 @@ docker build -t simap:local .
 bash scripts/check-image.sh simap:local     # add CHECK_IMAGE_DATABASE_URL=postgres://... for the db smoke
 ```
 
-CI runs the same check (job `image`) on every pull request. All simap workflows (`ci`, `risk-tier`, `release`) run on
-the home server's self-hosted runner `[self-hosted, macbook-runner]` (D60). CI starts its own throwaway Postgres
-containers (`scripts/ci-postgres.sh`, labelled `simap-ci=1`, always removed) and never touches the compose project
-`simap` or `~/.config/simap`. Jobs queue behind that one runner: cancel a CI run to deploy sooner.
+CI runs the same check (job `image`) on every same-repo pull request. The repository variable `SIMAP_RUNNER` picks the
+runner for all simap workflows (`ci`, `risk-tier`, `release`; D84, amends D60): `macbook` runs them on the home
+server's `[self-hosted, macbook-runner]`; unset or any other value runs them on GitHub-hosted `ubuntu-latest`.
+GitHub-hosted minutes count against the private repo's quota (if it runs out, jobs fail to start: set
+`SIMAP_RUNNER=macbook`). On macbook-runner jobs queue behind deploys (cancel a CI run to deploy sooner) and wait if
+the Mac is offline; there is no automatic fallback, so cancel and re-run manually with `runner=github`. Manual run:
+Actions, ci, Run workflow, input `runner` = `default` (follow the variable), `github` or `macbook`; the input wins over
+the variable for that run. CI starts its own throwaway Postgres containers (`scripts/ci-postgres.sh`, labelled
+`simap-ci=1`, always removed) and never touches the compose project `simap` or `~/.config/simap`.
 
 ## Release and deploy
 
 1. Ming pushes a branch `release/X.Y.Z` (no `v`, e.g. `release/0.1.0`) from a commit on `main` (agents never push `release/*`).
 2. The `release` workflow tags the commit, builds and pushes `mingming21400/simap:vX.Y.Z`, runs `check-image.sh` on
    the pushed digest and opens `release/simap-vX.Y.Z` on `mmlabs-online/deployment`, changing only
-   `apps/simap/release.env` (image pinned by digest). It deploys nothing itself. It runs on the home server's runner (D60), with an isolated Docker config under
+   `apps/simap/release.env` (image pinned by digest). It deploys nothing itself. It runs on the runner chosen by `SIMAP_RUNNER` (D84), with an isolated Docker config under
    `RUNNER_TEMP` (the host's `~/.docker` is untouched) and a cleanup step that logs out and removes the clone. The workflow passes the tag as
-   build arg `SIMAP_VERSION`, and the app header shows it (`dev` for a build without it).
+   build arg `SIMAP_VERSION`, and the app header shows it (`dev` for a build without it). If the run is stuck in the
+   queue (Mac offline), cancel it and use Actions, release, Run workflow on the `release/X.Y.Z` branch with
+   `runner=github`; a dispatch from a tag or from any branch that is not `release/X.Y.Z` fails at the guards.
 3. Ming reviews and merges that PR; `deploy-simap` on the home server backs up the databases, runs the one-shot
    `migrate` service, then replaces the app and waits for `/api/readyz`.
 4. Rollback restores the previous image; migrations are forward-only (expand, then contract).
