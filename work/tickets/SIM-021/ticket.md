@@ -12,7 +12,7 @@
 | Attempts | 2 |
 | Created | 2026-11-20 |
 | Claimed by | — |
-| PR | — |
+| PR | #115 |
 
 ## Goal
 simap runs in production at `simap.mmlabs.online` with a first org, and seatMGT's main flows are checked by hand.
