@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | REWORK |
 | Priority | P2 |
 | Size | S |
 | Areas | architecture, security |
 | Gate | plan-approval |
 | Depends on | — |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-26 |
 | Claimed by | — |
 | PR | https://github.com/mmlabs-online/simap/pull/140 |
@@ -60,6 +60,7 @@ home server's `[self-hosted, macbook-runner]`, so work is not blocked when the M
 - 2026-11-26: choose by repo variable plus manual run input; default (unset) is GitHub-hosted `ubuntu-latest`;
   release is included.
 - Plan approved (2026-11-26): Ming "duyệt SIM-065" — A1–A4 accepted as written.
+- 2026-11-26: Ming "sửa luôn trong PR này": fix security-review.md finding 🟡 1 (release dispatched on a tag `release/X.Y.Z` passes the ref guard) in this PR.
 
 
 ## Handoff
