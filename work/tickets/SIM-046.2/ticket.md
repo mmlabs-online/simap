@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P3 |
 | Size | M |
 | Areas | ui, api |
@@ -36,5 +36,6 @@ Other members' photos appear where people are listed (Members list, member card,
 - [ ] All Checks pass.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-3): "duyệt hết theo mặc định"; Q2 default: Remove photo stays visible on own card (F4 follow-up).
 
 ## Handoff
