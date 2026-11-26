@@ -2,15 +2,20 @@ import { describe, expect, it, vi } from "vitest";
 import { jpegOf } from "@/test/photo-fixtures";
 import { createOwnPhotoStore } from "./own-photo-store";
 import type { PhotoApi } from "./photo-api";
+import type { PhotoCheck } from "./profile-photo";
 
 const blob = new Blob([new Uint8Array(2)], { type: "image/png" });
-const file = (b: Uint8Array) => ({
-  size: b.length,
-  arrayBuffer: async () => b.buffer as ArrayBuffer,
-});
-const goodFile = () => file(new Uint8Array(jpegOf(64, 64)));
+const goodFile = () => new Blob([new Uint8Array(2)]);
+const prepared = new Uint8Array(jpegOf(64, 64));
 
-function setup(over: Partial<Record<"get" | "put" | "remove", unknown>> = {}) {
+function setup(
+  over: Partial<Record<"get" | "put" | "remove", unknown>> = {},
+  prepare: (f: Blob) => Promise<PhotoCheck> = async () => ({
+    ok: true,
+    bytes: prepared,
+    type: "jpeg",
+  }),
+) {
   let n = 0;
   const api = {
     get: vi.fn(async () => ({ ok: true as const, value: null as Blob | null })),
@@ -26,7 +31,7 @@ function setup(over: Partial<Record<"get" | "put" | "remove", unknown>> = {}) {
     create,
     revoke,
     onChange,
-    store: createOwnPhotoStore({ api, create, revoke, onChange }),
+    store: createOwnPhotoStore({ api, create, revoke, onChange, prepare }),
   };
 }
 
@@ -62,11 +67,32 @@ describe("own photo store", () => {
     expect(s.revoke).toHaveBeenCalledWith("blob:1");
   });
 
-  it("upload refused by the pre-check: put not called, code returned, URL unchanged", async () => {
-    const s = setup();
-    const r = await s.store.upload(file(new Uint8Array(0)));
-    expect(r).toEqual({ ok: false, code: "image_not_supported" });
+  it("upload order is prepare, onUploading, put; put receives the prepared bytes", async () => {
+    const order: string[] = [];
+    const s = setup(
+      {
+        put: vi.fn(async () => {
+          order.push("put");
+          return { ok: true, value: { hasPhoto: true, photoVersion: 1 } };
+        }),
+      },
+      async () => {
+        order.push("prepare");
+        return { ok: true, bytes: prepared, type: "jpeg" };
+      },
+    );
+    await s.store.upload(goodFile(), () => order.push("uploading"));
+    expect(order).toEqual(["prepare", "uploading", "put"]);
+    expect((s.api.put as ReturnType<typeof vi.fn>).mock.calls[0][0]).toBe(prepared);
+  });
+
+  it("upload refused by prepare: put and onUploading not called, code returned, URL unchanged", async () => {
+    const s = setup({}, async () => ({ ok: false, code: "read_failed" }));
+    const onUploading = vi.fn();
+    const r = await s.store.upload(goodFile(), onUploading);
+    expect(r).toEqual({ ok: false, code: "read_failed" });
     expect(s.api.put).not.toHaveBeenCalled();
+    expect(onUploading).not.toHaveBeenCalled();
     expect(s.store.snapshot().url).toBeNull();
   });
 

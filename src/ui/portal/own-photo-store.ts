@@ -1,6 +1,6 @@
 import { PHOTO_MIME } from "@/lib/validate/photo";
 import type { PhotoApi } from "./photo-api";
-import { checkPhotoFile } from "./profile-photo";
+import { preparePhoto, type PhotoCheck } from "./profile-photo";
 
 export type OwnPhotoSnapshot = { status: "loading" | "ready" | "failed"; url: string | null };
 export type PhotoAction = { ok: true } | { ok: false; code: string };
@@ -15,11 +15,13 @@ export function createOwnPhotoStore({
   create,
   revoke,
   onChange,
+  prepare = preparePhoto,
 }: {
   api: Pick<PhotoApi, "get" | "put" | "remove">;
   create: (b: Blob) => string;
   revoke: (url: string) => void;
   onChange: () => void;
+  prepare?: (file: Blob) => Promise<PhotoCheck>;
 }) {
   let state: OwnPhotoSnapshot = { status: "loading", url: null };
   let seq = 0;
@@ -42,12 +44,10 @@ export function createOwnPhotoStore({
       if (!r.ok) swap("failed", null);
       else swap("ready", r.value ? create(r.value) : null);
     },
-    async upload(file: {
-      size: number;
-      arrayBuffer(): Promise<ArrayBuffer>;
-    }): Promise<PhotoAction> {
-      const check = await checkPhotoFile(file);
+    async upload(file: Blob, onUploading?: () => void): Promise<PhotoAction> {
+      const check = await prepare(file);
       if (!check.ok) return { ok: false, code: check.code };
+      onUploading?.();
       const r = await api.put(check.bytes, check.type);
       if (!r.ok) return { ok: false, code: r.code };
       if (!disposed) {

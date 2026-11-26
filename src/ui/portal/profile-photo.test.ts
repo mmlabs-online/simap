@@ -1,76 +1,124 @@
 import { describe, expect, it, vi } from "vitest";
-import { bytesOf, jpegOf, pngOf } from "@/test/photo-fixtures";
-import { PHOTO_LIMITS, validatePhoto } from "@/lib/validate/photo";
+import { jpegOf, pngOf } from "@/test/photo-fixtures";
+import { PHOTO_INPUT_LIMITS } from "@/lib/photo-crop";
+import { validatePhoto } from "@/lib/validate/photo";
 import { apiCopy } from "../copy/api";
 import { portalCopy } from "../copy/portal";
-import { checkPhotoFile, photoErrorMessage } from "./profile-photo";
+import type { PhotoConverter, PhotoSource } from "./photo-canvas";
+import { photoErrorMessage, preparePhoto } from "./profile-photo";
 
-const fileOf = (bytes: Uint8Array) => ({
-  size: bytes.length,
-  arrayBuffer: async () =>
-    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length) as ArrayBuffer,
-});
+const file = (size = 1000) => ({ size, arrayBuffer: vi.fn(async () => new ArrayBuffer(0)) });
 
-describe("checkPhotoFile", () => {
-  it("file over 256 KB returns image_too_large without calling arrayBuffer", async () => {
-    const arrayBuffer = vi.fn(async () => new ArrayBuffer(0));
-    const r = await checkPhotoFile({ size: PHOTO_LIMITS.maxBytes + 1, arrayBuffer });
-    expect(r).toEqual({ ok: false, code: "image_too_large" });
-    expect(arrayBuffer).not.toHaveBeenCalled();
+function fake(width: number, height: number, out: Uint8Array | null, hasAlpha = false) {
+  const encode = vi.fn(async () => out as Uint8Array<ArrayBuffer> | null);
+  const render = vi.fn(async () => ({ hasAlpha, encode }));
+  const close = vi.fn();
+  const source: PhotoSource = { width, height, close, render };
+  const decode = vi.fn(async () => source);
+  return { converter: { decode } as PhotoConverter, decode, render, close, encode };
+}
+
+describe("preparePhoto", () => {
+  it("input over 20 MB: image_too_big_to_process, decode not called", async () => {
+    const f = fake(10, 10, null);
+    const r = await preparePhoto(
+      file(PHOTO_INPUT_LIMITS.maxBytes + 1) as unknown as Blob,
+      f.converter,
+    );
+    expect(r).toEqual({ ok: false, code: "image_too_big_to_process" });
+    expect(f.decode).not.toHaveBeenCalled();
   });
 
-  it("arrayBuffer rejects: read_failed", async () => {
-    const r = await checkPhotoFile({
-      size: 10,
-      arrayBuffer: async () => {
+  it("decode returns null: read_failed; decode throws: read_failed", async () => {
+    const none = { decode: async () => null } as PhotoConverter;
+    expect(await preparePhoto(file() as unknown as Blob, none)).toEqual({
+      ok: false,
+      code: "read_failed",
+    });
+    const boom = {
+      decode: async () => {
         throw new Error("x");
       },
+    } as PhotoConverter;
+    expect(await preparePhoto(file() as unknown as Blob, boom)).toEqual({
+      ok: false,
+      code: "read_failed",
     });
-    expect(r).toEqual({ ok: false, code: "read_failed" });
   });
 
-  it("non-square 100x80 PNG: image_bad_size; 32x32 and 600x600 JPEG: image_bad_size", async () => {
-    for (const b of [pngOf(100, 80), jpegOf(32, 32), jpegOf(600, 600)]) {
-      expect(await checkPhotoFile(fileOf(b))).toEqual({ ok: false, code: "image_bad_size" });
-    }
+  it("0x0 image: read_failed and close called", async () => {
+    const f = fake(0, 0, null);
+    expect(await preparePhoto(file() as unknown as Blob, f.converter)).toEqual({
+      ok: false,
+      code: "read_failed",
+    });
+    expect(f.close).toHaveBeenCalled();
   });
 
-  it("GIF bytes, an empty file and a JPEG with bytes after EOI: image_not_supported", async () => {
-    const gif = new TextEncoder().encode("GIF89a\x01\x00\x01\x00");
-    for (const b of [
-      gif,
-      new Uint8Array(0),
-      bytesOf([jpegOf(64, 64), new Uint8Array([1, 2, 3])]),
-    ]) {
-      expect(await checkPhotoFile(fileOf(b))).toEqual({ ok: false, code: "image_not_supported" });
-    }
+  it("60 MP image: image_too_big_to_process, close called, render not called", async () => {
+    const f = fake(10000, 6000, null);
+    expect(await preparePhoto(file() as unknown as Blob, f.converter)).toEqual({
+      ok: false,
+      code: "image_too_big_to_process",
+    });
+    expect(f.close).toHaveBeenCalled();
+    expect(f.render).not.toHaveBeenCalled();
   });
 
-  it("valid JPEG with Exif: ok, type jpeg, returned bytes have no APP1 segment and still pass validatePhoto", async () => {
-    const r = await checkPhotoFile(fileOf(jpegOf(64, 64, { exif: "GPS-data" })));
-    expect(r.ok).toBe(true);
-    if (!r.ok) return;
-    expect(r.type).toBe("jpeg");
-    expect(new TextDecoder("latin1").decode(r.bytes)).not.toContain("Exif");
-    expect(validatePhoto(r.bytes).ok).toBe(true);
+  it("4032x3024: renders the centered square in halving steps and returns valid JPEG bytes", async () => {
+    const f = fake(4032, 3024, jpegOf(512, 512));
+    const input = file();
+    const r = await preparePhoto(input as unknown as Blob, f.converter);
+    expect(f.render).toHaveBeenCalledWith({ sx: 504, sy: 0, side: 3024 }, [1512, 756, 512]);
+    expect(r.ok && r.type).toBe("jpeg");
+    if (r.ok) expect(validatePhoto(r.bytes).ok).toBe(true);
+    expect(f.close).toHaveBeenCalledTimes(1);
   });
 
-  it("valid 64x64 and 512x512 PNG: ok, type png", async () => {
-    for (const n of [64, 512]) {
-      const r = await checkPhotoFile(fileOf(pngOf(n, n)));
-      expect(r.ok && r.type).toBe("png");
-    }
+  it("close is called when render throws, and the result is read_failed", async () => {
+    const f = fake(100, 100, null);
+    f.render.mockRejectedValueOnce(new Error("x"));
+    expect(await preparePhoto(file() as unknown as Blob, f.converter)).toEqual({
+      ok: false,
+      code: "read_failed",
+    });
+    expect(f.close).toHaveBeenCalledTimes(1);
+  });
+
+  it("40x30 with alpha and a PNG encoder result: ok, type png", async () => {
+    const f = fake(40, 30, pngOf(64, 64), true);
+    const r = await preparePhoto(file() as unknown as Blob, f.converter);
+    expect(f.render).toHaveBeenCalledWith({ sx: 5, sy: 0, side: 30 }, [64]);
+    expect(r.ok && r.type).toBe("png");
+  });
+
+  it("encoder output that fails validatePhoto returns that code; the input bytes are never read", async () => {
+    const f = fake(300, 300, pngOf(100, 80), true);
+    const input = file();
+    const r = await preparePhoto(input as unknown as Blob, f.converter);
+    expect(r).toEqual({ ok: false, code: "image_bad_size" });
+    expect(input.arrayBuffer).not.toHaveBeenCalled();
   });
 });
 
 describe("photoErrorMessage", () => {
-  it("the 422 codes, image_changed and read_failed use the photo copy; image_not_supported says re-save or crop; others use apiCopy", () => {
+  it("photo codes use the photo copy without limit numbers; others use apiCopy", () => {
     const e = portalCopy.profile.photo.errors;
-    expect(photoErrorMessage("image_too_large")).toBe(e.image_too_large);
-    expect(photoErrorMessage("image_bad_size")).toBe(e.image_bad_size);
-    expect(photoErrorMessage("image_changed")).toBe(e.image_changed);
-    expect(photoErrorMessage("read_failed")).toBe(e.read_failed);
-    expect(photoErrorMessage("image_not_supported")).toMatch(/phone camera.*re-save or crop/);
+    for (const code of [
+      "image_too_big_to_process",
+      "image_could_not_shrink",
+      "read_failed",
+      "image_changed",
+      "image_too_large",
+      "image_bad_size",
+      "image_not_supported",
+    ] as const) {
+      expect(photoErrorMessage(code)).toBe(e[code]);
+    }
+    for (const text of Object.values(e)) expect(text).not.toMatch(/square|px|256 KB/);
+    // the hint itself says the photo is cropped to a square (planned copy), but names no pixel or KB limit
+    expect(portalCopy.profile.photo.hint).not.toMatch(/px|256 KB/);
+    expect(e.image_too_big_to_process).toContain("20 MB");
     expect(photoErrorMessage("not_allowed")).toBe(apiCopy.errors.not_allowed);
     expect(photoErrorMessage("zzz")).toBe(apiCopy.errors.internal);
   });

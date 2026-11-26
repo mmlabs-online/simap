@@ -43,14 +43,21 @@ describe("ProfilePhotoSection", () => {
     expect(render({ url: "blob:abc", busy: "remove" })).toContain(copy.removing);
   });
 
+  it("processing shows the processing label and disables the input and the remove button", () => {
+    const html = render({ url: "blob:abc", busy: "processing" });
+    expect(html).toContain(copy.processing);
+    expect(html).toMatch(/<input[^>]*disabled/);
+    expect(html).toMatch(/<button[^>]*disabled/);
+  });
+
   it("error renders role=alert, notice renders role=status", () => {
     expect(render({ error: "bad" })).toContain('role="alert"');
     expect(render({ notice: "ok" })).toContain('role="status"');
   });
 
-  it("file input accepts image/png,image/jpeg and sits inside its label; the limits hint is shown", () => {
+  it("file input accepts image/* and sits inside its label; the hint is shown", () => {
     const html = render();
-    expect(html).toMatch(/<label[^>]*>[^<]*<input[^>]*accept="image\/png,image\/jpeg"/);
+    expect(html).toMatch(/<label[^>]*>[^<]*<input[^>]*accept="image\/\*"/);
     expect(html).toContain(copy.hint);
   });
 
