@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P2 |
 | Size | S |
 | Areas | api, security |
@@ -46,6 +46,7 @@ not part of what Users see (OQ-58 default lists names, employee code and seats o
 
 ## Notes / answers from Ming
 - Plan approved (2026-11-26, batch 2026-11-26-2): "duyệt hết theo mặc định"; Q1 default: hide email from Users (own email still shown).
+- Merge approved (2026-11-26, batch 2026-11-26-2): "merge #127 #128 #130"; squash-merged by claude.
 
 ## Handoff
 

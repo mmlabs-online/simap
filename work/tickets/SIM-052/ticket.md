@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P2 |
 | Size | S |
 | Areas | api, ui, security |
@@ -43,6 +43,7 @@ The room map no longer shows a User the free-text `type` of devices they do not 
 
 ## Notes / answers from Ming
 - Plan approved (2026-11-26, batch 2026-11-26-2): "duyệt hết theo mặc định".
+- Merge approved (2026-11-26, batch 2026-11-26-2): "merge #127 #128 #130"; squash-merged by claude.
 
 ## Handoff
 

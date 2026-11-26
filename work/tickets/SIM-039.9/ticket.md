@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-25 |
-| Claimed by | claude@2026-11-25T17:03Z |
+| Claimed by | — |
 | PR | #107 |
 
 ## Goal
