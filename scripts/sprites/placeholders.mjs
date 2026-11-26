@@ -7,7 +7,18 @@ import { create, fillRect, outline } from "./raster.mjs";
 
 const OUTLINE = "#2a3140";
 const HEADROOM = 16;
-const TALL = new Set(["desk", "chair", "plant", "cabinet", "shelf", "rack", "lamp", "whiteboard"]);
+const TALL = new Set([
+  "desk",
+  "chair",
+  "plant",
+  "cabinet",
+  "shelf",
+  "rack",
+  "lamp",
+  "whiteboard",
+  "cooler",
+  "chart",
+]);
 
 /** Sub-tile canvases by key without direction: [w, h, width of the e/w views]. */
 const SUB = {
@@ -17,6 +28,8 @@ const SUB = {
   "device.pc": [12, 20, 12],
   "device.phone": [8, 12, 8],
   "device.other": [14, 12, 14],
+  "clock.wall": [20, 12, 6],
+  "lamp.desk": [12, 16, 12],
   "prop.keyboard": [18, 8, 18],
   "prop.mouse": [8, 10, 8],
   "prop.mug": [10, 11, 10],
@@ -187,6 +200,32 @@ const DRAW = {
       [w / 2 - 6, 1, 12, 10, "#f2c14e"],
       [w / 2 - 1, 11, 2, h - 15, "#8c95a3"],
       [w / 2 - 6, h - 4, 12, 3, "#3a4250"],
+    ]),
+  bin: (img, w, h) =>
+    rects(img, [
+      [w / 2 - 9, h - 22, 18, 20, "#8c95a3"],
+      [w / 2 - 10, h - 24, 20, 3, "#3a4250"],
+    ]),
+  chart: (img, w, h) =>
+    rects(img, [
+      [w / 2 - 11, 3, 22, h - 14, "#f6f5f2"],
+      [w / 2 - 8, 8, 16, 2, "#3b7dd4"],
+      [w / 2 - 1, h - 11, 2, 10, "#8c95a3"],
+    ]),
+  clock: (img, w, h) =>
+    rects(img, [
+      [1, 1, w - 2, h - 2, "#f6f5f2"],
+      [w / 2 - 1, 2, 2, h / 2 - 1, "#3a4250"],
+    ]),
+  cooler: (img, w, h) =>
+    rects(img, [
+      [w / 2 - 8, 2, 16, 12, "#9fd3ee"],
+      [w / 2 - 9, 14, 18, h - 16, "#e3e6ea"],
+    ]),
+  screen: (img, w, h) =>
+    rects(img, [
+      [1, 1, w - 2, h - 2, "#8c95a3"],
+      [2, 2, w - 4, h - 4, "#f6f5f2"],
     ]),
   plant: (img, w, h, _d, _t, key) => {
     const leaf = key === "plant.large" ? 32 : 20;

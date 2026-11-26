@@ -120,7 +120,44 @@ try {
     )
   ).rows[0].id;
 
-  const later = await run();
+  // Stage 2 (SIM-042): everything before the new built-in items migration, so an org seeded with 53 items exists
+  // (one renamed so its name collides with a new default, one hidden, one deleted) when the backfill runs.
+  const NEW_BUILTIN_VERSION = "20261126120000";
+  const stage2Lines = [];
+  for (const f of (await readdir(dir)).filter(
+    (n) => n.endsWith(".sql") && n < NEW_BUILTIN_VERSION,
+  )) {
+    await copyFile(path.join(dir, f), path.join(stageDir, f));
+  }
+  stage2Lines.push(...(await run(stageDir)));
+  const stage2Org = randomUUID();
+  await c.query(
+    `insert into members (org_id, sub, email, display_name) values ($1, $2, 'stage2@simap.example', 'Stage2')`,
+    [stage2Org, randomUUID()],
+  );
+  const stage2Count = (
+    await rows("select count(*)::int as n from map_items where org_id = $1", [stage2Org])
+  )[0].n;
+  await c.query(
+    `update map_items set name = 'Clock Wall' where org_id = $1 and builtin_key = 'wall.top'`,
+    [stage2Org],
+  );
+  await c.query(
+    `update map_items set hidden = true where org_id = $1 and builtin_key = 'plant.small'`,
+    [stage2Org],
+  );
+  await c.query(`delete from map_items where org_id = $1 and builtin_key = 'sofa'`, [stage2Org]);
+  const stage2Snapshot = JSON.stringify(
+    await rows("select * from map_items where org_id = $1 order by builtin_key", [stage2Org]),
+  );
+
+  const laterOnly = await run();
+  const later = [...stage2Lines, ...laterOnly];
+  check("1 stage 2 org was seeded with 53 map items", stage2Count === 53);
+  check(
+    "1 later run applies map_items_new_builtin",
+    laterOnly.some((l) => l.includes("map_items_new_builtin")),
+  );
   check(
     "1 later run applies device_types",
     later.some((l) => l.includes("device_types")),
@@ -850,24 +887,25 @@ try {
   const catalogMarker = async (/** @type {string} */ org) =>
     (await rows("select 1 from map_item_catalogs where org_id = $1", [org])).length;
   check(
-    "11 orgs existing before the migration get 53 map items",
-    (await itemCount(oldMemberOrg)) === 53 &&
-      (await itemCount(oldRoomOrg)) === 53 &&
+    "11 orgs seeded before SIM-042 get 59 map items",
+    (await itemCount(oldMemberOrg)) === 59 &&
+      (await itemCount(oldRoomOrg)) === 59 &&
+      (await itemCount(stage2Org)) === 58 &&
       (await catalogMarker(oldMemberOrg)) === 1 &&
       (await catalogMarker(oldRoomOrg)) === 1,
   );
   const itemOrg = randomUUID();
   await addMemberTo(itemOrg)();
   check(
-    "11 org created after the migration gets 53 map items on first member",
-    (await itemCount(itemOrg)) === 53 && (await catalogMarker(itemOrg)) === 1,
+    "11 org created after the migration gets 59 map items on first member",
+    (await itemCount(itemOrg)) === 59 && (await catalogMarker(itemOrg)) === 1,
   );
   await addMemberTo(itemOrg)();
-  check("11 second member adds none", (await itemCount(itemOrg)) === 53);
+  check("11 second member adds none", (await itemCount(itemOrg)) === 59);
   const sizes = (
     await rows(
       `select builtin_key, w, h from map_items where org_id = $1
-       and builtin_key in ('door', 'table.meeting', 'desk.single', 'prop.mug')`,
+       and builtin_key in ('door', 'table.meeting', 'desk.single', 'prop.mug', 'screen.projector', 'clock.wall')`,
       [itemOrg],
     )
   )
@@ -875,12 +913,42 @@ try {
     .sort()
     .join(",");
   check(
-    "11 spot sizes door 1x2, table.meeting 3x2, desk.single 2x1, prop.mug 1x1",
-    sizes === "desk.single 2x1,door 1x2,prop.mug 1x1,table.meeting 3x2",
+    "11 spot sizes door 1x2, table.meeting 3x2, desk.single 2x1, prop.mug 1x1, screen.projector 2x1, clock.wall 1x1",
+    sizes ===
+      "clock.wall 1x1,desk.single 2x1,door 1x2,prop.mug 1x1,screen.projector 2x1,table.meeting 3x2",
   );
   await c.query(`delete from map_items where org_id = $1 and builtin_key = 'sofa'`, [itemOrg]);
   await addMemberTo(itemOrg)();
-  check("11 deleted map item stays deleted", (await itemCount(itemOrg)) === 52);
+  check("11 deleted map item stays deleted", (await itemCount(itemOrg)) === 58);
+
+  // SIM-042 backfill: collision fallback, existing rows untouched, a row deleted before it is not restored
+  const stage2Names = await rows(
+    `select builtin_key, name from map_items where org_id = $1
+     and builtin_key in ('clock.wall', 'cooler.water', 'screen.projector')`,
+    [stage2Org],
+  );
+  check(
+    "11 SIM-042 backfill: a renamed 'Clock Wall' row makes the new row 'clock wall (built-in)'",
+    stage2Names.length === 3 &&
+      stage2Names.find((r) => r.builtin_key === "clock.wall")?.name === "clock wall (built-in)" &&
+      stage2Names.find((r) => r.builtin_key === "cooler.water")?.name === "cooler water",
+  );
+  const newKeys =
+    "'bin.trash','chart.flip','clock.wall','cooler.water','lamp.desk','screen.projector'";
+  check(
+    "11 SIM-042 backfill leaves existing rows unchanged",
+    JSON.stringify(
+      await rows(
+        `select * from map_items where org_id = $1 and builtin_key not in (${newKeys}) order by builtin_key`,
+        [stage2Org],
+      ),
+    ) === JSON.stringify(JSON.parse(stage2Snapshot)),
+  );
+  check(
+    "11 SIM-042 backfill does not restore a row deleted before it",
+    (await rows("select 1 from map_items where org_id = $1 and builtin_key = 'sofa'", [stage2Org]))
+      .length === 0,
+  );
 
   const placement = async (/** @type {string} */ table, /** @type {string} */ id) =>
     (await rows(`select * from ${table} where id = $1`, [id]))[0];
