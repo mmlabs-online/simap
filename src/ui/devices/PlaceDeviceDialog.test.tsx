@@ -118,7 +118,7 @@ describe("PlaceDeviceFields picker", () => {
     const lent = seat({
       id: "s9",
       code: "C-09",
-      occupant: { id: "u2", displayName: "Nguyễn Bình" },
+      occupant: { id: "u2", displayName: "Nguyễn Bình", hasPhoto: false, photoVersion: 0 },
     });
     const html = render({ tier: "user", mode: "move", device: placedDevice, seats: ready([lent]) });
     expect(html).toContain(copy.lentCurrent("C-09", "Nguyễn Bình"));
