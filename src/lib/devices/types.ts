@@ -81,7 +81,7 @@ export type DeviceDto = {
   canTakeBack: boolean;
   /** Owned and the expiry day is before today (UTC+7); computed on read, never stored (DEV-10). */
   overdue: boolean;
-  /** The one pending handoff, visible org-wide (DEV-02); the note is not included. */
+  /** The one pending handoff, visible to whoever may read the device (DEV-02); the note is not included. */
   pendingHandoff: PendingHandoffDto | null;
 };
 
@@ -146,6 +146,9 @@ export type HandoffCountDto = {
 
 export type DeviceListResponse = { items: DeviceDto[]; truncated: boolean };
 
+/** DEV-12: one page of the caller's held devices. */
+export type MyDevicesPage = { items: DeviceDto[]; nextCursor: string | null };
+
 export type DeviceHistoryKind =
   | "create"
   | "assign"
@@ -187,6 +190,8 @@ export const DEVICE_HISTORY_ACTIONS: readonly string[] = DEVICE_HISTORY_KINDS.ma
 );
 
 export const DEVICE_HISTORY_LIMITS = { defaultLimit: 50, maxLimit: 100 } as const;
+
+export const MY_DEVICES_LIMITS = { defaultLimit: 50, maxLimit: 100 } as const;
 
 export type DeviceHistoryEntryDto = {
   /** audit_log.id */

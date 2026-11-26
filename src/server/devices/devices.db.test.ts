@@ -14,6 +14,7 @@ import {
   testPool,
   waitForLockWait,
 } from "@/test/db/fixtures";
+import { confirmHandoff, listHandoffs } from "./handoffs";
 import { validateDeviceCreate } from "@/lib/validate/device";
 import {
   assignDevice,
@@ -21,6 +22,7 @@ import {
   deleteDevice,
   getDevice,
   listDevices,
+  listMyDevices,
   placeDevice,
   updateDevice,
   updateHolding,
@@ -98,9 +100,12 @@ describe("devices (db): reads", () => {
     expect(i.ok && i.value.items.map((d) => d.id)).toEqual([inv]);
     expect(all.ok && all.value.items.every((d) => d.mine && d.canEdit && d.canPlace)).toBe(true);
     const other = await listDevices(pool, w.scope, await subOf(w.y), "user", "all", TODAY);
-    expect(other.ok && other.value.items.every((d) => !d.mine && !d.canEdit && !d.canPlace)).toBe(
-      true,
+    expect(other.ok && other.value.items).toEqual([]);
+    const asManager = await listDevices(pool, w.scope, await subOf(w.y), "manager", "all", TODAY);
+    expect(asManager.ok && asManager.value.items.map((d) => d.id).sort()).toEqual(
+      [inv, placed].sort(),
     );
+    expect(asManager.ok && asManager.value.items.every((d) => !d.mine && d.canPlace)).toBe(true);
   });
 
   it("list/get include an unowned device with owner null, mine false, canPlace false; canEdit/canDelete only for Admin; filter unowned returns only unowned", async () => {
@@ -108,14 +113,18 @@ describe("devices (db): reads", () => {
     const owned = await addDevice(pool, w.orgId, w.x, null, "secondary");
     const unowned = await addDevice(pool, w.orgId, null, null, "secondary");
     const sub = await subOf(w.x);
-    const all = await listDevices(pool, w.scope, sub, "user", "all", TODAY);
+    const all = await listDevices(pool, w.scope, sub, "manager", "all", TODAY);
     expect(all.ok && all.value.items.map((d) => d.id).sort()).toEqual([owned, unowned].sort());
-    const only = await listDevices(pool, w.scope, sub, "user", "unowned", TODAY);
+    const only = await listDevices(pool, w.scope, sub, "manager", "unowned", TODAY);
     expect(only.ok && only.value.items.map((d) => d.id)).toEqual([unowned]);
-    const inv = await listDevices(pool, w.scope, sub, "user", "inventory", TODAY);
+    const inv = await listDevices(pool, w.scope, sub, "manager", "inventory", TODAY);
     expect(inv.ok && inv.value.items).toHaveLength(2);
+    expect(await getDevice(pool, w.scope, sub, "user", unowned, TODAY)).toEqual({
+      ok: false,
+      status: 404,
+      code: "not_found",
+    });
     for (const [tier, admin] of [
-      ["user", false],
       ["manager", false],
       ["admin", true],
     ] as const) {
@@ -878,10 +887,10 @@ describe("devices (db): pending transfer", () => {
       },
     });
     const asOther = await getDevice(pool, w.scope, await subOf(w.z), "user", d, TODAY);
-    expect(asOther.ok && asOther.value.pendingHandoff).toMatchObject({ id: h, canCancel: false });
+    expect(asOther).toEqual({ ok: false, status: 404, code: "not_found" });
     const asManager = await getDevice(pool, w.scope, await subOf(w.z), "manager", d, TODAY);
     expect(asManager.ok && asManager.value.pendingHandoff?.canCancel).toBe(true);
-    const listed = await listDevices(pool, w.scope, await subOf(w.z), "user", "all", TODAY);
+    const listed = await listDevices(pool, w.scope, await subOf(w.z), "manager", "all", TODAY);
     expect(listed.ok && listed.value.items.find((i) => i.id === d)?.pendingHandoff?.id).toBe(h);
   });
 
@@ -904,7 +913,7 @@ describe("devices (db): return flags", () => {
       return r.ok && r.value;
     };
     expect(await as(w.x, "user")).toMatchObject({ canReturn: true, canTakeBack: false });
-    expect(await as(w.z, "user")).toMatchObject({ canReturn: false, canTakeBack: false });
+    expect(await as(w.z, "user")).toBe(false);
     expect(await as(w.z, "manager")).toMatchObject({ canReturn: true, canTakeBack: false });
     expect(await as(w.z, "admin")).toMatchObject({ canReturn: true, canTakeBack: true });
     const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
@@ -918,5 +927,155 @@ describe("devices (db): return flags", () => {
     const free = await addDevice(pool, w.orgId, null, null, "secondary");
     const r = await getDevice(pool, w.scope, await subOf(w.z), "admin", free, TODAY);
     expect(r.ok && r.value).toMatchObject({ canReturn: false, canTakeBack: false });
+  });
+});
+
+const NOT_FOUND = { ok: false, status: 404, code: "not_found" } as const;
+const TIERS = ["user", "manager", "admin"] as const;
+
+describe("devices (db): visibility", () => {
+  it("list per tier: user sees only own; manager and admin see own, another member's and org inventory; no member row sees []", async () => {
+    const w = await world();
+    const mine = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const theirs = await addDevice(pool, w.orgId, w.y, null, "secondary");
+    const free = await addDevice(pool, w.orgId, null, null, "secondary");
+    const sub = await subOf(w.x);
+    const ids = async (tier: (typeof TIERS)[number], who = sub) => {
+      const r = await listDevices(pool, w.scope, who, tier, "all", TODAY);
+      return r.ok ? r.value.items.map((d) => d.id).sort() : [];
+    };
+    expect(await ids("user")).toEqual([mine]);
+    expect(await ids("manager")).toEqual([mine, theirs, free].sort());
+    expect(await ids("admin")).toEqual([mine, theirs, free].sort());
+    expect(await ids("user", randomUUID())).toEqual([]);
+  });
+
+  it("detail: user gets 404 for another member's and an unowned device (same as a cross-org id), 200 for own", async () => {
+    const w = await world();
+    const other = await world();
+    const mine = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const theirs = await addDevice(pool, w.orgId, w.y, null, "secondary");
+    const free = await addDevice(pool, w.orgId, null, null, "secondary");
+    const foreign = await addDevice(pool, other.orgId, other.x, null, "secondary");
+    const sub = await subOf(w.x);
+    expect((await getDevice(pool, w.scope, sub, "user", mine, TODAY)).ok).toBe(true);
+    const crossOrg = await getDevice(pool, w.scope, sub, "user", foreign, TODAY);
+    for (const d of [theirs, free]) {
+      expect(await getDevice(pool, w.scope, sub, "user", d, TODAY)).toEqual(crossOrg);
+    }
+    expect(crossOrg).toEqual(NOT_FOUND);
+    for (const tier of ["manager", "admin"] as const) {
+      expect((await getDevice(pool, w.scope, sub, tier, theirs, TODAY)).ok).toBe(true);
+    }
+  });
+
+  it("pending recipient: 404 on detail before confirm, the device is in incoming handoffs, detail 200 after confirm", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await addTransfer(pool, w.orgId, d, w.x, w.y);
+    const subY = await subOf(w.y);
+    expect(await getDevice(pool, w.scope, subY, "user", d, TODAY)).toEqual(NOT_FOUND);
+    const incoming = await listHandoffs(pool, w.scope, subY, "user", "incoming");
+    expect(JSON.stringify(incoming)).toContain(d);
+    const h = await one("select id from device_handoffs where device_id = $1", [d]);
+    expect((await confirmHandoff(pool, w.scope, subY, "user", h.id, TODAY)).ok).toBe(true);
+    expect((await getDevice(pool, w.scope, subY, "user", d, TODAY)).ok).toBe(true);
+  });
+
+  it("former holder: after the transfer is confirmed the old owner gets 404 and the device leaves their list and mine", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
+    expect((await confirmHandoff(pool, w.scope, await subOf(w.y), "user", h, TODAY)).ok).toBe(true);
+    const subX = await subOf(w.x);
+    expect(await getDevice(pool, w.scope, subX, "user", d, TODAY)).toEqual(NOT_FOUND);
+    const list = await listDevices(pool, w.scope, subX, "user", "all", TODAY);
+    expect(list.ok && list.value.items).toEqual([]);
+    const mineX = await listMyDevices(pool, w.scope, subX, "user", { limit: 10 }, TODAY);
+    expect(mineX.items).toEqual([]);
+  });
+});
+
+describe("devices (db): my devices", () => {
+  it("every tier gets only own devices; other orgs and members are absent; no member row and empty member give []", async () => {
+    const w = await world();
+    const other = await world();
+    const mine = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await addDevice(pool, w.orgId, w.y, null, "secondary");
+    await addDevice(pool, w.orgId, null, null, "secondary");
+    await addDevice(pool, other.orgId, other.x, null, "secondary");
+    const sub = await subOf(w.x);
+    for (const tier of TIERS) {
+      const r = await listMyDevices(pool, w.scope, sub, tier, { limit: 10 }, TODAY);
+      expect(r.items.map((d) => d.id)).toEqual([mine]);
+      expect(r.nextCursor).toBeNull();
+    }
+    const none = await listMyDevices(
+      pool,
+      w.scope,
+      await subOf(w.z),
+      "admin",
+      { limit: 10 },
+      TODAY,
+    );
+    expect(none).toEqual({ items: [], nextCursor: null });
+    const ghost = await listMyDevices(pool, w.scope, randomUUID(), "user", { limit: 10 }, TODAY);
+    expect(ghost).toEqual({ items: [], nextCursor: null });
+  });
+
+  it("carries placement, expiry, overdue and the pending handoff", async () => {
+    const w = await world();
+    const placed = await addDevice(pool, w.orgId, w.x, w.a1, "primary");
+    const inv = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    await pool.query(
+      "update devices set name = 'a', holding_expires_on = '2026-11-01' where id = $1",
+      [placed],
+    );
+    await pool.query(
+      "update devices set name = 'b', holding_expires_on = '2027-01-01' where id = $1",
+      [inv],
+    );
+    const h = await addTransfer(pool, w.orgId, inv, w.x, w.y);
+    const r = await listMyDevices(pool, w.scope, await subOf(w.x), "user", { limit: 10 }, TODAY);
+    const [a, b] = r.items;
+    expect(a).toMatchObject({
+      id: placed,
+      inventoryNumber: expect.any(String),
+      placement: { seatCode: "A-01", role: "primary" },
+      holding: { expiresOn: "2026-11-01" },
+      overdue: true,
+      pendingHandoff: null,
+    });
+    expect(b).toMatchObject({
+      id: inv,
+      placement: null,
+      holding: { expiresOn: "2027-01-01" },
+      overdue: false,
+      pendingHandoff: { id: h },
+    });
+  });
+
+  it("pages by lower(name), id: limit 2 over 3 gives 2 + a cursor, then 1 + null (Vietnamese names)", async () => {
+    const w = await world();
+    const names = ["Đèn", "an", "Bàn"];
+    for (const n of names) {
+      const id = await addDevice(pool, w.orgId, w.x, null, "secondary");
+      await pool.query("update devices set name = $2 where id = $1", [id, n]);
+    }
+    const sub = await subOf(w.x);
+    const decode = (c: string) => JSON.parse(Buffer.from(c, "base64url").toString("utf8"));
+    const first = await listMyDevices(pool, w.scope, sub, "user", { limit: 2 }, TODAY);
+    expect(first.items).toHaveLength(2);
+    expect(first.nextCursor).not.toBeNull();
+    const cursor = decode(first.nextCursor!);
+    const second = await listMyDevices(pool, w.scope, sub, "user", { limit: 2, cursor }, TODAY);
+    expect(second.items).toHaveLength(1);
+    expect(second.nextCursor).toBeNull();
+    const all = [...first.items, ...second.items].map((d) => d.name);
+    const sorted = [...names].sort((p, q) => {
+      const [lp, lq] = [p.toLowerCase(), q.toLowerCase()];
+      return lp < lq ? -1 : lp > lq ? 1 : 0;
+    });
+    expect(new Set(all)).toEqual(new Set(sorted));
   });
 });

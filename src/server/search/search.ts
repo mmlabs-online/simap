@@ -1,4 +1,6 @@
 import "server-only";
+import type { Tier } from "@/lib/auth/tier";
+import { deviceVisibility } from "@/lib/devices/visibility";
 import { escapeLike } from "@/lib/members/search";
 import { encodeSearchCursor } from "@/lib/search/cursor";
 import { foldSql, macCompact } from "@/lib/search/fold";
@@ -110,7 +112,9 @@ const seats = (c: Query, scope: OrgScope, f: SearchFilter) =>
     }),
   });
 
-const devices = (c: Query, scope: OrgScope, f: SearchFilter) => {
+type Viewer = { sub: string; tier: Tier };
+
+const devices = (c: Query, scope: OrgScope, f: SearchFilter, viewer: Viewer) => {
   const mac = macCompact(f.q);
   return page<DeviceRow, DeviceHit>(c, scope, f, "device", {
     select: `select d.id, d.name, d.inventory_number, d.mac, d.owner_id, m.display_name as owner_name,
@@ -133,7 +137,11 @@ const devices = (c: Query, scope: OrgScope, f: SearchFilter) => {
         like("m.display_name", p),
       ];
       if (mac !== null) alts.push(`replace(d.mac, ':', '') like ${bind(`%${mac}%`)}`);
-      return `(${alts.join(" or ")})`;
+      const hit = `(${alts.join(" or ")})`;
+      // DEV-12: a User finds only devices they hold; filter in SQL before the keyset and limit.
+      return deviceVisibility(viewer.tier) === "held"
+        ? `coalesce(m.sub = ${bind(viewer.sub)}::uuid, false) and ${hit}`
+        : hit;
     },
     map: (r) => ({
       id: r.id,
@@ -171,13 +179,18 @@ const members = (c: Query, scope: OrgScope, f: SearchFilter) =>
   });
 
 /** DSH-02: case- and diacritics-insensitive search, one keyset-paged group per requested kind, from one snapshot. */
-export function search(pool: Db, scope: OrgScope, f: SearchFilter): Promise<SearchResponse> {
+export function search(
+  pool: Db,
+  scope: OrgScope,
+  f: SearchFilter,
+  viewer: Viewer,
+): Promise<SearchResponse> {
   return withTx(pool, async (c) => {
     await c.query("set transaction isolation level repeatable read, read only");
     const want = (k: SearchKind) => f.kind === "all" || f.kind === k;
     return {
       seats: want("seat") ? await seats(c, scope, f) : null,
-      devices: want("device") ? await devices(c, scope, f) : null,
+      devices: want("device") ? await devices(c, scope, f, viewer) : null,
       members: want("member") ? await members(c, scope, f) : null,
     };
   });

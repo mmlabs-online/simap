@@ -9,6 +9,7 @@ import {
   addMember,
   addRoom,
   addSeat,
+  addTransfer,
   assertTestDb,
   newOrg,
   testPool,
@@ -55,9 +56,18 @@ const okv = <T>(r: { ok: boolean } & ({ ok: true; value: T } | object)): T => {
   if (!r.ok) throw new Error(`refused: ${JSON.stringify(r)}`);
   return (r as { value: T }).value;
 };
-const history = async (w: W, deviceId: string, limit = 100, cursor?: string) => {
+const history = async (
+  w: W,
+  deviceId: string,
+  limit = 100,
+  cursor?: string,
+  who: { sub?: string; tier?: "user" | "manager" | "admin" } = {},
+) => {
   const c = cursor === undefined ? undefined : (decodeCursor(cursor) ?? undefined);
-  return listDeviceHistory(pool, w.scope, deviceId, { limit, cursor: c });
+  return listDeviceHistory(pool, w.scope, who.sub ?? w.sz, who.tier ?? "manager", deviceId, {
+    limit,
+    cursor: c,
+  });
 };
 const page = async (w: W, deviceId: string, limit = 100): Promise<DeviceHistoryPage> =>
   okv(await history(w, deviceId, limit));
@@ -393,5 +403,22 @@ describe("device history (db)", () => {
     expect(p.holderSince).toBe(p.items.find((i) => i.kind === "transfer_confirm")!.at);
     okv(await takeBack(pool, w.scope, w.sz, "admin", d));
     expect((await page(w, d)).holderSince).toBeNull();
+  });
+});
+
+describe("device history (db): visibility", () => {
+  it("user: own 200, another member's 404, former holder 404 after a transfer confirm; manager: 200 for any", async () => {
+    const w = await world();
+    const d = await addDevice(pool, w.orgId, w.x, null, "secondary");
+    const asUser = (sub: string) => history(w, d, 100, undefined, { sub, tier: "user" });
+    expect((await asUser(w.sx)).ok).toBe(true);
+    expect(await asUser(w.sy)).toEqual({ ok: false, status: 404, code: "not_found" });
+    for (const tier of ["manager", "admin"] as const) {
+      expect((await history(w, d, 100, undefined, { sub: w.sz, tier })).ok).toBe(true);
+    }
+    const h = await addTransfer(pool, w.orgId, d, w.x, w.y);
+    await confirmHandoff(pool, w.scope, w.sy, "user", h, TODAY);
+    expect(await asUser(w.sx)).toEqual({ ok: false, status: 404, code: "not_found" });
+    expect((await asUser(w.sy)).ok).toBe(true);
   });
 });

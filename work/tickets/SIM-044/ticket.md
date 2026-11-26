@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | IN_PROGRESS |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | api, architecture, security |
 | Gate | plan-approval |
 | Depends on | — |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T03:48Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/119 |
 
 ## Goal
 A User's API calls return only the devices they hold, and every tier gets a "my devices" endpoint for its own list,
@@ -62,3 +62,9 @@ LAY-06, SHL-01; decisions D69, D70. Open questions with proposed defaults: OQ-55
 - Plan approved (2026-11-26), Ming: "duyệt plan SIM-044, dùng mặc định" — every default in plan.md "Questions for Ming at approval": Q1 nav hide + /devices redirect move to SIM-045; Q2 /devices/[id] stays for held devices; Q3 404 for a device not held (incl. pending recipient, org inventory); Q4 former holder loses detail/history; Q5 OQ-55 spec default; Q6 OQ-58 spec default, other members' email → follow-up; Q7 OQ-60 no change; Q8 `GET /api/devices/mine` with full DeviceDto; Q9 slice A here, slice B = SIM-044.1; Q10 write-action existence oracle → follow-up; Q11 badge stays with SIM-045.
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 9 (api-platform-engineer×1 47k, software-architect×1 78k, planner×1 138k, implementer×2 88k+22k, reviewer×2 71k+31k, security-ai-generated-code-auditor×2 68k+39k; all default models)
+- Done: slice A — User device visibility in list/detail/history/search (404 = cross-org), `GET /api/devices/mine`; review REWORK attempt 1 (two DB-test mistakes), PASS attempt 2 with test:db 307/307 on a local Postgres; security PASS both attempts. PR #119.
+- In progress / next: Ming merges PR #119; then SIM-044.1 (slice B) and SIM-045 (My Portal + nav hide).
+- Gotchas: run local Postgres with the data dir outside /tmp/claude-0 (it gets reset to 700 and the server PANICs at teardown).
