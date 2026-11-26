@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux, security |
@@ -78,6 +78,7 @@ Builds on SIM-055 (game-style sign-in, merged). Request: Ming 2026-11-26 with th
 - Manual: 1440 px, 1280 px and 390 px; light/dark; sign in with a real Identity account.
 
 ## Notes / answers from Ming
+- Merge approved (2026-11-26): "merge #144"; squash-merged by claude.
 - 2026-11-26: "theo mặc định" — all 9 plan questions answered with the defaults: Q1 cream/green `--aw-*` palette on AuthLayout screens only (recorded as D85, not D73); Q2 Fraunces italic (OFL) via next/font, Georgia fallback (D85); Q3 hero headline is the landing h1, card intro h2, other screens keep their title h1; Q4 other screens get header/background/frame/footer/green button, no hero, keep today's office scene from md; Q5 390 px order header, hero, card, footer, rooms from 1280 px; Q6 café from existing sprites; Q7 drop "[ 01 ]"; Q8 keep "Sign in"; Q9 split accepted — slice 2 is SIM-068.1.
 - 2026-11-26: requested with the mockup image `mockup-sign-in.webp`.
 - 2026-11-26: "chỉ lấy idea như hình, còn các button tính năng giữ như hiện tại" — take only the visual idea; keep
