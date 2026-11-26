@@ -1,0 +1,61 @@
+# SIM-042: New built-in map items from the unused Imersa props
+
+| Field | Value |
+|---|---|
+| State | BACKLOG |
+| Priority | P2 |
+| Size | M |
+| Areas | db, ui |
+| Gate | plan-approval |
+| Depends on | SIM-041 |
+| Needs Ming | M-82 |
+| Attempts | 0 |
+| Created | 2026-11-26 |
+| Claimed by | — |
+| PR | — |
+
+## Goal
+Offer more objects in the room editor by turning the Imersa "Office Pixel Art" props that are downloaded but unused
+into new built-in library items with real art.
+
+## Scope reference
+- D54 (cut objects from original sheets via `sprite-map.json`), D66 points 1 and 5 (built-in catalog rows seeded per
+  org; bundled atlas committed), D67. Imersa row in `assets/art/CREDITS.md`.
+- **Scope conflict to confirm (M-82):** D66 (1) says phase 1 manages "the existing library items only"; this ticket
+  adds new built-in keys (not Admin-created kinds). Needs a decision line before PLAN.
+- Ming 2026-11-26: "2 và 3".
+
+## Scope
+- New registry keys in `src/lib/sprites/keys.json` for the uncut Imersa props, each with n/e/s/w where the pack has
+  them: wall clock, desk lamp, water cooler, trash bin, projector screen, flip chart (sheets `props_decor`,
+  `props_desk_items`, `props_kitchen`, `props_meeting`). Plus the remaining plant directions if the keys allow it.
+- Optional, if SIM-041 shows a fit: 2dPig-only objects (vending machine, flags, coloured chairs) as new keys.
+- Forward-only migration that seeds the new catalog rows for **existing** orgs and for new orgs
+  (`map_items_seed`, `20261125200000_map_items.sql`), expand-only so the previous image keeps working (R2).
+- `sprite-map.json` entries, repacked atlas, `CREDITS.md` "Sprites derived" updated.
+
+## Out of scope
+- Admin-created item kinds (later phase, D66). Recolouring. comshadow.
+
+## Acceptance criteria
+- [ ] Each new key is in the registry, the sprite map (rect, anchor, tiles) and the committed atlas as a `map` source.
+- [ ] After the migration, every existing org and every newly created org has one catalog row per new key (name,
+      group, footprint), and no existing row changes; `pnpm migrate:smoke`, `schema:check`, `test:db` pass.
+- [ ] The new items appear in the editor palette and the "Map items" page and can be placed, rotated and saved.
+- [ ] A layout saved by the previous image still loads (expand-only).
+- [ ] All Checks pass.
+
+## Technical notes
+- Files: `src/lib/sprites/keys.json`, `assets/art/sprite-map.json`, `db/migrations/<new>.sql` (High path), seed tests in
+  `src/server/map-items/*`, palette tests, `public/sprites/office.*`, `assets/art/CREDITS.md`.
+- Risks: the seed function runs once per org (`map_item_catalogs`), so the migration must insert the new rows for
+  already-seeded orgs and redefine the function for new ones; footprint per item (e.g. projector screen 2×1?) is a PM
+  default to confirm in the plan.
+
+## Test plan
+- Unit: registry/palette tests for the new keys. DB: seed for existing and new orgs, idempotent.
+- Manual: place each new item in `/dev/roommap` in all four directions.
+
+## Notes / answers from Ming
+
+## Handoff
