@@ -138,7 +138,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-053 | My Portal and device dialog polish (SIM-045, SIM-045.1, SIM-048 follow-ups) | MERGED | P3 | S | ui | — | none | 0 | 2026-11-26 |
 | SIM-054 | Move "My requests" into My Portal → My seat | MERGED | P2 | S | ui, ux | SIM-045.1 | none | 0 | 2026-11-26 |
 | SIM-055 | Give the sign-in screens a game-style look | IN_PROGRESS | P2 | M | ui, ux | — | none | 0 | 2026-11-26 |
-| SIM-056 | Crop and resize the profile photo in the browser before upload | IN_PROGRESS | P2 | M | ui, ux | SIM-046.1 | none | 0 | 2026-11-26 |
+| SIM-056 | Crop and resize the profile photo in the browser before upload | DONE | P2 | M | ui, ux | SIM-046.1 | none | 1 | 2026-11-26 |
 | SIM-057 | Check-in room view and home page per role | DONE | P0 | M | ui, ux | — | none | 0 | 2026-11-26 |
 | SIM-058 | Presence record and check-in, check-out and move-seat API | BACKLOG | P1 | M | db, api, architecture, security | — | plan-approval | 0 | 2026-11-26 |
 | SIM-059 | Pixel check-in popup | BACKLOG | P1 | M | ui, ux | SIM-057, SIM-058 | plan-approval | 0 | 2026-11-26 |
