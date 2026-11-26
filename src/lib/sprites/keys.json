@@ -79,6 +79,38 @@
     "blocks": false,
     "shadow": false
   },
+  "bin.trash.e": {
+    "group": "bin",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "bin.trash.n": {
+    "group": "bin",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "bin.trash.s": {
+    "group": "bin",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "bin.trash.w": {
+    "group": "bin",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
   "cabinet.filing.e": {
     "group": "cabinet",
     "dir": "e",
@@ -141,6 +173,102 @@
     "layer": "furniture",
     "tiles": [1, 1],
     "blocks": false,
+    "shadow": true
+  },
+  "chart.flip.e": {
+    "group": "chart",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "chart.flip.n": {
+    "group": "chart",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "chart.flip.s": {
+    "group": "chart",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "chart.flip.w": {
+    "group": "chart",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "clock.wall.e": {
+    "group": "clock",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "clock.wall.n": {
+    "group": "clock",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "clock.wall.s": {
+    "group": "clock",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "clock.wall.w": {
+    "group": "clock",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "cooler.water.e": {
+    "group": "cooler",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "cooler.water.n": {
+    "group": "cooler",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "cooler.water.s": {
+    "group": "cooler",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
+    "shadow": true
+  },
+  "cooler.water.w": {
+    "group": "cooler",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": [1, 1],
+    "blocks": true,
     "shadow": true
   },
   "desk.pair.e": {
@@ -383,6 +511,38 @@
     "blocks": false,
     "shadow": false
   },
+  "lamp.desk.e": {
+    "group": "lamp",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "lamp.desk.n": {
+    "group": "lamp",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "lamp.desk.s": {
+    "group": "lamp",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
+  "lamp.desk.w": {
+    "group": "lamp",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": null,
+    "blocks": false,
+    "shadow": false
+  },
   "lamp.floor": {
     "group": "lamp",
     "dir": null,
@@ -462,6 +622,38 @@
     "tiles": [1, 1],
     "blocks": true,
     "shadow": true
+  },
+  "screen.projector.e": {
+    "group": "screen",
+    "dir": "e",
+    "layer": "furniture",
+    "tiles": [1, 2],
+    "blocks": false,
+    "shadow": false
+  },
+  "screen.projector.n": {
+    "group": "screen",
+    "dir": "n",
+    "layer": "furniture",
+    "tiles": [2, 1],
+    "blocks": false,
+    "shadow": false
+  },
+  "screen.projector.s": {
+    "group": "screen",
+    "dir": "s",
+    "layer": "furniture",
+    "tiles": [2, 1],
+    "blocks": false,
+    "shadow": false
+  },
+  "screen.projector.w": {
+    "group": "screen",
+    "dir": "w",
+    "layer": "furniture",
+    "tiles": [1, 2],
+    "blocks": false,
+    "shadow": false
   },
   "shelf.books": {
     "group": "shelf",

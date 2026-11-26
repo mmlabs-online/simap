@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | db, ui |
 | Gate | plan-approval |
 | Depends on | SIM-041 |
-| Needs Ming | M-82 |
-| Attempts | 0 |
+| Needs Ming | M-82, M-86 |
+| Attempts | 1 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/120 |
 
 ## Goal
 Offer more objects in the room editor by turning the Imersa "Office Pixel Art" props that are downloaded but unused
@@ -56,6 +56,19 @@ into new built-in library items with real art.
 - Manual: place each new item in `/dev/roommap` in all four directions.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, Ming: "duyệt SIM-042"; assumptions A1-A14 accepted as written).
 - 2026-11-26 Ming (M-82): "M-82 đồng ý" — adding new built-in library items is in scope; recorded as D73 (amends D66 (1)).
 
 ## Handoff
+
+### 2026-11-26 — claude — BLOCKED
+- Agent calls: 3, tokens ~206k total (database-optimizer×1 35k, frontend-developer×1 82k, planner×1 90k; default models).
+- Done: consult (db, ui), plan.md READY with assumptions A1-A14.
+- In progress / next: Ming approves the plan (M-86); then /run SIM-042 implements.
+- Gotchas: new groups must be added to FIXTURE_GROUPS (layout.ts) or items are invisible; seed runs once per org, so the migration backfills existing orgs; name collisions with admin-renamed rows are handled explicitly (A5); many hard-coded 53/52 counts in tests and schema-check.
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 7 this run (implementer×2 default 103k + 21k, reviewer×2 default 67k + 30k, security-ai-generated-code-auditor×2 default 41k + 23k); ~285k tokens; earlier run: consult×2 + planner 206k.
+- Done: 6 new directional built-in items (24 frames), FIXTURE_GROUPS, sprite map, atlas, migration 20261126120000 (seed redefined + backfill), tests and schema-check; review REWORK (flaky uuid-ordered DB test) → PASS on attempt 2; PR #120.
+- In progress / next: Ming reviews/merges PR #120; M-87 clash query before release; visual check after release.
+- Gotchas: scripts/test-db.mjs ignores file filters (always whole suite); layout reads order fixtures by random uuid, so tests must sort; Imersa sheets git-ignored, CI packs placeholders, so new groups need placeholder drawers.

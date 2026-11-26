@@ -11,6 +11,7 @@ import {
   testPool,
   waitForLockWait,
 } from "@/test/db/fixtures";
+import { LIBRARY_ITEMS } from "@/lib/map-items/library";
 import type { LayoutSaveValue } from "@/lib/sprites/layout";
 import { resolveLayout } from "@/lib/sprites/resolve-layout";
 import type { TxClient, TxPool } from "@/server/db/tx";
@@ -364,6 +365,22 @@ describe("saveRoomLayout (db)", () => {
     expect(got.layout.fixtures.map(({ id: _i, ...f }) => f)).toEqual(v.fixtures);
   });
 
+  it("a SIM-042 item saves rotated and reads back", async () => {
+    const o = await room();
+    const v = val(0, [], {
+      fixtures: [
+        { sprite: "screen.projector", x: 2, y: 4, rotation: 90 as const },
+        { sprite: "clock.wall", x: 8, y: 4, rotation: 180 as const },
+      ],
+    });
+    expect((await save(o, v)).ok).toBe(true);
+    const got = await value(o);
+    // the read orders by random uuid id, so compare order-independently
+    const strip = (fs: { id?: string; sprite: string }[]) =>
+      fs.map(({ id: _i, ...f }) => f).sort((a, b) => a.sprite.localeCompare(b.sprite));
+    expect(strip(got.layout.fixtures)).toEqual(strip(v.fixtures));
+  });
+
   it("a save in an org with no member seeds the catalog and stores the fixtures", async () => {
     const o = newOrg();
     const roomId = await addRoom(pool, o.orgId, "C302", { seatCounter: 0 });
@@ -371,7 +388,7 @@ describe("saveRoomLayout (db)", () => {
     expect(r.ok).toBe(true);
     expect(
       (await one("select count(*)::int as n from map_items where org_id = $1", [o.orgId])).n,
-    ).toBe(53);
+    ).toBe(LIBRARY_ITEMS.length);
     expect(
       (await one("select count(*)::int as n from layout_fixtures where org_id = $1", [o.orgId])).n,
     ).toBe(1);

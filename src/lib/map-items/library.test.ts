@@ -9,9 +9,9 @@ import { MAP_ITEM_LIMITS } from "./types";
 const keys = LIBRARY_ITEMS.map((i) => i.builtinKey);
 
 describe("map item library", () => {
-  it("LIBRARY_ITEMS is desk.single, the palette fixtures, the floors, then chair.office (53 rows)", () => {
-    expect(LIBRARY_ITEMS).toHaveLength(53);
-    expect(new Set(keys).size).toBe(53);
+  it("LIBRARY_ITEMS is desk.single, the palette fixtures, the floors, then chair.office (59 rows)", () => {
+    expect(LIBRARY_ITEMS).toHaveLength(59);
+    expect(new Set(keys).size).toBe(59);
     expect(keys[0]).toBe("desk.single");
     expect(keys.slice(-5)).toEqual([
       "floor.carpet",
@@ -20,7 +20,7 @@ describe("map item library", () => {
       "floor.wood",
       "chair.office",
     ]);
-    expect(LIBRARY_ITEMS.filter((i) => i.kind === "fixture")).toHaveLength(47);
+    expect(LIBRARY_ITEMS.filter((i) => i.kind === "fixture")).toHaveLength(53);
     expect(Object.isFrozen(LIBRARY_ITEMS)).toBe(true);
   });
 
@@ -39,7 +39,7 @@ describe("map item library", () => {
   });
 
   it("names are unique under deviceTypeKey and at most 60 chars; groups at most 40", () => {
-    expect(new Set(LIBRARY_ITEMS.map((i) => deviceTypeKey(i.name))).size).toBe(53);
+    expect(new Set(LIBRARY_ITEMS.map((i) => deviceTypeKey(i.name))).size).toBe(59);
     for (const i of LIBRARY_ITEMS) {
       expect(i.name.length).toBeLessThanOrEqual(MAP_ITEM_LIMITS.name);
       expect(i.group.length).toBeGreaterThan(0);
@@ -92,6 +92,26 @@ describe("map item library", () => {
         const r = checkLayoutRules({ ...base, [list]: [item] });
         if (r.ok || r.code !== "layout_unknown_sprite") expect(known.has(sprite)).toBe(true);
       }
+    }
+  });
+});
+
+describe("SIM-042 library keys", () => {
+  it("six directional library fixtures with default name, group and size", () => {
+    const want: Record<string, [string, number, number]> = {
+      "bin.trash": ["bin", 1, 1],
+      "chart.flip": ["chart", 1, 1],
+      "clock.wall": ["clock", 1, 1],
+      "cooler.water": ["cooler", 1, 1],
+      "lamp.desk": ["lamp", 1, 1],
+      "screen.projector": ["screen", 2, 1],
+    };
+    for (const [key, [group, w, h]] of Object.entries(want)) {
+      const i = libraryItem(key)!;
+      expect([i.name, i.group, i.w, i.h]).toEqual([mapItemName(key), group, w, h]);
+      expect([i.kind, i.directional]).toEqual(["fixture", true]);
+      for (const d of ["n", "e", "s", "w"])
+        expect(REGISTRY[`${key}.${d}`], `${key}.${d}`).toBeDefined();
     }
   });
 });

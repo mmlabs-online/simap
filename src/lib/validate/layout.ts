@@ -44,8 +44,12 @@ export type LayoutRulesInput = {
 const ROTATIONS: readonly number[] = [0, 90, 180, 270];
 export const SEAT_SPRITES: readonly string[] = ["desk.single"];
 export const FIXTURE_GROUPS: readonly string[] = [
+  "bin",
   "cabinet",
+  "chart",
   "circulation",
+  "clock",
+  "cooler",
   "door",
   "label",
   "lamp",
@@ -54,6 +58,7 @@ export const FIXTURE_GROUPS: readonly string[] = [
   "plant",
   "prop",
   "rack",
+  "screen",
   "shelf",
   "sofa",
   "table",
