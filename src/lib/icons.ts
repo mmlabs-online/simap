@@ -4,11 +4,14 @@
  */
 export const ICON_NAMES = [
   "add",
+  "auto_awesome",
   "block",
   "category",
   "chair",
+  "check",
   "close",
   "dark_mode",
+  "desktop_windows",
   "edit",
   "edit_square",
   "event",
@@ -21,6 +24,7 @@ export const ICON_NAMES = [
   "inbox",
   "lan",
   "light_mode",
+  "lock",
   "login",
   "logout",
   "mail",
@@ -28,11 +32,13 @@ export const ICON_NAMES = [
   "palette",
   "person",
   "qr_code",
+  "restart_alt",
   "search",
   "sell",
   "space_dashboard",
   "swap_horiz",
   "sync",
+  "upload",
 ] as const;
 
 export type IconName = (typeof ICON_NAMES)[number];

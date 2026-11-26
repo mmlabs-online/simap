@@ -1,8 +1,12 @@
 export { Icon } from "./Icon";
 export { Button, IconButton } from "./Button";
-export { FilterChips, Chip, type ChipOption } from "./Chip";
+export { FilterChips, Chip, Pill, type ChipOption } from "./Chip";
 export { FilledInput } from "./FilledInput";
 export { Card } from "./Card";
+export { TabBar, type TabBarItem } from "./TabBar";
+export { PageHeader } from "./PageHeader";
+export { SectionCard } from "./SectionCard";
+export { FormFooterBar, type FooterStatus } from "./FormFooterBar";
 export { Avatar } from "./Avatar";
 export { RoleBadge } from "./RoleBadge";
 export { EntityFormDialog, DialogField, DialogSelect } from "./EntityFormDialog";

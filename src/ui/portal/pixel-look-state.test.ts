@@ -7,13 +7,16 @@ import {
   afterReset,
   afterSave,
   canReset,
-  canSave,
   choose,
+  discard,
   initialPicker,
   isDerived,
   loaded,
+  lookDirty,
+  lookSaveAction,
   pickerErrorMessage,
   pickerOptions,
+  resetDraft,
   startBusy,
 } from "./pixel-look-state";
 
@@ -71,30 +74,59 @@ describe("pixel look state", () => {
     expect(choose(busy, "skin", 1)).toBe(busy);
   });
 
-  it("canSave: false while loading or busy, false when draft equals saved, false when nothing saved and draft equals derived, true after a change", () => {
-    expect(canSave(initialPicker(ID))).toBe(false);
-    expect(canSave(startBusy(choose(ready(), "style", otherStyle), "save"))).toBe(false);
-    expect(canSave(ready(stored))).toBe(false);
-    expect(canSave(ready())).toBe(false);
-    expect(canSave(choose(ready(stored), "skin", 3))).toBe(true);
-    expect(canSave(choose(ready(), "style", otherStyle))).toBe(true);
+  it("lookDirty: false after load (stored or derived); true after choose; false after choosing back; true after resetDraft with a stored look; false after resetDraft with none stored", () => {
+    expect(lookDirty(ready(stored))).toBe(false);
+    expect(lookDirty(ready())).toBe(false);
+    const changed = choose(ready(), "style", otherStyle);
+    expect(lookDirty(changed)).toBe(true);
+    expect(lookDirty(choose(changed, "style", derivedChoice(ID).style))).toBe(false);
+    expect(lookDirty(resetDraft(ready(stored)))).toBe(true);
+    expect(lookDirty(resetDraft(ready()))).toBe(false);
   });
 
-  it("canReset: false while loading or busy, false when nothing saved and draft equals derived, true when a look is saved or the draft changed", () => {
+  it('lookSaveAction: null when clean; "save" for a changed draft; "reset" when a look is stored and draft equals derived', () => {
+    expect(lookSaveAction(ready(stored))).toBeNull();
+    expect(lookSaveAction(ready())).toBeNull();
+    expect(lookSaveAction(choose(ready(stored), "skin", 3))).toBe("save");
+    expect(lookSaveAction(choose(ready(), "style", otherStyle))).toBe("save");
+    expect(lookSaveAction(resetDraft(ready(stored)))).toBe("reset");
+  });
+
+  it("resetDraft sets draft = derivedChoice(memberId) without touching saved; ignored while busy", () => {
+    const out = resetDraft(ready(stored));
+    expect(out.draft).toEqual(derivedChoice(ID));
+    expect(out.saved).toEqual(stored);
+    const busy = startBusy(ready(stored), "save");
+    expect(resetDraft(busy)).toBe(busy);
+  });
+
+  it("discard sets draft = saved ?? derived and clears notice; ignored while busy", () => {
+    const withNotice = (s: ReturnType<typeof ready>) => ({
+      ...choose(s, "skin", 3),
+      notice: { tone: "error" as const, text: "x" },
+    });
+    expect(discard(withNotice(ready(stored)))).toMatchObject({ draft: stored, notice: null });
+    expect(discard(withNotice(ready()))).toMatchObject({ draft: derivedChoice(ID), notice: null });
+    const busy = startBusy(ready(stored), "save");
+    expect(discard(busy)).toBe(busy);
+  });
+
+  it("canReset: false while loading or busy, false when draft equals derived, true otherwise", () => {
     expect(canReset(initialPicker(ID))).toBe(false);
     expect(canReset(startBusy(ready(stored), "reset"))).toBe(false);
     expect(canReset(ready())).toBe(false);
     expect(canReset(ready(stored))).toBe(true);
     expect(canReset(choose(ready(), "style", otherStyle))).toBe(true);
+    expect(canReset(resetDraft(ready(stored)))).toBe(false);
   });
 
-  it("afterSave ok: saved = draft = server look, status notice saved; failure: draft kept, error notice", () => {
+  it("afterSave and afterReset success leave notice null; failures keep draft and set the error notice", () => {
     const s = startBusy(choose(ready(), "style", otherStyle), "save");
     expect(afterSave(s, { ok: true, value: stored })).toMatchObject({
       busy: null,
       saved: stored,
       draft: stored,
-      notice: { tone: "status", text: copy.saved },
+      notice: null,
     });
     expect(afterSave(s, { ok: false, code: "invalid_look" })).toMatchObject({
       busy: null,
@@ -102,26 +134,15 @@ describe("pixel look state", () => {
       draft: s.draft,
       notice: { tone: "error", text: copy.errors.invalidLook },
     });
-  });
-
-  it("afterReset ok: saved null, draft = derivedChoice(memberId), lookFromChoice(draft) equals resolveLook(null, memberId) and avatarFor(memberId), notice resetDone", () => {
     const out = afterReset(startBusy(ready(stored), "reset"), { ok: true, value: null });
-    expect(out).toMatchObject({
-      busy: null,
-      saved: null,
-      draft: derivedChoice(ID),
-      notice: { tone: "status", text: copy.resetDone },
-    });
+    expect(out).toMatchObject({ busy: null, saved: null, draft: derivedChoice(ID), notice: null });
     expect(lookFromChoice(out.draft)).toEqual(resolveLook(null, ID));
     expect(lookFromChoice(out.draft)).toEqual(avatarFor(ID));
-  });
-
-  it("afterReset failure: saved and draft unchanged, error notice", () => {
-    const s = startBusy(choose(ready(stored), "skin", 3), "reset");
-    expect(afterReset(s, { ok: false, code: "unavailable" })).toMatchObject({
+    const f = startBusy(choose(ready(stored), "skin", 3), "reset");
+    expect(afterReset(f, { ok: false, code: "unavailable" })).toMatchObject({
       busy: null,
       saved: stored,
-      draft: s.draft,
+      draft: f.draft,
       notice: { tone: "error", text: copy.errors.retry },
     });
   });

@@ -93,7 +93,7 @@ export function afterSave(s: PickerState, r: PixelLookResult<PixelLook>): Picker
     busy: null,
     saved: r.value,
     draft: r.value,
-    notice: { tone: "status", text: copy.saved },
+    notice: null,
   };
 }
 
@@ -104,13 +104,29 @@ export function afterReset(s: PickerState, r: PixelLookResult<null>): PickerStat
     busy: null,
     saved: null,
     draft: derivedChoice(s.memberId),
-    notice: { tone: "status", text: copy.resetDone },
+    notice: null,
   };
 }
 
 const idle = (s: PickerState) => s.busy === null && s.status !== "loading";
 
-export const canSave = (s: PickerState) =>
-  idle(s) && !(s.saved !== null && sameLook(s.draft, s.saved)) && !isDerived(s);
+/** The draft differs from what is stored, or from the derived look when nothing is stored. */
+export const lookDirty = (s: PickerState) =>
+  !sameLook(s.draft, s.saved ?? derivedChoice(s.memberId));
 
-export const canReset = (s: PickerState) => idle(s) && !isDerived(s);
+/** What the footer Save must send: nothing, a PUT, or a DELETE (a stored look and a derived draft). */
+export function lookSaveAction(s: PickerState): "save" | "reset" | null {
+  if (!lookDirty(s)) return null;
+  return s.saved !== null && sameLook(s.draft, derivedChoice(s.memberId)) ? "reset" : "save";
+}
+
+/** Reset is a draft action: the draft goes back to the derived look, nothing is sent until Save. */
+export const resetDraft = (s: PickerState): PickerState =>
+  s.busy !== null ? s : { ...s, draft: derivedChoice(s.memberId), notice: null };
+
+/** Cancel: the draft goes back to the stored look (or the derived one). */
+export const discard = (s: PickerState): PickerState =>
+  s.busy !== null ? s : { ...s, draft: s.saved ?? derivedChoice(s.memberId), notice: null };
+
+export const canReset = (s: PickerState) =>
+  idle(s) && !sameLook(s.draft, derivedChoice(s.memberId));

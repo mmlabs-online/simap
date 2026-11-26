@@ -1,4 +1,5 @@
 import type { HandoffCountDto } from "@/lib/devices/types";
+import type { IconName } from "@/lib/icons";
 import type { Tier } from "@/lib/tier";
 import { apiErrorMessage } from "../copy/api";
 import { portalCopy } from "../copy/portal";
@@ -25,14 +26,13 @@ export function portalTabHref(pathname: string, tab: PortalTab): string {
 export const tabId = (tab: PortalTab) => `portal-tab-${tab}`;
 export const panelId = (tab: PortalTab) => `portal-panel-${tab}`;
 
-/** The tab index a key moves to (arrows wrap), or null for a key that does not move. */
-export function nextTabIndex(key: string, current: number, count: number): number | null {
-  if (key === "ArrowRight") return (current + 1) % count;
-  if (key === "ArrowLeft") return (current - 1 + count) % count;
-  if (key === "Home") return 0;
-  if (key === "End") return count - 1;
-  return null;
-}
+export { nextTabIndex } from "../tab-keys";
+
+export const PORTAL_TAB_ICONS: Record<PortalTab, IconName> = {
+  seat: "chair",
+  devices: "desktop_windows",
+  profile: "person",
+};
 
 /** The owner actions only: Edit, Delete, Take back, Assign and Edit holding stay on the Devices page. */
 export const portalHandlers = (h: DeviceRowHandlers): DeviceRowHandlers => ({

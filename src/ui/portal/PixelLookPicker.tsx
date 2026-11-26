@@ -1,10 +1,13 @@
 import type { AvatarView } from "@/lib/sprites/avatar";
 import type { PixelLook } from "@/lib/sprites/pixel-look";
 import { Button } from "../Button";
+import { Pill } from "../Chip";
 import { portalCopy } from "../copy/portal";
+import { Icon } from "../Icon";
+import { SectionCard } from "../SectionCard";
 import type { Atlas } from "../roomlayout/loadAtlas";
 import { LookPreview } from "./LookPreview";
-import { pickerOptions, type PickerNotice, type PixelLookKey } from "./pixel-look-state";
+import { pickerOptions, type PixelLookKey } from "./pixel-look-state";
 
 const copy = portalCopy.profile.character;
 
@@ -22,21 +25,19 @@ export type PixelLookPickerProps = {
   draft: PixelLook;
   isDerived: boolean;
   status: "loading" | "ready" | "failed";
-  busy: "save" | "reset" | null;
-  canSave: boolean;
+  /** True while any save runs or the draft is loading: the radios and Reset are disabled. */
+  locked: boolean;
   canReset: boolean;
-  notice: PickerNotice | null;
   atlas: Atlas | null;
   atlasFailed: boolean;
   onChoose: (key: PixelLookKey, value: number) => void;
-  onSave: () => void;
   onReset: () => void;
 };
 
-/** The pixel character picker: live previews, one radio group per layer, Save and Reset. Pure view. */
+/** The pixel character picker: live previews, one radio group per layer and Reset (saved by the footer). Pure view. */
 export function PixelLookPicker(p: PixelLookPickerProps) {
   const options = pickerOptions();
-  const locked = p.busy !== null || p.status === "loading";
+  const locked = p.locked;
 
   const group = (
     key: PixelLookKey,
@@ -73,75 +74,78 @@ export function PixelLookPicker(p: PixelLookPickerProps) {
   );
 
   return (
-    <section aria-labelledby="pixel-look-heading" className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
-        <h3 id="pixel-look-heading" className="text-base font-extrabold text-on-surface">
-          {copy.heading}
-        </h3>
-        <p className="text-xs text-on-surface-variant">{copy.hint}</p>
-      </div>
-      {p.atlasFailed ? (
-        <p className="text-xs text-on-surface-variant">{copy.previewUnavailable}</p>
-      ) : (
-        <div className="flex flex-wrap items-end gap-3" aria-busy={p.atlas ? undefined : true}>
-          {PREVIEWS.map(({ view, scale }) => {
-            const caption = `${copy.views[view]} ${scale}x`;
-            return (
-              <figure key={`${view}-${scale}`} className="m-0 flex flex-col items-center gap-1">
-                <LookPreview
-                  atlas={p.atlas}
-                  look={p.draft}
-                  view={view}
-                  scale={scale}
-                  label={copy.previewLabel(copy.views[view], scale)}
-                />
-                <figcaption className="text-xs text-on-surface-variant">{caption}</figcaption>
-              </figure>
-            );
-          })}
+    <SectionCard
+      headingId="pixel-look-heading"
+      title={copy.heading}
+      subtitle={copy.subtitle}
+      titleAdornment={<Icon name="auto_awesome" size={18} className="text-primary" />}
+      aside={<Pill tone="success" decorative label={copy.livePreview} />}
+      footer={
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-on-surface-variant">{copy.tagline}</p>
+          <Button
+            type="button"
+            variant="tonal"
+            size="sm"
+            icon="restart_alt"
+            disabled={!p.canReset || locked}
+            onClick={p.onReset}
+          >
+            {copy.reset}
+          </Button>
         </div>
-      )}
-      {p.isDerived && <p className="text-xs text-on-surface-variant">{copy.automatic}</p>}
-      <div className="flex flex-col gap-3" aria-busy={p.status === "loading" ? true : undefined}>
-        {group(
-          "skin",
-          copy.layers.skin,
-          options.skin.map((o) => ({ value: o.index, hex: o.hex })),
-        )}
-        {group(
-          "hair",
-          copy.layers.hair,
-          options.hair.map((o) => ({ value: o.index, hex: o.hex })),
-        )}
-        {group(
-          "style",
-          copy.layers.style,
-          options.style.map((n) => ({ value: n, text: copy.styleName(n) })),
-        )}
-        {group(
-          "shirt",
-          copy.layers.shirt,
-          options.shirt.map((o) => ({ value: o.index, hex: o.hex })),
-        )}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" disabled={!p.canSave} onClick={p.onSave}>
-          {p.busy === "save" ? copy.saving : copy.save}
-        </Button>
-        <Button type="button" variant="tonal" disabled={!p.canReset} onClick={p.onReset}>
-          {p.busy === "reset" ? copy.resetting : copy.reset}
-        </Button>
-      </div>
-      {p.notice &&
-        (p.notice.tone === "error" ? (
-          <p role="alert" className="text-sm font-semibold text-error">
-            {p.notice.text}
-          </p>
+      }
+    >
+      <div className="flex flex-col gap-3">
+        {p.atlasFailed ? (
+          <p className="text-xs text-on-surface-variant">{copy.previewUnavailable}</p>
         ) : (
-          <p role="status" className="text-sm font-semibold text-on-surface">
-            {p.notice.text}
-          </p>
-        ))}
-    </section>
+          <div className="flex flex-wrap items-end gap-3" aria-busy={p.atlas ? undefined : true}>
+            {PREVIEWS.map(({ view, scale }) => {
+              const caption = `${copy.views[view]} ${scale}x`;
+              return (
+                <figure key={`${view}-${scale}`} className="m-0 flex flex-col items-center gap-1">
+                  <LookPreview
+                    atlas={p.atlas}
+                    look={p.draft}
+                    view={view}
+                    scale={scale}
+                    label={copy.previewLabel(copy.views[view], scale)}
+                  />
+                  <figcaption className="text-xs text-on-surface-variant">{caption}</figcaption>
+                </figure>
+              );
+            })}
+          </div>
+        )}
+        <p className="text-xs text-on-surface-variant">{copy.mapsCaption}</p>
+        {p.isDerived && <p className="text-xs text-on-surface-variant">{copy.automatic}</p>}
+        {p.status === "failed" && (
+          <p className="text-xs text-on-surface-variant">{copy.loadFailed}</p>
+        )}
+        <div className="flex flex-col gap-3" aria-busy={p.status === "loading" ? true : undefined}>
+          {group(
+            "skin",
+            copy.layers.skin,
+            options.skin.map((o) => ({ value: o.index, hex: o.hex })),
+          )}
+          {group(
+            "hair",
+            copy.layers.hair,
+            options.hair.map((o) => ({ value: o.index, hex: o.hex })),
+          )}
+          {group(
+            "style",
+            copy.layers.style,
+            options.style.map((n) => ({ value: n, text: copy.styleName(n) })),
+          )}
+          {group(
+            "shirt",
+            copy.layers.shirt,
+            options.shirt.map((o) => ({ value: o.index, hex: o.hex })),
+          )}
+        </div>
+      </div>
+    </SectionCard>
   );
 }

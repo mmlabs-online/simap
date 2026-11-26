@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | IN_PROGRESS |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | claude@2026-11-26T16:47:52Z |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/143 |
 
 ## Goal
 The Profile tab of My Portal follows Ming's mockup (`mockup-profile.png` in this folder): a two-column "Profile
@@ -80,3 +80,9 @@ mockup image.
 - Merge approved (2026-11-26, batch 2026-11-26-7): Ming "cho merge SIM-066, SIM-067, SIM-069".
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 5 (frontend-developer×1 46k, ux-architect×1 35k, planner×1 107k, implementer×1 96k, reviewer×1 78k; default models)
+- Done: slice 1 implemented; review PASS attempt 1; PR #143.
+- In progress / next: wait for CI, merge (Merge approved, batch 2026-11-26-7), then SIM-067.
+- Gotchas: SIM-066.1 holds slice 2.

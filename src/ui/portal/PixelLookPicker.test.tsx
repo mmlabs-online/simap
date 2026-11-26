@@ -32,22 +32,17 @@ const props = (p: Partial<PixelLookPickerProps> = {}): PixelLookPickerProps => (
   draft: { skin: 1, hair: 2, style: 3, shirt: 0 },
   isDerived: false,
   status: "ready",
-  busy: null,
-  canSave: true,
+  locked: false,
   canReset: true,
-  notice: null,
   atlas: null,
   atlasFailed: false,
   onChoose: () => {},
-  onSave: () => {},
   onReset: () => {},
   ...p,
 });
 const render = (p: Partial<PixelLookPickerProps> = {}) =>
   renderToStaticMarkup(<PixelLookPicker {...props(p)} />);
 const count = (html: string, re: RegExp) => (html.match(re) ?? []).length;
-const buttons = (html: string) =>
-  (html.match(/<button[^>]*>[^<]*<\/button>/g) ?? []).map((b) => b.replace(/class="[^"]*"/, ""));
 
 describe("PixelLookPicker", () => {
   it("one radio per preset per layer inside four fieldsets with legends; the draft's options are checked", () => {
@@ -85,12 +80,11 @@ describe("PixelLookPicker", () => {
     expect(html).toContain('width="20"');
   });
 
-  it("atlas missing: no canvas; atlasFailed shows previewUnavailable; the radios and Save are still there", () => {
+  it("atlas missing: no canvas; atlasFailed shows previewUnavailable; the radios are still there", () => {
     const html = render({ atlasFailed: true });
     expect(html).not.toContain("<canvas");
     expect(html).toContain(copy.previewUnavailable);
     expect(count(html, /type="radio"/g)).toBe(RADIOS);
-    expect(html).toContain(copy.save);
   });
 
   it("isDerived shows the automatic line; a saved look does not", () => {
@@ -98,24 +92,27 @@ describe("PixelLookPicker", () => {
     expect(render({ isDerived: false })).not.toContain(copy.automatic);
   });
 
-  it("canSave false disables Save; canReset false disables Reset; busy save/reset shows the busy labels and disables both", () => {
-    const [save, reset] = buttons(render({ canSave: false, canReset: true }));
-    expect(save).toContain("disabled");
-    expect(reset).not.toContain("disabled");
-    const [s2, r2] = buttons(render({ canSave: true, canReset: false }));
-    expect(s2).not.toContain("disabled");
-    expect(r2).toContain("disabled");
-    const busySave = buttons(render({ busy: "save", canSave: false, canReset: false }));
-    expect(busySave[0]).toContain(copy.saving);
-    expect(busySave.every((b) => b.includes("disabled"))).toBe(true);
-    const busyReset = buttons(render({ busy: "reset", canSave: false, canReset: false }));
-    expect(busyReset[1]).toContain(copy.resetting);
+  it("Reset character is disabled when !canReset or locked", () => {
+    const reset = (p: Partial<PixelLookPickerProps>) => render(p).match(/<button[^>]*>/)![0];
+    expect(reset({})).not.toContain('disabled=""');
+    expect(reset({ canReset: false })).toContain('disabled=""');
+    expect(reset({ locked: true })).toContain('disabled=""');
+    expect(render()).toContain(copy.reset);
+    expect(render()).not.toContain("Save");
   });
 
-  it("status notice renders role=status, error notice renders role=alert; status loading shows aria-busy and disabled radios", () => {
-    expect(render({ notice: { tone: "status", text: "ok!" } })).toContain('role="status"');
-    expect(render({ notice: { tone: "error", text: "bad!" } })).toContain('role="alert"');
-    const html = render({ status: "loading" });
+  it("the card is labelled by its heading; the load-failure line shows only when status is failed", () => {
+    const html = render();
+    expect(html).toContain('aria-labelledby="pixel-look-heading"');
+    expect(html).toContain('id="pixel-look-heading"');
+    expect(html).toContain(copy.heading);
+    expect(html).toContain(copy.mapsCaption);
+    expect(html).not.toContain(copy.loadFailed);
+    expect(render({ status: "failed" })).toContain(copy.loadFailed);
+  });
+
+  it("status loading shows aria-busy and disabled radios when locked", () => {
+    const html = render({ status: "loading", locked: true });
     expect(html).toContain('aria-busy="true"');
     expect(count(html, /<input[^>]*disabled=""/g)).toBe(RADIOS);
   });
