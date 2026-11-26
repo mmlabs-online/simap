@@ -45,6 +45,13 @@ describe("MapItemArtBody", () => {
     expect(legends).toEqual(["North", "East", "South", "West"]);
   });
 
+  it("an n/s-only item renders two panels, North and South", () => {
+    const html = render({ item: dto("clock.wall") });
+    expect(count(html, "<fieldset")).toBe(2);
+    const legends = [...html.matchAll(/<legend[^>]*>([^<]*)</g)].map((m) => m[1]);
+    expect(legends).toEqual(["North", "South"]);
+  });
+
   it("a non-directional item renders one panel and no direction legends", () => {
     const html = render({ item: dto("plant.large") });
     expect(count(html, "<fieldset")).toBe(1);

@@ -22,6 +22,16 @@ describe("map item art rules", () => {
     }
   });
 
+  it("artDirAllowed refuses e and w for n/s-only items", () => {
+    for (const k of ["clock.wall", "screen.projector"]) {
+      expect(artDirAllowed(item(k), "n")).toBe(true);
+      expect(artDirAllowed(item(k), "s")).toBe(true);
+      expect(artDirAllowed(item(k), "e")).toBe(false);
+      expect(artDirAllowed(item(k), "w")).toBe(false);
+    }
+    expect(artDirAllowed(item("bin.trash"), "e")).toBe(true);
+  });
+
   it("spriteFits: door.e fits door 1x2 at e; table.meeting.n does not fit a 2x2 item at n; prop.mug (tiles null) fits 1x1", () => {
     expect(spriteFits("door.e", "e", 1, 2)).toBe(true);
     expect(spriteFits("door.e", "s", 1, 2)).toBe(false);
