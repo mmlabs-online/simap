@@ -129,7 +129,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-046 | Profile photo upload | DONE | P3 | M | api, db, ui, security | SIM-045 | plan-approval | 0 | 2026-11-26 |
 | SIM-046.1 | Profile photo in the Profile tab and the shell avatar | BACKLOG | P3 | M | ui | SIM-046, SIM-045.1 | none | 0 | 2026-11-26 || SIM-046.2 | Profile photos in member lists, member card and seat panel | BACKLOG | P2 | M | ui, api | SIM-046, SIM-044.1 | none | 0 | 2026-11-26 |
 | SIM-046.2 | Profile photos in member lists, member card and seat panel | BACKLOG | P3 | M | ui, api | SIM-046, SIM-044.1 | none | 0 | 2026-11-26 |
-| SIM-047 | Pixel character customisation | PLANNING | P3 | M | db, api, ui, ux | SIM-045 | plan-approval | 0 | 2026-11-26 |
+| SIM-047 | Pixel character customisation | IN_PROGRESS | P3 | M | db, api, ui, ux | SIM-045 | plan-approval | 0 | 2026-11-26 |
 | SIM-047.1 | Pixel character picker in the Profile tab | BACKLOG | P3 | M | ui | SIM-047, SIM-045.1 | none | 0 | 2026-11-26 |
 | SIM-048 | A User places devices only on seats they occupy | MERGED | P2 | S | api, security | — | none | 0 | 2026-11-26 |
 
