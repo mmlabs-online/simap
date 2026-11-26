@@ -84,3 +84,57 @@ None. The orchestrator copies any 🔴 from `security-review.md` here if that re
 ### Follow-ups (out of scope)
 - Already listed by the plan: SIM-044.1 (seat/member/layout data for Users), write-action existence oracle (Q10),
   other members' email visible to Users (Q6).
+
+## Attempt 2 — 2026-11-26
+Verdict: PASS
+
+Reviewed rework commit ec0bb73 (on top of 9e4a3f0), slice A only (AC1-4, AC7). AC5 is SIM-044.1, AC6 is SIM-045.
+
+### Checks (run by reviewer)
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck && pnpm check:layers` — exit 0, "check-layers: 824 files, no violations"
+- `pnpm test` — exit 0, "Test Files 315 passed | 1 skipped (316); Tests 3170 passed | 7 skipped (3177)"
+- `pnpm build` — exit 0, `ƒ /api/devices/mine` listed
+- `pnpm test:db` — exit 0, "Test Files 20 passed (20); Tests 307 passed (307)" against a throwaway local Postgres 16
+  (127.0.0.1:54329, stopped and data dir deleted afterwards). Matches impl-log attempt 2. 307 = attempt 1's
+  305 passed + the 2 that failed before.
+  Note: my first run exited 1 with `Error: Connection terminated unexpectedly` after an all-green summary. The Postgres
+  log showed `PANIC: could not open file ".../pg_control": Permission denied`: the scratchpad parent dir had been reset to
+  mode 700 during the run, so the `postgres` user lost access and the server died at the teardown checkpoint. That is an
+  environment problem, not a code problem. The re-run with a data dir outside that tree exited 0 with no teardown error. This
+  probably also explains the attempt-1 nit about the same error, so that nit is withdrawn.
+
+### Blockers from attempt 1
+- Issue 1 — fixed. `src/server/devices/devices.db.test.ts:108` now asserts `!d.mine && d.canPlace`, which matches
+  `canPlace(tier, mine)` (Manager may place a device they do not own). Green in `pnpm test:db`.
+- Issue 2 — fixed. `src/server/search/search.db.test.ts:278,281` store lowercase MACs (`aa:bb:cc:00:00:01/02`) that
+  satisfy `devices_mac_check`. The query stays uppercase, so case-insensitive MAC search is still proved. Green in `pnpm test:db`.
+
+### Acceptance criteria
+- [x] AC1 User list only held; Manager/Admin full list — evidence as in attempt 1. `devices.db.test.ts › reads › list:
+  every item has placement…` is now green.
+- [x] AC2 detail/history 404 for not held, same as cross-org; no 403 — evidence unchanged from attempt 1 (still green).
+- [x] AC3 search returns only held devices for a User — `search.db.test.ts › search (db): device group per tier` is green
+  (`pnpm test:db` exit 0). `search.test.ts` per-tier cases are green.
+- [x] AC4 `/api/devices/mine` for every tier, paged, org-scoped, DEV-12 fields — evidence unchanged (still green).
+- [x] AC7 tests cover the rule per tier for list, detail, history, search and mine. All green in `pnpm test` and `pnpm test:db`.
+
+Ming verification after merge (carry into the PR): sign in as a User and as a Manager on production. Check the Devices page
+(a User sees only their own devices), search for another member's device name, and open `/devices/<id>` of another
+member's device (it shows "not found").
+
+### Scope
+The rework changes only the two test lines named in attempt 1 and impl-log. No out-of-plan files.
+
+### Rules (CLAUDE.md)
+R1-R7: no violations. R5 is now satisfied: all checks are green and the new logic has tests.
+
+### Blockers from review agents
+None. The orchestrator copies any 🔴 from `security-review.md` here if that review runs.
+
+### Nits (do not block)
+- Still open from attempt 1: `devices.db.test.ts` "pages by lower(name), id" does not check order or `length === 3`.
+  `history.db.test.ts › visibility` does not assert `confirmHandoff(...).ok`.
+
+### Follow-ups (out of scope)
+- Unchanged from attempt 1: SIM-044.1, write-action existence oracle (Q10), other members' email visible to Users (Q6).
