@@ -129,6 +129,13 @@ export function AppShellView({
               >
                 {shellCopy.version.label(version)}
               </span>
+              <Link
+                href="/credits"
+                aria-current={pathname === "/credits" ? "page" : undefined}
+                className="flex-none whitespace-nowrap text-[11px] font-semibold text-on-surface-variant underline aria-[current=page]:text-on-surface"
+              >
+                {shellCopy.credits}
+              </Link>
               <span className="ml-2 min-w-0 max-w-[40vw] truncate text-[13px] font-semibold text-on-surface-variant">
                 {session.orgName}
               </span>

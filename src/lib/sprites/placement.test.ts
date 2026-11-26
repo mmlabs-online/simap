@@ -506,7 +506,8 @@ describe("catalog art per direction (SIM-039.8)", () => {
       const list = buildDrawList(layout, {}, manifest, {}, undefined, { items });
       const boxH = rotation === 90 || rotation === 270 ? 3 : 2;
       const f = sprites(list.ops).find((o) => o.key === "plant.small");
-      expect(f, String(rotation)).toMatchObject({ x: 64, y: (1 + boxH) * 32 - 16 });
+      const [ax, ay] = manifest.frames["plant.small"]!.anchor;
+      expect(f, String(rotation)).toMatchObject({ x: 64 + ax, y: (1 + boxH) * 32 + ay });
       const shadow = list.ops.find((o) => o.type === "shadow");
       expect(shadow).toMatchObject({ x: 66, y: (2 + boxH) * 32 - 1, w: 28 });
     }

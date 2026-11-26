@@ -13,8 +13,10 @@ Rejected (no row, not used):
   to games), modification not mentioned, no licence row under "More information", marked "AI Assisted, Graphics".
   Screenshot: `licences/comshadow-modern-office.png`.
 
-Note: the Imersa licence forbids redistributing the asset files, and this repo is public, so the original sheets in
-`assets/art/sources/imersa-office/` are git-ignored; copy them from the downloaded zip (Free v1.0, sha256
-`bac93deafbf82181262539fbf2339590f88c68ab16033dff37de2fffc1f3bfcd`): `Props/_Atlases/*`,
-`Tilesets/Floors/office_floors_tileset.png`, `Tilesets/Walls_Plain/office_walls_tileset.png`. Built output that ships
-inside the app (atlas, previews) is allowed.
+Note: the Imersa licence forbids redistributing the asset files, so the original sheets in
+`assets/art/sources/imersa-office/` are git-ignored and never committed; copy them from the downloaded zip (Free v1.0,
+sha256 `bac93deafbf82181262539fbf2339590f88c68ab16033dff37de2fffc1f3bfcd`): `Props/_Atlases/*`,
+`Tilesets/Floors/office_floors_tileset.png`, `Tilesets/Walls_Plain/office_walls_tileset.png`. This repo is private
+(D45, D60). The packed atlas in `public/sprites/` is built output that ships inside the app (D66 point 5), which the
+licence allows, so it is committed. That commit assumes a private repo: making the repo public would redistribute the
+pack, so ask Ming first.

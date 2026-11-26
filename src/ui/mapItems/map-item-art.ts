@@ -46,9 +46,11 @@ export function expectedImageSize(
 export function spriteChoices(
   item: MapItemDto,
   dir: Direction,
+  bundled?: ReadonlySet<string> | null,
 ): { group: string; keys: string[] }[] {
   const groups = new Map<string, string[]>();
   for (const k of FRAME_KEYS) {
+    if (bundled && !bundled.has(k)) continue;
     if (!spriteAllowedFor(item, k) || !spriteFits(k, dir, item.w, item.h)) continue;
     const g = REGISTRY[k]!.group;
     groups.set(g, [...(groups.get(g) ?? []), k]);
