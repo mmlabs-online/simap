@@ -32,10 +32,11 @@ export class DriveError extends Error {
 }
 
 /**
- * Coarse safety cap on any file the client uploads or downloads. It sits above the largest org image (device types
- * 100 KB under D68, map items 64 KB under D66); the product limits live in the validators.
+ * Coarse safety cap on any file the client uploads or downloads. It sits above the largest org image (profile photos
+ * 256 KB under OQ-56, device types 100 KB under D68, map items 64 KB under D66); the product limits live in the
+ * validators.
  */
-export const DRIVE_MAX_BYTES = 128 * 1024;
+export const DRIVE_MAX_BYTES = 256 * 1024;
 
 const MIME_RE = /^[A-Za-z0-9.+-]+\/[A-Za-z0-9.+-]+$/;
 const FOLDER_MIME = "application/vnd.google-apps.folder";

@@ -119,3 +119,28 @@ describe("readBytes", () => {
     });
   });
 });
+
+describe("readBytes with a list of types", () => {
+  const types = ["image/png", "image/jpeg"];
+  it("accepts any listed type, ignores parameters, refuses others", async () => {
+    const jpg = await readBytes(
+      req(new Uint8Array([1]), { "content-type": "image/jpeg; q=1" }),
+      10,
+      types,
+    );
+    expect(jpg).toEqual({ ok: true, bytes: new Uint8Array([1]) });
+    const png = await readBytes(req(new Uint8Array([1])), 10, types);
+    expect(png.ok).toBe(true);
+    const gif = await readBytes(
+      req(new Uint8Array([1]), { "content-type": "image/gif" }),
+      10,
+      types,
+    );
+    expect(gif).toEqual({ ok: false, reason: "type" });
+  });
+
+  it("caps are unchanged", async () => {
+    const big = await readBytes(req(new Uint8Array(11)), 10, types);
+    expect(big).toEqual({ ok: false, reason: "too_large" });
+  });
+});
