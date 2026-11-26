@@ -1,0 +1,664 @@
+<title>simap Check-in Room</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;700&family=Silkscreen&display=swap">
+<style>
+/* Layout: clean app shell around a pixel-art stage (map left, "who's here" + demo panel right).
+   Everything inside the stage (popup, buttons, toast) uses the pixel look of the room. */
+:root {
+  --bg: #f3f4f8;
+  --surface: #ffffff;
+  --fg: #1d2033;
+  --muted: #646a85;
+  --line: #dfe2ec;
+  --accent: #3d6bff;
+  --accent-soft: #e6ecff;
+  --ok: #1f9d63;
+  --away: #9aa0b5;
+  --stage: #23263a;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-pixel: "Silkscreen", ui-monospace, monospace;
+  /* pixel world (same in both themes: it is the room's art) */
+  --px-ink: #1b1e2e;
+  --px-wall: #454a66;
+  --px-wall-lit: #5a6083;
+  --px-paper: #f3ead8;
+  --px-card: #fffaf0;
+  --px-blue: #3d6bff;
+  --px-blue-dk: #2547c7;
+  --px-sand: #e9e0ca;
+  --px-sand-dk: #c4b89a;
+  --px-green: #1f9d63;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161f; --surface: #1d2030; --fg: #e9ebf5; --muted: #9aa0ba; --line: #2d3146;
+    --accent: #7b9bff; --accent-soft: #263055; --ok: #4fd39a; --away: #6d7390; --stage: #0f1119; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14161f; --surface: #1d2030; --fg: #e9ebf5; --muted: #9aa0ba; --line: #2d3146;
+  --accent: #7b9bff; --accent-soft: #263055; --ok: #4fd39a; --away: #6d7390; --stage: #0f1119; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 32px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 16px; }
+header.shell { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.logo { font-family: var(--font-pixel); font-size: 18px; letter-spacing: .02em; }
+.crumb { color: var(--muted); }
+.crumb b { color: var(--fg); font-weight: 600; }
+.demo-badge { margin-left: auto; font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 600; letter-spacing: .03em; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+.stage { position: relative; background: var(--stage); border-radius: 10px; padding: 10px; container-type: inline-size; }
+.stage.lobby-open { min-height: 560px; }
+canvas#map { display: block; width: 100%; height: auto; image-rendering: pixelated; border-radius: 4px; }
+.stage-inner { position: relative; }
+.tags { position: absolute; inset: 0; pointer-events: none; }
+.tag {
+  position: absolute; transform: translate(-50%, -100%); white-space: nowrap;
+  font: 500 clamp(8px, 1.45cqw, 12px)/1.3 var(--font-body);
+  background: var(--px-ink); color: #fff; padding: .15em .55em; border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.35); display: flex; align-items: center; gap: .35em;
+}
+.tag.below { transform: translate(-50%, 0); }
+.tag .dot { width: .55em; height: .55em; border-radius: 50%; background: #4fd39a; flex: none; }
+.tag.away { background: rgba(40,44,62,.72); color: #c3c7d8; }
+.tag.away .dot { background: #8a90a8; }
+.tag.me { background: var(--px-blue); color: #fff; }
+.tag.me .dot { background: #fff; }
+.tag.me.away { background: rgba(61,107,255,.6); }
+
+/* ---------- pixel UI kit ---------- */
+.px-frame {
+  background: var(--px-paper); color: var(--px-ink);
+  box-shadow: 4px 0 0 0 var(--px-ink), -4px 0 0 0 var(--px-ink), 0 4px 0 0 var(--px-ink), 0 -4px 0 0 var(--px-ink);
+  filter: drop-shadow(0 8px 0 rgba(0,0,0,.35));
+}
+.px-title {
+  background: var(--px-wall); color: #fff; font: 14px/1 var(--font-pixel); letter-spacing: .06em;
+  padding: 10px 14px 9px; border-bottom: 4px solid var(--px-wall-lit); display: flex; align-items: center; gap: 10px;
+}
+.px-title .led { width: 8px; height: 8px; background: #4fd39a; box-shadow: 0 0 0 2px #1d6b45; }
+.px-title .when { margin-left: auto; font-size: 11px; color: #c9cde6; }
+.pxbtn {
+  font: 13px/1 var(--font-pixel); letter-spacing: .06em; cursor: pointer; border: 0; border-radius: 0;
+  padding: 12px 16px 13px; color: #fff; background: var(--px-blue);
+  box-shadow: inset -4px -4px 0 0 var(--px-blue-dk), 4px 0 0 0 var(--px-ink), -4px 0 0 0 var(--px-ink), 0 4px 0 0 var(--px-ink), 0 -4px 0 0 var(--px-ink);
+  margin: 4px;
+}
+.pxbtn:hover { filter: brightness(1.08); }
+.pxbtn:active { box-shadow: inset 4px 4px 0 0 var(--px-blue-dk), 4px 0 0 0 var(--px-ink), -4px 0 0 0 var(--px-ink), 0 4px 0 0 var(--px-ink), 0 -4px 0 0 var(--px-ink); transform: translateY(2px); }
+.pxbtn.alt { background: var(--px-sand); color: var(--px-ink); box-shadow: inset -4px -4px 0 0 var(--px-sand-dk), 4px 0 0 0 var(--px-ink), -4px 0 0 0 var(--px-ink), 0 4px 0 0 var(--px-ink), 0 -4px 0 0 var(--px-ink); }
+.pxbtn.alt:active { box-shadow: inset 4px 4px 0 0 var(--px-sand-dk), 4px 0 0 0 var(--px-ink), -4px 0 0 0 var(--px-ink), 0 4px 0 0 var(--px-ink), 0 -4px 0 0 var(--px-ink); }
+.pxbtn:disabled { opacity: .5; cursor: default; transform: none; }
+.pxbtn:focus-visible, .opt:focus-within { outline: 3px dashed #ffd166; outline-offset: 6px; }
+
+.lobby {
+  position: absolute; inset: 0; display: grid; place-items: center; border-radius: 10px;
+  background: rgba(12,14,24,.5); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); padding: 24px 16px; overflow: auto;
+}
+.lobby-card { width: min(460px, 100%); }
+.lobby-body { padding: 16px 16px 18px; display: grid; gap: 14px; }
+.lobby-body h2 { margin: 0; font: 18px/1.25 var(--font-pixel); letter-spacing: .02em; text-wrap: balance; }
+.lobby-body .sub { font-size: 13px; color: #4a4f68; margin-top: -6px; }
+.opts { display: grid; gap: 10px; border: 0; margin: 0; padding: 4px; }
+.opts legend { font: 11px var(--font-pixel); letter-spacing: .08em; color: #6b6f87; padding: 0; margin-bottom: 6px; }
+.opt {
+  position: relative; display: grid; grid-template-columns: 92px minmax(0, 1fr) 14px; gap: 12px; align-items: center;
+  padding: 8px 10px 8px 8px; background: var(--px-card); cursor: pointer;
+  box-shadow: 2px 0 0 0 var(--px-ink), -2px 0 0 0 var(--px-ink), 0 2px 0 0 var(--px-ink), 0 -2px 0 0 var(--px-ink), inset 0 -3px 0 0 #e8dcc2;
+}
+.opt input { position: absolute; opacity: 0; pointer-events: none; }
+.opt canvas { width: 92px; height: auto; image-rendering: pixelated; display: block; box-shadow: 0 0 0 2px var(--px-ink); }
+.opt .nm { font: 13px/1.2 var(--font-pixel); letter-spacing: .03em; }
+.opt .dt { font-size: 12px; color: #555a72; line-height: 1.35; margin-top: 3px; }
+.opt .dt b { color: var(--px-ink); font-weight: 600; }
+.opt .arrow { font: 12px var(--font-pixel); color: var(--px-blue); visibility: hidden; animation: blink 1s steps(2) infinite; }
+.opt:has(input:checked) { background: #e8eeff; box-shadow: 2px 0 0 0 var(--px-blue), -2px 0 0 0 var(--px-blue), 0 2px 0 0 var(--px-blue), 0 -2px 0 0 var(--px-blue), inset 0 -3px 0 0 #c9d5ff; }
+.opt:has(input:checked) .arrow { visibility: visible; }
+.opt.disabled { cursor: default; opacity: .6; }
+.opt.disabled .dt a { color: var(--px-blue); }
+.chip { display: inline-block; font: 10px/1 var(--font-pixel); padding: 3px 5px 2px; background: var(--px-green); color: #fff; margin-left: 6px; vertical-align: 2px; }
+.chip.warn { background: #b26b00; }
+@keyframes blink { 50% { visibility: hidden; } }
+@media (max-width: 480px) { .opt { grid-template-columns: 64px minmax(0,1fr) 12px; } .opt canvas { width: 64px; } }
+.lobby-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+@media (max-width: 600px) {
+  .stage.lobby-open { min-height: 0; }
+  .stage.lobby-open .stage-inner { display: none; }
+  .stage.lobby-open .lobby { position: relative; inset: auto; padding: 12px 6px 20px; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+
+.float-actions { position: absolute; top: 22px; right: 22px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.float-actions .pxbtn { padding: 9px 12px 10px; font-size: 11px; }
+.skip-hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); font: 10px var(--font-pixel); letter-spacing: .06em; color: #fff; background: var(--px-ink); padding: 6px 10px 5px; box-shadow: 2px 0 0 0 var(--px-ink), -2px 0 0 0 var(--px-ink); white-space: nowrap; }
+
+.toast {
+  position: absolute; left: 50%; top: 24px; transform: translateX(-50%); max-width: calc(100% - 48px);
+  background: var(--px-ink); color: #fff; padding: 9px 14px 8px; display: flex; gap: 10px; align-items: center;
+  font: 500 13px/1.3 var(--font-body);
+  box-shadow: 4px 0 0 0 var(--px-ink), -4px 0 0 0 var(--px-ink), 0 4px 0 0 #000, inset 0 -3px 0 0 #2d3146;
+}
+.toast .dot { width: 8px; height: 8px; background: #4fd39a; box-shadow: 0 0 0 2px #1d6b45; flex: none; }
+
+aside { display: grid; gap: 16px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
+.panel h3 { margin: 0; font: 700 15px/1.2 var(--font-display); display: flex; align-items: baseline; gap: 8px; }
+.panel h3 .count { margin-left: auto; font: 500 12px var(--font-body); color: var(--muted); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+ul.people { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+ul.people li { display: grid; grid-template-columns: 10px minmax(0,1fr) auto; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--line); }
+ul.people li:last-child { border-bottom: 0; }
+ul.people .s { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+ul.people li.away .s { background: transparent; border: 1.5px solid var(--away); }
+ul.people li.away .n { color: var(--muted); }
+ul.people .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+ul.people .n small { color: var(--muted); font-size: 12px; }
+ul.people .meta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+ul.people li.me .n { font-weight: 600; color: var(--accent); }
+.demo { display: grid; gap: 8px; }
+.demo button { width: 100%; text-align: left; font: 500 14px/1.3 var(--font-body); border-radius: 8px; padding: 9px 12px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.demo button:disabled { opacity: .45; cursor: default; }
+.demo button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+label.chk { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+.notes { font-size: 13px; color: var(--muted); }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.notes b { color: var(--fg); font-weight: 600; }
+.legend { display: flex; gap: 8px 14px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+@media (prefers-reduced-motion: reduce) { .opt .arrow { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header class="shell">
+    <span class="logo">simap</span>
+    <span class="crumb">Rooms / <b id="crumbRoom">R2 · Floor 3</b></span>
+    <span class="demo-badge">MOCKUP · fake data</span>
+  </header>
+
+  <div class="layout">
+    <section class="stage" id="stage" aria-label="Room map">
+      <div class="stage-inner">
+        <canvas id="map" width="512" height="384"></canvas>
+        <div class="tags" id="tags"></div>
+      </div>
+
+      <div class="float-actions" id="floatActions" hidden>
+        <button class="pxbtn" id="btnCheckinFloat">Check in</button>
+        <button class="pxbtn alt" id="btnRooms">Rooms</button>
+        <button class="pxbtn alt" id="btnCheckout" hidden>Check out</button>
+      </div>
+
+      <div class="toast" id="toast" hidden><span class="dot"></span><span id="toastText"></span></div>
+      <div class="skip-hint" id="skipHint" hidden>CLICK OR PRESS ANY KEY TO SKIP</div>
+
+      <div class="lobby" id="lobby">
+        <div class="lobby-card px-frame" role="dialog" aria-labelledby="lobbyTitle">
+          <div class="px-title"><span class="led"></span>CHECK-IN<span class="when" id="lobbyDate">THU 26 NOV</span></div>
+          <div class="lobby-body">
+            <h2 id="lobbyTitle">Good morning!</h2>
+            <div class="sub">Pick the room you are working from today.</div>
+            <fieldset class="opts" id="opts">
+              <legend>YOUR ROOMS</legend>
+            </fieldset>
+            <div class="lobby-actions">
+              <button class="pxbtn" id="btnCheckin">Check in</button>
+              <button class="pxbtn alt" id="btnLook">Just look</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="panel">
+        <h3>Who's here <span class="count" id="hereCount"></span></h3>
+        <ul class="people" id="people"></ul>
+        <div class="legend"><span><i style="background:var(--ok)"></i>checked in</span><span><i style="border:1.5px solid var(--away)"></i>away (assigned, not in yet)</span></div>
+      </div>
+
+      <div class="panel demo">
+        <div class="eyebrow">Demo controls</div>
+        <button id="dReset">↺ Start over (not checked in)</button>
+        <button id="dApi">⇢ Start as: already checked in by API (R2)</button>
+        <button id="dColleague">◉ Simulate: a colleague checks in via API</button>
+        <label class="chk"><input type="checkbox" id="dReduce"> Reduced motion (no walking)</label>
+      </div>
+
+      <div class="panel notes">
+        <div class="eyebrow">Mockup này thể hiện</div>
+        <ul>
+          <li><b>Popup check-in pixel</b>: khung viền pixel, title bar màu tường, nút bấm có bóng 3D, cùng bộ màu với phòng.</li>
+          <li><b>Chọn phòng</b>: liệt kê các phòng mình có seat, kèm thumbnail và số người đang có mặt. Đổi lựa chọn thì phòng phía sau đổi theo.</li>
+          <li><b>R1</b> bị khoá vì không có seat ở đó, có link xin seat. Câu hỏi mở: có cho check-in vào seat trống (hot-desk) không?</li>
+          <li><b>Mặc định chọn</b> phòng của lần check-in gần nhất, hoặc seat đầu tiên.</li>
+          <li><b>Đã check-in một phòng</b> thì phải check out trước khi sang phòng khác (một check-in mỗi lúc).</li>
+          <li><b>API đã check-in sẵn</b> thì bỏ qua popup, nhân vật ngồi sẵn.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+  const T = 32;
+  const $ = id => document.getElementById(id);
+  const canvas = $('map');
+  let ctx = canvas.getContext('2d');
+
+  // ---------- fake data ----------
+  const LOOKS = {
+    lan:   { skin: '#f1c7a5', hair: '#2b1d16', shirt: '#e07a5f', long: true },
+    minh:  { skin: '#e0ac85', hair: '#1a1a1a', shirt: '#3d5a80' },
+    huy:   { skin: '#d79b72', hair: '#3b2a20', shirt: '#81b29a' },
+    trang: { skin: '#f3cfb3', hair: '#5a3825', shirt: '#f2cc8f', long: true },
+    khoa:  { skin: '#e8b48f', hair: '#111', shirt: '#6d597a' },
+    vy:    { skin: '#f6d2b8', hair: '#7a4a2a', shirt: '#e56b6f', long: true },
+    phuc:  { skin: '#d9a179', hair: '#222', shirt: '#355070' },
+    ngoc:  { skin: '#f0c4a0', hair: '#1f1410', shirt: '#b56576', long: true },
+    bao:   { skin: '#dca47e', hair: '#2d2d2d', shirt: '#588157' },
+    quan:  { skin: '#e3ad86', hair: '#151515', shirt: '#457b9d' },
+    thao:  { skin: '#f4cdb0', hair: '#4a2e1f', shirt: '#9d8189', long: true },
+    duc:   { skin: '#dba27b', hair: '#222', shirt: '#2a9d8f' },
+    mai:   { skin: '#f2c9a8', hair: '#3a2418', shirt: '#e9c46a', long: true },
+    long:  { skin: '#d49b74', hair: '#111', shirt: '#264653' },
+    ha:    { skin: '#f5d0b5', hair: '#6b3e26', shirt: '#f4a261', long: true },
+    tam:   { skin: '#e2ab84', hair: '#1d1d1d', shirt: '#8d99ae' },
+    son:   { skin: '#d8a07a', hair: '#2a1a12', shirt: '#bc4749' },
+    me:    { skin: '#eab896', hair: '#1c1c2a', shirt: '#3d6bff' },
+  };
+  const ROOMS = [
+    {
+      id: 'r2', name: 'R2', floor: 'Floor 3', W: 16, H: 12, door: { x: 2, y: 1 }, cols: [4, 5, 6, 7, 10, 11, 12, 13],
+      windows: [9, 10, 13], board: { x: 4, w: 3 }, lounge: { x: 9, y: 9 }, tiles: ['#ece2d0', '#e5d9c4'],
+      props: [['plant', 1, 2], ['plant', 14, 2], ['plant', 1, 10], ['plant', 14, 7], ['shelf', 11, 2, 2], ['sofa', 10, 10, 3], ['table', 11, 9]],
+      my: 'R2-14', last: 'Last check-in: yesterday',
+      people: {
+        'R2-01': ['Lan', 'lan', 'here', '08:05', 'app'], 'R2-02': ['Minh', 'minh', 'away'], 'R2-04': ['Huy', 'huy', 'here', '08:21', 'API'],
+        'R2-05': ['Trang', 'trang', 'away'], 'R2-06': ['Khoa', 'khoa', 'here', '07:58', 'API'], 'R2-08': ['Vy', 'vy', 'away'],
+        'R2-09': ['Phúc', 'phuc', 'here', '08:30', 'app'], 'R2-11': ['Ngọc', 'ngoc', 'here', '08:12', 'API'], 'R2-12': ['Bảo', 'bao', 'away'],
+        'R2-13': ['Quân', 'quan', 'here', '08:40', 'app'], 'R2-14': ['You', 'me', 'away'], 'R2-16': ['Thảo', 'thao', 'here', '08:02', 'API'],
+      },
+    },
+    {
+      id: 'r5', name: 'R5', floor: 'Floor 5', W: 12, H: 10, door: { x: 9, y: 1 }, cols: [3, 4, 5, 7, 8],
+      windows: [2, 4, 6], board: null, lounge: null, tiles: ['#dfe4ef', '#d6dceb'],
+      props: [['plant', 1, 2], ['plant', 10, 8], ['shelf', 1, 8, 2], ['plant', 10, 4]],
+      my: 'R5-03', last: 'Lab room · last check-in 3 days ago',
+      people: {
+        'R5-01': ['Đức', 'duc', 'here', '08:10', 'API'], 'R5-02': ['Mai', 'mai', 'away'], 'R5-03': ['You', 'me', 'away'],
+        'R5-04': ['Long', 'long', 'here', '08:33', 'app'], 'R5-06': ['Hà', 'ha', 'here', '07:50', 'API'], 'R5-08': ['Tâm', 'tam', 'away'],
+        'R5-09': ['Sơn', 'son', 'here', '08:25', 'app'],
+      },
+    },
+  ];
+  const NO_SEAT_ROOM = { name: 'R1', floor: 'Floor 2', W: 12, H: 10, door: { x: 2, y: 1 }, cols: [3, 4, 7, 8], windows: [5, 6], board: null, lounge: null, tiles: ['#e8e3d6', '#e0dacb'], props: [['plant', 10, 2]], people: {} };
+
+  // ---------- room model ----------
+  const key = (x, y) => x + ',' + y;
+  function buildRoom(def) {
+    const { W, H, cols } = def;
+    const n = cols.length, seats = [];
+    cols.forEach((x, i) => seats.push({ code: def.name + '-' + String(i + 1).padStart(2, '0'), x, y: 4, side: 'n' }));
+    cols.forEach((x, i) => seats.push({ code: def.name + '-' + String(i + 1 + n).padStart(2, '0'), x, y: 7, side: 's' }));
+    const blocked = new Set();
+    for (let x = 0; x < W; x++) { blocked.add(key(x, 0)); blocked.add(key(x, 1)); blocked.add(key(x, H - 1)); }
+    for (let y = 0; y < H; y++) { blocked.add(key(0, y)); blocked.add(key(W - 1, y)); }
+    blocked.delete(key(def.door.x, def.door.y));
+    cols.forEach(x => { blocked.add(key(x, 5)); blocked.add(key(x, 6)); });
+    seats.forEach(s => blocked.add(key(s.x, s.y)));
+    const props = def.props.map(([type, x, y, w = 1]) => { for (let i = 0; i < w; i++) blocked.add(key(x + i, y)); return { type, x, y, w }; });
+    const room = { ...def, seats, byCode: Object.fromEntries(seats.map(s => [s.code, s])), blocked, propsList: props, occ: {} };
+    room.bg = paintBg(room);
+    return room;
+  }
+  function resetOcc(room) {
+    room.occ = {};
+    for (const [code, [name, look, status, time, src]] of Object.entries(room.people)) room.occ[code] = { name, look, status, time, src };
+  }
+
+  function paintBg(room) {
+    const { W, H, door } = room;
+    const c = document.createElement('canvas'); c.width = W * T; c.height = H * T;
+    const b = c.getContext('2d');
+    const r = (col, x, y, w, h) => { b.fillStyle = col; b.fillRect(x, y, w, h); };
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const lounge = room.lounge && x >= room.lounge.x && y >= room.lounge.y;
+      const col = lounge ? ((x + y) % 2 ? '#cfe5d6' : '#c6dfcf') : room.tiles[(x + y) % 2];
+      r(col, x * T, y * T, T, T);
+      if (!lounge) r('rgba(0,0,0,.035)', x * T, y * T + T - 1, T, 1);
+    }
+    if (room.lounge) { const { x, y } = room.lounge; r('#e9a6a6', x * T + 10, y * T + 6, 4 * T - 20, 2 * T - 10); r('#f3c4c4', x * T + 14, y * T + 10, 4 * T - 28, 2 * T - 18); }
+    r('#454a66', 0, 0, W * T, T); r('#5a6083', 0, T - 4, W * T, 4);
+    r('#cfcbe0', 0, T, W * T, T); r('#b9b4cf', 0, 2 * T - 6, W * T, 2); r('#6b6889', 0, 2 * T - 4, W * T, 4);
+    room.windows.forEach(x => { r('#7d86a8', x * T + 4, T + 4, 24, 20); r('#a9d8ff', x * T + 6, T + 6, 20, 16); r('#d8efff', x * T + 6, T + 6, 20, 5); r('#7d86a8', x * T + 15, T + 6, 2, 16); });
+    if (room.board) {
+      const bx = room.board.x * T, bw = room.board.w * T;
+      r('#9aa0b5', bx + 2, T + 3, bw - 4, 22); r('#fbfbff', bx + 4, T + 5, bw - 8, 18);
+      r('#e07a5f', bx + 10, T + 9, 22, 2); r('#3d6bff', bx + 10, T + 14, 34, 2); r('#81b29a', bx + 48, T + 9, 14, 10); r('#2b2d42', bx + 62, T + 12, 18, 2);
+    }
+    r('#6b4428', door.x * T + 2, T, 28, 28); r('#3a2516', door.x * T + 5, T + 3, 22, 25); r(room.tiles[0], door.x * T + 5, T + 26, 22, 6);
+    r('#ffd166', door.x * T + 22, T + 14, 2, 3);
+    r('#8a6f5a', door.x * T + 4, 2 * T + 2, 24, 10); r('#a58a73', door.x * T + 6, 2 * T + 4, 20, 6);
+    for (let y = 1; y < H; y++) { r('#454a66', 0, y * T, T, T); r('#454a66', (W - 1) * T, y * T, T, T); }
+    r('#5a6083', T - 4, T, 4, (H - 2) * T); r('#5a6083', (W - 1) * T, T, 4, (H - 2) * T);
+    r('#454a66', 0, (H - 1) * T, W * T, T); r('#5a6083', 0, (H - 1) * T, W * T, 3);
+    r('#1f9d63', door.x * T + 9, 6, 14, 7); r('#c8f7dc', door.x * T + 11, 8, 10, 3);
+    return c;
+  }
+
+  // ---------- drawing ----------
+  const R = (c, x, y, w, h) => { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); };
+  function drawDesk(x, row, present, t, phase) {
+    const px = x * T, py = row * T;
+    R('#a87445', px + 1, py + 22, 30, 6); R('#d4a373', px + 1, py + 2, 30, 21); R('#e6bd8e', px + 1, py + 2, 30, 1);
+    if (row === 5) { R('#c9ccd8', px + 10, py + 5, 12, 3); R('#2b2d42', px + 9, py + 12, 14, 9); R('#3c3f5a', px + 10, py + 13, 12, 1); }
+    else {
+      R('#2b2d42', px + 9, py + 1, 14, 11);
+      R(present ? (Math.floor(t / 420 + phase) % 3 === 0 ? '#9fe0ff' : '#7fc8f5') : '#4a4e66', px + 10, py + 2, 12, 8);
+      if (present) { R('#e8f7ff', px + 11, py + 4, 6, 1); R('#e8f7ff', px + 11, py + 6, 8, 1); }
+      R('#2b2d42', px + 15, py + 12, 2, 3); R('#c9ccd8', px + 10, py + 16, 12, 3);
+    }
+  }
+  function drawChair(s) {
+    const px = s.x * T, py = s.y * T;
+    if (s.side === 'n') { R('#33406a', px + 9, py + 4, 14, 5); R('#4a5a8a', px + 9, py + 9, 14, 11); }
+    else { R('#4a5a8a', px + 9, py + 6, 14, 12); R('#33406a', px + 9, py + 18, 14, 6); }
+    R('#22283f', px + 15, py + 24, 2, 4);
+  }
+  function drawProp(p) {
+    const px = p.x * T, py = p.y * T;
+    if (p.type === 'plant') {
+      R('rgba(0,0,0,.15)', px + 8, py + 27, 16, 3); R('#b5651d', px + 10, py + 18, 12, 10); R('#cf7a2e', px + 10, py + 18, 12, 2);
+      R('#3f8f4a', px + 8, py + 6, 16, 13); R('#56b061', px + 10, py + 3, 8, 10); R('#56b061', px + 16, py + 8, 7, 7); R('#2f7339', px + 12, py + 13, 6, 5);
+    } else if (p.type === 'shelf') {
+      R('#7a5232', px + 2, py - 6, p.w * T - 4, 34); R('#5e3e24', px + 4, py + 4, p.w * T - 8, 2); R('#5e3e24', px + 4, py + 15, p.w * T - 8, 2);
+      const books = ['#e07a5f', '#3d5a80', '#f2cc8f', '#81b29a', '#6d597a', '#e56b6f', '#355070'];
+      for (let i = 0; i < p.w * 4 + 1; i++) { R(books[i % 7], px + 6 + i * 6, py - 4, 4, 8); R(books[(i + 3) % 7], px + 6 + i * 6, py + 7, 4, 8); }
+    } else if (p.type === 'sofa') {
+      R('rgba(0,0,0,.15)', px + 2, py + 27, p.w * T - 4, 3); R('#5c6fb1', px + 2, py + 6, p.w * T - 4, 22); R('#7186cf', px + 6, py + 6, p.w * T - 12, 12);
+      R('#4a5a95', px + 2, py + 6, 5, 22); R('#4a5a95', px + p.w * T - 7, py + 6, 5, 22);
+    } else if (p.type === 'table') {
+      R('rgba(0,0,0,.15)', px + 4, py + 24, 24, 3); R('#a87445', px + 4, py + 10, 24, 14); R('#d4a373', px + 4, py + 8, 24, 12);
+      R('#fff', px + 9, py + 10, 5, 5); R('#c0392b', px + 10, py + 11, 3, 3);
+    }
+  }
+  function drawChar(cx, top, dir, look, o = {}) {
+    const s = o.s || 1;
+    ctx.globalAlpha = o.alpha == null ? 1 : o.alpha;
+    const shade = '#00000022';
+    if (!o.sitting) {
+      const f = o.walk || 0;
+      R('rgba(0,0,0,.18)', cx - 7, top + 27, 14, 3);
+      R('#33384f', cx - 4, top + 22, 3, f === 1 ? 4 : 5); R('#33384f', cx + 1, top + 22, 3, f === 2 ? 4 : 5);
+      R('#1c1f2e', cx - 4, top + (f === 1 ? 25 : 26), 3, 1); R('#1c1f2e', cx + 1, top + (f === 2 ? 25 : 26), 3, 1);
+    }
+    R(look.shirt, cx - 6, top + 13, 12, 10); R(shade, cx + 3, top + 13, 3, 10);
+    const ty = o.typing && o.typingFrame ? -1 : 0;
+    if (dir === 'side') {
+      const sw = (o.walk === 1 ? -1 : o.walk === 2 ? 1 : 0) * s;
+      R(look.shirt, cx - 1 + sw, top + 14, 3, 6); R(look.skin, cx - 1 + sw, top + 20, 3, 2);
+    } else {
+      R(look.shirt, cx - 8, top + 14 + ty, 2, 6); R(look.shirt, cx + 6, top + 14 - ty, 2, 6);
+      R(look.skin, cx - 8, top + 20 + ty, 2, 2); R(look.skin, cx + 6, top + 20 - ty, 2, 2);
+    }
+    R(look.skin, cx - 5, top + 2, 10, 10); R(shade, cx - 5, top + 11, 10, 1);
+    const h = look.hair;
+    if (dir === 'back') R(h, cx - 6, top + 1, 12, look.long ? 13 : 10);
+    else if (dir === 'front') {
+      R(h, cx - 5, top + 1, 10, 4); R(h, cx - 6, top + 2, 1, look.long ? 11 : 6); R(h, cx + 5, top + 2, 1, look.long ? 11 : 6);
+      R('#1b1b24', cx - 3, top + 7, 1, 2); R('#1b1b24', cx + 2, top + 7, 1, 2); R('#e89a8c', cx - 4, top + 9, 1, 1); R('#e89a8c', cx + 3, top + 9, 1, 1);
+    } else {
+      R(h, cx - 5, top + 1, 10, 4); R(h, s > 0 ? cx - 6 : cx + 2, top + 2, 4, look.long ? 11 : 7);
+      R('#1b1b24', cx + 3 * s - (s < 0 ? 1 : 0), top + 7, 1, 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+  const seatedTop = s => s.side === 'n' ? s.y * T + 12 : s.y * T - 10;
+
+  // draws one frame of a room into the current ctx
+  function renderScene(room, now, ws, highlightMine) {
+    ctx.drawImage(room.bg, 0, 0);
+    const mySeat = room.my && room.byCode[room.my];
+    if (highlightMine && mySeat) {
+      ctx.strokeStyle = `rgba(61,107,255,${0.35 + 0.25 * Math.sin(now / 300)})`; ctx.lineWidth = 2;
+      ctx.strokeRect(mySeat.x * T + 3, mySeat.y * T + 1, T - 6, T - 2);
+    }
+    const seated = code => { const o = room.occ[code]; return o && o.status === 'here' && !ws.some(w => w.code === code); };
+    const n = room.cols.length, list = [];
+    room.cols.forEach((x, i) => {
+      list.push({ y: 5 * T + 30, f: () => drawDesk(x, 5, seated(room.seats[i].code), now, i) });
+      list.push({ y: 6 * T + 30, f: () => drawDesk(x, 6, seated(room.seats[i + n].code), now, i + 2) });
+    });
+    room.seats.forEach(s => list.push({ y: s.y * T + 1, f: () => drawChair(s) }));
+    room.propsList.forEach(p => list.push({ y: p.y * T + 26, f: () => drawProp(p) }));
+    room.seats.forEach((s, idx) => {
+      if (!seated(s.code)) return;
+      list.push({ y: s.y * T + 20, f: () => drawChar(s.x * T + 16, seatedTop(s), s.side === 'n' ? 'front' : 'back', LOOKS[room.occ[s.code].look],
+        { sitting: true, typing: true, typingFrame: Math.floor(now / 260 + idx * 1.7) % 2 }) });
+    });
+    ws.forEach(w => list.push({ y: w.py + 28, f: () => drawChar(w.px + 16, w.py - 4 - w.bob, w.dir, LOOKS[room.occ[w.code].look], { walk: w.walk, s: w.s, alpha: w.alpha }) }));
+    list.sort((a, b) => a.y - b.y).forEach(d => d.f());
+  }
+
+  // ---------- path finding ----------
+  function bfs(room, from, to) {
+    const q = [from], prev = new Map([[key(from.x, from.y), null]]);
+    while (q.length) {
+      const c = q.shift();
+      if (c.x === to.x && c.y === to.y) break;
+      for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]]) {
+        const nx = c.x + dx, ny = c.y + dy, k = key(nx, ny);
+        if (nx < 0 || ny < 0 || nx >= room.W || ny >= room.H || prev.has(k)) continue;
+        if (room.blocked.has(k) && !(nx === to.x && ny === to.y)) continue;
+        prev.set(k, c); q.push({ x: nx, y: ny });
+      }
+    }
+    if (!prev.has(key(to.x, to.y))) return null;
+    const path = []; let c = to;
+    while (c) { path.unshift(c); c = prev.get(key(c.x, c.y)); }
+    return path;
+  }
+
+  // ---------- state ----------
+  const rooms = ROOMS.map(buildRoom);
+  const noSeat = buildRoom({ ...NO_SEAT_ROOM, id: 'r1' });
+  let cur = rooms[0];
+  let checkedIn = null; // room id I am checked in to
+  let walkers = [];
+  let mode = 'lobby';
+  let reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $('dReduce').checked = reduce;
+  const SPEED = 5.5;
+
+  function startWalk(code, direction, onDone) {
+    const s = cur.byCode[code];
+    const path = direction === 'in' ? bfs(cur, cur.door, s) : bfs(cur, s, cur.door);
+    if (!path || reduce) { onDone(); return; }
+    walkers = walkers.filter(w => w.code !== code);
+    walkers.push({ code, path, i: 0, t: 0, direction, onDone, born: performance.now(), px: path[0].x * T, py: path[0].y * T, bob: 0, walk: 0, dir: 'front', s: 1, alpha: 0 });
+    updateBusy();
+  }
+  function finishAll() { const ws = walkers; walkers = []; ws.forEach(w => w.onDone()); updateBusy(); }
+  const meWalking = () => walkers.some(w => w.code === cur.my);
+  function updateBusy() {
+    $('skipHint').hidden = !meWalking();
+    $('btnCheckinFloat').disabled = $('btnCheckout').disabled = $('btnRooms').disabled = meWalking();
+  }
+
+  // ---------- render loop ----------
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    for (const w of walkers.slice()) {
+      w.t += dt * SPEED;
+      while (w.t >= 1 && w.i < w.path.length - 1) { w.t -= 1; w.i++; }
+      const a = w.path[w.i], b = w.path[Math.min(w.i + 1, w.path.length - 1)];
+      const done = w.i >= w.path.length - 1, k = done ? 0 : w.t;
+      w.px = (a.x + (b.x - a.x) * k) * T; w.py = (a.y + (b.y - a.y) * k) * T;
+      const dx = b.x - a.x, dy = b.y - a.y;
+      w.dir = dy > 0 ? 'front' : dy < 0 ? 'back' : dx !== 0 ? 'side' : 'front';
+      w.s = dx < 0 ? -1 : 1;
+      w.walk = done ? 0 : (Math.floor(w.t * 4) % 2 ? 1 : 2);
+      w.bob = w.walk ? Math.floor(w.t * 4) % 2 : 0;
+      w.alpha = w.direction === 'in' ? Math.min(1, (now - w.born) / 300)
+        : (w.i >= w.path.length - 2 ? Math.max(0, 1 - (w.i - (w.path.length - 2) + w.t)) : 1);
+      if (done) { walkers = walkers.filter(x => x !== w); w.onDone(); updateBusy(); }
+    }
+    ctx = canvas.getContext('2d');
+    const mine = cur.my && cur.occ[cur.my];
+    renderScene(cur, now, walkers, mine && (mine.status !== 'here' || meWalking()));
+    positionTags();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- tags ----------
+  const tagsEl = $('tags');
+  let tagEls = {};
+  function buildTags() {
+    tagsEl.innerHTML = ''; tagEls = {};
+    for (const code of Object.keys(cur.occ)) { const el = document.createElement('div'); tagsEl.appendChild(el); tagEls[code] = el; }
+  }
+  function positionTags() {
+    for (const [code, el] of Object.entries(tagEls)) {
+      const o = cur.occ[code], s = cur.byCode[code], w = walkers.find(x => x.code === code);
+      let x, y, below = false;
+      if (w) { x = w.px + 16; y = w.py - 6; }
+      else if (s.side === 'n') { x = s.x * T + 16; y = s.y * T + 12; }
+      else { x = s.x * T + 16; y = s.y * T + 27; below = true; }
+      const here = o.status === 'here' || !!w, me = code === cur.my;
+      const cls = 'tag' + (below && !w ? ' below' : '') + (here ? '' : ' away') + (me ? ' me' : '');
+      if (el.className !== cls) el.className = cls;
+      const html = `<span class="dot"></span>${me ? 'You' : o.name}`;
+      if (el._h !== html) { el.innerHTML = html; el._h = html; }
+      el.style.left = (x / (cur.W * T) * 100) + '%';
+      el.style.top = (y / (cur.H * T) * 100) + '%';
+    }
+  }
+
+  // ---------- lobby (room picker) ----------
+  const hereCount = room => Object.entries(room.occ).filter(([c, o]) => o.status === 'here' && c !== room.my).length;
+  function thumb(room) {
+    const c = document.createElement('canvas'); c.width = room.W * T; c.height = room.H * T;
+    const saved = ctx; ctx = c.getContext('2d'); renderScene(room, 0, [], false); ctx = saved;
+    return c;
+  }
+  function buildOptions() {
+    const box = $('opts');
+    box.querySelectorAll('.opt').forEach(n => n.remove());
+    rooms.forEach(room => {
+      const lab = document.createElement('label'); lab.className = 'opt';
+      const isIn = checkedIn === room.id;
+      lab.innerHTML = `<input type="radio" name="room" id="room-${room.id}" value="${room.id}" ${room === cur ? 'checked' : ''}>
+        <span class="th"></span>
+        <span><span class="nm">${room.name} · ${room.floor.toUpperCase()}${isIn ? '<span class="chip">IN</span>' : ''}</span>
+        <div class="dt">Your seat <b>${room.my}</b> · ${hereCount(room)} here now<br>${room.last}</div></span>
+        <span class="arrow">◀</span>`;
+      lab.querySelector('.th').appendChild(thumb(room));
+      lab.querySelector('input').onchange = () => selectRoom(room);
+      box.appendChild(lab);
+    });
+    const lab = document.createElement('div'); lab.className = 'opt disabled';
+    lab.innerHTML = `<span class="th"></span><span><span class="nm">${noSeat.name} · ${noSeat.floor.toUpperCase()}<span class="chip warn">NO SEAT</span></span>
+      <div class="dt">You have no seat here. <a href="#" onclick="return false">Request a seat</a></div></span><span></span>`;
+    lab.querySelector('.th').appendChild(thumb(noSeat));
+    box.appendChild(lab);
+    syncLobbyButton();
+  }
+  function syncLobbyButton() {
+    const other = checkedIn && checkedIn !== cur.id;
+    const already = checkedIn === cur.id;
+    $('btnCheckin').disabled = !!other;
+    $('btnCheckin').textContent = already ? `Enter ${cur.name}` : `Check in to ${cur.name}`;
+    $('lobbyTitle').textContent = other ? `You are checked in to ${rooms.find(r => r.id === checkedIn).name}. Check out first.` : greeting();
+  }
+  function selectRoom(room) {
+    walkers = []; cur = room;
+    canvas.width = room.W * T; canvas.height = room.H * T;
+    $('crumbRoom').textContent = `${room.name} · ${room.floor}`;
+    buildTags(); syncLobbyButton(); syncUI();
+  }
+  function greeting() { const h = new Date().getHours(); return (h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening') + '!'; }
+  function openLobby() { mode = 'lobby'; buildOptions(); syncUI(); setTimeout(() => $('room-' + cur.id)?.focus(), 0); }
+
+  // ---------- side panel + chrome ----------
+  function renderPeople() {
+    const list = Object.entries(cur.occ).sort(([ac, a], [bc, b]) => (a.status === 'here' ? 0 : 1) - (b.status === 'here' ? 0 : 1) || (ac === cur.my ? -1 : bc === cur.my ? 1 : 0) || ac.localeCompare(bc));
+    $('hereCount').textContent = `${list.filter(([, o]) => o.status === 'here').length} of ${list.length} in ${cur.name}`;
+    $('people').innerHTML = list.map(([code, o]) => {
+      const me = code === cur.my, here = o.status === 'here';
+      return `<li class="${here ? '' : 'away'} ${me ? 'me' : ''}"><span class="s"></span><span class="n">${me ? 'You' : o.name} ${here ? '<small>· ' + code + '</small>' : ''}</span><span class="meta">${here ? o.time + ' · ' + o.src : code}</span></li>`;
+    }).join('');
+  }
+  let toastTimer;
+  function toast(msg) { $('toastText').textContent = msg; $('toast').hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').hidden = true, 3200); }
+  const nowHHMM = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+  function syncUI() {
+    const meHere = checkedIn === cur.id;
+    $('lobby').hidden = mode !== 'lobby';
+    $('stage').classList.toggle('lobby-open', mode === 'lobby');
+    $('floatActions').hidden = mode === 'lobby';
+    $('btnCheckinFloat').hidden = meHere || !!checkedIn;
+    $('btnCheckout').hidden = !meHere;
+    $('btnRooms').hidden = meHere;
+    $('dColleague').disabled = !Object.entries(cur.occ).some(([c, o]) => c !== cur.my && o.status === 'away');
+    renderPeople(); updateBusy();
+  }
+
+  // ---------- actions ----------
+  function checkIn() {
+    if (checkedIn === cur.id) { mode = 'room'; syncUI(); return; }
+    if (checkedIn) return;
+    mode = 'room'; checkedIn = cur.id;
+    Object.assign(cur.occ[cur.my], { status: 'here', time: nowHHMM(), src: 'app' });
+    const room = cur;
+    startWalk(cur.my, 'in', () => { if (cur === room) toast(`Checked in at ${room.occ[room.my].time} · ${room.name} · seat ${room.my}`); syncUI(); });
+    syncUI();
+  }
+  function checkOut() {
+    const room = cur;
+    startWalk(cur.my, 'out', () => { room.occ[room.my].status = 'away'; checkedIn = null; toast('Checked out. See you tomorrow!'); syncUI(); });
+    syncUI();
+  }
+  $('btnCheckin').onclick = checkIn;
+  $('btnCheckinFloat').onclick = checkIn;
+  $('btnCheckout').onclick = checkOut;
+  $('btnRooms').onclick = openLobby;
+  $('btnLook').onclick = () => { mode = 'room'; syncUI(); };
+  function resetAll() { walkers = []; rooms.forEach(resetOcc); resetOcc(noSeat); checkedIn = null; $('toast').hidden = true; }
+  $('dReset').onclick = () => { resetAll(); selectRoom(rooms[0]); openLobby(); };
+  $('dApi').onclick = () => {
+    resetAll(); selectRoom(rooms[0]);
+    Object.assign(cur.occ[cur.my], { status: 'here', time: '08:15', src: 'API' }); checkedIn = cur.id; mode = 'room';
+    toast('Checked in at 08:15 by the access gate (API)'); syncUI();
+  };
+  $('dColleague').onclick = () => {
+    const entry = Object.entries(cur.occ).find(([c, o]) => c !== cur.my && o.status === 'away');
+    if (!entry) return;
+    const [code, o] = entry;
+    if (mode === 'lobby') mode = 'room';
+    Object.assign(o, { status: 'here', time: nowHHMM(), src: 'API' });
+    startWalk(code, 'in', () => { toast(`${o.name} just checked in (API)`); syncUI(); });
+    syncUI();
+  };
+  $('dReduce').onchange = e => { reduce = e.target.checked; if (reduce) finishAll(); };
+  $('stage').addEventListener('click', e => { if (!e.target.closest('button, .lobby') && meWalking()) finishAll(); });
+  addEventListener('keydown', e => { if (meWalking() && !e.target.closest?.('button')) finishAll(); });
+
+  $('lobbyDate').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
+
+  resetAll(); selectRoom(rooms[0]); openLobby();
+  requestAnimationFrame(frame);
+})();
+</script>
