@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | db, api, architecture, security |
@@ -67,5 +67,6 @@ D79 (UTC+7 work day, D35), D81 (same-day reopen), D82 (losing the seat ends the 
 - `pnpm schema:check` against the local DB.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-5): "duyệt plan SIM-058 theo mặc định"; Q1 default: one PR (no SIM-058.1 split); Q2 default: forced room delete also ends presence (D82).
 
 ## Handoff
