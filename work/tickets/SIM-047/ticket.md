@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P3 |
 | Size | M |
 | Areas | db, api, ui, ux |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T05:22:24Z |
+| Claimed by | claude@2026-11-26T05:48:26Z |
 | PR | — |
 
 ## Goal
@@ -48,5 +48,6 @@ derived from their account id.
 - Manual: change the look, open a room map in another session, reset.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-1; Ming: "duyệt hết theo mặc định", assumptions 1–11 with defaults; split into SIM-047 slice A + SIM-047.1).
 
 ## Handoff
