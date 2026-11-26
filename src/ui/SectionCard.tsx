@@ -13,6 +13,7 @@ export function SectionCard({
   aside,
   footer,
   divided = true,
+  flush = false,
   className = "",
   children,
 }: {
@@ -24,6 +25,8 @@ export function SectionCard({
   aside?: ReactNode;
   footer?: ReactNode;
   divided?: boolean;
+  /** The body has no padding, so a table can run edge to edge. */
+  flush?: boolean;
   className?: string;
   children: ReactNode;
 }) {
@@ -32,7 +35,7 @@ export function SectionCard({
       <section aria-labelledby={headingId}>
         <div
           className={[
-            "flex items-start justify-between gap-3 p-4 sm:p-5",
+            "flex flex-wrap items-start justify-between gap-3 p-4 sm:p-5",
             divided ? "border-b border-outline-variant" : "",
           ].join(" ")}
         >
@@ -48,7 +51,7 @@ export function SectionCard({
           </div>
           {aside}
         </div>
-        <div className="p-4 sm:p-5">{children}</div>
+        <div className={flush ? "" : "p-4 sm:p-5"}>{children}</div>
         {footer && <div className="border-t border-outline-variant p-4 sm:p-5">{footer}</div>}
       </section>
     </Card>
