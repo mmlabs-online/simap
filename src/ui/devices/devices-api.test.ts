@@ -332,3 +332,24 @@ describe("devices-api history", () => {
     expect(await missing.api.history("d1")).toEqual({ ok: false, code: "not_found" });
   });
 });
+
+describe("devices-api listMine", () => {
+  it("GET /api/devices/mine; the cursor is encoded", async () => {
+    const { api, calls } = fake(() => jsonRes({ items: [], nextCursor: null }));
+    await api.listMine();
+    await api.listMine("a b/c");
+    expect(calls.map((c) => c[0])).toEqual([
+      "/api/devices/mine",
+      "/api/devices/mine?cursor=a%20b%2Fc",
+    ]);
+    expect(calls[0][1]?.method).toBe("GET");
+  });
+  it("returns the page; a malformed body is internal; an error code passes through", async () => {
+    const ok = fake(() => jsonRes({ items: [], nextCursor: "n" }));
+    expect(await ok.api.listMine()).toEqual({ ok: true, value: { items: [], nextCursor: "n" } });
+    const bad = fake(() => jsonRes({ items: [] }));
+    expect(await bad.api.listMine()).toEqual({ ok: false, code: "internal" });
+    const err = fake(() => jsonRes({ error: { code: "forbidden" } }, 403));
+    expect(await err.api.listMine()).toEqual({ ok: false, code: "forbidden" });
+  });
+});

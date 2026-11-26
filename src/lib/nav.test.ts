@@ -4,14 +4,14 @@ import { deviceDetailHref, isActive, navItemsFor, roomDetailHref, roomEditorHref
 const ids = (tier: Parameters<typeof navItemsFor>[0]) => navItemsFor(tier).map((i) => i.id);
 
 describe("navItemsFor", () => {
-  it("user sees dashboard, search, rooms, devices, members, myRequests only", () => {
+  it("user sees dashboard, search, rooms, members, myRequests, portal (no devices)", () => {
     expect(ids("user")).toEqual([
       "dashboard",
       "search",
       "rooms",
-      "devices",
       "members",
       "myRequests",
+      "portal",
     ]);
   });
   it("manager adds approvals but not the editor", () => {
@@ -22,6 +22,7 @@ describe("navItemsFor", () => {
       "devices",
       "members",
       "myRequests",
+      "portal",
       "approvals",
     ]);
   });
@@ -30,7 +31,7 @@ describe("navItemsFor", () => {
       expect(ids(tier)).not.toContain("groups");
   });
   it("admin sees all items incl. roomEditor", () => {
-    expect(ids("admin")).toHaveLength(11);
+    expect(ids("admin")).toHaveLength(12);
     expect(ids("admin")).toContain("roomEditor");
   });
   it("audit is admin only", () => {
@@ -57,6 +58,7 @@ describe("navItemsFor", () => {
       "devices",
       "members",
       "myRequests",
+      "portal",
       "approvals",
       "audit",
       "deviceTypes",
@@ -113,7 +115,13 @@ describe("deviceDetailHref", () => {
   it("deviceDetailHref encodes the id; isActive marks Devices on /devices/<id>", () => {
     expect(deviceDetailHref("abc")).toBe("/devices/abc");
     expect(deviceDetailHref("a/b c")).toBe("/devices/a%2Fb%20c");
-    const devices = navItemsFor("user").find((i) => i.id === "devices")!;
+    const devices = navItemsFor("manager").find((i) => i.id === "devices")!;
     expect(isActive(devices, "/devices/abc")).toBe(true);
+  });
+  it("every tier has portal; isActive on /portal", () => {
+    for (const tier of ["user", "manager", "admin"] as const) expect(ids(tier)).toContain("portal");
+    const portal = navItemsFor("user").find((i) => i.id === "portal")!;
+    expect(isActive(portal, "/portal")).toBe(true);
+    expect(isActive(portal, "/requests")).toBe(false);
   });
 });

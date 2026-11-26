@@ -24,7 +24,7 @@ import type { RefreshFn } from "./useDeviceDetail";
 import { useSetHandoffBadge } from "./useHandoffBadge";
 
 /**
- * Dialog host for the device detail page. It repeats the wiring of `DevicesPage` on purpose (plan A1); a shared host is a follow-up.
+ * Dialog host for the device detail page and for My Portal > My devices. It repeats the wiring of `DevicesPage` on purpose (plan A1); a shared host is a follow-up.
  */
 export function useDeviceDetailActions({
   api,
