@@ -27,7 +27,7 @@ Runbooks (this checklist links to them and does not repeat their steps):
 
 - [ ] **1. Identity app `simap`**
   - Owner: Ming (verifies; registered in M-1)
-  - Check: origin `https://simap.mmlabs.online`; `org_mode=required`; roles per D14 (`simap:admin` owner role,
+  - Check: origin `https://simap.mmlabs.online`; `org_mode=required`; roles per D14 (`simap:member` app-scope default, `simap:admin` owner role,
     `simap:manager`, `simap:user`; `simap:org:invite` on admin and manager); the email-link base for verify-email,
     reset-password and accept-invitation is `https://simap.mmlabs.online` (A4). A forgot-password email for a test
     account opens `https://simap.mmlabs.online/reset-password#token=...`.
@@ -47,13 +47,17 @@ Runbooks (this checklist links to them and does not repeat their steps):
 
 - [ ] **4. Database**
   - Owner: Ming
-  - Check: `select version();` reports 13 or newer; the `simap` role owns database `simap`; the `pg-backup` sidecar is
-    healthy.
+  - Check: `select version();` reports 13 or newer; the `pg-backup` sidecar is healthy; and, as an admin role:
+    - `select rolsuper, rolcreatedb, rolcreaterole, rolbypassrls from pg_roles where rolname = 'simap';` returns all
+      `false`;
+    - `select datname from pg_database where datdba = 'simap'::regrole;` returns only `simap`;
+    - `select datname from pg_database where has_database_privilege('simap', datname, 'CONNECT');` returns only
+      `simap` (template databases aside), so the role cannot reach other apps' databases.
   - Refs: M-3, M-6 (Postgres check)
 
 - [ ] **5. Secrets**
   - Owner: Ming
-  - Check: the Docker Hub repository `mingming21400/simap` exists. The simap repo has the secrets `DOCKERHUB_USERNAME`,
+  - Check: the release image repository on Docker Hub (see [README.md](../README.md#production-image)) exists. The simap repo has the secrets `DOCKERHUB_USERNAME`,
     `DOCKERHUB_TOKEN` and `DEPLOY_REPO_TOKEN`; the deployment repo has the four Drive secrets `SIMAP_GOOGLE_CLIENT_ID`,
     `SIMAP_GOOGLE_CLIENT_SECRET`, `SIMAP_GOOGLE_REFRESH_TOKEN` and `SIMAP_DRIVE_FOLDER_ID` (all or none). Check names
     only; never paste values.
@@ -69,7 +73,9 @@ Runbooks (this checklist links to them and does not repeat their steps):
 - [ ] **7. Runner safety**
   - Owner: Ming
   - Check: GitHub settings that keep fork code off the production runner are confirmed (item M-76 in
-    `work/ming-todo.md`), before any `release/*` push.
+    `work/ming-todo.md`), before any `release/*` push. The same fork-PR setting is off on `mmlabs-online/deployment`,
+    and no workflow there that runs on the production runner has a `pull_request` or `pull_request_target` trigger
+    without a same-repo guard.
   - Refs: M-76, D60
 
 - [ ] **8. First release**
@@ -130,7 +136,14 @@ shared `pgdata`. Spec §8: rollback is the previous image, or fix forward, or re
 - remove the tunnel route for `simap.mmlabs.online` so users see nothing while you fix it;
 - restore the `deploy-simap` dump (see `ops/backup/RESTORE.md` in `mmlabs-online/deployment`);
 - on the first release only, when the `simap` database holds no real data, drop and recreate the empty `simap`
-  database.
+  database. Ming only, as an admin role on the shared Postgres, and only after the `deploy-simap` dump exists. The only
+  drop statement is `drop database simap;`. Recreate it through `bash postgres/scripts/add-app-db.sh simap` in
+  `mmlabs-online/deployment` (or `create database simap owner simap;` then
+  `revoke connect, temporary on database simap from public;`), then run item 4's checks again.
+
+**`restore-failed`.** The new image failed its health check and restoring the previous image failed too. Nothing was
+pushed and simap may be down. Check the `deploy-simap` run log, then fix forward with a new release or take the tunnel
+route down, as in the first-release options above. See the deployment README.
 
 **Later releases.**
 - Automatic: if the new container fails its health check, `deploy-simap` restores the previous release.
@@ -146,8 +159,11 @@ SIM-011 A4 lets a Manager deactivate Admins. If every Manager or above is deacti
 through the app. Ming recovers with one SQL statement run through the pg-tunnel (D56) as the `simap` role:
 
 ```sql
+begin;
 update members set status = 'active', updated_at = now()
 where org_id = '<org uuid>' and sub = '<admin sub>';
+-- expect: UPDATE 1. Anything else: rollback; and recheck the placeholders.
+commit;
 ```
 
 Table and columns: `db/migrations/20261120150000_init.sql` (members). The deny-list reads `members.status` on each
