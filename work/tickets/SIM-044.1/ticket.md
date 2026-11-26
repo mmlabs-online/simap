@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | M |
 | Areas | api, architecture, security |
@@ -11,7 +11,7 @@
 | Needs Ming | M-88 |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-26T05:09Z |
 | PR | — |
 
 ## Goal
@@ -50,6 +50,7 @@ Seat, member and layout responses no longer reveal other members' devices to a U
 
 ## Notes / answers from Ming
 Waiting for Ming: plan approval (P1 gate)
+- Plan approved (2026-11-26), Ming: "duyệt SIM-044.1, dùng mặc định" — all six defaults in plan.md "Questions for Ming at approval".
 
 ## Handoff
 
