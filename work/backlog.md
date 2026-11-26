@@ -125,7 +125,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-044 | Restrict User device visibility and add a "my devices" API | MERGED | P1 | M | api, architecture, security | — | plan-approval | 1 | 2026-11-26 |
 | SIM-044.1 | Limit device data in seat, member and layout responses for Users | MERGED | P1 | M | api, architecture, security | SIM-044 | plan-approval | 0 | 2026-11-26 |
 | SIM-045 | My Portal part 1: My seat, My devices, display name | MERGED | P2 | M | ui, ux | SIM-044 | none | 1 | 2026-11-26 |
-| SIM-045.1 | My Portal: My seat tab | IN_PROGRESS | P2 | S | ui | SIM-045 | none | 0 | 2026-11-26 |
+| SIM-045.1 | My Portal: My seat tab | DONE | P2 | S | ui | SIM-045 | none | 0 | 2026-11-26 |
 | SIM-046 | Profile photo upload | IN_PROGRESS | P3 | M | api, db, ui, security | SIM-045 | plan-approval | 0 | 2026-11-26 |
 | SIM-046.1 | Profile photo in the Profile tab and the shell avatar | BACKLOG | P3 | M | ui | SIM-046, SIM-045.1 | none | 0 | 2026-11-26 || SIM-046.2 | Profile photos in member lists, member card and seat panel | BACKLOG | P2 | M | ui, api | SIM-046, SIM-044.1 | none | 0 | 2026-11-26 |
 | SIM-046.2 | Profile photos in member lists, member card and seat panel | BACKLOG | P3 | M | ui, api | SIM-046, SIM-044.1 | none | 0 | 2026-11-26 |
