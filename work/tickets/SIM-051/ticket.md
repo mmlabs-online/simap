@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T08:09Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/128 |
 
 ## Goal
 A User acting on a device they do not hold gets the same 404 as for an unknown id, so writes no longer reveal that a
@@ -49,3 +49,9 @@ device exists (follow-up Q10 of SIM-044).
 - Plan approved (2026-11-26, batch 2026-11-26-2): "duyệt hết theo mặc định"; plan assumptions accepted (handoff party keeps 422, no member row = holds nothing).
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 4, ~214k tokens (planner×1 sonnet 48k, implementer×1 default 65k, reviewer×1 default 51k, security-ai-generated-code-auditor×1 default 50k; consult skipped, fast lane; batch 2026-11-26-2).
+- Done: hidden-device/handoff 404 for Users on edit, place, transfer, return, extension, cancel, decline, confirm; tests; review PASS attempt 1; PR #128.
+- In progress / next: Ming merges PR #128; consider a follow-up for the device dialogs treating `not_found` as done, and the inventory-number oracle (security F1).
+- Gotchas: unowned device now 404 for Users (was 422 `device_unowned`).
