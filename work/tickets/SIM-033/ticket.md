@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | ui, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-22 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-26T00:58:18Z |
 | PR | — |
 
 ## Goal
@@ -48,6 +48,7 @@ Production shows the real sprites of the bundled package (the library behind the
 - 2026-11-26: The repo is PUBLIC (gh repo view), contrary to D45/D60; CREDITS.md:16 also says public. Ming: "Anh sẽ chuyển repo sang private" (M-77). The atlas commit (4383539) was already pushed while the repo was public. The PR must not open until the repo is private.
 - 2026-11-26: Ming: "ignore đi tôi chuyển private sau. hãy làm như thể repo đã private" — proceed as if the repo is private; M-77 stays open for Ming and does not block the PR.
 Waiting for Ming: plan approval (High tier) — M-78.
+Plan approved (2026-11-26, Ming: "duyệt SIM-033" — assumptions A1–A8 as written).
 - 2026-11-25: re-scoped to D66 (bundled package committed; per-item art moves to SIM-039.x).
 - 2026-11-25: D64 replaces the single-pack plan (M-9/M-10 not needed). Re-scope this ticket before running it: Admins pick art per item from a bundled package or a custom image.
 - 2026-11-22 (D58): created from the art review. Waits for M-10.
