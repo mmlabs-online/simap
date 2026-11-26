@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/141 |
 
 ## Goal
 A member who has not checked in today gets a pixel-style popup on the room view that lists their rooms and checks
@@ -56,5 +56,12 @@ D76.
 - Manual: User with two rooms, check in, reload (no popup); 390 px; keyboard only.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-6): "duyệt hết theo mặc định"; Q1 default (SIM-060 after Ming merges SIM-059); Q2 one PR in two ordered commits (A, B); Q3 global `--px-wall` title bar, per-room colour as follow-up.
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 5, ~318k tokens (frontend-developer×1 default 33k, ux-architect×1 default 40k, planner×1 default 100k, implementer×1 default 105k, reviewer×1 default 72k; batch 2026-11-26-6).
+- Done: client presence data layer (presence-api, useMyPresence, useRoomPresence), floating check-in button, pixel check-in popup; committed as slice A + slice B; review PASS attempt 1; PR #141.
+- In progress / next: Ming merges PR #141; then SIM-060 is rebased and built (`/run-batch --resume`).
+- Gotchas: focus, Escape and 390 px are checked by hand (no DOM in Vitest).

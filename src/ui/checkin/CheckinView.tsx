@@ -11,7 +11,7 @@ export type CheckinViewState =
   | { kind: "noSeat" }
   | { kind: "room"; roomHeading: string; map: ReactNode };
 
-/** The slot for the floating Check in / Check out button (SIM-058/059 fill it). Empty here. */
+/** The slot for the floating Check in / Check out button (filled by `CheckinButton`, SIM-059). */
 export function CheckinButtonSlot({ children }: { children?: ReactNode }) {
   return (
     <div
@@ -24,7 +24,15 @@ export function CheckinButtonSlot({ children }: { children?: ReactNode }) {
 }
 
 /** The check-in room view. Pure: state and slots come from props. */
-export function CheckinView({ state, switcher }: { state: CheckinViewState; switcher: ReactNode }) {
+export function CheckinView({
+  state,
+  switcher,
+  button,
+}: {
+  state: CheckinViewState;
+  switcher: ReactNode;
+  button?: ReactNode;
+}) {
   const headingId = useId();
   let body: ReactNode;
   if (state.kind === "loading") {
@@ -78,7 +86,7 @@ export function CheckinView({ state, switcher }: { state: CheckinViewState; swit
       <h1 className="text-xl font-extrabold text-on-surface">{checkinCopy.title}</h1>
       <div className="flex items-center gap-2">{switcher}</div>
       {body}
-      <CheckinButtonSlot />
+      <CheckinButtonSlot>{button}</CheckinButtonSlot>
     </div>
   );
 }
