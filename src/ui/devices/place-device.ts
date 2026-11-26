@@ -1,3 +1,4 @@
+import type { Tier } from "@/lib/auth/tier";
 import { decidePlacement, type PlacementRefusalCode } from "@/lib/devices/rules";
 import type { DeviceDto, DeviceRole } from "@/lib/devices/types";
 import type { SeatDto } from "@/lib/seats/types";
@@ -26,12 +27,26 @@ export function seatTarget(seat: SeatDto) {
   };
 }
 
+/**
+ * D72: a User may place only on a seat they occupy. For a User the caller is the owner (`canPlace` is
+ * owner-only for them), so the seat's occupant is compared with the owner. Manager+ see every seat (D19).
+ */
+export function ownSeats(d: DeviceDto, seats: SeatDto[], tier: Tier): SeatDto[] {
+  if (tier !== "user") return seats;
+  return seats.filter((s) => s.occupant !== null && s.occupant.id === d.owner?.id);
+}
+
 /** Why the device cannot be primary on this seat, or null. One rule (lib); the server stays the guard. */
-export function primaryRefusal(d: DeviceDto, seat: SeatDto): PlacementRefusalCode | null {
+export function primaryRefusal(
+  d: DeviceDto,
+  seat: SeatDto,
+  tier: Tier,
+): PlacementRefusalCode | null {
   const decision = decidePlacement({
     // Permission is the server's `canPlace`, already true when the dialog opens.
-    tier: "user",
+    tier,
     isOwner: true,
+    callerId: d.owner?.id ?? null,
     deviceId: d.id,
     ownerId: d.owner?.id ?? null,
     current: { seatId: d.placement?.seatId ?? null, role: d.placement?.role ?? "secondary" },
@@ -42,8 +57,8 @@ export function primaryRefusal(d: DeviceDto, seat: SeatDto): PlacementRefusalCod
   return decision.kind === "refuse" ? decision.code : null;
 }
 
-export function offeredRoles(d: DeviceDto, seat: SeatDto): DeviceRole[] {
-  return primaryRefusal(d, seat) === null ? ["secondary", "primary"] : ["secondary"];
+export function offeredRoles(d: DeviceDto, seat: SeatDto, tier: Tier): DeviceRole[] {
+  return primaryRefusal(d, seat, tier) === null ? ["secondary", "primary"] : ["secondary"];
 }
 
 export function placeVerb(d: DeviceDto, seat: SeatDto | null): "place" | "move" | "lend" {
@@ -71,13 +86,15 @@ export function planSubmit(
   mode: PlaceMode,
   seat: SeatDto | null,
   role: DeviceRole,
+  tier: Tier,
 ): SubmitPlan {
   if (mode === "return") return { kind: "send", body: toPlacementBody(d, null) };
   if (!seat) return { kind: "invalid", message: devicesCopy.place.pickSeat };
-  const chosen = offeredRoles(d, seat).includes(role) ? role : "secondary";
+  const chosen = offeredRoles(d, seat, tier).includes(role) ? role : "secondary";
   const decision = decidePlacement({
-    tier: "user",
+    tier,
     isOwner: true,
+    callerId: d.owner?.id ?? null,
     deviceId: d.id,
     ownerId: d.owner?.id ?? null,
     current: { seatId: d.placement?.seatId ?? null, role: d.placement?.role ?? "secondary" },

@@ -247,6 +247,7 @@ export const devicesCopy = {
     seatsLoading: "Loading seats…",
     seatsError: "Could not load the seats.",
     seatsEmpty: "This room has no seats.",
+    noOwnSeats: "You don't occupy a seat in this room.",
     seatsTruncated: (n: number) => `Showing the first ${n} seats.`,
     pickRoom: "Choose a room",
     pickSeat: "Choose a seat.",

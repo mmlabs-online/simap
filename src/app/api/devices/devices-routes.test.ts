@@ -134,6 +134,13 @@ describe("devices routes", () => {
     expect(g.status).toBe(404);
     for (const r of [p, g]) expect(r.headers.get("Cache-Control")).toBe("no-store");
   });
+
+  it("422 seat_not_yours passes through", async () => {
+    fakeAuth(["simap:user"]);
+    svc.placeDevice.mockResolvedValue({ ok: false, status: 422, code: "seat_not_yours" });
+    const p = await PUT(req("PUT", undefined, okPut), idRoute);
+    expect([p.status, await p.json()]).toEqual([422, { error: { code: "seat_not_yours" } }]);
+  });
 });
 
 describe("devices write routes", () => {

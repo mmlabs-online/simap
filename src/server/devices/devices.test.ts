@@ -152,7 +152,7 @@ describe("placeDevice refusals", () => {
       notOcc.db,
       scope,
       ACTOR,
-      "user",
+      "manager",
       DEV,
       put({ seatId: SEAT_A, role: "primary", expectedSeatId: null }),
     );
@@ -163,6 +163,23 @@ describe("placeDevice refusals", () => {
       expect(s).toContain("rollback");
       expect(s).not.toContain("commit");
     }
+  });
+
+  it("seat_not_yours writes nothing: no update, no audit insert (D72)", async () => {
+    const t = fakeDb(base({ occupant: OTHER }));
+    const r = await placeDevice(
+      t.db,
+      scope,
+      ACTOR,
+      "user",
+      DEV,
+      put({ seatId: SEAT_A, role: "secondary", expectedSeatId: null }),
+    );
+    expect(r).toEqual({ ok: false, status: 422, code: "seat_not_yours" });
+    const s = t.sqls();
+    expect(s.some((q) => q.startsWith("update ") || q.startsWith("insert into"))).toBe(false);
+    expect(s).toContain("rollback");
+    expect(s).not.toContain("commit");
   });
 
   it("the unlocked seat_id differs from the locked one -> 409 placement_changed", async () => {

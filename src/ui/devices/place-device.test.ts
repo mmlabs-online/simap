@@ -5,6 +5,7 @@ import { apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
 import {
   offeredRoles,
+  ownSeats,
   placeModes,
   placeVerb,
   planSubmit,
@@ -79,25 +80,58 @@ describe("placeModes", () => {
 
 describe("offeredRoles and primaryRefusal", () => {
   it("empty seat: secondary only", () => {
-    expect(offeredRoles(device(), seat())).toEqual(["secondary"]);
-    expect(primaryRefusal(device(), seat())).toBe("seat_has_no_occupant");
+    expect(offeredRoles(device(), seat(), "manager")).toEqual(["secondary"]);
+    expect(primaryRefusal(device(), seat(), "manager")).toBe("seat_has_no_occupant");
   });
   it("owner at the seat, no primary: both", () => {
-    expect(offeredRoles(device(), seat({ occupant: owner }))).toEqual(["secondary", "primary"]);
-    expect(primaryRefusal(device(), seat({ occupant: owner }))).toBeNull();
+    expect(offeredRoles(device(), seat({ occupant: owner }), "manager")).toEqual([
+      "secondary",
+      "primary",
+    ]);
+    expect(primaryRefusal(device(), seat({ occupant: owner }), "manager")).toBeNull();
   });
   it("another member at the seat: secondary only (lend)", () => {
-    expect(offeredRoles(device(), seat({ occupant: other }))).toEqual(["secondary"]);
-    expect(primaryRefusal(device(), seat({ occupant: other }))).toBe("owner_not_occupant");
+    expect(offeredRoles(device(), seat({ occupant: other }), "manager")).toEqual(["secondary"]);
+    expect(primaryRefusal(device(), seat({ occupant: other }), "manager")).toBe(
+      "owner_not_occupant",
+    );
   });
   it("owner's seat with another primary: secondary only", () => {
     const s = seat({ occupant: owner, devices: [primaryDev("d9")] });
-    expect(offeredRoles(device(), s)).toEqual(["secondary"]);
-    expect(primaryRefusal(device(), s)).toBe("seat_has_primary");
+    expect(offeredRoles(device(), s, "manager")).toEqual(["secondary"]);
+    expect(primaryRefusal(device(), s, "manager")).toBe("seat_has_primary");
   });
   it("the device is that seat's primary: primary stays offered", () => {
     const s = seat({ occupant: owner, devices: [primaryDev("d1")] });
-    expect(offeredRoles(placed("s1", "primary"), s)).toEqual(["secondary", "primary"]);
+    expect(offeredRoles(placed("s1", "primary"), s, "manager")).toEqual(["secondary", "primary"]);
+  });
+});
+
+describe("ownSeats and tier (D72)", () => {
+  const mine = seat({ id: "s1", occupant: owner });
+  const theirs = seat({ id: "s2", occupant: other });
+  const empty = seat({ id: "s3" });
+  const all = [mine, theirs, empty];
+  it("user keeps only seats occupied by the owner; manager and admin keep all", () => {
+    expect(ownSeats(device(), all, "user")).toEqual([mine]);
+    expect(ownSeats(device(), all, "manager")).toEqual(all);
+    expect(ownSeats(device(), all, "admin")).toEqual(all);
+  });
+  it("an unowned device leaves a user no seat", () => {
+    expect(ownSeats(device({ owner: null }), all, "user")).toEqual([]);
+  });
+  it("offeredRoles and planSubmit honour the tier", () => {
+    expect(offeredRoles(device(), mine, "user")).toEqual(["secondary", "primary"]);
+    expect(primaryRefusal(device(), theirs, "user")).toBe("seat_not_yours");
+    expect(primaryRefusal(device(), theirs, "manager")).toBe("owner_not_occupant");
+    expect(planSubmit(device(), "place", mine, "primary", "user")).toMatchObject({
+      kind: "send",
+      body: { role: "primary" },
+    });
+    expect(planSubmit(device(), "place", theirs, "secondary", "manager")).toMatchObject({
+      kind: "send",
+      body: { seatId: "s2" },
+    });
   });
 });
 
@@ -144,22 +178,24 @@ describe("toPlacementBody", () => {
 
 describe("planSubmit", () => {
   it("needs a seat, detects a no-op, otherwise sends", () => {
-    expect(planSubmit(device(), "place", null, "secondary")).toEqual({
+    expect(planSubmit(device(), "place", null, "secondary", "manager")).toEqual({
       kind: "invalid",
       message: devicesCopy.place.pickSeat,
     });
-    expect(planSubmit(placed("s1"), "move", seat(), "secondary")).toEqual({ kind: "noop" });
-    expect(planSubmit(device(), "place", seat(), "secondary")).toEqual({
+    expect(planSubmit(placed("s1"), "move", seat(), "secondary", "manager")).toEqual({
+      kind: "noop",
+    });
+    expect(planSubmit(device(), "place", seat(), "secondary", "manager")).toEqual({
       kind: "send",
       body: { seatId: "s1", role: "secondary", expectedSeatId: null },
     });
-    expect(planSubmit(placed("s0"), "return", null, "secondary")).toEqual({
+    expect(planSubmit(placed("s0"), "return", null, "secondary", "manager")).toEqual({
       kind: "send",
       body: { seatId: null, expectedSeatId: "s0" },
     });
   });
   it("a role that is not offered falls back to secondary", () => {
-    expect(planSubmit(device(), "place", seat(), "primary")).toMatchObject({
+    expect(planSubmit(device(), "place", seat(), "primary", "manager")).toMatchObject({
       body: { role: "secondary" },
     });
   });
@@ -177,6 +213,7 @@ describe("settle", () => {
       "seat_has_no_occupant",
       "owner_not_occupant",
       "seat_has_primary",
+      "seat_not_yours",
       "not_allowed",
     ]) {
       expect(settle({ ok: false, code })).toEqual({

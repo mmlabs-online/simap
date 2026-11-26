@@ -6,6 +6,7 @@ import type { RoomsApi } from "../rooms/rooms-api";
 import type { SeatsApi } from "../seats/seats-api";
 import { AssignDeviceDialog } from "./AssignDeviceDialog";
 import { ExtendDeviceDialog } from "./ExtendDeviceDialog";
+import type { Tier } from "@/lib/auth/tier";
 import { PlaceDeviceDialog } from "./PlaceDeviceDialog";
 import { ReturnDeviceDialog } from "./ReturnDeviceDialog";
 import { TakeBackDeviceDialog } from "./TakeBackDeviceDialog";
@@ -29,12 +30,14 @@ export function useDeviceDetailActions({
   api,
   roomsApi,
   seatsApi,
+  tier,
   refresh,
   requestFocus,
 }: {
   api: DevicesApi;
   roomsApi: RoomsApi;
   seatsApi: SeatsApi;
+  tier: Tier;
   refresh: RefreshFn;
   requestFocus: () => void;
 }) {
@@ -134,6 +137,7 @@ export function useDeviceDetailActions({
         open={placing !== null}
         device={placing?.device ?? null}
         mode={placing?.mode ?? "place"}
+        tier={tier}
         devicesApi={api}
         roomsApi={roomsApi}
         seatsApi={seatsApi}
