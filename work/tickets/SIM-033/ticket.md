@@ -45,6 +45,7 @@ Production shows the real sprites of the bundled package (the library behind the
 
 ## Notes / answers from Ming
 - 2026-11-26: M-63 done (Ming: "Đồng ý, làm luôn"): the real Imersa atlas is packed (55 map frames) and committed on this branch. Gate set to plan-approval (P1 policy `high-paths+P1`, matching the board).
+- 2026-11-26: The repo is PUBLIC (gh repo view), contrary to D45/D60; CREDITS.md:16 also says public. Ming: "Anh sẽ chuyển repo sang private" (M-77). The atlas commit (4383539) was already pushed while the repo was public. The PR must not open until the repo is private.
 - 2026-11-25: re-scoped to D66 (bundled package committed; per-item art moves to SIM-039.x).
 - 2026-11-25: D64 replaces the single-pack plan (M-9/M-10 not needed). Re-scope this ticket before running it: Admins pick art per item from a bundled package or a custom image.
 - 2026-11-22 (D58): created from the art review. Waits for M-10.
