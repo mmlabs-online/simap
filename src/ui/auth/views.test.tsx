@@ -161,11 +161,13 @@ describe("other views", () => {
 });
 
 describe("pixel surface (D52)", () => {
-  it("AuthLayout has the px-frame, px-strip and the scene slot; scene={false} drops the slot", () => {
+  it("AuthLayout has the pixel classes and the scene slot; scene={false} drops the slot", () => {
     const out = html(<AuthLayout title="T">x</AuthLayout>);
-    expect(out).toContain("px-frame");
-    expect(out).toContain("px-strip");
+    for (const c of ["px-stage", "px-frame", "px-strip", "px-card", "px-title", "px-heading"])
+      expect(out).toContain(c);
     expect(out).toContain("px-scene");
+    const strip = out.match(/<div class="px-strip">.*?<\/div>/)?.[0] ?? "";
+    expect(strip).toContain(authCopy.brand);
     expect(
       html(
         <AuthLayout title="T" scene={false}>
@@ -180,6 +182,25 @@ describe("pixel surface (D52)", () => {
     expect(out).toContain('aria-hidden="true"');
     expect(out.replace(/<[^>]*>/g, "")).toBe("");
     expect(out).not.toContain("<img");
+    expect(out).not.toContain("<canvas");
+  });
+
+  it("pixel classes stay off form text", () => {
+    const page = html(<SignInView {...base} accounts={accounts} onContinueAs={noop} />);
+    expect(page).not.toContain("font-pixel");
+    for (const tag of page.match(/<(input|label|a)\b[^>]*>/g) ?? [])
+      expect(tag).not.toMatch(/px-title|px-heading|font-pixel/);
+    for (const tag of page.match(/<[a-z0-9]+\b[^>]*role="status"[^>]*>/g) ?? [])
+      expect(tag).not.toMatch(/px-title|px-heading/);
+    expect(page).toMatch(/<p class="px-title"/);
+    expect(page).toMatch(/<h1 class="[^"]*px-heading/);
+    expect(page.match(/px-heading/g)).toHaveLength(1);
+  });
+
+  it("the submit button carries data-variant=filled inside the px-card", () => {
+    const page = html(<SignInView {...base} />);
+    const card = page.slice(page.indexOf("px-card"));
+    expect(card).toMatch(/<button[^>]*data-variant="filled"/);
   });
 
   it("every img in any view has an alt", () => {

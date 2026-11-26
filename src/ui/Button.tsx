@@ -56,6 +56,7 @@ export function Button({
         fullWidth ? "w-full" : "",
         className,
       ].join(" ")}
+      data-variant={variant}
       {...rest}
     >
       {icon && <Icon name={icon} filled={iconFilled} size={size === "lg" ? 20 : 18} />}

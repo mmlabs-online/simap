@@ -78,6 +78,15 @@
   --px-accent: #14b8a6;
   --px-floor: #d9dee5;
   --px-wall: #eef1f5;
+  --px-bg: #eceff3;
+  --px-bg-alt: #e4e8ee;
+  --px-shadow: #b3bcc9;
+  --px-title: #1a2230;
+  --px-title-shadow: #5eead4;
+  --px-heading-shadow: #99f6e4;
+  --px-btn: #c2410c;
+  --px-btn-ledge: #7c2d12;
+  --px-btn-text: #ffffff;
 
   /* type scale */
   --text-hero: 80px;
@@ -133,6 +142,12 @@
 
   /* wall top: keeps the pixel frame at 3:1 or more on the dark surface */
   --px-outline: #8b95a7;
+  --px-bg: #121417;
+  --px-bg-alt: #171a1e;
+  --px-shadow: #050608;
+  --px-heading-shadow: #115e59;
+  --px-floor: #1e2228;
+  --px-wall: #2a2f37;
 }
 
 /* Class-based dark variant for later tickets: `dark:` utilities follow data-theme. */
@@ -355,19 +370,76 @@ dialog::backdrop {
 }
 
 /* Pixel accents for the sign-in surface (D52): CSS only, no font, no motion. */
+.px-stage {
+  /* a low-contrast 32 px checker floor */
+  background: repeating-conic-gradient(var(--px-bg) 0 25%, var(--px-bg-alt) 0 50%) 0 0 / 64px 64px;
+}
 .px-frame {
   position: relative;
-  /* four 2 px bands without corner squares: stepped corners */
+  /* 4 px stepped bands without corner squares, then a hard pixel drop shadow (max 12 px out) */
   box-shadow:
-    0 -2px 0 0 var(--px-outline),
-    0 2px 0 0 var(--px-outline),
-    -2px 0 0 0 var(--px-outline),
-    2px 0 0 0 var(--px-outline);
+    0 -4px 0 0 var(--px-outline),
+    0 4px 0 0 var(--px-outline),
+    -4px 0 0 0 var(--px-outline),
+    4px 0 0 0 var(--px-outline),
+    4px 8px 0 0 var(--px-shadow),
+    8px 4px 0 0 var(--px-shadow),
+    8px 8px 0 0 var(--px-shadow);
 }
 .px-strip {
-  height: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 4px 10px;
   background: var(--px-accent);
-  border-bottom: 2px solid var(--px-outline);
+  border-bottom: 4px solid var(--px-outline);
+}
+.px-strip > span {
+  width: 6px;
+  height: 6px;
+  background: var(--px-title);
+}
+.px-strip > .px-title {
+  margin: 0 auto 0 0;
+}
+.px-title {
+  margin: 0;
+  color: var(--px-title);
+  font-weight: 800;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-shadow: 1px 1px 0 var(--px-title-shadow);
+  overflow-wrap: anywhere;
+}
+.px-heading {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-shadow: 2px 2px 0 var(--px-heading-shadow);
+}
+.px-card [data-variant="filled"] {
+  border-radius: 0;
+  background: var(--px-btn);
+  color: var(--px-btn-text);
+  border: 3px solid var(--px-outline);
+  box-shadow: 0 4px 0 0 var(--px-btn-ledge);
+  transform: none;
+  transition: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.px-card [data-variant="filled"]:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 0 var(--px-btn-ledge);
+}
+.px-card [data-variant="filled"]:disabled {
+  box-shadow: none;
+}
+.px-card [data-variant="filled"]:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
 }
 .px-scene {
   width: 384px; /* 12 tiles of 32 px at 1x */
@@ -384,4 +456,10 @@ dialog::backdrop {
     0 2px 0 0 var(--px-outline),
     -2px 0 0 0 var(--px-outline),
     2px 0 0 0 var(--px-outline);
+}
+.px-scene-canvas {
+  display: block;
+  width: 384px;
+  height: 224px;
+  image-rendering: pixelated;
 }

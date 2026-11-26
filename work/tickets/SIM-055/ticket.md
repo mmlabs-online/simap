@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/138 |
 
 ## Goal
 The sign-in screens should feel like the start screen of a small office game, not a plain form next to an empty grey
@@ -75,5 +75,12 @@ box (Ming, 2026-11-26, screenshot of `/` signed out: "thay đổi UI đăng nh�
   forgot password, create account and the org picker.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-4): "duyệt hết theo mặc định"; Q1 default: CSS pixel lettering, no new font; Q2: `data-variant` on src/ui/Button.tsx approved.
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 5, ~353k tokens (frontend-developer×1 default 39k, ux-architect×1 default 41k, planner×1 default 135k, implementer×1 default 81k, reviewer×1 default 61k; batch 2026-11-26-4).
+- Done: pixel office scene from the atlas (≥ 768 px, placeholder fallback), game-style frame/title/button/floor on AuthLayout and the org picker, dark tokens; review PASS attempt 1; PR #138.
+- In progress / next: Ming decides on the uppercase email labels (review 🟡) and runs the manual browser checks; merges PR #138.
+- Gotchas: the local dev launcher signs in automatically, so the sign-in screen needs a sign-out (or the hosted build) to be seen.
