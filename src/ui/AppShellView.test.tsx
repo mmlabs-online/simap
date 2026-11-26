@@ -120,7 +120,7 @@ describe("AppShellView", () => {
     expect(html).not.toContain("child-marker");
   });
 
-  it("admin on /rooms/A1: nav landmark, 11 links, one aria-current", () => {
+  it("admin on /rooms/A1: nav landmark, 10 links, one aria-current", () => {
     const html = render("admin", "/rooms/A1");
     expect(html).toContain(`<nav aria-label="${shellCopy.navLabel}"`);
     expect(hrefs(html)).toEqual([
@@ -129,7 +129,6 @@ describe("AppShellView", () => {
       "/rooms",
       "/devices",
       "/members",
-      "/requests",
       "/portal",
       "/approvals",
       "/audit",
@@ -203,23 +202,31 @@ describe("AppShellView", () => {
     const link = (html: string, href: string) =>
       new RegExp(`<a [^>]*href="${href}"[^>]*>.*?</a>`).exec(html)?.[0] ?? "";
 
-    it("count on the myRequests link with aria-hidden numeral and sr-only text", () => {
-      const three = link(withBadges("user", { myRequests: 3 }), "/requests");
+    const portalLabel = (decisions: number) =>
+      shellCopy.badge.portalBreakdown(
+        { incoming: 0, returns: 0, extensions: 0, overdue: 0 },
+        decisions,
+      );
+    it("portal badge: numeral aria-hidden, sr-only text from the label", () => {
+      const three = link(withBadges("user", { portal: 3 }, { portal: portalLabel(3) }), "/portal");
       expect(three).toMatch(/<span aria-hidden="true" class="absolute[^>]*>3</);
       expect(three).toContain(`<span class="sr-only">${shellCopy.badge.newDecisions(3)}</span>`);
-      expect(link(withBadges("user", { myRequests: 1 }), "/requests")).toContain("1 new decision<");
     });
-    it("caps at 9+ visibly and keeps the exact count for screen readers", () => {
-      const many = link(withBadges("user", { myRequests: 12 }), "/requests");
+    it("portal badge caps at 9+ visibly and keeps the exact count for screen readers", () => {
+      const many = link(withBadges("user", { portal: 12 }, { portal: portalLabel(12) }), "/portal");
       expect(many).toMatch(/<span aria-hidden="true" class="absolute[^>]*>9\+</);
       expect(many).toContain("12 new decisions");
     });
-    it("0 or no prop: no badge markup", () => {
-      for (const b of [undefined, { myRequests: 0 }]) {
+    it("portal 0 or no prop: no badge markup", () => {
+      for (const b of [undefined, { portal: 0 }]) {
         const html = withBadges("user", b);
-        expect(link(html, "/requests")).not.toContain('<span aria-hidden="true" class="absolute');
+        expect(link(html, "/portal")).not.toContain('<span aria-hidden="true" class="absolute');
         expect(html).not.toContain("new decision");
       }
+    });
+    it("no tier has a /requests link (REG-02)", () => {
+      for (const tier of ["user", "manager", "admin"] as const)
+        expect(withBadges(tier)).not.toContain('href="/requests"');
     });
     it("devices badge: numeral aria-hidden, sr-only '3 incoming transfers' / '1 incoming transfer'", () => {
       const three = link(withBadges("manager", { devices: 3 }), "/devices");
@@ -233,12 +240,10 @@ describe("AppShellView", () => {
       );
     });
     it("portal badge: count and label render on My Portal; a User has no Devices entry", () => {
-      const label = shellCopy.badge.portalBreakdown({
-        incoming: 2,
-        returns: 0,
-        extensions: 0,
-        overdue: 1,
-      });
+      const label = shellCopy.badge.portalBreakdown(
+        { incoming: 2, returns: 0, extensions: 0, overdue: 1 },
+        0,
+      );
       const html = withBadges("user", { portal: 3 }, { portal: label });
       const portal = link(html, "/portal");
       expect(portal).toMatch(/<span aria-hidden="true" class="absolute[^>]*>3</);
@@ -257,10 +262,10 @@ describe("AppShellView", () => {
         expect(html).not.toContain("incoming transfer");
       }
     });
-    it("myRequests and devices together: each link has its own text", () => {
-      const html = withBadges("manager", { myRequests: 2, devices: 5 });
-      expect(link(html, "/requests")).toContain("2 new decisions");
-      expect(link(html, "/requests")).not.toContain("incoming transfer");
+    it("portal and devices together: each link has its own text", () => {
+      const html = withBadges("manager", { portal: 2, devices: 5 }, { portal: portalLabel(2) });
+      expect(link(html, "/portal")).toContain("2 new decisions");
+      expect(link(html, "/portal")).not.toContain("incoming transfer");
       expect(link(html, "/devices")).toContain("5 incoming transfers");
       expect(link(html, "/devices")).not.toContain("new decision");
     });

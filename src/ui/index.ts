@@ -29,7 +29,7 @@ export { DeviceTypesPage } from "./deviceTypes/DeviceTypesPage";
 export { MapItemsPage } from "./mapItems/MapItemsPage";
 export { CreditsPage } from "./credits/CreditsPage";
 export { ApprovalsPage } from "./requests/ApprovalsPage";
-export { MyRequestsPage } from "./requests/MyRequestsPage";
+export { RequestsRedirect } from "./requests/RequestsRedirect";
 export { DevicesPage } from "./devices/DevicesPage";
 export { PortalPage } from "./portal/PortalPage";
 export { DeviceDetailPage } from "./devices/DeviceDetailPage";

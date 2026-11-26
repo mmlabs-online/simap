@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SeatDto } from "@/lib/seats/types";
 import type { MyRequestDto } from "@/lib/requests/types";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { portalCopy } from "../copy/portal";
+import { mergeNewIds, newestDecidedAt } from "../requests/request-badge";
 import { MyRequestsView } from "../requests/MyRequestsView";
 import { createRequestsApi } from "../requests/requests-api";
 import { cancelOutcome } from "../requests/requests-state";
 import { useMyRequests } from "../requests/useMyRequests";
+import { useSetRequestBadge } from "../requests/useRequestBadge";
 import { ConfirmSeatDialog } from "../seats/ConfirmSeatDialog";
 import { createSeatsApi } from "../seats/seats-api";
 import { MySeatView } from "./MySeatView";
@@ -17,14 +19,32 @@ import { useMySeats } from "./useMySeats";
 
 type Notice = { tone: "status" | "error"; text: string };
 
-/** The My seat tab: my seats (View on map, Release) and my requests (Cancel). It does not mark decisions seen. */
-export function MySeatTab() {
+/** The My seat tab: my seats (View on map, Release) and my requests (Cancel). With `markSeen` it marks the decisions shown as seen (POR-02). */
+export function MySeatTab({ markSeen }: { markSeen: boolean }) {
   const apiFetch = useApiFetch();
   const seatsApi = useMemo(() => createSeatsApi(apiFetch), [apiFetch]);
   const requestsApi = useMemo(() => createRequestsApi(apiFetch), [apiFetch]);
   const seats = useMySeats(apiFetch, seatsApi);
-  const requests = useMyRequests(requestsApi);
+  const setBadge = useSetRequestBadge();
+  const [newIds, setNewIds] = useState<ReadonlySet<string>>(new Set());
+  const markedUpTo = useRef<string | null>(null);
   const mounted = useRef(true);
+  /**
+   * Marks seen only up to the newest decision that was shown. It never sends an empty body, because the
+   * server reads that as "now" and would clear decisions the user has not been shown.
+   */
+  const onPage = useCallback(
+    async (items: MyRequestDto[]) => {
+      setNewIds((prev) => mergeNewIds(prev, items));
+      const upTo = newestDecidedAt(items, markedUpTo.current);
+      if (upTo === null) return;
+      markedUpTo.current = upTo;
+      const r = await requestsApi.markSeen(upTo);
+      if (r.ok && mounted.current) setBadge(r.value.unseen);
+    },
+    [requestsApi, setBadge],
+  );
+  const requests = useMyRequests(requestsApi, markSeen ? (items) => void onPage(items) : undefined);
   const acting = useRef(false);
   const [releasing, setReleasing] = useState<SeatDto | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -89,7 +109,7 @@ export function MySeatTab() {
             embedded
             state={requests.status}
             items={requests.items}
-            newIds={new Set()}
+            newIds={newIds}
             hasMore={requests.hasMore}
             loadingMore={requests.loadingMore}
             errorCode={requests.errorCode}
