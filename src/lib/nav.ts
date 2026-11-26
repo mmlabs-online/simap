@@ -3,6 +3,7 @@ import { atLeastTier, type Tier } from "./tier";
 
 export type NavId =
   | "dashboard"
+  | "checkin"
   | "search"
   | "rooms"
   | "devices"
@@ -24,8 +25,12 @@ export type NavItem = {
   placement: "rail" | "room";
 };
 
+export const CHECKIN_PATH = "/checkin";
+export const DASHBOARD_PATH = "/dashboard";
+
 const NAV_ITEMS: readonly NavItem[] = [
   { id: "dashboard", href: "/", icon: "space_dashboard", minTier: "user", placement: "rail" },
+  { id: "checkin", href: CHECKIN_PATH, icon: "meeting_room", minTier: "user", placement: "rail" },
   { id: "search", href: "/search", icon: "search", minTier: "user", placement: "rail" },
   { id: "rooms", href: "/rooms", icon: "grid_view", minTier: "user", placement: "rail" },
   { id: "devices", href: "/devices", icon: "lan", minTier: "manager", placement: "rail" },
@@ -59,7 +64,27 @@ const NAV_ITEMS: readonly NavItem[] = [
 
 /** Hiding is UX only; the API enforces permissions (spec SYS-01). */
 export function navItemsFor(tier: Tier): NavItem[] {
-  return NAV_ITEMS.filter((item) => atLeastTier(tier, item.minTier));
+  const items = NAV_ITEMS.filter((item) => atLeastTier(tier, item.minTier));
+  if (homeFor(tier) !== "checkin") return items;
+  // A User's home is the check-in view at "/"; the Dashboard moves to its own path (PRE-01, D76).
+  const mapped = items.map((item) =>
+    item.id === "checkin"
+      ? { ...item, href: "/" }
+      : item.id === "dashboard"
+        ? { ...item, href: DASHBOARD_PATH }
+        : item,
+  );
+  return [...mapped.filter((i) => i.id === "checkin"), ...mapped.filter((i) => i.id !== "checkin")];
+}
+
+/** The view at "/": a User lands on check-in, Manager and Admin on the Dashboard (PRE-01, D76). */
+export function homeFor(tier: Tier): "checkin" | "dashboard" {
+  return atLeastTier(tier, "manager") ? "dashboard" : "checkin";
+}
+
+/** True where the check-in room view renders (it has its own room switcher). */
+export function isCheckinView(pathname: string, tier: Tier): boolean {
+  return pathname === CHECKIN_PATH || (pathname === "/" && homeFor(tier) === "checkin");
 }
 
 export function isActive(item: NavItem, pathname: string): boolean {

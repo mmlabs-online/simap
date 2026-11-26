@@ -1,5 +1,5 @@
-import { DashboardPage } from "@/ui";
+import { HomePage } from "@/ui";
 
 export default function Page() {
-  return <DashboardPage />;
+  return <HomePage />;
 }

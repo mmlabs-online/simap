@@ -138,11 +138,12 @@ describe("AppShellView", () => {
     expect(html).not.toContain("child-marker");
   });
 
-  it("admin on /rooms/A1: nav landmark, 10 links, one aria-current", () => {
+  it("admin on /rooms/A1: nav landmark, 11 links, one aria-current", () => {
     const html = render("admin", "/rooms/A1");
     expect(html).toContain(`<nav aria-label="${shellCopy.navLabel}"`);
     expect(hrefs(html)).toEqual([
       "/",
+      "/checkin",
       "/search",
       "/rooms",
       "/devices",
@@ -191,6 +192,17 @@ describe("AppShellView", () => {
     expect(at).toBeGreaterThan(withIt.indexOf("</header>"));
     expect(at).toBeLessThan(withIt.indexOf("<main"));
     expect(shell(null, true)).not.toContain("switcher-marker");
+  });
+
+  it("manager has /checkin with label Check in; user's first link is / labelled Check in and has /dashboard", () => {
+    const manager = render("manager");
+    expect(hrefs(manager)).toContain("/checkin");
+    expect(manager).toContain(`>${shellCopy.nav.checkin}<`);
+    const user = render("user");
+    expect(hrefs(user)[0]).toBe("/");
+    expect(hrefs(user)).toContain("/dashboard");
+    expect(hrefs(user)).not.toContain("/checkin");
+    expect(/<a [^>]*href="\/"[^>]*>[\s\S]*?Check in/.test(user)).toBe(true);
   });
 
   it("user has no approvals link; manager has it; no tier has a groups link (D65)", () => {

@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import type { RoomDto } from "./rooms/types";
-import { goTarget, keepGoodRooms, roomCodeFromPath, visibleSelection } from "./room-switcher";
+import {
+  checkinGoTarget,
+  checkinRoomHref,
+  goTarget,
+  keepGoodRooms,
+  roomCodeFromPath,
+  roomCodeFromQuery,
+  visibleSelection,
+} from "./room-switcher";
 
 const room = (code: string): RoomDto => ({
   id: code,
@@ -65,5 +73,36 @@ describe("visibleSelection", () => {
   });
   it("leaves Go with no target when the code is not listed", () => {
     expect(goTarget(visibleSelection([], "B"), null)).toBeNull();
+  });
+});
+
+describe("roomCodeFromQuery", () => {
+  it("none, empty, multiple, invalid chars, too long → null; valid code", () => {
+    expect(roomCodeFromQuery([])).toBeNull();
+    expect(roomCodeFromQuery([""])).toBeNull();
+    expect(roomCodeFromQuery(["A1", "B2"])).toBeNull();
+    expect(roomCodeFromQuery(["a 1"])).toBeNull();
+    expect(roomCodeFromQuery(["A".repeat(33)])).toBeNull();
+    expect(roomCodeFromQuery(["C302"])).toBe("C302");
+    expect(roomCodeFromQuery(["A.1_b-2".toUpperCase()])).toBe("A.1_B-2");
+  });
+});
+
+describe("checkinRoomHref", () => {
+  it("bare path, room only, room + seat, seat only, encodes values", () => {
+    expect(checkinRoomHref("/", null, null)).toBe("/");
+    expect(checkinRoomHref("/checkin", "A1", null)).toBe("/checkin?room=A1");
+    expect(checkinRoomHref("/checkin", "A1", "A1-01")).toBe("/checkin?room=A1&seat=A1-01");
+    expect(checkinRoomHref("/", null, "A1-01")).toBe("/?seat=A1-01");
+    expect(checkinRoomHref("/", "A&B", null)).toBe("/?room=A%26B");
+  });
+});
+
+describe("checkinGoTarget", () => {
+  it("empty or current selection → null; other code → href with ?room=", () => {
+    expect(checkinGoTarget("/", "", "A1")).toBeNull();
+    expect(checkinGoTarget("/", "A1", "A1")).toBeNull();
+    expect(checkinGoTarget("/checkin", "B2", "A1")).toBe("/checkin?room=B2");
+    expect(checkinGoTarget("/", "B2", null)).toBe("/?room=B2");
   });
 });
