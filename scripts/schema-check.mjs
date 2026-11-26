@@ -159,6 +159,10 @@ try {
     laterOnly.some((l) => l.includes("map_items_new_builtin")),
   );
   check(
+    "1 later run applies members_photo",
+    later.some((l) => l.includes("members_photo")),
+  );
+  check(
     "1 later run applies device_types",
     later.some((l) => l.includes("device_types")),
   );
@@ -1103,6 +1107,35 @@ try {
       "23514",
       "map_items_art_sprite_check",
     ),
+  );
+
+  // 12 member photo (SIM-046)
+  const setPhoto = (/** @type {string} */ id, /** @type {number} */ version) =>
+    q(`update members set photo_drive_file_id = $2, photo_version = $3 where id = $1`, [
+      m1.id,
+      id,
+      version,
+    ]);
+  const oldPhoto = (
+    await rows("select photo_drive_file_id as f, photo_version as v from members where id = $1", [
+      oldMember,
+    ])
+  )[0];
+  check(
+    "12 member created before the migration has no photo, version 0",
+    oldPhoto.f === null && oldPhoto.v === 0,
+  );
+  check(
+    "12 bad Drive id refused (23514 members_photo_check)",
+    refused(await tx(setPhoto("bad id", 1)), "23514", "members_photo_check"),
+  );
+  check(
+    "12 negative version refused (23514 members_photo_version_check)",
+    refused(await tx(setPhoto("file_abcdefghij", -1)), "23514", "members_photo_version_check"),
+  );
+  check(
+    "12 valid id with version 1 accepted",
+    (await tx(setPhoto("file_abcdefghij", 1), false)) === null,
   );
 
   // extras

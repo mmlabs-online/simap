@@ -5,12 +5,17 @@ export type ReadBytes =
   | { ok: false; reason: "type" | "too_large" | "empty" | "read" };
 
 /**
- * Reads a small raw body: the media type must be exactly `type` (lowercased, parameters ignored), a declared
+ * Reads a small raw body: the media type must be exactly `type` (or one of the listed types) (lowercased, parameters ignored), a declared
  * `content-length` over the cap is refused without reading, and the size is capped again while streaming.
  */
-export async function readBytes(req: Request, maxBytes: number, type: string): Promise<ReadBytes> {
+export async function readBytes(
+  req: Request,
+  maxBytes: number,
+  type: string | readonly string[],
+): Promise<ReadBytes> {
   const got = req.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase();
-  if (got !== type) return { ok: false, reason: "type" };
+  if (got === undefined || !([] as readonly string[]).concat(type).includes(got))
+    return { ok: false, reason: "type" };
   const header = req.headers.get("content-length");
   if (header !== null && Number.isFinite(Number(header)) && Number(header) > maxBytes) {
     return { ok: false, reason: "too_large" };

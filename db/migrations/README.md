@@ -69,5 +69,9 @@ The app never migrates.
   already drops (an undrawable fixture is deleted, an undrawable seat goes back to unplaced), so no room changes.
   SIM-042 (D73) redefines `map_items_seed` with the six new built-in keys and backfills them for orgs already seeded
   (a name clash gets a " (built-in)" suffix); new built-in keys are permanent once released.
+- Member photo (SIM-046, D71): `members.photo_drive_file_id` (nullable, same id format check as the device type image,
+  `members_photo_check`) and `photo_version` (integer, default 0, bumped on every set and remove, used in the ETag).
+  No FK and no index. The Drive file is deleted after commit (best effort; orphans are logged as `drive_orphan`). The
+  MIME type is taken from the bytes on every read, not stored. The previous image never touches the columns.
 - Dev seed: `pnpm seed:dev` loads fake data (fixed UUIDs, `@simap.example` emails, invented names) into a local
   database only; it refuses non-local hosts and `NODE_ENV=production`. Never put real data in the seed.

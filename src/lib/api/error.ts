@@ -52,6 +52,7 @@ export const API_ERROR_CODES = [
   "name_taken",
   "type_limit",
   "image_not_png",
+  "image_not_supported",
   "image_bad_size",
   "image_too_large",
   "image_changed",
