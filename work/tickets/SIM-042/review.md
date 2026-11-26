@@ -89,3 +89,54 @@ None (to be filled by the orchestrator from `security-review.md`).
 
 ### Follow-ups (out of scope)
 - None.
+
+## Attempt 2 — 2026-11-26
+Verdict: PASS
+
+### Checks (run by reviewer)
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck && pnpm check:layers` — exit 0; "check-layers: 816 files, no violations"
+- `pnpm test` — exit 0; Test Files 311 passed | 1 skipped (312); Tests 3155 passed | 9 skipped (3164)
+- `pnpm build` — exit 0, "Compiled successfully"
+- `pnpm test:db` (local Postgres, whole suite) — 3 runs, all exit 0: Test Files 20 passed (20); Tests 300 passed (300).
+  Matches impl-log attempt 2.
+- `pnpm migrate:smoke` — exit 0, "migrate smoke ok"
+- `pnpm schema:check` — exit 0, "schema check ok"
+
+### Acceptance criteria
+- [x] Each new key is in the registry, the sprite map (rect, anchor, tiles) and the committed atlas as a `map` source —
+  evidence unchanged from attempt 1 (files not touched since).
+- [x] Every existing and every new org has one row per new key, no existing row changes; `migrate:smoke`,
+  `schema:check`, `test:db` pass — evidence: attempt-1 evidence plus the green runs above.
+- [x] New items appear in the palette / "Map items" page and can be placed, rotated and saved — evidence:
+  `layout.test.ts › SIM-042 built-in items` (green in `pnpm test`); `layout.db.test.ts › a SIM-042 item saves rotated
+  and reads back` now compares fixtures stripped of `id` and sorted by `sprite`
+  (`src/server/layout/layout.db.test.ts:378-381`), green in 3 of 3 full `test:db` runs (failed 3 of 4 before the fix).
+  The visual check in the editor is a Ming verification item.
+- [x] A layout saved by the previous image still loads (expand-only) — evidence unchanged from attempt 1.
+- [x] All Checks pass — see above.
+
+Ming verification after merge (not verified by the reviewer; carry into the PR):
+- Place each of the six items in all four directions in a room on the deployed build and confirm the thin side views
+  (wall clock 8x44, projector screen 10x90 / 9x90) and the short flip-chart front look right.
+- After release: the "Map items" page of the production org lists the six new items (backfill ran).
+
+### Issues
+- None. Attempt-1 Issue 1 is fixed as instructed; the read query's ordering is untouched (`src/server/layout/layout.ts`
+  not in the rework diff).
+
+### Scope
+- Rework diff (`29dea68..HEAD`): `src/server/layout/layout.db.test.ts` (one assertion), `impl-log.md`, `ticket.md`,
+  `security-review.md`. Nothing else changed. Attempt-1 scope findings still hold.
+
+### Rules (CLAUDE.md)
+- No violations found. R5 now met (all checks green, new logic has tests).
+
+### Blockers from review agents
+- None (`security-review.md` attempt 1 has no 🔴 finding, per the orchestrator).
+
+### Nits (do not block)
+- Attempt-1 nits still apply (hard-coded backfill file name in `sql-sync.test.ts`; rollback-window name clash).
+
+### Follow-ups (out of scope)
+- None.
