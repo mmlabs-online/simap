@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | REWORK |
 | Priority | P2 |
 | Size | M |
 | Areas | db, ui |
 | Gate | plan-approval |
 | Depends on | SIM-041 |
 | Needs Ming | M-82, M-86 |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-26 |
 | Claimed by | claude@2026-11-26T03:48:33Z |
 | PR | — |
