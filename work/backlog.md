@@ -125,7 +125,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-045 | My Portal part 1: My seat, My devices, display name | BACKLOG | P2 | M | ui, ux | SIM-044 | none | 0 | 2026-11-26 |
 | SIM-046 | Profile photo upload | BACKLOG | P3 | M | api, db, ui, security | SIM-045 | plan-approval | 0 | 2026-11-26 |
 | SIM-047 | Pixel character customisation | BACKLOG | P3 | M | db, api, ui, ux | SIM-045 | plan-approval | 0 | 2026-11-26 |
-| SIM-048 | A User places devices only on seats they occupy | PLANNING | P2 | S | api, security | — | none | 0 | 2026-11-26 |
+| SIM-048 | A User places devices only on seats they occupy | DONE | P2 | S | api, security | — | none | 0 | 2026-11-26 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.
 

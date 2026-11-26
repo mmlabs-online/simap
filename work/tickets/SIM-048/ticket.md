@@ -11,8 +11,8 @@
 | Needs Ming | M-85 |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-26T02:43Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/118 |
 
 ## Goal
 A User can place or move their devices only onto a seat they occupy, so devices are not parked on other people's
@@ -61,3 +61,9 @@ the spec change (DEV-03/04/05 and a new D-entry) ships with this ticket.
 - 2026-11-26 Ming: M-85 defaults accepted — an empty seat counts as not yours; Manager/Admin keep D19 (any seat); devices a User already lent to other seats stay where they are.
 
 ## Handoff
+
+### 2026-11-26 — claude — DONE
+- Agent calls: 4 (planner×1 sonnet 48k, implementer×1 default 74k, reviewer×1 default 52k, security-ai-generated-code-auditor×1 default 42k)
+- Done: rule in decidePlacement (422 seat_not_yours for Users on seats they do not occupy), server wiring, UI seat picker filter, spec DEV-03/04/05 + D72, tests. Review PASS attempt 1; security PASS. PR #118.
+- In progress / next: Ming reviews and merges PR #118; CI test:db must be green.
+- Gotchas: tickets on this branch were renumbered (SIM-041..046 → SIM-043..048, M-79..81 → M-83..85) because main took those numbers; the board row lives on this branch (session branch mandate), not committed on main.
