@@ -1,0 +1,89 @@
+# SIM-068: Redesign the sign-in page as a "small world" landing (Ming's mockup)
+
+| Field | Value |
+|---|---|
+| State | BACKLOG |
+| Priority | P2 |
+| Size | M |
+| Areas | ui, ux, security |
+| Gate | none |
+| Depends on | — |
+| Needs Ming | — |
+| Attempts | 0 |
+| Created | 2026-11-26 |
+| Claimed by | — |
+| PR | — |
+
+## Goal
+The signed-out sign-in page follows Ming's mockup (`mockup-sign-in.webp` in this folder): a calm "small world"
+landing with four pixel rooms joined by paths around a central sign-in card, so the first screen already feels like
+simap's office world.
+
+## Scope reference
+`docs/spec-v1.md` AUT-01 (sign in with mmlabs Identity), D52 and `docs/art/style-guide.md` §1 (sign-in is a pixel/game
+surface; forms and body text never use a pixel font), §4 (`scene.signin`); D41/D46/D48 (32 px tiles, whole-number
+scale, no game engine), D45/D66 (only licence-checked bundled art and fonts), D36 (copy in `src/ui/copy/auth.ts`).
+Builds on SIM-055 (game-style sign-in, merged). Request: Ming 2026-11-26 with the mockup image.
+
+## Scope
+- **Header:** simap logo and wordmark, tagline "A little world of better work", and a "Need a hand?" help link on the
+  right (target: the existing help/forgot-password route or Identity help; see open questions).
+- **Hero:** eyebrow "Not just a workplace. Your place.", headline "A small world. *A better workday.*", subline
+  "Find your people. Pick your spot. Feel at home."
+- **Central card** ("Your workspace portal" title bar): small avatar with "Player, ready?" and "Come on in.", the
+  existing sign-in form restyled (work email, password with Show, "Forgot password?" link, primary "Enter your
+  workspace →" button), keeping today's Identity flow, validation, Turnstile and error messages.
+- **Four decorative pixel rooms** around the card, drawn from the bundled atlas with the existing map paint code at a
+  whole-number scale: "The focus studio" (desks), "Good ideas live here" (meeting table), "The slow corner" (lounge),
+  "Coffee & connection" (café); dotted paths join them to the card; a few idle avatars; two small note cards
+  ("Your next great day starts with a little hello", "Big ideas. Small pixels."). All `aria-hidden`; hidden or
+  simplified below `md`.
+- **"Find your vibe" switcher** under the card (Studio / Lounge / Café): highlights the matching room and swaps the
+  one-line caption (e.g. "The slow corner — take a breath, find a fresh perspective."). Purely decorative, keyboard
+  operable, remembers nothing.
+- **Footer:** "© 2026 simap. Make room for you.", "Small pixels. Real connections.", "Made for a better workday."
+- Same look carried to the other `AuthLayout` screens (forgot/reset password, sign-up, verify email, accept
+  invitation) at least for header, background and card frame.
+- `prefers-reduced-motion` respected; works at 390 px (rooms collapse, card first).
+
+## Out of scope
+- Any change to authentication: Identity calls, token handling, Turnstile, password rules (AUT-01, D4).
+- The mockup's **demo-only texts and controls** are not shipped as written: "Demo password", "Any 6+ characters for
+  this demo", "Demo only · No real authentication…" and "Explore the demo". simap signs in with real mmlabs Identity
+  accounts, so the copy says "Password" and no demo mode is added (see open questions).
+- New third-party art or fonts that are not licence-checked (D45); new libraries.
+
+## Acceptance criteria
+- [ ] The signed-out page shows the header, hero, central card, four pixel rooms with paths, the vibe switcher and the
+  footer as in the mockup at desktop width; at 390 px the card comes first and the rooms are hidden or simplified.
+- [ ] Sign-in still works exactly as before (same Identity requests, Turnstile, errors, redirect to `/`); existing
+  sign-in tests pass unchanged or are updated only for markup.
+- [ ] No demo wording ships: the password field is "Password", there is no "Explore the demo" control and no
+  "no real authentication" note.
+- [ ] Rooms and avatars come from the bundled atlas at a whole-number scale, are `aria-hidden`, and form text never
+  uses a pixel font (style guide §1).
+- [ ] The vibe switcher is keyboard-operable, changes only the highlighted room and caption, and stores nothing.
+- [ ] Copy lives in `src/ui/copy/auth.ts`; render tests cover the layout regions and the switcher.
+
+## Technical notes
+- Files (expected): `src/ui/auth/AuthLayout.tsx`, `SignInScene.tsx`, `views.tsx`, `src/ui/copy/auth.ts`,
+  `src/app/globals.css` (tokens), maybe a new `src/ui/auth/SmallWorld*.tsx`.
+- Fonts: the mockup's italic serif headline needs a licence-checked font bundled locally (CSP; D45). If none is
+  available, use the closest existing font and note it.
+- Security area: the page holds the password form; check no new script, font or image host is added to the CSP and
+  nothing about the password leaves the existing flow.
+- Open questions (planner proposes a default, Ming confirms):
+  1. "Remember my email" checkbox: add it (stores the email in `localStorage` only, never the password), or leave it
+     out? Default proposal: leave it out (not in AUT-01).
+  2. "Need a hand?": where does it go (forgot password page, Identity help, a mailto)? Default proposal: forgot
+     password page.
+  3. "Explore the demo": drop (default), or does Ming want a real demo org/read-only tour later (new ticket)?
+
+## Test plan
+- Unit: render regions, switcher state, no demo strings, sign-in form unchanged behaviour.
+- Manual: 1440 px, 1280 px and 390 px; light/dark; sign in with a real Identity account.
+
+## Notes / answers from Ming
+- 2026-11-26: requested with the mockup image `mockup-sign-in.webp`.
+
+## Handoff
