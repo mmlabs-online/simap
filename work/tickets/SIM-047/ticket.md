@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P3 |
 | Size | M |
 | Areas | db, api, ui, ux |
