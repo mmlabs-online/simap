@@ -9,6 +9,7 @@ import { portalCopy } from "../copy/portal";
 import { mapPatchResult, profilePatchInit } from "../org/profile-form";
 import { useSession } from "../session";
 import { profileOutcome, type ProfileOutcomeView } from "./portal-state";
+import { ProfilePhoto } from "./ProfilePhoto";
 import { ProfileTabView } from "./ProfileTabView";
 
 type Load = { status: "loading" } | { status: "error" } | { status: "ready"; name: string };
@@ -91,6 +92,7 @@ export function ProfileTab() {
       error={result.fieldError}
       notice={result.notice}
       onSubmit={(name) => void save(name)}
+      sections={<ProfilePhoto name={load.name} />}
     />
   );
 }

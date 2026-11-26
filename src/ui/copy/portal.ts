@@ -1,3 +1,5 @@
+import { PHOTO_LIMITS } from "@/lib/validate/photo";
+
 /** English strings for My Portal (D36). */
 export const portalCopy = {
   tablistLabel: "My Portal sections",
@@ -44,6 +46,26 @@ export const portalCopy = {
       required: "Enter a display name.",
       invalid: "That name cannot be used. Use letters or numbers, up to 80 characters.",
       retry: "Could not save your name. Try again.",
+    },
+    photo: {
+      heading: "Photo",
+      hint: `PNG or JPEG, square, ${PHOTO_LIMITS.minPx} x ${PHOTO_LIMITS.minPx} to ${PHOTO_LIMITS.maxPx} x ${PHOTO_LIMITS.maxPx} pixels, up to ${PHOTO_LIMITS.maxBytes / 1024} KB.`,
+      upload: "Upload photo",
+      replace: "Replace photo",
+      remove: "Remove photo",
+      uploading: "Uploading...",
+      removing: "Removing...",
+      saved: "Photo saved.",
+      removed: "Photo removed.",
+      loadFailed: "Could not load your photo. You can still upload a new one.",
+      errors: {
+        image_too_large: `The photo is too large. The limit is ${PHOTO_LIMITS.maxBytes / 1024} KB.`,
+        image_bad_size: `The photo must be square, from ${PHOTO_LIMITS.minPx} x ${PHOTO_LIMITS.minPx} to ${PHOTO_LIMITS.maxPx} x ${PHOTO_LIMITS.maxPx} pixels. Crop or resize it and try again.`,
+        image_not_supported:
+          "Use a PNG or JPEG photo that is not animated. Photos from a phone camera often carry extra data: re-save or crop the image and try again.",
+        image_changed: "Your photo was changed in another window. Reload and try again.",
+        read_failed: "Could not read this file. Try another one.",
+      },
     },
   },
 } as const;

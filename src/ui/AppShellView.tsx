@@ -26,6 +26,7 @@ export function AppShellView({
   badges,
   badgeLabels,
   version = APP_VERSION,
+  photoUrl,
   children,
 }: {
   session: Session | null;
@@ -38,6 +39,8 @@ export function AppShellView({
   badgeLabels?: Partial<Record<NavId, string>>;
   /** The release tag shown in the header (SIM-040); defaults to the build-time constant. */
   version?: string;
+  /** The member's own photo (blob URL); initials when null. */
+  photoUrl?: string | null;
   children: ReactNode;
 }) {
   const navItems = session
@@ -183,7 +186,7 @@ export function AppShellView({
               )}
               <div className="flex items-center gap-2 flex-none">
                 <span title={session.email}>
-                  <Avatar name={session.email.split("@")[0]} size={40} />
+                  <Avatar name={session.email.split("@")[0]} size={40} src={photoUrl} />
                 </span>
                 <span className="hidden lg:inline-flex">
                   <RoleBadge tier={session.tier} />

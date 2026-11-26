@@ -35,6 +35,16 @@ describe("ProfileTabView", () => {
     expect(html).toMatch(/<button[^>]*disabled[^>]*>/);
     expect(html).toContain(portalCopy.profile.saving);
   });
+  it("sections slot renders between the heading and the name form; absent when not given", () => {
+    const html = render({ sections: <p>slot-marker</p> });
+    const h = html.indexOf(portalCopy.profile.heading);
+    const s = html.indexOf("slot-marker");
+    const f = html.indexOf("<form");
+    expect(h).toBeGreaterThanOrEqual(0);
+    expect(s).toBeGreaterThan(h);
+    expect(f).toBeGreaterThan(s);
+    expect(render()).not.toContain("slot-marker");
+  });
   it("notice renders with role status", () => {
     expect(render({ notice: { tone: "status", text: portalCopy.profile.saved } })).toContain(
       'role="status"',
