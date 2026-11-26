@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | S |
 | Areas | api, security |
@@ -46,5 +46,6 @@ device exists (follow-up Q10 of SIM-044).
 - Unit + DB: each write per tier (own, other's, unowned, unknown id).
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-26, batch 2026-11-26-2): "duyệt hết theo mặc định"; plan assumptions accepted (handoff party keeps 422, no member row = holds nothing).
 
 ## Handoff
