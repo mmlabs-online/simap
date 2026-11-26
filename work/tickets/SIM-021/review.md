@@ -255,3 +255,72 @@ None. `security-review.md` attempt 1 had no 🔴. Its 🟡 items 5-8 are applied
   A spec clean-up (`/solo` or a ticket) should amend DEV-01 and D31.
 - Carried from attempt 1: the stale Turnstile comment in `src/lib/identity/config.ts` (High path, A2).
 - Carried from the security review: remove the test accounts' `simap:*` roles after A5.
+
+## Attempt 3 — 2026-11-26
+Verdict: PASS
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format."
+- `pnpm typecheck`: exit 0, "Types generated successfully", tsc clean.
+- `pnpm check:layers`: exit 0, "check-layers: 808 files, no violations".
+- `pnpm test`: exit 0, "Test Files 308 passed | 1 skipped (309)", "Tests 3126 passed | 7 skipped (3133)".
+- `pnpm build`: exit 0, "Compiled successfully".
+- Plan greps: tick boxes 15, `Owner:` 15, `Check:` 15; `^| F` lines 76 (74 flow rows plus the `| Field` and `| FAIL`
+  lines); the email/UUID grep finds nothing in either file; no CODEOWNERS handle; `down -v` appears once, as a "never"
+  (`docs/go-live.md:132`). Every flow row cites a spec ID or D-number, and the Result column is empty.
+- No changes under `src/`, `db/` or `.github/` in `origin/main...HEAD`.
+- The results match impl-log.md attempt 3.
+
+### Attempt-2 issues and nits
+- [x] Issue 1 (F6.14), `flow-run.md:107`: "Admin opens D2's actions while placed", Expected "DEV-01, D63: no Delete
+  action". This matches the code: `canDelete` needs `owner_id === null` (`src/server/devices/devices.ts:106`), and
+  `decideDelete` refuses `device_owned` before `device_placed` (`src/lib/devices/rules.ts:38-39`). D31 is no longer cited.
+- [x] Issue 2 (F6.18), `flow-run.md:111`: the Manager assigns D1 to User A with an expiry of today. This is possible:
+  - D1 is unowned after F6.12 (`handoffs.ts:445` clears owner and expiry);
+  - assign requires an unowned device with no pending handoff (`devices.ts:466-473`);
+  - an expiry of today is accepted (`src/lib/validate/device.ts:184` refuses only `day < today`);
+  - the next day it is overdue (`devices.ts:144`, `holding_expires_on < today`).
+- [x] Issue 3 (F4.7), `flow-run.md:75`: "Room view (spec §6 LAY), LAY-06". §6 starts at `docs/spec-v1.md:151`, and
+  the heading is at `:486`.
+- [x] Issue 4 (item 4 CONNECT), `docs/go-live.md:55-57`: the query excludes templates and `postgres`, the expectation is
+  "returns only `simap`", and the "hold no app data" clause is there.
+- [x] Issue 5 (recreate), `docs/go-live.md:140-145`:
+  - the explicit `create database simap owner simap;` plus the revoke is the primary path;
+  - the role and its password stay as they are;
+  - `add-app-db.sh` is used only "if it is known to be safe for an existing role";
+  - the drop is still guarded: first release only, Ming only, after the dump exists.
+- [x] Nit F7.6, `flow-run.md:122`: it now cites REG-02 (`docs/spec-v1.md:505-506`).
+- [x] Nit rewrap, `docs/go-live.md:30-34, 62-65`: rewrapped.
+- [x] Nit "stop the `simap` container first", `docs/go-live.md:141-142`: added.
+
+### Acceptance criteria
+- [x] AC1-AC11 are met. AC7 is now fully met. I walked F4 and F6 top to bottom once more:
+  - F4.1-F4.7 are unchanged except the F4.7 citation.
+  - Each F6 row works in the state the earlier rows leave. F6.13 places D2 after F6.8 emptied A's seat. F6.14 checks
+    that no Delete action appears. F6.15 takes D2 back. F6.16 deletes D2 from org inventory. F6.17 shows D1's history.
+    F6.18 re-assigns D1, which is unowned.
+  - No row would give a false FAIL.
+- Nothing regressed. Attempt 3 touched only F4.7, F6.14, F6.18, F7.6 and the go-live lines above.
+
+### Rules (CLAUDE.md)
+- R3: no secret values, emails, UUIDs or handles.
+- R4: in scope. Commit 9172482 touches only `docs/go-live.md`, `flow-run.md` and `impl-log.md`.
+- R1, R2, R6, R7: not affected (no code).
+- R5: checks green.
+
+### Blockers from review agents
+None.
+
+### Nits (do not block)
+- `docs/go-live.md:55`: the CONNECT query line is 146 characters long. This is acceptable because it is a single inline
+  code span that I prescribed.
+
+### Ming verification after merge
+- Run the go-live checklist (`docs/go-live.md`) and the flow run (`work/tickets/SIM-021/flow-run.md`) on production.
+  F6.18 needs a second-day check.
+
+### Follow-ups (out of scope)
+- Spec conflict for Ming: DEV-01's last bullet and D31 (`docs/spec-v1.md:282-284`) conflict with D63. A placed device
+  always has an owner, and only org-inventory devices can be deleted. Amend the spec.
+- Carried: the stale Turnstile comment in `src/lib/identity/config.ts` (High path, A2). Remove the test accounts'
+  `simap:*` roles after A5.
