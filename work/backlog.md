@@ -147,7 +147,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-061 | Simple walk-in and walk-out | MERGED | P1 | M | ui | SIM-060 | plan-approval | 1 | 2026-11-26 |
 | SIM-061.1 | Typing idle animation for present characters | MERGED | P1 | S | ui | SIM-061 | plan-approval | 0 | 2026-11-27 |
 | SIM-062 | Multi-direction walking avatar frames | MERGED | P2 | M | ui | SIM-061 | none | 0 | 2026-11-26 |
-| SIM-063 | Third-party check-in provider: REST pull adapter and mock | PLANNING | P2 | M | architecture, api, security | SIM-058 | plan-approval | 0 | 2026-11-26 |
+| SIM-063 | Third-party check-in provider: REST pull adapter and mock | BLOCKED | P2 | M | architecture, api, security | SIM-058 | plan-approval | 0 | 2026-11-26 |
 | SIM-064 | Layout editor warning for unreachable chairs | BACKLOG | P2 | S | ui, ux | SIM-061 | none | 0 | 2026-11-26 |
 | SIM-065 | Choose GitHub-hosted or macbook runner for simap workflows | MERGED | P2 | S | architecture, security | — | plan-approval | 1 | 2026-11-26 |
 | SIM-066 | Redesign My Portal → Profile layout and the portal tab bar | MERGED | P2 | M | ui, ux | — | none | 0 | 2026-11-26 |
