@@ -92,7 +92,8 @@ Avatars use their own small ramps (section 5); they still take the outline colou
 ## 5. Avatars (D44, D51)
 
 - Size 18 × 24 px drawn inside a 32 × 32 cell, two views: **front** (seen from the desk's far side) and **back** (seen
-  from behind the chair). Seated pose only in v1.
+  from behind the chair) for the seated pose, plus walking frames: 4 directions (`n`, `e`, `s`, `w`) × 2 steps per
+  layer, 32 × 32 each, standing (legs visible, no headroom). Side views `e` and `w` are drawn separately.
 - Layers, each a separate frame so colours can be swapped at runtime: `body` (skin), `hair` (3 styles × 2 views),
   `shirt`, optional `accessory` (glasses, headphones) later.
 - Colours are picked from fixed ramps by a hash of the Identity `sub` (stable per person):
@@ -136,7 +137,7 @@ Source column: **draw** = in-house; **adapt** = start from a free pack that pass
 | Circulation | `stairs`, `elevator` | 2×2 | 1 | draw |
 | Markers | `marker.blocked` (area), `label.sign` | 1×1 | 1 | draw |
 | Overlays | `state.cannot`, `state.pending`, `state.mine.tint` | sub-tile | 1 | draw |
-| Avatars | `avatar.body.front/back`, `avatar.hair.{1..3}.front/back`, `avatar.shirt.front/back` | 1×1 cell | layered | draw |
+| Avatars | `avatar.body.front/back`, `avatar.hair.{1..3}.front/back`, `avatar.shirt.front/back`; walking: `avatar.body.walk.{n,e,s,w}.{0,1}`, `avatar.shirt.walk.*`, `avatar.hair.{1..3}.walk.*` (40 frames, 32×32) | 1×1 cell | layered | draw |
 | Sign-in scene | `scene.signin` (a small office vignette) | about 12×7 tiles | 1 | composed from the above |
 
 Accepted extra keys: the sprite map's `wall.*` tile keys (D55) as the wall set, `window.single` and

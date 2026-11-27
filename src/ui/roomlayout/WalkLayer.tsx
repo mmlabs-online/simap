@@ -33,7 +33,7 @@ export function WalkLayer({ atlas, walks, bounds, zoom, onDone }: Props) {
       cur.bounds,
       cur.zoom,
       frames.map(({ w, f }) => ({
-        ops: walkerOps(cur.atlas.manifest, w.who, f.view, f.x, f.y, f.bob),
+        ops: walkerOps(cur.atlas.manifest, w.who, f.view, f.x, f.y, f.bob, f.walk),
         alpha: f.alpha,
       })),
     );

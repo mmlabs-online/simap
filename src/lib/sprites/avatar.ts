@@ -61,3 +61,44 @@ export function avatarFrames(look: AvatarLook, view: AvatarView): { key: string;
     { key: `avatar.hair.${look.style}.${view}`, tint: look.hair },
   ];
 }
+
+export const WALK_DIRS = ["n", "e", "s", "w"] as const;
+export type WalkDir = (typeof WALK_DIRS)[number];
+export const WALK_STEPS = 2;
+export const HAIR_STYLES = [1, 2, 3] as const;
+
+export type WalkPose = { dir: WalkDir; step: number };
+
+/** Direction of travel of one path segment (screen y grows down); a zero-length segment faces the viewer. */
+export function walkDir(a: { x: number; y: number }, b: { x: number; y: number }): WalkDir {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  if (dx === 0 && dy === 0) return "s";
+  if (Math.abs(dy) >= Math.abs(dx)) return dy < 0 ? "n" : "s";
+  return dx > 0 ? "e" : "w";
+}
+
+/** Walking frames to draw, bottom to top (same order and tints as `avatarFrames`). */
+export function avatarWalkFrames(
+  look: AvatarLook,
+  pose: WalkPose,
+): { key: string; tint: string }[] {
+  const suffix = `walk.${pose.dir}.${pose.step}`;
+  return [
+    { key: `avatar.body.${suffix}`, tint: look.skin },
+    { key: `avatar.shirt.${suffix}`, tint: look.shirt },
+    { key: `avatar.hair.${look.style}.${suffix}`, tint: look.hair },
+  ];
+}
+
+/** Every walking frame key (5 layers x 4 directions x 2 steps), sorted. */
+export function walkFrameKeys(): string[] {
+  const keys: string[] = [];
+  for (const dir of WALK_DIRS) {
+    for (let step = 0; step < WALK_STEPS; step++) {
+      keys.push(`avatar.body.walk.${dir}.${step}`, `avatar.shirt.walk.${dir}.${step}`);
+      for (const style of HAIR_STYLES) keys.push(`avatar.hair.${style}.walk.${dir}.${step}`);
+    }
+  }
+  return keys.sort();
+}

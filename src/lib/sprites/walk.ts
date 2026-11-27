@@ -1,5 +1,13 @@
 import type { SeatPresence } from "@/lib/presence/seat-presence";
-import { avatarFrames, avatarView, type AvatarView } from "./avatar";
+import {
+  avatarFrames,
+  avatarView,
+  avatarWalkFrames,
+  walkDir,
+  WALK_STEPS,
+  type AvatarView,
+  type WalkPose,
+} from "./avatar";
 import type { SeatView } from "./layout";
 import { TILE, type DrawOp } from "./placement";
 import { resolveLook, type PixelLook } from "./pixel-look";
@@ -179,6 +187,8 @@ export type WalkFrame = {
   x: number;
   y: number;
   view: AvatarView;
+  /** The walking pose (direction of travel and step) while walking; null for the seated frames (fades, start, end). */
+  walk: WalkPose | null;
   alpha: number;
   /** Pixels to lift the character, 0 or 1 (a step bob). */
   bob: number;
@@ -195,6 +205,7 @@ export function walkFrame(walk: ActiveWalk, now: number): WalkFrame {
       x: t.x,
       y: t.y,
       view: walk.endView ?? "front",
+      walk: null,
       alpha: walk.mode === "in" ? p : 1 - p,
       bob: 0,
       done,
@@ -206,13 +217,22 @@ export function walkFrame(walk: ActiveWalk, now: number): WalkFrame {
   const a = walk.path[i];
   const b = walk.path[i + 1];
   const f = pos - i;
-  let view: AvatarView = b.y < a.y ? "back" : "front";
-  if (p <= 0 && walk.startView) view = walk.startView;
-  if (done && walk.endView) view = walk.endView;
+  const dir = walkDir(a, b);
+  let view: AvatarView = dir === "n" ? "back" : "front";
+  let pose: WalkPose | null = { dir, step: Math.floor(pos * 2) % WALK_STEPS };
+  if (p <= 0 && walk.startView) {
+    view = walk.startView;
+    pose = null;
+  }
+  if (done && walk.endView) {
+    view = walk.endView;
+    pose = null;
+  }
   return {
     x: a.x + (b.x - a.x) * f,
     y: a.y + (b.y - a.y) * f,
     view,
+    walk: pose,
     alpha: walk.mode === "out" && done ? 0 : 1,
     bob: Math.floor(pos * 2) % 2,
     done,
@@ -227,9 +247,15 @@ export function walkerOps(
   x: number,
   y: number,
   bob = 0,
+  walk: WalkPose | null = null,
 ): Extract<DrawOp, { type: "frame" }>[] {
   const ops: Extract<DrawOp, { type: "frame" }>[] = [];
-  for (const f of avatarFrames(resolveLook(who.look, who.seed), view)) {
+  const look = resolveLook(who.look, who.seed);
+  const seated = avatarFrames(look, view);
+  const frames = walk ? avatarWalkFrames(look, walk) : seated;
+  for (const [i, wanted] of frames.entries()) {
+    // A walk key missing from the manifest falls back to the layer's seated frame.
+    const f = manifest.frames[wanted.key] ? wanted : seated[i];
     const frame = manifest.frames[f.key];
     if (!frame) continue;
     ops.push({

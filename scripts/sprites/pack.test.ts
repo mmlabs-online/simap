@@ -90,6 +90,17 @@ describe("sprite packer", () => {
     expect([f.w, f.h]).toEqual([8, 8]);
   });
 
+  it("an export PNG for an avatar walk key replaces its placeholder", () => {
+    const root = tempRoot();
+    write(root, "assets/art/export/avatar.body.walk.e.0.png", solid(32, 32, "#e6e6e6"));
+    const out = join(root, "out");
+    const r = pack({ root, outDir: out });
+    expect(r.errors).toEqual([]);
+    expect(r.sources["avatar.body.walk.e.0"]).toBe("export");
+    expect(r.sources["avatar.body.walk.e.1"]).toBe("placeholder");
+    expect(readManifest(out).frames["avatar.body.walk.e.0"].anchor).toEqual([0, 0]);
+  });
+
   it("packs a 16 px second source at scale 2 next to a scale-1 source, both as map", () => {
     const root = tempRoot();
     const a = "assets/art/sources/imersa/s.png";

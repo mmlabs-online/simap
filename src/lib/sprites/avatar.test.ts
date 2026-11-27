@@ -6,7 +6,9 @@ import {
   avatarFor,
   avatarFrames,
   avatarView,
+  avatarWalkFrames,
   fnv1a,
+  walkDir,
 } from "./avatar";
 
 describe("fnv1a", () => {
@@ -72,5 +74,25 @@ describe("avatar frames", () => {
       { key: "avatar.shirt.back", tint: "#3" },
       { key: "avatar.hair.2.back", tint: "#2" },
     ]);
+  });
+
+  it("walkDir maps up/down/left/right to n/s/w/e", () => {
+    const o = { x: 2, y: 2 };
+    expect(walkDir(o, { x: 2, y: 1 })).toBe("n");
+    expect(walkDir(o, { x: 2, y: 3 })).toBe("s");
+    expect(walkDir(o, { x: 1, y: 2 })).toBe("w");
+    expect(walkDir(o, { x: 3, y: 2 })).toBe("e");
+    expect(walkDir(o, o)).toBe("s");
+  });
+
+  it("avatarWalkFrames paints body, shirt, hair with the look's tints and the pose's dir/step", () => {
+    const look = { skin: "#1", hair: "#2", shirt: "#3", style: 3 as const };
+    const frames = avatarWalkFrames(look, { dir: "e", step: 1 });
+    expect(frames).toEqual([
+      { key: "avatar.body.walk.e.1", tint: "#1" },
+      { key: "avatar.shirt.walk.e.1", tint: "#3" },
+      { key: "avatar.hair.3.walk.e.1", tint: "#2" },
+    ]);
+    expect(frames.map((f) => f.tint)).toEqual(avatarFrames(look, "front").map((f) => f.tint));
   });
 });

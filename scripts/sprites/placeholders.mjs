@@ -74,6 +74,68 @@ function table(/** @type {Img} */ img, w, h, top, dir, topC, faceC, legC) {
   ]);
 }
 
+/**
+ * Standing, walking avatar rects for `avatar.<layer>[.<style>].walk.<dir>.<step>` (greys only). South and north are
+ * front and back views, east a side profile and west its mirror; the step swaps the legs and the swinging arm.
+ * @returns {Array<[number, number, number, number, string]>}
+ */
+function walkRects(key) {
+  const [, layer, ...rest] = key.split(".");
+  const style = layer === "hair" ? Number(rest[0]) : 0;
+  const [dir, stepText] = key.split(".walk.")[1].split(".");
+  const step = Number(stepText);
+  const side = dir === "e" || dir === "w";
+  /** @type {Array<[number, number, number, number, string]>} */
+  let r = [];
+  if (layer === "body") {
+    const near = step === 0 ? 4 : 2;
+    if (side) {
+      r = [
+        [12, 4, 9, 10, "#e6e6e6"],
+        [14, 14, 5, 3, "#e6e6e6"],
+        [step === 0 ? 13 : 17, 17, 3, 8, "#e6e6e6"],
+        [13, 25, 3, near + 3, "#e6e6e6"],
+        [17, 25, 3, 9 - near, "#e6e6e6"],
+        [18, 8, 2, 2, "#8f8f8f"],
+      ];
+    } else {
+      r = [
+        [11, 4, 10, 10, "#e6e6e6"],
+        [13, 14, 6, 3, "#e6e6e6"],
+        [7, step === 0 ? 17 : 18, 3, 8, "#e6e6e6"],
+        [22, step === 0 ? 18 : 17, 3, 8, "#e6e6e6"],
+        [12, 25, 3, near + 3, "#e6e6e6"],
+        [17, 25, 3, 9 - near, "#e6e6e6"],
+      ];
+      if (dir === "s") r.push([13, 8, 2, 2, "#8f8f8f"], [17, 8, 2, 2, "#8f8f8f"]);
+    }
+  } else if (layer === "hair") {
+    if (side) {
+      r = [
+        [11, 3, 10, 4 + style, "#8f8f8f"],
+        [11, 3, 5, 11, "#8f8f8f"],
+      ];
+      if (style === 3) r.push([11, 5, 4, 12, "#8f8f8f"]);
+    } else {
+      r = [[10, 3, 12, 4 + style, "#8f8f8f"]];
+      if (dir === "n") r.push([10, 3, 12, 11, "#8f8f8f"]);
+      if (style === 3) r.push([9, 5, 2, 9, "#8f8f8f"], [21, 5, 2, 9, "#8f8f8f"]);
+    }
+  } else if (side) {
+    r = [
+      [12, 15, 9, 10, "#bdbdbd"],
+      [step === 0 ? 13 : 17, 17, 3, 6, "#bdbdbd"],
+    ];
+  } else {
+    r = [
+      [8, 15, 16, 10, "#bdbdbd"],
+      [7, step === 0 ? 17 : 18, 4, 6, "#bdbdbd"],
+      [21, step === 0 ? 18 : 17, 4, 6, "#bdbdbd"],
+    ];
+  }
+  return dir === "w" ? r.map(([x, y, w, h, c]) => [32 - x - w, y, w, h, c]) : r;
+}
+
 /** @type {Record<string, (img: Img, w: number, h: number, dir: string | null, top: number, key: string) => void>} */
 const DRAW = {
   floor: (img, w, h, _d, _t, key) => {
@@ -353,6 +415,10 @@ const DRAW = {
     }
   },
   avatar: (img, w, h, _d, _t, key) => {
+    if (key.includes(".walk.")) {
+      rects(img, walkRects(key));
+      return;
+    }
     const back = key.endsWith(".back");
     if (key.startsWith("avatar.body")) {
       rects(img, [
