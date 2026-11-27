@@ -90,7 +90,7 @@ export function CheckinView({
     );
   }
   return (
-    <div className="page-content flex flex-col gap-4">
+    <div className="page-content max-w-none! flex flex-col gap-4">
       <h1 className="text-display text-text-primary">{checkinCopy.title}</h1>
       <div className="flex items-center gap-2">{switcher}</div>
       {body}

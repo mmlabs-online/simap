@@ -285,7 +285,7 @@ export function CheckinPage() {
   return (
     <Suspense
       fallback={
-        <div className="page-content">
+        <div className="page-content max-w-none!">
           <Card className="h-48 animate-pulse">
             <div aria-busy="true" />
           </Card>

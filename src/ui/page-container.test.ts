@@ -49,4 +49,8 @@ describe("page container", () => {
     }
     for (const f of CONTENT) expect(read(f), f).toContain("page-content");
   });
+  it("check-in drops the width cap (full content width)", () => {
+    for (const f of ["ui/checkin/CheckinPage.tsx", "ui/checkin/CheckinView.tsx"])
+      expect(read(f), f).toContain("page-content max-w-none!");
+  });
 });
