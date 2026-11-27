@@ -1,6 +1,9 @@
 import type { IconName } from "@/lib/icons";
 import { Icon } from "./Icon";
 
+const TRANSITION =
+  "transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out";
+
 export interface ChipOption<T extends string> {
   value: T;
   label: string;
@@ -8,8 +11,8 @@ export interface ChipOption<T extends string> {
 }
 
 /**
- * MD3 segmented filter chips inside a tonal track. Selected chip fills with
- * primary. Rendered as a radiogroup for accessibility.
+ * Segmented filter chips inside a canvas track. Selected chip fills with
+ * the workspace action colour. Rendered as a radiogroup for accessibility.
  */
 export function FilterChips<T extends string>({
   options,
@@ -26,7 +29,7 @@ export function FilterChips<T extends string>({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className="flex items-center gap-0.5 rounded-full bg-surface-high border border-outline-variant p-[3px]"
+      className="flex items-center gap-1 rounded-lg border border-border bg-canvas p-1"
     >
       {options.map((opt) => {
         const active = opt.value === value;
@@ -38,11 +41,11 @@ export function FilterChips<T extends string>({
             aria-checked={active}
             onClick={() => onChange(opt.value)}
             className={[
-              "state-layer inline-flex items-center gap-1.5 rounded-full px-4 py-2 cursor-pointer",
-              "text-[13px] font-bold font-[inherit] transition-colors duration-150 ease-[cubic-bezier(0.2,0.7,0.2,1)]",
+              "state-layer inline-flex min-h-control items-center gap-2 rounded-md px-4 text-label cursor-pointer",
+              TRANSITION,
               active
-                ? "bg-primary text-on-primary"
-                : "text-on-surface-variant hover:text-on-surface",
+                ? "bg-workspace-action text-on-action"
+                : "text-text-secondary enabled:hover:text-text-primary",
             ].join(" ")}
           >
             {opt.icon && <Icon name={opt.icon} size={16} />}
@@ -68,10 +71,10 @@ export function Chip({
 }) {
   return (
     <span
-      className="inline-flex items-center gap-1.5 rounded-[10px] px-2.5 py-1 text-[11px] font-bold border border-outline-variant"
+      className="inline-flex items-center gap-1 rounded-md border border-divider px-2 py-1 text-caption font-medium"
       style={{
-        background: color ?? "var(--secondary-container)",
-        color: onColor ?? "var(--on-secondary-container)",
+        background: color ?? "var(--color-canvas)",
+        color: onColor ?? "var(--color-text-primary)",
       }}
     >
       {icon && <Icon name={icon} size={14} />}
@@ -81,11 +84,12 @@ export function Chip({
 }
 
 const PILL_TONES = {
-  accent: "bg-primary-container text-on-primary-container",
-  neutral: "bg-surface-high text-on-surface-variant",
-  success: "bg-success-container text-on-success-container",
-  warning: "bg-warning-container text-on-warning-container",
-  danger: "bg-error-container text-on-error-container",
+  accent: "bg-workspace-action text-on-action",
+  neutral: "bg-canvas text-text-secondary",
+  success: "bg-success-tint text-success",
+  warning: "bg-warning-tint text-warning",
+  danger: "bg-danger-tint text-danger",
+  info: "bg-info-tint text-info",
 } as const;
 
 /** A small rounded label. `decorative` hides it from assistive tech. */
@@ -106,7 +110,7 @@ export function Pill({
   return (
     <span
       aria-hidden={decorative ? true : undefined}
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${PILL_TONES[tone]}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 text-caption font-medium ${PILL_TONES[tone]}`}
     >
       {dot && <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />}
       {icon && <Icon name={icon} size={12} />}

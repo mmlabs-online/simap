@@ -15,4 +15,11 @@ describe("Avatar", () => {
       expect(html).not.toContain("<img");
     }
   });
+  it("given color uses the on-action token for initials, no hex colour", () => {
+    const html = renderToStaticMarkup(
+      <Avatar name="Lê Bình" color="var(--color-workspace-primary)" />,
+    );
+    expect(html).toContain("color:var(--color-on-action)");
+    expect(html).not.toContain("#");
+  });
 });

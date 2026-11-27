@@ -22,9 +22,10 @@ describe("SegmentedFilter", () => {
     expect(html.match(/aria-pressed="true"/g)).toHaveLength(1);
     expect(html.match(/aria-pressed="false"/g)).toHaveLength(1);
     const beta = html.match(/<button[^>]*aria-pressed="true"[^>]*>Beta<\/button>/)![0];
-    expect(beta).toContain("bg-surface text-primary shadow-sm");
-    expect(html.match(/<button[^>]*aria-pressed="false"[^>]*>Alpha<\/button>/)![0]).not.toContain(
-      "shadow-sm",
-    );
+    expect(beta).toContain("border-border-strong bg-surface text-text-primary shadow-card");
+    expect(beta).toContain("min-h-control");
+    const alpha = html.match(/<button[^>]*aria-pressed="false"[^>]*>Alpha<\/button>/)![0];
+    expect(alpha).not.toContain("shadow-card");
+    expect(alpha).toContain("min-h-control");
   });
 });

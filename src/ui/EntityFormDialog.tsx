@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 import type { IconName } from "@/lib/icons";
+import { Button } from "./Button";
 import { kitCopy } from "./copy/kit";
 import { Icon } from "./Icon";
 
@@ -68,16 +69,16 @@ export function EntityFormDialog({
         if (pressedOnScrim.current && e.target === e.currentTarget) onClose();
         pressedOnScrim.current = false;
       }}
-      className="m-auto w-[calc(100%-2.5rem)] max-w-[440px] p-0 bg-surface-high text-on-surface rounded-md3-xl overflow-hidden shadow-[0_12px_40px_var(--shadow)]"
-      style={{ animation: "popin .2s ease" }}
+      className="m-auto w-[calc(100%_-_2*var(--space-5))] max-w-md overflow-hidden rounded-2xl bg-surface p-0 text-text-primary shadow-dialog"
+      style={{ animation: "popin var(--duration-ui) ease-out" }}
     >
       <div className="flex flex-col">
-        <div className="px-6 pt-[22px] pb-3.5">
-          <h2 id={titleId} className="text-[20px] font-extrabold text-on-surface">
+        <div className="px-6 pt-6 pb-3">
+          <h2 id={titleId} className="text-subtitle text-text-primary">
             {title}
           </h2>
           {subtitle && (
-            <p id={subtitleId} className="text-[13px] text-on-surface-variant font-medium mt-0.5">
+            <p id={subtitleId} className="mt-1 text-label font-normal text-text-secondary">
               {subtitle}
             </p>
           )}
@@ -87,26 +88,18 @@ export function EntityFormDialog({
           {children}
 
           {error && (
-            <div role="alert" className="text-[13px] font-semibold text-error px-1">
+            <div role="alert" className="px-1 text-label text-danger">
               {error}
             </div>
           )}
 
           <div className="flex justify-end gap-2 pt-3 pb-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="state-layer px-5 py-2.5 rounded-md3 border border-outline text-on-surface font-bold text-sm cursor-pointer font-[inherit] hover:border-primary hover:text-primary"
-            >
+            <Button variant="tonal" onClick={onClose}>
               {cancelLabel}
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="state-layer px-5 py-2.5 rounded-md3 bg-primary text-on-primary font-bold text-sm cursor-pointer font-[inherit] disabled:opacity-40 disabled:pointer-events-none"
-            >
+            </Button>
+            <Button type="submit" disabled={submitting}>
               {submitting ? kitCopy.saving : submitLabel}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -115,9 +108,8 @@ export function EntityFormDialog({
 }
 
 const FIELD_BOX =
-  "group flex items-center gap-2.5 rounded-md3 bg-surface px-3.5 h-11 border border-outline-variant focus-within:border-primary focus-within:shadow-[0_0_0_3px_var(--field-focus)] transition-[border-color,box-shadow] duration-150 ease-[cubic-bezier(0.2,0.7,0.2,1)]";
-const FIELD_CAPTION =
-  "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5";
+  "field-box group flex min-h-control items-center gap-2 rounded-lg border border-border-strong bg-surface px-3 transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out";
+const FIELD_CAPTION = "text-label text-text-primary";
 
 /** Labelled text input. The wrapping `<label>` associates the caption with the input. */
 export function DialogField({
@@ -126,12 +118,12 @@ export function DialogField({
   ...rest
 }: { label: string; icon: IconName } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <label className="flex flex-col gap-1">
       <span className={FIELD_CAPTION}>{label}</span>
       <span className={FIELD_BOX}>
-        <Icon name={icon} size={18} className="text-on-surface-variant" />
+        <Icon name={icon} size={18} className="text-text-secondary" />
         <input
-          className="flex-1 min-w-0 bg-transparent outline-none text-sm font-medium text-on-surface placeholder:text-on-surface-variant disabled:opacity-60"
+          className="flex-1 min-w-0 bg-transparent outline-none text-label text-text-primary placeholder:text-text-secondary disabled:cursor-not-allowed disabled:opacity-50"
           {...rest}
         />
       </span>
@@ -147,12 +139,12 @@ export function DialogSelect({
   ...rest
 }: { label: string; icon: IconName } & React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <label className="flex flex-col gap-1">
       <span className={FIELD_CAPTION}>{label}</span>
       <span className={FIELD_BOX}>
-        <Icon name={icon} size={18} className="text-on-surface-variant" />
+        <Icon name={icon} size={18} className="text-text-secondary" />
         <select
-          className="flex-1 min-w-0 bg-transparent outline-none text-sm font-medium text-on-surface disabled:opacity-60 cursor-pointer"
+          className="flex-1 min-w-0 bg-transparent outline-none text-label text-text-primary placeholder:text-text-secondary disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           {...rest}
         >
           {children}

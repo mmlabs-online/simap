@@ -143,6 +143,10 @@ const NON_TEXT_PAIRS: [string, string][] = [
   ["focus", "tile"],
   ["border-strong", "surface"],
   ["border-strong", "canvas"],
+  ["workspace-primary", "surface"],
+  ["workspace-primary", "canvas"],
+  ["workspace-action", "surface"],
+  ["workspace-action", "canvas"],
 ];
 
 describe.each([
@@ -172,6 +176,19 @@ describe("globals.css", () => {
     expect(rule).not.toBeNull();
     expect(rule![1]).toMatch(/outline:\s*2px solid var\(--color-focus\)/);
     expect(rule![1]).toMatch(/outline-offset:\s*2px/);
+  });
+
+  it("field box ring, checkbox accent, state layer and no status-dot", () => {
+    const field = /\.field-box:focus-within\s*\{([^}]*)\}/.exec(globalsCss);
+    expect(field).not.toBeNull();
+    expect(field![1]).toMatch(/outline:\s*2px solid var\(--color-focus\)/);
+    expect(field![1]).toMatch(/outline-offset:\s*2px/);
+    expect(globalsCss.indexOf(".field-box:focus-within")).toBeGreaterThan(
+      globalsCss.search(/:focus-visible\s*\{/),
+    );
+    expect(globalsCss).toContain("accent-color: var(--color-workspace-action)");
+    expect(globalsCss).toContain(".state-layer:not(:disabled):hover::after");
+    expect(globalsCss).not.toContain(".status-dot");
   });
 
   it("reduced-motion block sets animation and transition to none", () => {
