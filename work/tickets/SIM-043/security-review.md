@@ -64,3 +64,43 @@ None.
 ### Follow-ups (out of scope)
 - Option B: mark each domain action row written by a super admin, or add a read audit for export and search, if Ming wants reads in simap's own audit trail.
 - If Ming wants to know ahead of time, document that an invalid `SIMAP_SUPER_ADMIN_ROLE` makes every request answer 503.
+
+## Attempt 2
+
+## SIM-043 attempt 2: security re-review of finding 🟡 1 (auditRoute)
+
+I only read files. I did not run `git diff` or `pnpm test`, so I have not confirmed the tests pass. The orchestrator's check run has to confirm that.
+
+**Verdict:** finding 🟡 1 is fixed and covered by tests. The change adds no new issue. No 🔴 and no 🟡.
+
+### Findings
+
+**🔴 Blockers:** none.
+
+**🟡 Should-fix:** none.
+
+**🟢 Verified**
+
+1. **Fixed: UUIDs are always masked now.** `/home/user/simap/src/lib/audit/route.ts:4,11`
+   - The function checks `isCanonicalUuid(s)` before the word rule, so a UUID becomes `:id` whatever its first character.
+   - `KEEP` is now `/^[a-z][a-z-]{0,40}$/` with no digits. Any segment with a digit becomes `:id`, which also covers hex ids that are not canonical UUIDs.
+   - Every real `/api` route segment under `src/app/api/**` is a plain lowercase word or a kebab-case word (`delete-impact`, `take-back`, `deactivation-impact`, `pixel-look`), so no static segment is masked by mistake.
+
+2. **Covered by tests.** `/home/user/simap/src/lib/audit/route.test.ts:12-20`
+   - UUIDs starting with a letter: `a1b2c3d4-…` (`:13`) and `f0000000-…` (`:16`). These are the exact cases attempt 1 missed.
+   - A UUID starting with a digit (`:17`).
+   - A kebab-case word that must be kept (`:18`).
+   - A hex id that is not a UUID (`deadbeef1234`, `:19`).
+   - The existing tests still cover query stripping, non-ASCII or encoded segments, numeric ids and the 200-char cap (`:5-10,21-23`).
+
+3. **No new issue.**
+   - `isCanonicalUuid` (`/home/user/simap/src/lib/validate/uuid.ts:1-6`) is a pure function in lib, so R1 layers hold. Its regex is anchored with no nested quantifiers, so there is no ReDoS risk.
+   - The only caller is unchanged: `/home/user/simap/src/server/http/with-auth.ts:104` passes `new URL(req.url).pathname` only, so the query and fragment never reach it.
+   - The output is still at most 200 chars and contains only kept words, `/` and `:id`.
+
+### 💭 Notes (no action)
+- A segment of 41 chars or fewer made only of the letters a to f and dashes, such as an all-letter string shaped like a UUID that is not canonical, would still be kept. Real ids come from `gen_random_uuid()`, which always contains the version digit `4`, so `KEEP` rejects them. This is not a practical leak.
+- Dynamic segments that are codes, not entity ids (`map-items/[key]`, `export/[kind]`, `art/[dir]`), are kept when they are plain words and become `:id` when they contain a digit. That only loses some detail, it is safe, and it was the same before.
+
+### Follow-ups
+None.
