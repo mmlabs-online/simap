@@ -67,17 +67,46 @@ describe("PixelLookPicker", () => {
     for (const n of [1, 2, 3]) expect(html).toContain(copy.styleName(n));
   });
 
-  it("atlas ready: four canvases with role=img and the four preview labels; width = box x scale", () => {
+  it("atlas ready: three stage canvases (4x, 1x, 2x) with role=img; width = box x scale", () => {
     const html = render({ atlas });
-    expect(count(html, /<canvas/g)).toBe(4);
-    for (const view of [copy.views.front, copy.views.back]) {
-      for (const scale of [1, 2]) {
-        expect(html).toContain(`aria-label="${copy.previewLabel(view, scale)}"`);
-      }
+    expect(count(html, /<canvas/g)).toBe(3 + 3);
+    for (const scale of [1, 2, 4]) {
+      expect(html).toContain(`aria-label="${copy.previewLabel(copy.views.front, scale)}"`);
     }
-    expect(count(html, /role="img"/g)).toBe(4);
+    expect(count(html, /role="img"/g)).toBe(3);
     expect(html).toContain('width="10"');
     expect(html).toContain('width="20"');
+    expect(html).toContain('width="40"');
+  });
+
+  it("hairstyle cards: 3 radios, each card has a canvas with atlas", () => {
+    const html = render({ atlas });
+    const style = html.match(/<fieldset(?:(?!<\/fieldset>).)*pixel-look-style.*?<\/fieldset>/s)![0];
+    expect(count(style, /type="radio"/g)).toBe(3);
+    expect(count(style, /<canvas/g)).toBe(3);
+    expect(count(style, /<label/g)).toBe(3);
+  });
+
+  it("hairstyle cards without atlas: text names only, no canvas", () => {
+    const html = render();
+    const style = html.match(/<fieldset(?:(?!<\/fieldset>).)*pixel-look-style.*?<\/fieldset>/s)![0];
+    expect(style).not.toContain("<canvas");
+    for (const n of [1, 2, 3]) expect(style).toContain(copy.styleName(n));
+  });
+
+  it("selected swatch shows check icon; unselected do not; exactly 4 checks (3 swatches + the style card)", () => {
+    const html = render();
+    expect(count(html, />check<\/span>/g)).toBe(4);
+    const skin = html.match(/<fieldset(?:(?!<\/fieldset>).)*pixel-look-skin.*?<\/fieldset>/s)![0];
+    expect(count(skin, />check<\/span>/g)).toBe(1);
+  });
+
+  it("swatch and card labels carry min 44 px classes", () => {
+    const html = render();
+    const labels = html.match(/<label[^>]*>/g)!;
+    expect(labels).toHaveLength(RADIOS);
+    for (const l of labels) expect(l).toContain("min-h-11");
+    for (const l of labels) expect(l).toContain("min-w-11");
   });
 
   it("atlas missing: no canvas; atlasFailed shows previewUnavailable; the radios are still there", () => {
@@ -93,7 +122,10 @@ describe("PixelLookPicker", () => {
   });
 
   it("Reset character is disabled when !canReset or locked", () => {
-    const reset = (p: Partial<PixelLookPickerProps>) => render(p).match(/<button[^>]*>/)![0];
+    const reset = (p: Partial<PixelLookPickerProps>) =>
+      render(p)
+        .match(/<button[^>]*>/g)!
+        .at(-1)!;
     expect(reset({})).not.toContain('disabled=""');
     expect(reset({ canReset: false })).toContain('disabled=""');
     expect(reset({ locked: true })).toContain('disabled=""');

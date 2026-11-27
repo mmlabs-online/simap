@@ -130,6 +130,8 @@ export const portalCopy = {
       option: (layer: string, n: number, total: number) => `${layer} ${n} of ${total}`,
       styleName: (n: number) => `Style ${n}`,
       views: { front: "Front", back: "Back" },
+      stageLabel: "A little you",
+      viewToggleLabel: "Character view",
       previewLabel: (view: string, scale: number) => `Preview, ${view}, ${scale}x`,
       previewUnavailable: "Preview not available. You can still choose and save.",
       automatic: "Automatic look, picked for you. Reset returns here.",
