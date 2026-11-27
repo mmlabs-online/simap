@@ -113,3 +113,38 @@ None.
 - Room without a door, or a walled-in chair: a short fade at the chair.
 - Name tags before the first presence answer: neutral, no green dot; adjacent tags never cover a dot.
 - Seat map / room pages (D50 hover tags): unchanged.
+
+## Attempt 2 — 2026-11-27
+Verdict: PASS
+
+### Checks (run by reviewer)
+- `pnpm format:check` — exit 0, "All matched files use the correct format."
+- `pnpm typecheck` — exit 0.
+- `pnpm check:layers` — exit 0, "994 files, no violations".
+- `pnpm test` — exit 0 (all test files passed, incl. the new walk.test.ts cases).
+- `pnpm build` — first two runs died with a Node worker "Fatal process out of memory: Zone" (exit 3221226505) during page-data collection on this Windows host; re-run with `NODE_OPTIONS=--max-old-space-size=6144` — exit 0. Diff touches no route/page-data code, so the crash is host memory, not the change (attempt 1 built clean on the same host).
+- `test:db` not run (nothing outside src/lib and src/ui changed; matches impl-log).
+
+### Acceptance criteria
+- [x] Attempt-1 blocker: walk baseline resets on layout change — `walk.ts` `presenceStep` (`same` also requires `baseline.layout === input.layout`); `layout` passed via `RoomMap.tsx:104` and `useWalks.ts` (deps `[roomId, layout, presence]`). `layout` is a stable loaded-state prop (already a memo dependency in RoomMap), so no spurious resets. Tests: "presence arriving before the new room's layout does not walk anyone in", "the same-room layout object keeps the baseline".
+- [x] Attempt-1 should-fix: finished walk-out invisible — `walk.ts` `alpha: walk.mode === "out" && done ? 0 : 1`; test "finished walk-out is invisible once done" (alpha 1 at start, 0 at end).
+- [x] All other criteria unchanged from attempt 1 (diff of attempt 2 is limited to the four listed files plus work files).
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1 (layers green), R4 (only the four planned-for-rework files changed), R5 (new logic has tests).
+
+### Blockers from review agents
+None.
+
+### Nits (do not block)
+- Attempt-1 nits (`startWalks` cap handling, `finish` clearing a same-tick new walk) remain, as the implementer noted.
+- Build on this Windows host needs a larger Node heap; consider noting it in the README if it recurs.
+
+### Follow-ups (out of scope)
+- As attempt 1: own check-in navigating to another room plays no walk-in (PRE-07 decision); typing idle SIM-061.1; walker depth sorting.
+
+### Ming verification after merge (visual; not checkable in node)
+As listed in attempt 1 (check-in/out walks, click-tag chair-to-chair, second browser, room switching shows no walk-in on arrival, click/key skip, reduced motion, no-door fade, name tags before first presence).
