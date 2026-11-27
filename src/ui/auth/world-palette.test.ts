@@ -50,6 +50,12 @@ describe("auth world palette", () => {
       expect(v).toMatch(/^#[0-9a-f]{6}$/);
   });
 
+  it("the aw-world block comes once, after the aw block", () => {
+    const WORLD = "/* SIM-068.1 small world (aw-world) */";
+    expect(css.split(WORLD)).toHaveLength(2);
+    expect(css.indexOf(WORLD)).toBeGreaterThan(css.indexOf(MARKER));
+  });
+
   it("the aw block has no animation or transition", () => {
     expect(block).not.toMatch(/animation|transition|@keyframes/);
   });

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/147 |
 
 ## Goal
 Finish the "small world" landing from Ming's mockup (`work/tickets/SIM-068/mockup-sign-in.webp`): four decorative
@@ -55,3 +55,9 @@ D45/D66, D36; style guide §1 and §4.
 - 2026-11-26: split from SIM-068 (Ming: "theo mặc định", Q9).
 
 ## Handoff
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 6, ~416k tokens (frontend-developer×1 default 55k, ux-architect×1 default 30k, planner×1 default 112k, implementer×1 default 92k, reviewer×1 default 60k (resumed after a rate limit), security-ai-generated-code-auditor×1 default 35k (resumed)).
+- Done: four 12×7 rooms, standing/seated avatars, dotted paths, two notes and the card avatar on the landing at ≥ 1280 px; atlas fetched once behind a JS media gate; review and security PASS attempt 1; PR #147.
+- In progress / next: Ming merges PR #147 and checks the look on a deployed build.
+- Gotchas: world-palette.test.ts scans from the aw marker to the end of globals.css — no animation words or token blocks after it; pnpm dev shows DevGate, not the sign-in page.
