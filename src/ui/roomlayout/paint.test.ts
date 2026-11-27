@@ -4,7 +4,8 @@ import type { RoomLayout } from "@/lib/sprites/layout";
 import { buildDrawList, type DrawOp } from "@/lib/sprites/placement";
 import type { SpriteManifest } from "@/lib/sprites/types";
 import type { Atlas } from "./loadAtlas";
-import { paintRoom, smoothFor, tintedFrame } from "./paint";
+import { paintRoom, paintWalkers, smoothFor, tintedFrame } from "./paint";
+import { walkerOps } from "@/lib/sprites/walk";
 
 const manifest = JSON.parse(
   readFileSync(new URL("../../../public/sprites/office.json", import.meta.url), "utf8"),
@@ -235,5 +236,50 @@ describe("paintRoom screen op", () => {
     expect(at).toBeGreaterThan(0);
     expect(log[at - 1]).toEqual(["set fillStyle", "rgba(125,211,252,.7)"]);
     expect(log.some((c) => c[0] === "drawImage" && c[6] === 5)).toBe(false);
+  });
+});
+
+describe("paintWalkers", () => {
+  const bounds = { x: -8, y: -16, w: 100, h: 80 };
+  const ops = (x: number) => walkerOps(manifest, { seed: "m1", look: null }, "front", x, 1);
+
+  it("draws every frame of each walker with the zoom scale, the bounds translate and a per-walker alpha", () => {
+    const log: Call[] = [];
+    const canvas = fakeCanvas(log);
+    const walkers = [
+      { ops: ops(1), alpha: 0.5 },
+      { ops: ops(2), alpha: 1 },
+    ];
+    expect(paintWalkers(canvas, atlas(), bounds, 2, walkers, () => fakeCanvas([]))).toBe(true);
+    expect([canvas.width, canvas.height]).toEqual([200, 160]);
+    const names = log.map((c) => c[0]);
+    expect(names).toContain("clearRect");
+    expect(log).toContainEqual(["scale", 2, 2]);
+    expect(log).toContainEqual(["translate", 8, 16]);
+    expect(log.filter((c) => c[0] === "set globalAlpha").map((c) => c[1])).toEqual([0.5, 1, 1]);
+    expect(names.filter((n) => n === "drawImage")).toHaveLength(6);
+    for (const c of log.filter((c) => c[0] === "drawImage")) {
+      expect(Number.isInteger(c[6]) && Number.isInteger(c[7])).toBe(true);
+    }
+  });
+
+  it("does not resize when the size is unchanged", () => {
+    const canvas = fakeCanvas([]);
+    paintWalkers(canvas, atlas(), bounds, 2, []);
+    let sets = 0;
+    Object.defineProperty(canvas, "width", {
+      get: () => 200,
+      set: () => {
+        sets++;
+      },
+    });
+    expect(paintWalkers(canvas, atlas(), bounds, 2, [])).toBe(true);
+    expect(sets).toBe(0);
+  });
+
+  it("returns false over the canvas budget", () => {
+    expect(paintWalkers(fakeCanvas([]), atlas(), { x: 0, y: 0, w: 1e6, h: 1e6 }, 4, [])).toBe(
+      false,
+    );
   });
 });

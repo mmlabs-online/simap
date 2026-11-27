@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
 | Gate | plan-approval |
 | Depends on | SIM-060 |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/148 |
 
 ## Goal
 On check-in the member's character walks from the room's door to their chair along the tile grid, and walks back out
@@ -50,6 +50,20 @@ checked in by the provider); decision D77 (walk to the new chair on move).
 - Manual: check in/out in a room with and without a door; OS reduced motion on.
 
 ## Notes / answers from Ming
+- Plan approved (2026-11-27): "duyệt plan SIM-061" — defaults: one PR (no 1a/1b split); typing idle split to SIM-061.1.
+- Waiting for Ming: plan approval (High tier gate: plan-approval).
 - Carried from SIM-060 (2026-11-26, orchestrator): (1) typing idle animation (PRE-06/LAY-06) moves here — SIM-060 draws a static seated pose; (2) review should-fix: `src/ui/roomlayout/SeatOverlay.tsx:34` treats unknown presence as "present" (green dot before the first poll / after a failed poll) — show no or a neutral marker; (3) review should-fix: `src/lib/sprites/tag-layout.ts:98-107` does not reserve the dot fallback rect in `taken`. See work/tickets/SIM-060/review.md.
 
 ## Handoff
+
+### 2026-11-27 — claude — BLOCKED
+- Agent calls: 2, ~156k tokens (frontend-developer×1 default 47k, planner×1 default 109k).
+- Done: consult; plan READY (walk-in/out/move with BFS path from doors, overlay walk canvas, reduced motion, skip; carried SIM-060 fixes; typing idle split to a proposed SIM-061.1).
+- In progress / next: Ming approves the plan (optionally picks the 1a/1b split); then `/run SIM-061`.
+- Gotchas: ~550 product + ~450 test lines; no "photo" in roomlayout/sprites.
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 6, ~411k tokens (frontend-developer×1 default 47k, planner×1 default 109k, implementer×2 default 121k + 29k, reviewer×2 default 74k + sonnet 24k).
+- Done: walk-in / walk-out / move with door paths and fade fallback, WalkLayer overlay, reduced motion, skip; carried SIM-060 fixes; REWORK attempt 1 (room-switch walk burst, finished walk-out drawn), PASS attempt 2; PR #148.
+- In progress / next: Ming merges PR #148 and checks the animation in a browser; then SIM-061.1 (typing idle), SIM-062, SIM-064.
+- Gotchas: Ming's approval item renumbered M-90 → M-91 (another session used M-90); local build may need more Node memory.
