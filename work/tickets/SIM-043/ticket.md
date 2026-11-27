@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P2 |
 | Size | M |
 | Areas | security, api, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | M-83, M-84 |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-27T01:44:44Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -75,4 +75,12 @@ supersedes these points (M-83) and Identity can mint such tokens (M-84). Raised 
 
 - 2026-11-27: M-84 answered by org-admin-api (ADR-0030) and marked done by Ming. Contract in D86: role key `simap:super-admin`, check `org_access == "super_admin"`, `org_roles: []`, picker items have `access`, handle 429 on `/auth/token`. Release waits for M-90 (org-admin-api deploy + setup).
 
+Waiting for Ming: plan approval (High tier)
+
 ## Handoff
+
+### 2026-11-27 — claude — BLOCKED
+- Agent calls: 3 (api-platform-engineer×1 36k, software-architect×1 54k, planner×1 90k; default models)
+- Done: consults, plan READY (slice 1 of a proposed split; follows D86 over the older ticket wording); plan gate (High paths); M-91 added.
+- In progress / next: Ming approves the plan and Q1–Q15 → implement slice 1; create the slice-2 ticket if the split is approved.
+- Gotchas: ticket Scope/Notes/AC1 still say the old role key and lack the `org_access` condition; D86 wins.
