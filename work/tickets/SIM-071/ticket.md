@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-27 |
-| Claimed by | claude@2026-11-27T10:36:23Z |
-| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 |
+| Claimed by | |
+| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 (merged); slice 5c: https://github.com/mmlabs-online/simap/pull/164 |
 
 ## Goal
 Every screen of simap uses one set of design tokens (colours, type, spacing, radius, elevation, layout, motion) from
@@ -127,3 +127,9 @@ workspace coral) via D87.
 - Done: slice 5b (Devices + Device types, 26 screen files, 16 files off the pending list) PASS on the first try; PR https://github.com/mmlabs-online/simap/pull/163.
 - In progress / next: after Ming merges #163, `/run SIM-071` → slice 5c (Dashboard, Search, Rooms, room-detail chrome; needs an addendum), then slice 6 and slice 7.
 - Gotchas: Ming should check the DeskSlotDiagram fill in a browser (the old class had no theme key). 1 rework left on the ticket.
+
+### 2026-11-27 — claude — IN_PROGRESS (slice 5c PR open)
+- Agent calls: 3 (planner×1 151k slice 5c addendum, implementer×1 81k, reviewer×1 79k)
+- Done: slice 5c (Dashboard, Search, Rooms, seat chrome; 8 pending keys removed, 183 → 142) passed review on attempt 1. PR https://github.com/mmlabs-online/simap/pull/164.
+- In progress / next: after Ming merges #164, run `/run SIM-071` for slice 6 (end-user/pixel surfaces; needs an addendum), then slice 7.
+- Gotchas: Q-S5c-1..5 took their defaults. The seat panel and member picker changes also show in check-in and in the device dialogs. 1 rework left on the ticket.
