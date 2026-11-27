@@ -64,7 +64,8 @@ const firstString = (...vals: unknown[]): string | undefined =>
 /**
  * Reads the `/auth/orgs` body. The shape is not documented (Q18), so this accepts a bare array or the first array
  * under `items` / `orgs` / `organizations` / `data`, and an org either flat or nested under `org` / `organization`.
- * Roles are ignored. A body that cannot be read rejects `unknown`: never an empty list by mistake.
+ * Roles are ignored. `access` (D86) is read from the item or the nested org: missing = `member`; an unknown value
+ * drops the org (not openable) and does not count as an unreadable body. A body that cannot be read rejects `unknown`: never an empty list by mistake.
  */
 function parseOrgs(json: unknown): OrgChoice[] {
   const body = asObject(json);
@@ -76,6 +77,7 @@ function parseOrgs(json: unknown): OrgChoice[] {
   if (!list) throw unknownError();
   const out: OrgChoice[] = [];
   const seen = new Set<string>();
+  let unopenable = 0;
   for (const raw of list) {
     const item = asObject(raw);
     const src =
@@ -87,12 +89,17 @@ function parseOrgs(json: unknown): OrgChoice[] {
     const id = firstString(src.id, item.org_id, src.org_id, item.organization_id);
     const name = firstString(src.name, src.display_name, item.org_name, src.slug);
     if (!id || !UUID_RE.test(id) || !name) continue;
+    const rawAccess = item.access !== undefined ? item.access : src.access;
+    if (rawAccess !== undefined && rawAccess !== "member" && rawAccess !== "super_admin") {
+      unopenable++;
+      continue;
+    }
     const key = id.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push({ id: key, name: name.trim().normalize("NFC") });
+    out.push({ id: key, name: name.trim().normalize("NFC"), access: rawAccess ?? "member" });
   }
-  if (list.length > 0 && out.length === 0) throw unknownError();
+  if (list.length > 0 && out.length === 0 && unopenable === 0) throw unknownError();
   return out;
 }
 

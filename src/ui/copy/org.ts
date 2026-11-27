@@ -15,6 +15,9 @@ export const orgCopy = {
     retry: "Try again",
     only: "You are only in this organization.",
   },
+  badge: {
+    supportAccess: "Support access",
+  },
   notices: {
     org_denied: "You no longer have access to that organization.",
   },

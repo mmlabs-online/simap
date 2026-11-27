@@ -66,3 +66,13 @@ describe("sortOrgs", () => {
     expect(sortOrgs([mk("9", nfd), mk("8", "Ánh")]).map((o) => o.id)).toEqual(["8", "9"]);
   });
 });
+
+describe("decideOrg access", () => {
+  it("keeps access on enter and pick; absent stays absent", () => {
+    const S: OrgChoice = { ...B, access: "super_admin" };
+    expect(d([S])).toEqual({ kind: "enter", org: S });
+    expect(d([A, S])).toEqual({ kind: "pick", orgs: [A, S] });
+    const out = d([A, S]);
+    if (out.kind === "pick") expect("access" in out.orgs[0]!).toBe(false);
+  });
+});

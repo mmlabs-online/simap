@@ -71,6 +71,11 @@ export function OrgSwitcherDialog({
                   onChange={() => setChosen(o.id)}
                 />
                 <span className="min-w-0 break-words">{o.name}</span>
+                {o.access === "super_admin" && (
+                  <span className="text-xs text-on-surface-variant">
+                    {orgCopy.badge.supportAccess}
+                  </span>
+                )}
                 {o.id === currentId && (
                   <span className="text-xs text-on-surface-variant">
                     {orgCopy.switcher.current}

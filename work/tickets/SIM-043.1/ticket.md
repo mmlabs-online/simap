@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | S |
 | Areas | ui, api |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-27 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/153 |
 
 ## Goal
 The org picker understands D86's `access` field and shows super-admin orgs as support access, and token renewal
@@ -44,3 +44,9 @@ Decision D86 (amends D75); SIM-043 `plan.md` → Split proposal and Q8 defaults 
 - 2026-11-27: created from the SIM-043 split ("duyệt SIM-043, tách slice 2"), Q8 defaults approved.
 
 ## Handoff
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 4, ~166k tokens total (planner×1 sonnet 52k; implementer×1 default 46k; reviewer×1 default 40k; security-ai-generated-code-auditor×1 default 28k).
+- Done: fast lane (no consult), plan READY, attempt 1, review PASS, security PASS (no 🔴/🟡), PR #153.
+- In progress / next: Ming reviews and merges PR #153; after M-90 check the badge with a staff account.
+- Gotchas: Retry-After ≥ 60 s cannot re-arm background renewal (it fires 60 s before expiry); tests use 30 s / 120 s. Follow-ups: `onVisible` ignores a pending Retry-After; one test name overclaims.

@@ -47,4 +47,4 @@ export type Credentials = { email: string; password: string };
 export type AccountChoice = { accountId: string; email: string };
 
 /** An organization the account may enter for this app (`GET /auth/orgs`). */
-export type OrgChoice = { id: string; name: string };
+export type OrgChoice = { id: string; name: string; access?: "member" | "super_admin" };
