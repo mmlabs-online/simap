@@ -10,6 +10,7 @@ import { DeviceRowActions } from "../devices/DeviceRowActions";
 import { FilledInput } from "../FilledInput";
 import { Icon } from "../Icon";
 import { SectionCard } from "../SectionCard";
+import { TABLE_CELL, TABLE_HEAD, TABLE_ROW } from "../table";
 import {
   effectiveType,
   filterDevices,
@@ -18,8 +19,6 @@ import {
   typeSummary,
 } from "./my-devices-filter";
 
-const CELL = "px-4 py-4 align-top text-sm text-on-surface";
-const HEAD = "px-4 py-3 text-left text-[11px] font-extrabold uppercase text-on-surface-variant";
 const COLUMNS = [
   "name",
   "type",
@@ -86,7 +85,7 @@ export function MyDevicesTable({
             placeholder={copy.searchPlaceholder}
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
-            className="h-10! w-full sm:w-56"
+            className="w-full sm:w-56"
           />
           <label htmlFor={TYPE_SELECT_ID} className="sr-only">
             {copy.typeLabel}
@@ -95,7 +94,7 @@ export function MyDevicesTable({
             id={TYPE_SELECT_ID}
             value={type}
             onChange={(e) => onTypeChange(e.target.value)}
-            className="h-10 min-w-0 rounded-md3 border border-outline-variant bg-surface px-3 text-sm font-semibold text-on-surface"
+            className="min-h-control min-w-0 rounded-lg border border-border-strong bg-surface px-3 text-label font-semibold text-text-primary"
           >
             <option value="">{copy.allTypes}</option>
             {options.map((o) => (
@@ -107,13 +106,13 @@ export function MyDevicesTable({
         </div>
       }
       footer={
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-on-surface-variant">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-caption text-text-secondary">
           <p role="status">
             {(hasMore ? copy.showingLoaded : copy.showing)(rows.length, devices.length)}
           </p>
           <span className="lg:hidden">{copy.scrollHint}</span>
           {errorCode !== null && (
-            <p role="alert" className="font-semibold text-error">
+            <p role="alert" className="font-semibold text-danger">
               {copy.loadMoreFailed} {apiErrorMessage(errorCode)}
             </p>
           )}
@@ -126,17 +125,17 @@ export function MyDevicesTable({
       }
     >
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[960px] border-collapse">
+        <table className="w-full min-w-240 border-collapse">
           <caption className="sr-only">{copy.tableCaption}</caption>
           <thead>
-            <tr className="bg-surface-container">
+            <tr className="border-b border-divider">
               {COLUMNS.map((c) => (
-                <th key={c} scope="col" className={HEAD}>
+                <th key={c} scope="col" className={TABLE_HEAD}>
                   {devicesCopy.columns[c]}
                 </th>
               ))}
               {showActions && (
-                <th scope="col" className={HEAD}>
+                <th scope="col" className={TABLE_HEAD}>
                   {devicesCopy.columns.actions}
                 </th>
               )}
@@ -144,39 +143,39 @@ export function MyDevicesTable({
           </thead>
           <tbody>
             {rows.map((d) => (
-              <tr key={d.id} className="border-t border-outline-variant">
-                <td className={`${CELL} font-semibold`}>
+              <tr key={d.id} className={TABLE_ROW}>
+                <td className={TABLE_CELL}>
                   <span className="inline-flex items-center gap-2">
-                    <Icon name={typeIcon(d.type)} size={20} className="text-on-surface-variant" />
+                    <Icon name={typeIcon(d.type)} size={20} className="text-text-secondary" />
                     <DeviceNameLink device={d} />
                   </span>
                 </td>
-                <td className={CELL}>{d.type}</td>
-                <td className={`${CELL} font-mono`}>{d.inventoryNumber}</td>
-                <td className={CELL}>
+                <td className={TABLE_CELL}>{d.type}</td>
+                <td className={`${TABLE_CELL} font-mono`}>{d.inventoryNumber}</td>
+                <td className={TABLE_CELL}>
                   <Mac mac={d.mac} />
                 </td>
-                <td className={CELL}>
+                <td className={TABLE_CELL}>
                   <Details device={d} />
                 </td>
-                <td className={CELL}>
+                <td className={TABLE_CELL}>
                   <OwnerLabel device={d} />
                 </td>
-                <td className={CELL}>
+                <td className={TABLE_CELL}>
                   <PlacementLabel device={d} inventoryLabel={copy.inMyInventory} />
                 </td>
                 {showActions && (
-                  <td className={CELL}>
+                  <td className={TABLE_CELL}>
                     <DeviceRowActions device={d} handlers={actions} busyId={busyId} />
                   </td>
                 )}
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr className="border-t border-outline-variant">
-                <td colSpan={cols} className={`${CELL} text-center`}>
+              <tr className={TABLE_ROW}>
+                <td colSpan={cols} className={`${TABLE_CELL} text-center`}>
                   <span className="inline-flex flex-wrap items-center justify-center gap-3">
-                    <span className="text-on-surface-variant">{copy.noMatches}</span>
+                    <span className="text-text-secondary">{copy.noMatches}</span>
                     <Button variant="tonal" size="sm" type="button" onClick={onClear}>
                       {copy.clearFilters}
                     </Button>

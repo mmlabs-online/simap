@@ -5,10 +5,7 @@ import { portalCopy } from "../copy/portal";
 import { Icon } from "../Icon";
 import { tileValue, typeIcon, typeSummary } from "./my-devices-filter";
 
-const TONES = [
-  "bg-secondary-container text-on-secondary-container",
-  "bg-tertiary-container text-on-tertiary-container",
-];
+const TONES = ["bg-canvas text-text-primary", "bg-info-tint text-info"];
 
 function Tile({
   icon,
@@ -24,12 +21,12 @@ function Tile({
   return (
     <li>
       <Card className="flex items-center gap-4 p-5">
-        <span className={`flex size-11 shrink-0 items-center justify-center rounded-md3 ${tone}`}>
+        <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${tone}`}>
           <Icon name={icon} size={24} />
         </span>
         <span className="flex min-w-0 flex-col">
-          <span className="text-2xl font-extrabold text-on-surface">{value}</span>
-          <span title={label} className="truncate text-sm text-on-surface-variant">
+          <span className="text-title text-text-primary">{value}</span>
+          <span title={label} className="truncate text-label font-normal text-text-secondary">
             {label}
           </span>
         </span>
@@ -50,7 +47,7 @@ export function MyDevicesTiles({ devices, hasMore }: { devices: DeviceDto[]; has
     >
       <Tile
         icon="category"
-        tone="bg-primary-container text-on-primary-container"
+        tone="bg-workspace-action text-on-action"
         value={fmt(devices.length)}
         label={copy.totalTile}
       />

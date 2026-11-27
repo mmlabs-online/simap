@@ -79,4 +79,17 @@ describe("MyRequestRow", () => {
     expect(html).not.toContain(`>${requestsCopy.mine.newChip}<`);
     expect(render(req(), true)).toContain(`>${requestsCopy.mine.newChip}<`);
   });
+  it("tokens: status icon tint, Cancel target, no -container classes", () => {
+    const pending = render(req());
+    expect(pending.match(/<span class="[^"]*rounded-full[^"]*"/)![0]).toContain(
+      "bg-warning-tint text-warning",
+    );
+    expect(
+      render(decided("cancelled", null)).match(/<span class="[^"]*rounded-full[^"]*"/)![0],
+    ).toContain("bg-canvas");
+    const cancel = pending.match(/<button[^>]*>/)![0];
+    expect(cancel).toContain("min-h-control");
+    expect(cancel).not.toContain("min-h-11");
+    expect(pending).not.toContain("-container");
+  });
 });

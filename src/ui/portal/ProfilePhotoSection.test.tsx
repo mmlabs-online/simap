@@ -68,4 +68,15 @@ describe("ProfilePhotoSection", () => {
     expect(html).toContain(copy.loadFailed);
     expect(html).toContain(copy.upload);
   });
+  it("tokens: file label is a field-box 44 px target; Remove is a kit text button; error is danger", () => {
+    const html = render({ url: "https://x/y.png", error: "Boom" });
+    const label = html.match(/<label[^>]*>/)![0];
+    expect(label).toContain("field-box");
+    expect(label).toContain("min-h-control");
+    expect(label).not.toContain("focus-within:");
+    const remove = html.match(/<button[^>]*>[^<]*<\/button>/)![0];
+    expect(remove).toContain('data-variant="text"');
+    expect(remove).toContain("min-h-control");
+    expect(html.match(/<p role="alert"[^>]*>/)![0]).toContain("text-danger");
+  });
 });

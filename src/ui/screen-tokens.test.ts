@@ -83,6 +83,26 @@ const MIGRATED = [
   "ui/checkin/CheckinPage.tsx",
   "ui/checkin/WhosHere.tsx",
   "ui/checkin/PixelHead.tsx",
+  "ui/portal/PortalPage.tsx",
+  "ui/portal/PortalTabs.tsx",
+  "ui/portal/MySeatTab.tsx",
+  "ui/portal/MySeatView.tsx",
+  "ui/portal/SeatCard.tsx",
+  "ui/portal/MyRequestsPanel.tsx",
+  "ui/portal/MyRequestRow.tsx",
+  "ui/portal/MyDevicesTab.tsx",
+  "ui/portal/MyDevicesView.tsx",
+  "ui/portal/MyDevicesTiles.tsx",
+  "ui/portal/MyDevicesTable.tsx",
+  "ui/portal/ProfileTab.tsx",
+  "ui/portal/ProfileTabView.tsx",
+  "ui/portal/PersonalInfoCard.tsx",
+  "ui/portal/MembershipCard.tsx",
+  "ui/portal/ProfilePhotoSection.tsx",
+  "ui/portal/ProfilePhoto.tsx",
+  "ui/portal/PixelLookPicker.tsx",
+  "ui/portal/LookStage.tsx",
+  "ui/portal/LookPreview.tsx",
 ];
 
 const LEGACY =
@@ -124,6 +144,7 @@ describe("migrated management screens", () => {
       "ui/checkin/CheckinPopup.tsx",
       "ui/checkin/CheckinButton.tsx",
       "ui/checkin/CheckinView.tsx",
+      "ui/portal/ProfilePhotoSection.tsx",
     ]) {
       expect(read(f), f).not.toContain("<button");
     }
@@ -160,12 +181,37 @@ describe("migrated management screens", () => {
     }
   });
 
-  it("DeviceTable and SeatsView use the shared table classes", () => {
-    for (const f of ["ui/devices/DeviceTable.tsx", "ui/seats/SeatsView.tsx"]) {
+  it("DeviceTable, SeatsView and MyDevicesTable use the shared table classes", () => {
+    for (const f of [
+      "ui/devices/DeviceTable.tsx",
+      "ui/seats/SeatsView.tsx",
+      "ui/portal/MyDevicesTable.tsx",
+    ]) {
       const text = read(f);
       expect(text, f).toContain("TABLE_HEAD");
       expect(text, f).toContain("TABLE_CELL");
       expect(text, f).not.toMatch(/const (CELL|HEAD|TH|TD)\b/);
+    }
+  });
+
+  it("portal character picker uses pixel tokens", () => {
+    const bad =
+      /--px-|outline-variant|opacity-\d|(?<![\w-])(?:ring|outline|text|border)-primary(?![\w-])/;
+    for (const f of ["PixelLookPicker", "LookStage", "LookPreview"]) {
+      expect(read(`ui/portal/${f}.tsx`), f).not.toMatch(bad);
+    }
+    const picker = read("ui/portal/PixelLookPicker.tsx");
+    for (const c of [
+      "ring-pixel-primary",
+      "border-pixel-primary",
+      "text-pixel-primary",
+      "outline-focus",
+    ]) {
+      expect(picker, c).toContain(c);
+    }
+    expect(read("ui/portal/LookStage.tsx")).toContain("bg-tile");
+    for (const f of MIGRATED.filter((m) => m.startsWith("ui/portal/"))) {
+      expect(read(f), f).not.toContain("outline-variant");
     }
   });
 

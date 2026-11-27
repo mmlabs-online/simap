@@ -40,7 +40,7 @@ export function LookPreview({ atlas, look, view, scale, label, decorative }: Loo
     return (
       <span
         aria-busy={atlas ? undefined : true}
-        className="inline-block rounded bg-surface-container"
+        className="inline-block rounded bg-divider"
         style={{ width: 32 * scale, height: 32 * scale }}
       />
     );

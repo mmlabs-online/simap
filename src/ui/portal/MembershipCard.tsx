@@ -13,24 +13,26 @@ export function MembershipCard({ orgName, tier }: { orgName?: string; tier: Tier
     <SectionCard headingId="profile-membership-heading" title={copy.title} icon="group">
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-primary-container text-on-primary-container text-sm font-extrabold">
+          <span className="flex size-10 flex-none items-center justify-center rounded-xl bg-workspace-action text-on-action text-label font-semibold">
             {orgName ? initials(orgName) : <Icon name="group" size={22} />}
           </span>
           <div className="flex min-w-0 flex-col">
             {orgName ? (
               <>
-                <span className="truncate text-sm font-bold text-on-surface">{orgName}</span>
-                <span className="text-xs text-on-surface-variant">{copy.yourOrg}</span>
+                <span className="truncate text-label font-semibold text-text-primary">
+                  {orgName}
+                </span>
+                <span className="text-caption text-text-secondary">{copy.yourOrg}</span>
               </>
             ) : (
-              <span className="text-sm font-bold text-on-surface">{copy.yourOrg}</span>
+              <span className="text-label font-semibold text-text-primary">{copy.yourOrg}</span>
             )}
           </div>
           <span className="ml-auto">
             <RoleBadge tier={tier} />
           </span>
         </div>
-        <p className="text-xs text-on-surface-variant">{copy.managed}</p>
+        <p className="text-caption text-text-secondary">{copy.managed}</p>
       </div>
     </SectionCard>
   );

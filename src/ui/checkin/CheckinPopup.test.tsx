@@ -117,7 +117,7 @@ describe("CheckinPopup", () => {
     expect(html).toMatch(/<button[^>]*data-variant="tonal"[^>]*>Just look</);
     expect(html).not.toContain("rounded-none");
     for (const bad of ["opacity-90", "text-[", "tracking-[", "border-[", "shadow-["]) {
-      expect(html.replace("max-h-[90dvh]", "").replace(/w-\[min[^\s"]*/, "")).not.toContain(bad);
+      expect(html).not.toContain(bad);
     }
   });
 });

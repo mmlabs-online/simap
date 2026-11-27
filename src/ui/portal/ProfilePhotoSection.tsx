@@ -1,10 +1,11 @@
 import { Avatar } from "../Avatar";
+import { Button } from "../Button";
 import { Icon } from "../Icon";
 import { portalCopy } from "../copy/portal";
 
 const copy = portalCopy.profile.photo;
 const BTN =
-  "inline-flex items-center gap-1.5 rounded-full border border-outline-variant bg-surface text-on-surface px-4 py-2 text-sm font-bold cursor-pointer hover:border-outline focus-within:ring-2 focus-within:ring-primary";
+  "field-box inline-flex min-h-control cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-4 text-label text-text-primary transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out";
 
 export type ProfilePhotoSectionProps = {
   name: string;
@@ -58,27 +59,22 @@ export function ProfilePhotoSection({
               />
             </label>
             {url && (
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={onRemove}
-                className="text-sm font-bold text-error px-2 py-1.5"
-              >
+              <Button variant="text" size="sm" disabled={busy !== null} onClick={onRemove}>
                 {busy === "remove" ? copy.removing : copy.remove}
-              </button>
+              </Button>
             )}
           </div>
-          <p className="text-xs text-on-surface-variant">{copy.hint}</p>
+          <p className="text-caption text-text-secondary">{copy.hint}</p>
         </div>
       </div>
-      {status === "failed" && <p className="text-xs text-on-surface-variant">{copy.loadFailed}</p>}
+      {status === "failed" && <p className="text-caption text-text-secondary">{copy.loadFailed}</p>}
       {error && (
-        <p role="alert" className="text-xs font-medium text-error">
+        <p role="alert" className="text-caption font-medium text-danger">
           {error}
         </p>
       )}
       {notice && (
-        <p role="status" className="text-xs font-medium text-on-surface">
+        <p role="status" className="text-caption font-medium text-text-primary">
           {notice}
         </p>
       )}

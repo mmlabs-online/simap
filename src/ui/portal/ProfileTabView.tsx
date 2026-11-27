@@ -32,7 +32,7 @@ export function ProfileTabView(p: ProfileTabViewProps) {
         title={copy.title}
         subtitle={copy.subtitle}
         aside={
-          <span className="inline-flex items-center gap-1.5 text-xs text-on-surface-variant">
+          <span className="inline-flex items-center gap-1 text-caption text-text-secondary">
             <Icon name="lock" size={16} />
             {copy.visibility}
           </span>
