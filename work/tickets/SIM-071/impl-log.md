@@ -183,3 +183,36 @@ None out of plan. Follow-up: browser width check at 800/1024 (see table). The "t
 
 ### Scope self-check
 Only plan files. AppShell.tsx untouched as planned.
+
+## Slice 5a (attempt 1) — Management screens: Members, invitations, Groups, Approvals, Audit, Credits, Org
+
+### Files touched
+- `src/ui/table.ts` (new): `TABLE_HEAD/CELL/ROW/REFS` (R-g). Required because five copies of the table classes drift.
+- Members: `MembersView.tsx`, `PendingInvitations.tsx`, `MemberPhotoSection.tsx`, `DeactivateMemberDialog.tsx`, `ReactivateMemberDialog.tsx`. Invitations: `InvitePeople.tsx` (kit `Button`), `InviteDialog.tsx` (kit retry `Button`). Groups: `GroupsView.tsx`, `ListSection.tsx`, `DeleteDialog.tsx`. Requests: `ApprovalsView.tsx` (Pill via `requestStatusLook`), `RequestRowActions.tsx`, `DecisionDialog.tsx`. `audit/AuditView.tsx`, `credits/CreditsPage.tsx`, `org/{ProfileView,OrgPickerView,OrgSwitcherDialog}.tsx`. Each required because it is in the 5a Files table (R-a..R-g applied; rename map as in the plan's R-a/R-b, reused by 5b/5c).
+- `scripts/check-tokens.pending.json`: 5 keys removed (see below).
+- Tests: `src/ui/page-container.test.ts` (recursive scan), `src/ui/screen-tokens.test.ts` (new), and the 7 listed view tests extended.
+
+### Pending before/after
+`node scripts/check-tokens.mjs --list` diffed against the committed file: only the 5 planned keys removed (`audit/AuditView.tsx` 3, `invitations/InviteDialog.tsx` 5, `invitations/InvitePeople.tsx` 2, `members/MembersView.tsx` 4, `members/PendingInvitations.tsx` 3 = 17); globals.css stays 65; no other count changed. 261 -> 244. `node scripts/check-tokens.mjs` exits 0. Every touched pending file reached 0 (R-h), nothing needed an allowlist.
+
+### Visible differences
+- Members: "Invite people" near-black pill -> coral action Button, 8 px, 44 px, 14 px 500. Status column -> green "Active" / grey "Deactivated" pills with a dot; deactivated rows on `bg-canvas`, no 60 % fade. Table headers 11 px 800 -> 12 px 600 uppercase; member name 700 -> 600; borders divider. Pending invitations heading 18 px 800 -> 600. Row action group wraps.
+- Invite dialog: notices 13 -> 14 px; Retry pill -> 8 px outlined 44 px Button.
+- Groups: section headings (formerly unstyled because `text-h3` is undefined) -> 18 px 600; names/codes 700/800 -> 600; row actions wrap.
+- Approvals: decided chips -> green / red / grey pills with a dot; times 12 px secondary; Approve/Reject lost redundant `min-h-11` (already 44 px).
+- Audit: headers as Members; entity id and metadata 12 px.
+- Credits: title 24 px 800 -> 32 px 600; pack names 700 -> 600.
+- Profile / org picker / switcher: profile label 12 px secondary -> 14 px ink; hint/error 12 px; switcher radio rows 44 px with 20 px radio.
+- Page titles Members, Groups, Approvals, Audit: 32 px 800 -> 600.
+
+### Checks
+- format:check: `All matched files use the correct format`
+- typecheck: pass; check:layers: `1029 files, no violations`
+- test: `397 passed | 1 skipped (398) files; 3874 passed | 7 skipped (3881)`
+- build: pass
+
+### Out-of-plan files / Follow-ups
+None out of plan. Follow-up: none. Not browser-verified (no browser here).
+
+### Scope self-check
+Only the 5a Files table; no copy, props, `aria-*`, `src/app` or `src/lib` change.

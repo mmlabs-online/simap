@@ -37,7 +37,7 @@ export function OrgPickerView({
             >
               {busyId === o.id ? orgCopy.picker.entering : o.name}
               {busyId !== o.id && o.access === "super_admin" && (
-                <span className="ml-2 text-xs text-on-surface-variant">
+                <span className="ml-2 text-caption text-text-secondary">
                   {orgCopy.badge.supportAccess}
                 </span>
               )}

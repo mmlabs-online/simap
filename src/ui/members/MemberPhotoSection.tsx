@@ -57,7 +57,7 @@ export function MemberPhotoSection({
       </div>
       {shown && confirming && (
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium text-on-surface-variant">{copy.confirmBody}</p>
+          <p className="text-label text-text-secondary">{copy.confirmBody}</p>
           <div className="flex gap-2">
             <Button type="button" variant="danger" size="sm" disabled={busy} onClick={remove}>
               {busy ? copy.removing : copy.confirm}
@@ -75,7 +75,7 @@ export function MemberPhotoSection({
         </div>
       )}
       {error && (
-        <p role="alert" className="text-sm font-medium text-error">
+        <p role="alert" className="text-label text-danger">
           {error}
         </p>
       )}

@@ -92,6 +92,19 @@ describe("ApprovalsView", () => {
     );
     expect(anon).not.toContain("by Mia");
   });
+  it("decided rows carry a toned pill with the status text; pending rows no pill", () => {
+    const tones = {
+      approved: "bg-success-tint",
+      rejected: "bg-danger-tint",
+      cancelled: "bg-canvas",
+    };
+    for (const status of ["approved", "rejected", "cancelled"] as const) {
+      const html = render({ filter: status, items: [req({ id: "1", status })] });
+      expect(html, status).toContain(tones[status]);
+      expect(html, status).toContain(requestsCopy.statusLabel[status]);
+    }
+    expect(render()).not.toContain("bg-warning-tint");
+  });
   it("hasMore shows Load more; loadingMore disables it; no button without hasMore", () => {
     expect(render({ hasMore: true })).toContain(requestsCopy.loadMore);
     const busy = render({ hasMore: true, loadingMore: true });
@@ -107,6 +120,7 @@ describe("ApprovalsView", () => {
   });
   it("h1 has tabindex=-1 (ready and forbidden)", () => {
     expect(render()).toMatch(/<h1[^>]*tabindex="-1"/);
+    expect(render()).toMatch(/<h1[^>]*text-display/);
     expect(render({ state: "forbidden" })).toMatch(/<h1[^>]*tabindex="-1"/);
   });
   it("notice: status tone -> role=status, error tone -> role=alert, null -> neither", () => {

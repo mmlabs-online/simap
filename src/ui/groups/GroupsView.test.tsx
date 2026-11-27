@@ -66,5 +66,8 @@ describe("GroupsView", () => {
     expect(html).toContain(`aria-label="${groupsCopy.project.deleteLabel("KT")}"`);
     expect(html).toContain(groupsCopy.group.new);
     expect(html).toContain(groupsCopy.project.new);
+    expect(html).toMatch(/<h2[^>]*text-subtitle/);
+    expect(html).toMatch(/font-semibold[^>]*>Nhóm A</);
+    expect(html).not.toMatch(/font-(bold|extrabold)/);
   });
 });

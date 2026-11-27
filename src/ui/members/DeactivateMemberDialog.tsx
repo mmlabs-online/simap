@@ -83,7 +83,7 @@ function DeactivateInner({
       onSubmit={submit}
     >
       {impact && (
-        <div className="text-sm font-medium text-on-surface">
+        <div className="text-label text-text-primary">
           {step === "release" ? (
             <>
               <p>{d.releaseIntro(member.displayName)}</p>

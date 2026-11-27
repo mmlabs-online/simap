@@ -48,11 +48,13 @@ export function ProfileView({
 
   return (
     <AuthLayout title={profileCopy.title}>
-      <p className="break-words text-sm text-on-surface-variant">{profileCopy.intro(email)}</p>
+      <p className="break-words text-label font-normal text-text-secondary">
+        {profileCopy.intro(email)}
+      </p>
       {saveError && <Notice kind="error">{profileCopy.errors.retry}</Notice>}
       <form method="post" noValidate onSubmit={submit} className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
-          <label htmlFor="profile-name" className="text-xs font-semibold text-on-surface-variant">
+          <label htmlFor="profile-name" className="text-label text-text-primary">
             {profileCopy.label}
           </label>
           <FilledInput
@@ -72,11 +74,11 @@ export function ProfileView({
             }}
           />
           {fieldError ? (
-            <small id="profile-name-error" role="alert" className="text-xs text-error">
+            <small id="profile-name-error" role="alert" className="text-caption text-danger">
               {profileCopy.errors[fieldError]}
             </small>
           ) : (
-            <small id="profile-name-hint" className="text-xs text-on-surface-variant">
+            <small id="profile-name-hint" className="text-caption text-text-secondary">
               {profileCopy.hint}
             </small>
           )}

@@ -71,6 +71,9 @@ describe("AuditView", () => {
     expect(html).toContain("06 Mar 2026, 00:30");
     expect(html).toContain(auditCopy.actions["room.create"]);
     expect(html).not.toContain("font-pixel");
+    for (const th of html.match(/<th [^>]*>/g) ?? []) expect(th).toContain("text-caption");
+    expect(html).toContain("min-w-160");
+    expect(html).not.toContain("text-[");
   });
   it("Vietnamese display name renders intact", () => {
     const html = render({

@@ -128,6 +128,29 @@ describe("MembersView", () => {
     expect(html).toContain(membersCopy.invitations.noExpiry);
   });
 
+  it("status pills: active is green, deactivated sits on canvas with a neutral pill, no dimming", () => {
+    const html = render({ canManage: true });
+    expect(html).toContain("bg-success-tint");
+    expect(html).toContain(`</span>${membersCopy.statusLabels.active}</span>`);
+    expect(html).toContain(`</span>${membersCopy.statusLabels.deactivated}</span>`);
+    const rows = html.match(/<tr class="[^"]*">/g) ?? [];
+    expect(rows.filter((r) => r.includes("bg-canvas"))).toHaveLength(1);
+    expect(html).not.toContain("opacity-60");
+  });
+
+  it("uses the token type scale, min width and 44 px row buttons", () => {
+    const html = render({ canManage: true });
+    expect(html).toMatch(/<h1[^>]*text-display/);
+    for (const th of html.match(/<th [^>]*>/g) ?? []) {
+      expect(th).toContain("text-caption");
+      expect(th).toContain("uppercase");
+    }
+    expect(html).toContain("min-w-224");
+    const actions = html.match(/<button[^>]*aria-label="(Edit|Deactivate|Reactivate)[^>]*>/g) ?? [];
+    expect(actions.length).toBeGreaterThan(0);
+    for (const b of actions) expect(b).toContain("min-h-control");
+  });
+
   it("renders loading, error, and empty states", () => {
     expect(render({ status: "loading", items: [] })).toContain('aria-busy="true"');
     const err = render({ status: "error", items: [], errorCode: "unavailable" });

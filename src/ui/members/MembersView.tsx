@@ -6,8 +6,9 @@ import { shellCopy } from "../copy/shell";
 import { Avatar } from "../Avatar";
 import { Button } from "../Button";
 import { Card } from "../Card";
-import { FilterChips } from "../Chip";
+import { FilterChips, Pill } from "../Chip";
 import { FilledInput } from "../FilledInput";
+import { TABLE_CELL, TABLE_HEAD, TABLE_REFS, TABLE_ROW } from "../table";
 import { moreCount, STATUS_FILTERS } from "./members-state";
 import { PendingInvitations } from "./PendingInvitations";
 import type { InvitationsState } from "./usePendingInvitations";
@@ -37,10 +38,6 @@ export type MembersViewProps = {
   onReactivate: (member: MemberDto) => void;
 };
 
-const CELL = "px-3 py-2 align-top text-sm text-on-surface";
-const HEAD = "px-3 py-2 text-left text-[11px] font-extrabold uppercase text-on-surface-variant";
-const REFS = "mt-1 list-none p-0 text-xs text-on-surface-variant";
-
 /** The Members page body. Pure: data and handlers come from props. */
 export function MembersView(p: MembersViewProps) {
   const filtered = p.searching || p.statusFilter !== "active";
@@ -48,14 +45,14 @@ export function MembersView(p: MembersViewProps) {
   return (
     <div className="page-content flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.members.title}</h1>
+        <h1 className="text-display text-text-primary">{shellCopy.pages.members.title}</h1>
         {p.headerAction}
       </div>
-      <p className="text-sm font-medium text-on-surface-variant">{membersCopy.accountsNote}</p>
+      <p className="text-label text-text-secondary">{membersCopy.accountsNote}</p>
 
       <div className="flex flex-wrap items-center gap-3">
         <FilledInput
-          className="flex-1 min-w-[14rem]"
+          className="flex-1 min-w-56"
           type="search"
           value={p.search}
           aria-label={membersCopy.search.label}
@@ -81,7 +78,7 @@ export function MembersView(p: MembersViewProps) {
 
       {p.status === "error" && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(p.errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={p.onRetry}>
@@ -92,7 +89,7 @@ export function MembersView(p: MembersViewProps) {
 
       {p.status === "ready" && p.items.length === 0 && (
         <Card className="px-6 py-12 text-center">
-          <p className="text-sm font-medium text-on-surface-variant">
+          <p className="text-label text-text-secondary">
             {filtered ? membersCopy.emptyFiltered : shellCopy.pages.members.empty}
           </p>
         </Card>
@@ -100,17 +97,17 @@ export function MembersView(p: MembersViewProps) {
 
       {p.status === "ready" && p.items.length > 0 && (
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[56rem] border-collapse">
+          <table className="w-full min-w-224 border-collapse">
             <thead>
-              <tr className="border-b border-outline-variant">
-                <th className={HEAD}>{membersCopy.columns.name}</th>
-                <th className={HEAD}>{membersCopy.columns.email}</th>
-                <th className={HEAD}>{membersCopy.columns.code}</th>
-                <th className={HEAD}>{membersCopy.columns.group}</th>
-                <th className={HEAD}>{membersCopy.columns.status}</th>
-                <th className={HEAD}>{membersCopy.columns.seats}</th>
-                <th className={HEAD}>{membersCopy.columns.devices}</th>
-                {p.canManage && <th className={HEAD}>{membersCopy.columns.actions}</th>}
+              <tr className="border-b border-divider">
+                <th className={TABLE_HEAD}>{membersCopy.columns.name}</th>
+                <th className={TABLE_HEAD}>{membersCopy.columns.email}</th>
+                <th className={TABLE_HEAD}>{membersCopy.columns.code}</th>
+                <th className={TABLE_HEAD}>{membersCopy.columns.group}</th>
+                <th className={TABLE_HEAD}>{membersCopy.columns.status}</th>
+                <th className={TABLE_HEAD}>{membersCopy.columns.seats}</th>
+                <th className={TABLE_HEAD}>{membersCopy.columns.devices}</th>
+                {p.canManage && <th className={TABLE_HEAD}>{membersCopy.columns.actions}</th>}
               </tr>
             </thead>
             <tbody>
@@ -140,23 +137,21 @@ function MemberRow({ m, p }: { m: MemberDto; p: MembersViewProps }) {
   const seatMore = moreCount(m.seatCount, m.seats.length);
   const deviceMore = m.deviceCount === null ? 0 : moreCount(m.deviceCount, m.devices.length);
   return (
-    <tr
-      className={`border-b border-outline-variant last:border-b-0 ${deactivated ? "opacity-60" : ""}`}
-    >
-      <td className={`${CELL} font-bold`}>
+    <tr className={`${TABLE_ROW} ${deactivated ? "bg-canvas" : ""}`}>
+      <td className={`${TABLE_CELL} font-semibold`}>
         <span className="flex items-center gap-2">
           <Avatar name={m.displayName} src={p.photoUrl?.(m) ?? null} size={32} />
           {m.displayName}
         </span>
       </td>
-      <td className={`${CELL} break-all`}>{m.email ?? membersCopy.hiddenEmail}</td>
-      <td className={CELL}>{m.employeeCode ?? membersCopy.noCode}</td>
-      <td className={CELL}>
+      <td className={`${TABLE_CELL} break-all`}>{m.email ?? membersCopy.hiddenEmail}</td>
+      <td className={TABLE_CELL}>{m.employeeCode ?? membersCopy.noCode}</td>
+      <td className={TABLE_CELL}>
         {m.group ? (
           <span className="flex items-center gap-2">
             <span
               aria-hidden="true"
-              className="size-3 shrink-0 rounded-full border border-outline-variant"
+              className="size-3 shrink-0 rounded-full border border-divider"
               style={{ backgroundColor: m.group.color }}
             />
             {m.group.name}
@@ -165,11 +160,17 @@ function MemberRow({ m, p }: { m: MemberDto; p: MembersViewProps }) {
           membersCopy.noGroup
         )}
       </td>
-      <td className={CELL}>{membersCopy.statusLabels[m.status]}</td>
-      <td className={CELL}>
+      <td className={TABLE_CELL}>
+        <Pill
+          dot
+          tone={m.status === "active" ? "success" : "neutral"}
+          label={membersCopy.statusLabels[m.status]}
+        />
+      </td>
+      <td className={TABLE_CELL}>
         {m.seatCount}
         {m.seats.length > 0 && (
-          <ul className={REFS}>
+          <ul className={TABLE_REFS}>
             {m.seats.map((s) => (
               <li key={s.id}>{s.code}</li>
             ))}
@@ -177,7 +178,7 @@ function MemberRow({ m, p }: { m: MemberDto; p: MembersViewProps }) {
           </ul>
         )}
       </td>
-      <td className={CELL}>
+      <td className={TABLE_CELL}>
         {m.deviceCount === null ? (
           <>
             <span aria-hidden="true">{membersCopy.hiddenDevices}</span>
@@ -187,7 +188,7 @@ function MemberRow({ m, p }: { m: MemberDto; p: MembersViewProps }) {
           m.deviceCount
         )}
         {m.devices.length > 0 && (
-          <ul className={REFS}>
+          <ul className={TABLE_REFS}>
             {m.devices.map((d) => (
               <li key={d.id}>{membersCopy.deviceRef(d.name, d.inventoryNumber, d.role)}</li>
             ))}
@@ -196,8 +197,8 @@ function MemberRow({ m, p }: { m: MemberDto; p: MembersViewProps }) {
         )}
       </td>
       {p.canManage && (
-        <td className={CELL}>
-          <div className="flex items-center gap-2">
+        <td className={TABLE_CELL}>
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="tonal"
               size="sm"

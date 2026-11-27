@@ -1,7 +1,12 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const read = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
+
+const scan = (dir: string) =>
+  readdirSync(new URL(`../${dir}/`, import.meta.url), { recursive: true, encoding: "utf8" })
+    .map((f) => `${dir}/${f.replaceAll("\\", "/")}`)
+    .filter((f) => f.endsWith(".tsx") && !f.endsWith(".test.tsx"));
 
 const LIBRARY = [
   "ui/deviceTypes/DeviceTypesView.tsx",
@@ -33,7 +38,9 @@ const CONTENT = [
 
 describe("page container", () => {
   it("no page wrapper keeps the old padding", () => {
-    for (const f of [...LIBRARY, ...CONTENT]) expect(read(f), f).not.toContain("p-4 lg:p-6");
+    const files = [...scan("ui"), ...scan("app")];
+    expect(files.length).toBeGreaterThan(100);
+    for (const f of files) expect(read(f), f).not.toContain("p-4 lg:p-6");
   });
   it("library pages use page-library, the rest page-content", () => {
     for (const f of LIBRARY) {

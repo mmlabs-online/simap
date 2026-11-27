@@ -55,5 +55,8 @@ describe("InviteDialog", () => {
     const html = render("admin", { notice: { kind: "sentNotRecorded" } });
     expect(html).toContain(invitationsCopy.sentNotRecorded);
     expect(html).toContain(invitationsCopy.retryRecord);
+    expect(html).toMatch(/<button[^>]*min-h-control[^>]*data-variant="outlined"/);
+    expect(html).toMatch(/role="status"[^>]*>\s*<span class="text-label/);
+    expect(html).not.toContain("text-[");
   });
 });

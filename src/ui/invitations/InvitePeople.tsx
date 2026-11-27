@@ -5,6 +5,7 @@ import { inviteOutcome, recordOutcome } from "@/lib/invitations/invite-flow";
 import { canInviteRole, inviteRoleOptions } from "@/lib/invitations/roles";
 import { emailError } from "@/lib/validate/credentials";
 import { normalizeInviteEmail, type InvitationRecordValue } from "@/lib/validate/invitation";
+import { Button } from "../Button";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { getAuthRuntime } from "../auth/runtime";
 import { authErrorMessage } from "../copy/auth";
@@ -117,13 +118,7 @@ export function InvitePeople() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="state-layer px-5 py-2.5 rounded-md3 bg-primary text-on-primary font-bold text-sm cursor-pointer font-[inherit]"
-      >
-        {invitationsCopy.open}
-      </button>
+      <Button onClick={() => setOpen(true)}>{invitationsCopy.open}</Button>
       <InviteDialog
         open={open}
         tier={tier}

@@ -5,7 +5,8 @@ import { requestsCopy } from "../copy/requests";
 import { shellCopy } from "../copy/shell";
 import { Button } from "../Button";
 import { Card } from "../Card";
-import { Chip, FilterChips } from "../Chip";
+import { FilterChips, Pill } from "../Chip";
+import { requestStatusLook } from "../portal/my-requests";
 import { formatRequestTime, occupantHintId, statusOptions } from "./requests-state";
 
 export type ApprovalsViewProps = {
@@ -43,11 +44,7 @@ export function ApprovalsView({
   headingRef,
 }: ApprovalsViewProps) {
   const title = (
-    <h1
-      ref={headingRef}
-      tabIndex={-1}
-      className="text-h2 font-extrabold text-on-surface outline-none"
-    >
+    <h1 ref={headingRef} tabIndex={-1} className="text-display text-text-primary outline-none">
       {shellCopy.pages.approvals.title}
     </h1>
   );
@@ -56,7 +53,7 @@ export function ApprovalsView({
       <div className="page-content flex flex-col gap-4">
         {title}
         <Card className="px-6 py-12 text-center">
-          <p role="alert" className="text-sm font-medium text-on-surface-variant">
+          <p role="alert" className="text-label text-text-secondary">
             {requestsCopy.noAccess}
           </p>
         </Card>
@@ -70,11 +67,11 @@ export function ApprovalsView({
 
       {notice &&
         (notice.tone === "error" ? (
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {notice.text}
           </p>
         ) : (
-          <p role="status" className="text-sm font-semibold text-on-surface">
+          <p role="status" className="text-label font-semibold text-text-primary">
             {notice.text}
           </p>
         ))}
@@ -88,7 +85,7 @@ export function ApprovalsView({
             ariaLabel={requestsCopy.filterLabel}
           />
         </div>
-        <p aria-live="polite" className="text-sm text-on-surface-variant">
+        <p aria-live="polite" className="text-label font-normal text-text-secondary">
           {state === "ready" ? requestsCopy.summary(items.length, hasMore) : null}
         </p>
       </div>
@@ -101,7 +98,7 @@ export function ApprovalsView({
 
       {state === "error" && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -112,9 +109,7 @@ export function ApprovalsView({
 
       {state === "ready" && items.length === 0 && (
         <Card className="px-6 py-12 text-center">
-          <p className="text-sm font-medium text-on-surface-variant">
-            {requestsCopy.emptyFor[filter]}
-          </p>
+          <p className="text-label text-text-secondary">{requestsCopy.emptyFor[filter]}</p>
         </Card>
       )}
 
@@ -124,31 +119,37 @@ export function ApprovalsView({
             <li key={it.id}>
               <Card className="flex min-w-0 flex-col gap-1 break-words p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-bold text-on-surface">
+                  <span className="text-label font-semibold text-text-primary">
                     {it.subject.displayName}
                   </span>
-                  {it.status !== "pending" && <Chip label={requestsCopy.statusLabel[it.status]} />}
+                  {it.status !== "pending" && (
+                    <Pill
+                      dot
+                      tone={requestStatusLook(it.status).tone}
+                      label={requestsCopy.statusLabel[it.status]}
+                    />
+                  )}
                 </div>
-                <p className="text-sm text-on-surface">
+                <p className="text-label font-normal text-text-primary">
                   {requestsCopy.seatLine(it.seat.code, it.seat.roomCode)}
                 </p>
                 {it.status === "pending" && (
                   <p
                     id={it.currentOccupant ? occupantHintId(it.id) : undefined}
-                    className="text-sm text-on-surface-variant"
+                    className="text-label font-normal text-text-secondary"
                   >
                     {it.currentOccupant
                       ? requestsCopy.occupiedBy(it.currentOccupant.displayName)
                       : requestsCopy.seatEmpty}
                   </p>
                 )}
-                <p className="text-xs text-on-surface-variant">
+                <p className="text-caption text-text-secondary">
                   <time dateTime={it.createdAt}>
                     {requestsCopy.requestedAt(formatRequestTime(it.createdAt))}
                   </time>
                 </p>
                 {it.status !== "pending" && it.decidedAt !== null && (
-                  <p className="text-xs text-on-surface-variant">
+                  <p className="text-caption text-text-secondary">
                     <time dateTime={it.decidedAt}>
                       {requestsCopy.decidedLine(
                         it.status,

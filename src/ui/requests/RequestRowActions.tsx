@@ -24,20 +24,13 @@ export function RequestRowActions({
       <Button
         variant="filled"
         size="sm"
-        className="min-h-11"
         disabled={busy !== null || item.currentOccupant !== null}
         aria-describedby={item.currentOccupant ? occupantHintId(item.id) : undefined}
         onClick={() => onApprove(item)}
       >
         {mine === "approve" ? d.approving : d.approve}
       </Button>
-      <Button
-        variant="tonal"
-        size="sm"
-        className="min-h-11"
-        disabled={busy !== null}
-        onClick={() => onReject(item)}
-      >
+      <Button variant="tonal" size="sm" disabled={busy !== null} onClick={() => onReject(item)}>
         {mine === "reject" ? d.rejecting : d.reject}
       </Button>
     </div>

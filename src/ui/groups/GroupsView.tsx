@@ -29,7 +29,7 @@ function RowActions({
   onDelete: () => void;
 }) {
   return (
-    <div className="flex items-center gap-2 shrink-0">
+    <div className="flex flex-wrap items-center gap-2 shrink-0">
       <Button variant="tonal" size="sm" icon="edit" aria-label={editLabel} onClick={onEdit}>
         {groupsCopy.edit}
       </Button>
@@ -42,15 +42,13 @@ function RowActions({
 
 /** The Groups and projects page body. Pure: data and handlers come from props. */
 export function GroupsView(props: GroupsViewProps) {
-  const title = (
-    <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.groups.title}</h1>
-  );
+  const title = <h1 className="text-display text-text-primary">{shellCopy.pages.groups.title}</h1>;
   if (props.access === "forbidden") {
     return (
       <div className="page-content flex flex-col gap-4">
         {title}
         <Card className="px-6 py-12 text-center">
-          <p role="alert" className="text-sm font-medium text-on-surface-variant">
+          <p role="alert" className="text-label text-text-secondary">
             {groupsCopy.noAccess}
           </p>
         </Card>
@@ -73,10 +71,10 @@ export function GroupsView(props: GroupsViewProps) {
             <div className="flex items-center gap-3 min-w-0">
               <span
                 aria-hidden="true"
-                className="size-4 shrink-0 rounded-full border border-outline-variant"
+                className="size-4 shrink-0 rounded-full border border-divider"
                 style={{ backgroundColor: g.color }}
               />
-              <span className="truncate text-sm font-bold text-on-surface">{g.name}</span>
+              <span className="truncate text-label font-semibold text-text-primary">{g.name}</span>
             </div>
             <RowActions
               editLabel={groupsCopy.group.editLabel(g.name)}
@@ -98,8 +96,8 @@ export function GroupsView(props: GroupsViewProps) {
         renderRow={(p) => (
           <>
             <div className="flex items-baseline gap-3 min-w-0">
-              <span className="shrink-0 text-sm font-extrabold text-on-surface">{p.code}</span>
-              <span className="truncate text-sm font-medium text-on-surface-variant">{p.name}</span>
+              <span className="shrink-0 text-label font-semibold text-text-primary">{p.code}</span>
+              <span className="truncate text-label text-text-secondary">{p.name}</span>
             </div>
             <RowActions
               editLabel={groupsCopy.project.editLabel(p.code)}
