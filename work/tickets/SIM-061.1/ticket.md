@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-27 |
-| Claimed by | claude@2026-11-27T02:22:40Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -43,5 +43,12 @@ split out of SIM-061 by its approved plan.
 
 ## Notes / answers from Ming
 - 2026-11-27: created from the approved SIM-061 plan (typing idle split).
+- Waiting for Ming: plan approval (P1, gate `plan-approval`; M-93).
 
 ## Handoff
+
+### 2026-11-27 — claude — BLOCKED
+- Agent calls: 2, tokens ~100k total (frontend-developer×1 default model 39k; planner×1 default model 61k).
+- Done: consult (`consult-frontend-developer.md`); `plan.md` Status READY, no blocking questions, no High path, ~120 prod + ~130 test lines.
+- In progress / next: waiting for Ming's plan approval (M-93); then `/run SIM-061.1` resumes at IMPLEMENT.
+- Gotchas: plan adds AC "pause while the tab is hidden" (from SIM-061 plan) and "`onDone` only for walk completion"; `buildDrawList` gets a boolean `art.idle` option instead of the consult's passed-in seat set. M-91/M-92 numbers also exist on the SIM-043 cloud branch (renumber on merge).
