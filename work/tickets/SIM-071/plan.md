@@ -494,3 +494,283 @@ Ming verification after merge: none for this slice (no visible change).
   map. **Default: keep as specified.**
 - The file-level `// token-ok` escape comment is not added (not in the approved plan); anything that must stay literal
   goes into `ALLOWLIST` with a reason.
+
+## Slice 3 addendum — UI kit
+Status: READY. Written against slices 1 (#154) and 2 (#155) as merged, Split proposal item 3 and Ming's approved
+defaults Q1–Q17 (ticket.md:85, "theo mặc định hết"). No new decisions; open points are non-blocking questions at the end,
+each with a default. Closes AC 2 for the kit (screens follow in slices 4–6) and the kit part of AC 3. One PR, about
+400 changed lines (most of it class strings and tests), so no 3a/3b split.
+
+### Scope (from this plan and the brief)
+- Split proposal item 3: Button (primary → workspace-action, `pixel` → pixel-primary + `shadow-pixel`, secondary →
+  surface + border, disabled → opacity + `cursor-not-allowed` with no hover/shadow; `rounded-lg`, `min-h-control`,
+  `text-label`; `sm` raised to 44 px; IconButton 44×44), Chip, Card, SectionCard, FilledInput, EntityFormDialog (dialog
+  `rounded-2xl shadow-dialog`, fields `border-border-strong`), RoleBadge, SegmentedFilter, TabBar, FormFooterBar,
+  PageHeader, PageSkeleton, Avatar (chrome only), `auth/fields.tsx`, `dashboard/StatTile.tsx`, KitGallery; globals.css
+  `.state-layer`, `.status-dot`, scrollbar.
+- brief.md Component mapping (lines 126–136): primary "white text, `--radius-lg`, min-height `--size-control-min`,
+  Label style. Pixel variant may add `--shadow-pixel`"; secondary "`--color-surface` background, 1px `--color-border`,
+  `--color-text-primary`"; disabled "reduced opacity, `not-allowed` cursor, no hover/shadow"; inputs "`--color-surface`
+  background, 1px `--color-border`, `--radius-lg`, min-height 44px, Label-style labels … Selected state must be explicit
+  (filled indicator plus a border or background change)"; cards "`--radius-xl`, `--shadow-card`"; dialogs "`--radius-2xl`,
+  `--shadow-dialog`"; badges "pill (`--radius-full`) or `--radius-sm`, Caption style … Always include a text label";
+  transitions "`color, background-color, border-color, box-shadow, transform` at `--duration-ui` ease-out".
+- Approved defaults used: Q1 (filled = `--color-workspace-action` `#D3441F` / hover `#B93B19`, brief coral only for
+  non-text: tab indicator), Q2 (Button/IconButton 8 px, chips 6 px, badges full or 4 px, avatars round), Q4 (pixel
+  variant exists in the kit; callers adopt it in slice 6), Q6 (`border-border-strong` on control boundaries), Q7 (700/800
+  → 600 headings/metrics, 500 labels/buttons), Q8 (13 px → `text-label` 14 / `text-caption` 12), Q11 (tints for badges),
+  Q12 (coral filled buttons appear in this slice), Q15 (cards keep a 1 px divider border), Q16 (metrics → Title).
+- **`--primary` re-point for buttons** is done per component, not globally: the kit's filled fills (`Button` filled,
+  `FilterChips` selected, the EntityFormDialog submit) move from `bg-primary` to `bg-workspace-action`. The global
+  `--primary` alias stays ink until slice 7, because re-pointing it would also recolour every `text-primary` use (slice 1
+  Approach 2; 70 hits in 47 files).
+
+### Rules for every kit file in this slice
+1. Only token utilities from `src/styles/tokens.css` / the `@theme inline` size aliases: colours `canvas`, `surface`,
+   `text-primary`, `text-secondary`, `border`, `border-strong`, `divider`, `focus`, `workspace-primary`,
+   `workspace-action(-hover)`, `pixel-primary`, `pixel-hover`, `on-action`, `success|warning|danger|info` and their
+   `-tint`; sizes `min-h-control`, `size-control`; type `text-caption|label|body|subtitle|title|display`; radius
+   `rounded-sm|md|lg|xl|2xl|full`; shadows `shadow-card|dialog|pixel`. **No legacy aliases** (`*-primary` other than
+   `text-text-primary`/`workspace-*`/`pixel-primary`, `on-primary`, `on-surface*`, `surface-high/highest/low/lowest/
+   container`, `outline*`, `error*`, `*-container`, `secondary*`, `tertiary*`, `accent-orange*`, `rounded-md3*`,
+   `--field-focus`, `--card-shadow*`, `--shadow`). Exception: Avatar's default initials background (Q-S3-2).
+2. No `font-bold`/`font-extrabold`; no `font-[inherit]` (Tailwind v4 preflight already sets `font: inherit` on
+   buttons, inputs and selects; implementer confirms in the built CSS once).
+3. Transitions: `transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui)
+   ease-out` (v4 `(--var)` shorthand; the guard only flags `duration-[`). If 4.3.x rejects the shorthand, use
+   `duration-150` (same value) and record it.
+4. Hover styles are written `enabled:hover:…` on buttons so disabled controls get no hover; disabled =
+   `disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none` (no `pointer-events-none`, so the cursor shows).
+5. Focus: no per-component focus classes; the global `:focus-visible` rule (globals.css:333–336) applies. Text fields
+   show the ring on their box via `.field-box` (Approach 2).
+6. Keep every prop, variant name and `data-variant` value: `filled` stays the primary variant name (113 call sites in
+   57 files, `.px-card`/`.aw-card [data-variant="filled"]` selectors at globals.css:398–420, 583–587, and
+   `views.test.tsx:312`, `CheckinButton.test.tsx:20`, `CheckinPopup.test.tsx:91`, `SeatCard.test.tsx:51` depend on it).
+   Only additions: Button `variant="pixel"`, Pill `tone="info"`. Only removal: IconButton's `size` prop (no caller passes
+   it: KitGallery.tsx:44–45, AppShellView.tsx:158/173/180, ThemeToggle.tsx:24, SeatDetailPanel.tsx:228).
+
+### Files (slice 3)
+None matches a High path (`.github/risk-tiers.yml`: `src/ui/**`, `src/app/globals.css`, `src/app/dev/**`,
+`scripts/check-tokens.pending.json` are not listed; `*.test.ts(x)` are Low).
+
+| File | Change | Pending before → after |
+|---|---|---|
+| `src/ui/Button.tsx` | Button and IconButton per Approach 1 | 12 → 0 (remove key) |
+| `src/ui/Chip.tsx` | FilterChips, Chip, Pill (+ `info` tone) per Approach 3 | 16 → 0 (remove) |
+| `src/ui/Card.tsx` | `rounded-xl border border-divider bg-surface shadow-card`; interactive: token transition + `hover:-translate-y-0.5 hover:border-border-strong` (lines 21–23) | 3 → 0 (remove) |
+| `src/ui/SectionCard.tsx` | `gap-0.5` → `gap-1` (line 42); `border-outline-variant` → `border-divider` (39, 55); icon `text-primary` → `text-text-primary` (44); h3 `text-base font-extrabold text-on-surface` → `text-body font-semibold text-text-primary` (45); subtitle `text-xs text-on-surface-variant` → `text-caption text-text-secondary` (50) | 1 → 0 (remove) |
+| `src/ui/FilledInput.tsx` | box (lines 19–24) → `field-box group flex h-12 items-center gap-2 rounded-lg border border-border-strong bg-surface px-4` + token transition; drop `focus-within:*`; input (31) `text-label text-text-primary placeholder:text-text-secondary outline-none disabled:cursor-not-allowed disabled:opacity-50`, drop `font-medium`; icons `text-text-secondary` (27, 34) | 4 → 0 (remove) |
+| `src/ui/EntityFormDialog.tsx` | dialog, header, error, footer, `FIELD_BOX`, `FIELD_CAPTION`, inputs per Approach 4 | 28 → 0 (remove) |
+| `src/ui/RoleBadge.tsx` | inline styles → token classes per Approach 5 | 6 → 0 (remove) |
+| `src/ui/SegmentedFilter.tsx` | per Approach 6 | 2 → 0 (remove) |
+| `src/ui/TabBar.tsx` | container `border-outline-variant` → `border-divider` (32); tab (57–61): `min-h-11` → `min-h-control`, `text-sm font-semibold` → `text-label`, selected `border-workspace-primary text-text-primary font-semibold`, unselected `border-transparent text-text-secondary` | not pending (stays 0) |
+| `src/ui/FormFooterBar.tsx` | `border-outline-variant` → `border-divider` (32); status `text-sm font-semibold` → `text-label font-semibold`, `text-error` → `text-danger`, `text-on-surface` → `text-text-primary` (36–37); saved check icon `text-primary` → `text-success` (40); detail `text-on-surface-variant` → `text-text-secondary` (43) | not pending |
+| `src/ui/PageHeader.tsx` | heading `text-xl font-extrabold text-on-surface` → `text-subtitle text-text-primary` (31; 20 px is off-scale, nearest step 18); subtitle `text-sm text-on-surface-variant` → `text-label font-normal text-text-secondary` (37) | not pending |
+| `src/ui/PageSkeleton.tsx` | h1 `font-extrabold text-on-surface` → `font-semibold text-text-primary` (17); icon and text `text-on-surface-variant` → `text-text-secondary`, `text-sm font-medium` → `text-label` (19–20) | not pending |
+| `src/ui/Avatar.tsx` | `font-extrabold` → `font-semibold` (28); `"#ffffff"` → `"var(--color-on-action)"` (33, Q-S2-2 default); default background/colour unchanged (Q-S3-2) | 1 → 0 (remove) |
+| `src/ui/auth/fields.tsx` | Notice (17–25): `rounded-md3` → `rounded-lg`, `text-sm` → `text-label font-normal`, error tone `border-danger/40 bg-danger-tint text-danger`, info tone `border-border bg-canvas text-text-primary`; `linkClass` (32) `text-sm` → `text-label`, `text-on-surface` → `text-text-primary`; Field label (54) `text-xs font-semibold text-on-surface-variant` → `text-label text-text-primary`; error (66) `text-xs text-error` → `text-caption text-danger`; ShowPasswordToggle (82) `min-h-[44px]` → `min-h-control`, `text-xs text-on-surface-variant` → `text-label font-normal text-text-secondary` | 1 → 0 (remove) |
+| `src/ui/dashboard/StatTile.tsx` | label (9–11) `text-on-surface-variant` → `text-text-secondary`, `text-[13px] font-medium` → `text-label`; value (13) `text-h2 font-extrabold text-on-surface` → `text-title text-text-primary` (Q16) | 2 → 0 (remove) |
+| `src/app/globals.css` | per Approach 2: `.state-layer` hover/active skip disabled; delete unused `.status-dot` block (lines 260–278, no element uses it: `rg status-dot src` hits only globals.css); scrollbar thumb `border-radius: 8px` → `var(--radius-lg)` (251) and `--surface-container-highest` → `var(--color-border)`, hover `--outline` → `var(--color-border-strong)` (250, 256); add `.field-box` focus rules and the checkbox/radio `accent-color` rule | 69 → 65 |
+| `scripts/check-tokens.pending.json` | remove the 11 kit keys above; `src/app/globals.css` → 65 (exact values from `node scripts/check-tokens.mjs --list`) | total 373 → 293 expected |
+| `src/app/dev/shell/KitGallery.tsx` | add `<Button variant="pixel">`, a Pill row with all six tones, a native checkbox and a SegmentedFilter; h1 `font-extrabold` → `font-semibold` (33); Avatar sample `var(--accent-orange)` → `var(--color-workspace-primary)` (57) | not pending |
+| `src/ui/copy/gallery.ts` | dev-only gallery strings for the new samples: `buttons.pixel: "Pixel"`, `pills: { accent: "New", neutral: "Draft", success: "Approved", warning: "Pending", danger: "Rejected", info: "Info" }`, `checkbox: "Checkbox"`, `segments: { ariaLabel: "View", list: "List", grid: "Grid" }` (D36; no product copy changes) | not scanned (no violations) |
+| `src/ui/kit.test.tsx` | new kit asserts (Tests below) | test |
+| `src/ui/layout-blocks.test.tsx` | class updates: TabBar (28, 36, 39), SectionCard (105), Pill (121–126) + new asserts | test |
+| `src/ui/SegmentedFilter.test.tsx` | class update (25–28) + `min-h-control` | test |
+| `src/ui/Avatar.test.tsx` | add: `color` given → `color:var(--color-on-action)` | test |
+| `src/ui/portal/MyRequestRow.test.tsx` | Pill class updates only: `bg-warning-container` → `bg-warning-tint` (35), `bg-success-container` → `bg-success-tint` (52), `bg-error-container` → `bg-danger-tint` (61) | test |
+| `src/lib/color/tokens.test.ts` | add non-text pairs and the globals.css rule checks (Tests below) | test |
+| `work/tickets/SIM-071/impl-log.md` | append "Slice 3": files, rename map, pending before/after, visible differences, checks | deliverable |
+
+Not touched: `ThemeToggle.tsx` (no change needed; it gets the new IconButton look through `IconButton`),
+`src/ui/index.ts` (exports unchanged), `src/styles/tokens.css` (no new token), `scripts/check-tokens.mjs` (rules
+unchanged), any screen file (`AppShellView.tsx`, `RoomSwitcher.tsx`, feature folders: slices 4–6). Tests outside the
+table may change only if a kit class string they assert changed; the implementer lists each in impl-log. Expected:
+`PortalTabs.test.tsx:42–43` stays green unchanged (`text-text-primary` contains `text-primary`;
+`text-text-secondary` does not).
+
+### Approach (slice 3)
+1. **Button.tsx.**
+   - Base (lines 50–53): `state-layer inline-flex items-center justify-center gap-2 rounded-lg min-h-control text-label
+     whitespace-nowrap select-none cursor-pointer` + transition (rule 3) + `enabled:active:scale-95` + disabled (rule 4).
+   - Variants (8–16):
+     | Variant | Classes |
+     |---|---|
+     | `filled` (primary) | `bg-workspace-action text-on-action enabled:hover:bg-workspace-action-hover` |
+     | `pixel` (new) | `bg-pixel-primary text-on-action shadow-pixel enabled:hover:bg-pixel-hover` |
+     | `tonal`, `outlined` | `bg-surface text-text-primary border border-border enabled:hover:border-border-strong` |
+     | `text` | `bg-transparent text-text-primary` (hover = state layer) |
+     | `danger` | `bg-danger-tint text-danger border border-danger/30` |
+   - Sizes (18–22): `sm: "px-4"`, `md: "px-5"`, `lg: "min-h-12 px-6"` (48 px CTA; all sizes `text-label` from the base,
+     so 13 → 14 px and 15 → 14 px). Icon sizes unchanged (62).
+   - IconButton (68–104): drop the `size` prop and the inline `style`; classes `state-layer inline-flex size-control
+     flex-none items-center justify-center rounded-lg cursor-pointer` + transition + `enabled:active:scale-95` + disabled;
+     `active` → `bg-canvas text-text-primary border border-border`, else `text-text-secondary enabled:hover:bg-canvas
+     enabled:hover:text-text-primary`. Update the doc comment ("Square 44 px icon-only button").
+   - Docblock (24–27): replace "MD3 pill button" with the brief mapping in one line.
+2. **globals.css.**
+   - `.state-layer:hover::after` / `:active::after` (322–327) → `.state-layer:not(:disabled):hover::after` /
+     `.state-layer:not(:disabled):active::after` (brief: disabled has no hover).
+   - Insert **after** the global `:where(…):focus-visible` rule (333–336), never before it (`tokens.test.ts:171`
+     matches the first `:focus-visible {` in the file):
+     ```css
+     /* Text fields: the ring sits on the whole box (icon + input), not on the bare input. */
+     .field-box:focus-within {
+       outline: 2px solid var(--color-focus);
+       outline-offset: 2px;
+     }
+     .field-box :where(input, select):focus-visible {
+       outline: none;
+     }
+     /* Checkboxes and radios: native filled indicator in the action colour (brief: explicit selected state). */
+     @layer base {
+       input[type="checkbox"],
+       input[type="radio"] {
+         accent-color: var(--color-workspace-action);
+       }
+     }
+     ```
+     (`@layer base` so screen utilities and the slice 6 pixel scopes can override it; sizes are not set globally because
+     several radios are visually hidden with `sr-only`.)
+   - Delete `.status-dot` (260–278); scrollbar per the Files table.
+3. **Chip.tsx.**
+   - FilterChips track (29): `flex items-center gap-1 rounded-lg border border-border bg-canvas p-1`; chip (41–46):
+     `state-layer inline-flex min-h-control items-center gap-2 rounded-md px-4 text-label cursor-pointer` + transition;
+     checked `bg-workspace-action text-on-action`, unchecked `text-text-secondary enabled:hover:text-text-primary`.
+   - Chip (71–75): `inline-flex items-center gap-1 rounded-md border border-divider px-2 py-1 text-caption font-medium`;
+     inline defaults `var(--secondary-container)` → `var(--color-canvas)`, `var(--on-secondary-container)` →
+     `var(--color-text-primary)` (the `color`/`onColor` props are group colours, user data, unchanged).
+   - Pill (83–116): base `inline-flex items-center gap-1 rounded-full px-2 text-caption font-medium`; tones `accent:
+     bg-workspace-action text-on-action`, `neutral: bg-canvas text-text-secondary`, `success: bg-success-tint
+     text-success`, `warning: bg-warning-tint text-warning`, `danger: bg-danger-tint text-danger`, new `info:
+     bg-info-tint text-info`; dot `size-1.5 rounded-full bg-current` unchanged (`size-*` is not a spacing-scale rule).
+4. **EntityFormDialog.tsx.**
+   - `<dialog>` (71–72): `m-auto w-[calc(100%_-_2*var(--space-5))] max-w-md overflow-hidden rounded-2xl bg-surface p-0
+     text-text-primary shadow-dialog`; style `animation: "popin var(--duration-ui) ease-out"`. (`max-w-md` = 448 px,
+     was 440; the calc keeps the 20 px gutter without a px literal.)
+   - Header (75–83): `px-6 pt-6 pb-3`; h2 `text-subtitle text-text-primary`; subtitle `mt-1 text-label font-normal
+     text-text-secondary`.
+   - Error (90): `px-1 text-label text-danger`.
+   - Footer (95–110): replace both hand-rolled buttons with kit Buttons: `<Button variant="tonal" onClick={onClose}>` and
+     `<Button type="submit" disabled={submitting}>` (import `./Button`), same labels; wrapper classes unchanged.
+   - `FIELD_BOX` (117–118): `field-box group flex min-h-control items-center gap-2 rounded-lg border border-border-strong
+     bg-surface px-3` + transition (rule 3); drop `focus-within:*`.
+   - `FIELD_CAPTION` (119–120): `text-label text-text-primary` (brief: Label-style labels; drops uppercase/tracking, the
+     copy string is unchanged). Label wrappers (129, 150) `gap-1.5` → `gap-1`.
+   - Icons (132, 153) `text-text-secondary`; input/select (134, 155) `flex-1 min-w-0 bg-transparent outline-none
+     text-label text-text-primary placeholder:text-text-secondary disabled:cursor-not-allowed disabled:opacity-50`.
+5. **RoleBadge.tsx.** Replace `TIER_STYLES` (4–20) with a class map and drop the `style` prop:
+   `user: "border-border bg-canvas text-text-secondary"`, `manager: "border-info/40 bg-info-tint text-info"`,
+   `admin: "border-transparent bg-text-primary text-surface"` (inverse of text-primary on surface, so the AA pair already
+   tested in slice 1 applies). Span (27): `inline-flex flex-none items-center rounded-sm border px-2 text-caption
+   font-medium uppercase tracking-wide ${TIER_CLASSES[tier]} ${className}`. Text label unchanged.
+6. **SegmentedFilter.tsx.** Track (20): `inline-flex flex-wrap gap-1 rounded-xl border border-border bg-canvas p-1`;
+   button (31–35): `min-h-control cursor-pointer rounded-lg border px-3 text-label` + transition; drop the
+   `focus-visible:*` classes and `font-[inherit]`; pressed `border-border-strong bg-surface text-text-primary
+   shadow-card`, unpressed `border-transparent text-text-secondary hover:text-text-primary` (selected = background +
+   border change, brief).
+7. **Pending file.** After the edits run `node scripts/check-tokens.mjs --list`, confirm none of the 11 kit keys
+   appears, copy the new `src/app/globals.css` count, delete the 11 keys, keep keys sorted. No other key may change; if
+   one does, a non-kit file was edited by mistake.
+8. **impl-log.md "Slice 3":** files; rename map (old class → new) for slices 4–6 to reuse; pending table before/after;
+   visible differences (below); built-CSS confirmations (rule 2 preflight, rule 3 shorthand); checks output.
+9. Checks: `pnpm format:check`, `pnpm typecheck && pnpm check:layers`, `pnpm test`, `pnpm build`.
+
+Rules: R1 (all edits stay in ui/pages/lib layers; KitGallery imports `@/ui`, unchanged), R3 (none), R4 (only the files
+above), R5 (kit tests below). R2/R6/R7 not touched.
+
+### Tests to write / update (slice 3)
+Helper in `kit.test.tsx`: `classes(html, selector)` returns the class tokens of the first matching element;
+`LEGACY = /^(?:[\w-]+:)*(?:bg|text|border|outline|shadow)-(?:primary|on-primary|on-surface(?:-variant)?|surface-(?:high|highest|low|lowest|container)|outline(?:-variant)?|error|secondary[\w-]*|tertiary[\w-]*|accent-orange[\w-]*|[\w-]*-container)(?:\/\d+)?$|^rounded-md3/`
+(anchored per class token, so `text-text-primary` and `bg-workspace-action` do not match).
+
+| Test (file › name) | Covers |
+|---|---|
+| `kit.test.tsx` › Button: `filled` has `bg-workspace-action text-on-action` and `enabled:hover:bg-workspace-action-hover`; `pixel` has `bg-pixel-primary`, `shadow-pixel`, `enabled:hover:bg-pixel-hover`; `tonal` and `outlined` have `bg-surface`, `border-border`, `text-text-primary`; `danger` has `bg-danger-tint text-danger`; each renders `data-variant` equal to its variant | AC 2 variant → tokens |
+| kit.test › Button: every size has `min-h-control`, `rounded-lg`, `text-label`; `lg` also `min-h-12`; no `rounded-full`, `font-bold`, `font-extrabold`, `text-[` | AC 3 (44 px, 14 px), Q2, Q7, Q8 |
+| kit.test › Button disabled: has `disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none`, no `pointer-events-none`; every class token containing `hover:` starts with `enabled:` | brief Disabled |
+| kit.test › IconButton: `size-control rounded-lg`, `aria-label` and `title` equal `label`, no `style=` attribute; `active` adds `border-border` | 44×44, Q2 |
+| kit.test › FilterChips: radiogroup; each radio `min-h-control rounded-md text-label`; checked radio has `bg-workspace-action text-on-action`, unchecked does not | selected state explicit |
+| kit.test › Chip: `rounded-md text-caption border-divider`; default style uses `var(--color-canvas)` and `var(--color-text-primary)`; given `color` is passed through | Q2 chips 6 px |
+| kit.test › Card: `rounded-xl border-divider bg-surface shadow-card`; `interactive` adds `hover:border-border-strong` | brief Cards, Q15 |
+| kit.test › RoleBadge (extend existing): each tier has its class set from Approach 5, `rounded-sm text-caption uppercase`, no `style=` | badge tints, text label |
+| kit.test › EntityFormDialog (extend): dialog has `rounded-2xl shadow-dialog bg-surface max-w-md`; submit button `type="submit"` + `data-variant="filled"`; cancel `data-variant="tonal"`; with `submitting` the submit is `disabled=""` | brief Dialogs, kit buttons |
+| kit.test › DialogField / DialogSelect / FilledInput: box has `field-box`, `border-border-strong`, `rounded-lg`, and `min-h-control` (DialogField/Select) or `h-12` (FilledInput); caption `text-label`; no `focus-within:` class | Q6, focus on box |
+| kit.test › StatTile: label `text-label`, value `text-title`, no `text-h2` | Q16 |
+| kit.test › auth fields: Field label `text-label`, error `text-caption text-danger`; ShowPasswordToggle label `min-h-control`; Notice error has `bg-danger-tint` and `role="alert"` | Q8, 44 px |
+| kit.test › no legacy alias or weight: render Button (all variants), IconButton, FilterChips, Chip, Pill (all tones), Card, SectionCard, FilledInput, EntityFormDialog with DialogField + DialogSelect, RoleBadge (all tiers), SegmentedFilter, TabBar, FormFooterBar, PageHeader, PageSkeleton, StatTile, Field, Notice; no class token matches `LEGACY`, `font-bold` or `font-extrabold` | Rules 1–2 for the whole kit |
+| `layout-blocks.test.tsx` › TabBar (update 28–39): selected has `border-workspace-primary text-text-primary`, unselected has `border-transparent text-text-secondary`; both `min-h-control` | Q1 non-text coral |
+| layout-blocks › SectionCard (update 105): `border-b border-divider` | |
+| layout-blocks › Pill (update 121–126): tones → `bg-workspace-action`, `bg-canvas`, `bg-success-tint`, `bg-warning-tint`, `bg-danger-tint`, `bg-info-tint`; base `text-caption rounded-full` | badge tints |
+| `SegmentedFilter.test.tsx` (update 25–28): pressed has `border-border-strong bg-surface text-text-primary shadow-card`; unpressed lacks `shadow-card`; both `min-h-control` | selected explicit |
+| `Avatar.test.tsx` › `color` given → style contains `color:var(--color-on-action)`; no `#` colour in the markup | Q-S2-2 |
+| `MyRequestRow.test.tsx` (update 35, 52, 61) | class rename only |
+| `src/lib/color/tokens.test.ts` › add to `NON_TEXT_PAIRS`: `workspace-primary` on `surface` and `canvas` (tab indicator), `workspace-action` on `surface` and `canvas` (checkbox/radio fill); both themes ≥ 3 (computed now: light ≈ 3.4/3.3 and 4.55/4.4, dark ≈ 4.8 and 3.6) | WCAG 1.4.11 |
+| tokens.test › globals.css: `.field-box:focus-within` rule has `outline: 2px solid var(--color-focus)` and `outline-offset: 2px`; the first `:focus-visible {` rule is still the global one; `accent-color: var(--color-workspace-action)` present; `.state-layer:not(:disabled):hover::after` present; no `.status-dot` | Approach 2 |
+| `scripts/check-tokens.test.ts` (unchanged) › repo ratchet green with the shrunk pending file | pending only shrinks |
+
+### Acceptance → verification (slice 3)
+| # | Criterion | How the reviewer verifies it |
+|---|---|---|
+| S3-1 | Workspace filled buttons are `--color-workspace-action`/hover with white text; `pixel` variant uses pixel green + `--shadow-pixel`; secondary, danger, disabled follow the brief (AC 2, Q1, Q4) | kit.test Button tests green; `/dev/shell` in `pnpm dev`, light and dark |
+| S3-2 | Kit targets ≥ 44 px (Button all sizes, IconButton, FilterChips, SegmentedFilter, TabBar, fields, ShowPasswordToggle); labels 14 px, metadata 12 px; no 700/800 weights in kit files (AC 3, Q7, Q8) | kit/layout-blocks/SegmentedFilter tests; `rg -n "font-(bold\|extrabold)\|text-\[\|min-h-11\|rounded-full" src/ui/{Button,Chip,Card,SectionCard,FilledInput,EntityFormDialog,RoleBadge,SegmentedFilter,TabBar,FormFooterBar,PageHeader,PageSkeleton,Avatar}.tsx src/ui/auth/fields.tsx src/ui/dashboard/StatTile.tsx` → only `rounded-full` in Pill, the Pill dot and Avatar |
+| S3-3 | Inputs/selects have the strong border, 8 px radius, 44 px height, Label-style captions; the focus ring is on the field box; checkboxes/radios fill with the action colour (Q6) | tests above; keyboard-tab through the KitGallery dialog: one green ring around each field box, none doubled |
+| S3-4 | Cards 12 px + `shadow-card` + divider border; dialog 16 px + `shadow-dialog`; badges caption, tints, text label (Q2, Q11, Q15) | Card/EntityFormDialog/RoleBadge/Pill tests |
+| S3-5 | No legacy alias classes in kit files (Rule 1) | kit.test "no legacy alias or weight" green; `rg -n "on-surface\|outline-variant\|surface-high\|primary-container\|error-container\|rounded-md3\|field-focus\|card-shadow" <kit files above>` → no hits (Avatar default style excepted, Q-S3-2) |
+| S3-6 | Pending list shrinks exactly for the kit (373 → 293 expected) and nothing else changes | `git diff main -- scripts/check-tokens.pending.json` shows only the 11 removed keys and `globals.css` 69 → 65; `node scripts/check-tokens.mjs` exits 0; `--list` output has none of the 11 kit paths |
+| S3-7 | No API change for callers: variant names, `data-variant`, props kept (only `pixel`, `info` added; IconButton `size` removed with no caller) | `pnpm typecheck`; `git diff --stat main` lists only the Files table |
+| S3-8 | Contrast: new non-text pairs pass 3:1 in both themes | tokens.test green |
+| S3-9 | Checks green; existing tests changed only for class strings | `pnpm format:check && pnpm typecheck && pnpm check:layers && pnpm test && pnpm build`; reviewer reads test diffs |
+| S3-10 | impl-log "Slice 3" has files, rename map, pending before/after, visible differences | read impl-log |
+
+### Visible differences to log (slice 3)
+- Every filled Button, the selected FilterChip, the EntityFormDialog Save button and the Tab "You" pill turn from
+  near-black/ink to coral action `#D3441F` (hover `#B93B19`), white text (Q1, Q12). Sign-in/check-in buttons do **not**
+  change colour yet: `.aw-card`/`.px-card [data-variant="filled"]` (unlayered) still override them until slice 6; they do
+  get 14 px labels (was 15) and 44/48 px height.
+- Buttons and IconButtons: pill → 8 px corners (Q2); `sm` buttons 36 → 44 px tall, so table rows with row actions
+  (devices, members, requests, rooms, device types, incoming transfers, pending returns/extensions) grow by ~8 px; label
+  13/15 → 14 px; weight 700 → 500; press no longer hides the cursor when disabled (not-allowed cursor shows); disabled
+  opacity 40 % → 50 %.
+- Secondary (tonal/outlined) border: divider `#E8ECE0` → border `#E1E4DE`, hover border-strong; danger button text
+  `#B44C46` on 8 % tint (unchanged tokens, new classes).
+- FilterChips: pill track → 8 px track with 6 px chips, 44 px tall (was ~38 px).
+- Cards: 16 → 12 px radius; hover no longer adds the larger shadow, border darkens instead.
+- Dialogs: 20 → 16 px radius, surface (was 5 % grey), brief dialog shadow; title 20 → 18 px · 600 (was 800); subtitle and
+  error 13 → 14 px; width 440 → 448 px; field captions 11 px uppercase 800 → 14 px sentence case 500 (same strings);
+  field borders darker (`#889282`, Q6); focus ring moves from an orange glow to the green 2 px ring around the box.
+- Search/text fields (FilledInput): same border/ring change; text weight 500 → 500 label scale (unchanged size).
+- Role badges: 10 px 800 → 12 px 500, 8 → 4 px radius; Manager is info blue tint, Admin stays solid ink.
+- Pills/badges: 11 → 12 px; neutral pill on canvas instead of grey.
+- Page headers (PageHeader) 20 px 800 → 18 px 600; section card titles 16 px 800 → 600; dashboard stat values 32 px →
+  24 px Title, stat labels 13 → 14 px.
+- Auth fields: labels 12 → 14 px ink; errors 12 px danger; notices 8 px radius.
+- Tabs: active underline ink → coral (non-text, 3:1), active label ink 600, inactive secondary 500.
+- Scrollbar thumb colours follow the border tokens.
+- Interim (until slices 4–6): hand-rolled `bg-primary` buttons outside the kit stay ink — `InvitePeople.tsx:123`
+  (slice 5), the AppShellView skip link `AppShellView.tsx:54` (slice 4), the SeatOverlay tag `SeatOverlay.tsx:204`
+  (slice 6).
+
+Ming verification after merge: open `/dev/shell` and two management screens (Members, Devices) at 390 / 800 / 1280 px
+in light and dark; check coral buttons, 44 px row actions, a dialog with keyboard focus, and badges.
+
+### Assumptions and non-blocking questions (slice 3)
+- Hotspots: `scripts/check-tokens.pending.json` and `src/app/globals.css` are edited by every slice; SIM-070 (DONE, not
+  merged) touches `src/ui/mapItems/**`, which uses `Button` but no kit file; if it merges first, only the pending file
+  needs a rebase (`--list`). SIM-063 (IN_PROGRESS) is server work; no overlap.
+- Size ≈ 400 changed lines (kit ~230, globals ~25, gallery ~30, tests ~110, pending ~12); no 3a/3b split needed. If the
+  diff exceeds ~450 lines, the implementer moves KitGallery/gallery copy into slice 4 and records it.
+- Q-S3-1 (non-blocking). Variant names stay `filled/tonal/outlined/text/danger` (+ `pixel`) instead of the brief's
+  "primary/secondary". **Default: keep the names** (113 call sites, CSS selectors and tests); `filled` is documented as
+  the brief's primary, `tonal`/`outlined` as secondary (now identical; merging them is a follow-up).
+- Q-S3-2 (non-blocking). Avatar's default initials background is `--secondary-container` (5 % ink on surface), which has
+  no brief token; `--color-canvas` would make avatars disappear on white cards. **Default: leave the two default
+  inline values on the compat alias in this slice; slice 7, which removes the alias, maps them to
+  `color-mix(in srgb, var(--color-text-primary) 5%, var(--color-surface))` defined once as a derived token in
+  tokens.css, or Ming picks a brief token then.**
+- Q-S3-3 (non-blocking). PageHeader and dialog titles are 20 px today, between Subtitle 18 and Title 24. **Default: the
+  nearest step, Subtitle 18 px · 600** (Q16 reserves Display for page `h1`s and Title for metrics).
+- Q-S3-4 (non-blocking). SectionCard/FormFooterBar icons: **default ink for the section icon (no coral on non-action
+  icons), success green for the "saved" check** (status colour with its text label).
+- Q-S3-5 (non-blocking). Checkbox/radio sizing (20 px box inside a 44 px label row) is per screen; **default: only the
+  colour is global in this slice; screens get `min-h-control` label rows in slices 4–6.**
