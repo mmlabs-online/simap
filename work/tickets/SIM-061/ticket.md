@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-27T01:32Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/148 |
 
 ## Goal
 On check-in the member's character walks from the room's door to their chair along the tile grid, and walks back out
@@ -61,3 +61,9 @@ checked in by the provider); decision D77 (walk to the new chair on move).
 - Done: consult; plan READY (walk-in/out/move with BFS path from doors, overlay walk canvas, reduced motion, skip; carried SIM-060 fixes; typing idle split to a proposed SIM-061.1).
 - In progress / next: Ming approves the plan (optionally picks the 1a/1b split); then `/run SIM-061`.
 - Gotchas: ~550 product + ~450 test lines; no "photo" in roomlayout/sprites.
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 6, ~411k tokens (frontend-developer×1 default 47k, planner×1 default 109k, implementer×2 default 121k + 29k, reviewer×2 default 74k + sonnet 24k).
+- Done: walk-in / walk-out / move with door paths and fade fallback, WalkLayer overlay, reduced motion, skip; carried SIM-060 fixes; REWORK attempt 1 (room-switch walk burst, finished walk-out drawn), PASS attempt 2; PR #148.
+- In progress / next: Ming merges PR #148 and checks the animation in a browser; then SIM-061.1 (typing idle), SIM-062, SIM-064.
+- Gotchas: Ming's approval item renumbered M-90 → M-91 (another session used M-90); local build may need more Node memory.
