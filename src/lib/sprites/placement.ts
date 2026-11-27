@@ -34,7 +34,17 @@ export const DEVICE_IMAGE = 24;
 /** Desk footprint in pixels (room coordinates), for the seat buttons. */
 export type SeatBox = { id: string; code: string; tileX: number; tileY: number } & Rect;
 
-export type DrawList = { ops: DrawOp[]; bounds: Rect; seats: SeatBox[]; unknown: string[] };
+/** A present seat's avatar ops, drawn by the overlay canvas (typing idle) instead of the static layer. */
+export type IdleSeat = { seatId: string; ops: Extract<DrawOp, { type: "frame" }>[] };
+
+export type DrawList = {
+  ops: DrawOp[];
+  bounds: Rect;
+  seats: SeatBox[];
+  unknown: string[];
+  /** Only when `art.idle` is on. */
+  idle?: IdleSeat[];
+};
 
 const EMPTY_VIEW: SeatView = { state: "empty", avatarSeed: null, name: null, look: null };
 
@@ -150,6 +160,8 @@ export function buildDrawList(
     image?: (key: string, dir: Direction, version: number) => ItemImageSize | null;
     /** Presence view only: `away` seats draw no character, `present` seats get the monitor screen on. Undefined = as always. */
     presence?: Readonly<Record<string, SeatPresence>>;
+    /** Presence view only: present seats with a monitor return their avatar ops in `idle` (drawn by the overlay canvas) instead of `ops`. */
+    idle?: boolean;
   } = {},
 ): DrawList {
   const unknown: string[] = [];
@@ -165,17 +177,17 @@ export function buildDrawList(
     ops.push(op);
     bounds = union(bounds, op);
   };
-  const emitFrame = (
+  const frameOp = (
     layer: Layer,
     key: string,
     tx: number,
     ty: number,
     offset: [number, number] = [0, 0],
     tint: string | null = null,
-  ) => {
+  ): Extract<DrawOp, { type: "frame" }> | null => {
     const f = manifest.frames[key];
-    if (!f) return;
-    emit({
+    if (!f) return null;
+    return {
       type: "frame",
       layer,
       key,
@@ -184,8 +196,20 @@ export function buildDrawList(
       y: ty * TILE + f.anchor[1] + offset[1],
       w: f.w,
       h: f.h,
-    });
+    };
   };
+  const emitFrame = (
+    layer: Layer,
+    key: string,
+    tx: number,
+    ty: number,
+    offset: [number, number] = [0, 0],
+    tint: string | null = null,
+  ) => {
+    const op = frameOp(layer, key, tx, ty, offset, tint);
+    if (op) emit(op);
+  };
+  const idle: IdleSeat[] = [];
   const lookup = (sprite: string, rotation: Rotation) => {
     const key = resolveFrameKey(sprite, rotation);
     const frame = key ? manifest.frames[key] : undefined;
@@ -492,9 +516,19 @@ export function buildDrawList(
     const presence = art.presence?.[s.id];
     if (view.avatarSeed !== null && presence !== "away") {
       const avatar = avatarView(s.chairKey);
+      const idleSeat = art.idle === true && presence === "present" && s.monitors.length > 0;
+      const idleOps: IdleSeat["ops"] = [];
       for (const f of avatarFrames(resolveLook(view.look, view.avatarSeed), avatar)) {
-        emitFrame("avatar", f.key, s.chairX, s.chairY, [0, 0], f.tint);
+        if (!idleSeat) {
+          emitFrame("avatar", f.key, s.chairX, s.chairY, [0, 0], f.tint);
+          continue;
+        }
+        const op = frameOp("avatar", f.key, s.chairX, s.chairY, [0, 0], f.tint);
+        if (!op) continue;
+        bounds = union(bounds, op);
+        idleOps.push(op);
       }
+      if (idleSeat) idle.push({ seatId: s.id, ops: idleOps });
       if (presence === "present") {
         for (const m of s.monitors) {
           emit({ type: "screen", layer: "overlay", ...screenRect(m, avatar) });
@@ -513,5 +547,11 @@ export function buildDrawList(
     .sort((a, b) => rank(a.op) - rank(b.op) || a.i - b.i)
     .map((e) => e.op);
 
-  return { ops: sorted, bounds, seats: seatOrder(seatBoxes), unknown };
+  return {
+    ops: sorted,
+    bounds,
+    seats: seatOrder(seatBoxes),
+    unknown,
+    ...(art.idle ? { idle } : {}),
+  };
 }
