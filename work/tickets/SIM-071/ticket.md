@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | L |
 | Areas | ui, ux, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-27 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-27T07:19:15Z |
 | PR | — |
 
 ## Goal
@@ -82,7 +82,7 @@ workspace coral) via D87.
 - 2026-11-27: brief given (`brief.md`). Answers: one ticket (planner slices); keep dark mode with derived values;
   DM Sans everywhere, keep Fraunces for the sign-in headline.
 
-Waiting for Ming: plan approval (M-95)
+- Plan approved (2026-11-27): Ming "duyệt SIM-071, theo mặc định hết" — all 7 slices and defaults Q1–Q17.
 
 ## Handoff
 
