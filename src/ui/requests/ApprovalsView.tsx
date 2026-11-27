@@ -53,7 +53,7 @@ export function ApprovalsView({
   );
   if (state === "forbidden") {
     return (
-      <div className="p-4 lg:p-6 flex flex-col gap-4">
+      <div className="page-content flex flex-col gap-4">
         {title}
         <Card className="px-6 py-12 text-center">
           <p role="alert" className="text-sm font-medium text-on-surface-variant">
@@ -65,7 +65,7 @@ export function ApprovalsView({
   }
 
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-4">
+    <div className="page-content flex flex-col gap-4">
       {title}
 
       {notice &&

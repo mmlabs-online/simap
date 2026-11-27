@@ -39,7 +39,7 @@ function useIsDesktop(): boolean | null {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="page-library flex flex-col gap-4">
       <h1 className="text-h2 font-extrabold text-on-surface">{roomlayoutCopy.editor.title}</h1>
       {children}
     </div>

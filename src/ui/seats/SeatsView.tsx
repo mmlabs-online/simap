@@ -56,7 +56,7 @@ export function SeatsView({
         : null;
 
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-4">
+    <div className="page-library flex flex-col gap-4">
       <BackLink />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="text-h2 font-extrabold text-on-surface">

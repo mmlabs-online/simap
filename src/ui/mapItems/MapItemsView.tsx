@@ -39,7 +39,7 @@ export function MapItemsView({
   );
   if (access === "forbidden") {
     return (
-      <div className="p-4 lg:p-6 flex flex-col gap-4">
+      <div className="page-library flex flex-col gap-4">
         {title}
         <Card className="px-6 py-12 text-center">
           <p role="alert" className="text-sm font-medium text-on-surface-variant">
@@ -50,7 +50,7 @@ export function MapItemsView({
     );
   }
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-6">
+    <div className="page-library flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         {title}
         <p className="text-sm font-medium text-on-surface-variant">{mapItemsCopy.intro}</p>

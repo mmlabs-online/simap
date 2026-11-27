@@ -5,7 +5,7 @@ import { creditsCopy } from "../copy/credits";
 /** Third-party art packs with author, source, licence and the attribution text the licence asks for (D45). */
 export function CreditsPage({ credits = CREDITS }: { credits?: readonly CreditEntry[] }) {
   return (
-    <div className="flex flex-col gap-4 p-4 lg:p-6">
+    <div className="page-content flex flex-col gap-4">
       <h1 className="font-heading text-2xl font-extrabold text-on-surface">{creditsCopy.title}</h1>
       <p className="text-sm text-on-surface-variant">{creditsCopy.intro}</p>
       {credits.length === 0 ? (

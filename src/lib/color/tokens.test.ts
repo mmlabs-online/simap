@@ -191,6 +191,18 @@ describe("globals.css", () => {
     expect(globalsCss).not.toContain(".status-dot");
   });
 
+  it("page containers cap the width and pad from the space scale", () => {
+    const rule = (n: string) =>
+      new RegExp(`@utility ${n}\\s*\\{([\\s\\S]*?\\n\\})`).exec(globalsCss)?.[1] ?? "";
+    const content = rule("page-content");
+    expect(content).toContain("max-width: var(--width-content)");
+    expect(content).toContain("margin-inline: auto");
+    expect(content).toContain("var(--space-6)");
+    expect(content).toContain("var(--space-8)");
+    expect(rule("page-library")).toContain("max-width: var(--width-library)");
+    expect(globalsCss).not.toContain("--accent-shadow");
+  });
+
   it("reduced-motion block sets animation and transition to none", () => {
     const block = /@media \(prefers-reduced-motion: reduce\)\s*\{([\s\S]*?\n\})/.exec(globalsCss);
     expect(block).not.toBeNull();

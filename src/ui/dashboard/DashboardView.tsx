@@ -81,7 +81,7 @@ export function DashboardView({
   onExport = () => {},
 }: DashboardViewProps) {
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-4">
+    <div className="page-content flex flex-col gap-4">
       <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.dashboard.title}</h1>
 
       {status === "loading" && (

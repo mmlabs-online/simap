@@ -47,7 +47,7 @@ export function GroupsView(props: GroupsViewProps) {
   );
   if (props.access === "forbidden") {
     return (
-      <div className="p-4 lg:p-6 flex flex-col gap-4">
+      <div className="page-content flex flex-col gap-4">
         {title}
         <Card className="px-6 py-12 text-center">
           <p role="alert" className="text-sm font-medium text-on-surface-variant">
@@ -58,7 +58,7 @@ export function GroupsView(props: GroupsViewProps) {
     );
   }
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-6">
+    <div className="page-content flex flex-col gap-6">
       {title}
       <ListSection
         title={groupsCopy.group.title}
