@@ -19,8 +19,8 @@ export function ExportCard({
 }) {
   return (
     <Card className="flex flex-col gap-3 p-4">
-      <h2 className="text-lg font-extrabold text-on-surface">{copy.heading}</h2>
-      <p className="text-[13px] font-medium text-on-surface-variant">{copy.hint}</p>
+      <h2 className="text-subtitle text-text-primary">{copy.heading}</h2>
+      <p className="text-label text-text-secondary">{copy.hint}</p>
       <div className="flex flex-wrap gap-2">
         {EXPORT_KINDS.map((kind) => (
           <Button
@@ -36,12 +36,12 @@ export function ExportCard({
         ))}
       </div>
       {error && (
-        <p role="alert" className="text-sm font-semibold text-error">
+        <p role="alert" className="text-label font-semibold text-danger">
           {error}
         </p>
       )}
       {notice && (
-        <p role="status" className="text-[13px] font-medium text-on-surface-variant">
+        <p role="status" className="text-label text-text-secondary">
           {notice}
         </p>
       )}

@@ -347,3 +347,54 @@ None (no review trigger matched).
 
 ### Blockers from review agents (slice 5b)
 - None (no review trigger matched).
+
+## Slice 5c (attempt 1)
+Verdict: PASS
+
+Date: 2026-11-27. Scope: slice 5c (Dashboard, search, rooms and seats chrome), commit 4f3b688 on `claude/modest-allen-yru4g8`, against plan.md "Slice 5c addendum" (S5c-1..10), the slice-5 rules R-a..R-h and CLAUDE.md. Commits after 4f3b688 touch only `work/`.
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0 (1091 files).
+- `pnpm typecheck`: exit 0. `pnpm check:layers`: exit 0, "1033 files, no violations".
+- `pnpm test`: exit 0, "399 passed | 1 skipped (400)" files, "3940 passed | 7 skipped (3947)" tests (matches impl-log).
+- `pnpm build`: exit 0. Built CSS contains every new utility (`shadow-dialog`, `min-w-136`, `sm:max-w-110`, `max-w-56`, `max-w-72`, `stroke-divider`, `stroke-text-primary`).
+- `node scripts/check-tokens.mjs`: exit 0, "22 files, no violations outside the pending list". `--list` output is identical to the committed pending JSON (22 keys / 142).
+- `pnpm test:db`: CI-only, not affected (no server/DB change).
+
+### Acceptance criteria
+- [x] S5c-1 Token utilities only. Evidence: `screen-tokens.test.ts` green with the 18 planned files added to `MIGRATED`; the plan's S5c-1 rg over `src/ui/{dashboard,rooms,search,seats}` (non-test `.tsx`): no hits. Every `primary`/`secondary` class in those folders is `text-text-primary`/`text-text-secondary`/`stroke-text-primary` (no bare `text-primary`, `stroke-primary`, `surface-high`, `outline-variant`).
+- [x] S5c-2 No off-scale type. Evidence: `rg "text-(xs|sm|base|lg|2xl)\b"`: no hits. h1s `text-display` (DashboardView.tsx:92, RoomsView.tsx:36, SearchView.tsx:141, SeatsView.tsx:62); section/card/panel h2s `text-subtitle`; `<dt>` and `<th>` `text-caption font-semibold uppercase tracking-wide`. Token tests in Dashboard/Rooms/Search/SeatsView/SeatDetailPanel green.
+- [x] S5c-3 44 px targets. Evidence: `rg "<button|py-1\.5|py-0\.5"`: no hits. Seat codes are kit `Button variant="text" size="sm"` (base `min-h-control`, Button.tsx:57), back link `inline-flex min-h-control` (SeatsView.tsx:28), picker retry/Load more kit Buttons, radio rows `min-h-control` + `size-5` radios. Tests: SeatsView tokens (codes count = seats.length, each `min-h-control` + `data-variant="text"`; back link pinned to `href="/rooms"`), MemberPickerFields tokens (2 tests), RoomsView tokens (Edit/Delete, length > 0).
+- [x] S5c-4 Shared table classes; focus without per-component classes. Evidence: SeatsView imports `TABLE_CELL/HEAD/ROW` (SeatsView.tsx:10), `TH`/`TD` removed; screen-tokens shared-table test loops over DeviceTable and SeatsView; `rg "focus(-within|-visible)?:"`: no hits; region is `overflow-x-auto rounded-xl` inside a Card without `overflow-hidden`, so the global `:where(…, [tabindex]):focus-visible` outline (globals.css:339, 2 px offset) is not clipped. Manual Tab at 390 px is in Ming's list.
+- [x] S5c-5 Every status has text. Evidence: Search Deactivated → `<Pill dot tone="neutral" label={copy.deactivated} />` (SearchView.tsx:74), test asserts `bg-canvas` pill with dot span and no `bg-danger-tint`/`error-container`; seat status keeps icon + text (existing SeatsView "status has text" green); ring keeps `role="img"`, `aria-label` and percent text (OccupancyRing.tsx diff only touches classes).
+- [x] S5c-6 Pending shrinks by exactly the 8 keys. Evidence: pending diff removes the 8 planned keys (41 violations); the only other line change is `SeatOverlay.tsx: 10` losing its trailing comma as the new last entry (value unchanged; logged in impl-log). 30/183 → 22/142.
+- [x] S5c-7 No behaviour/copy/prop/id/data/aria change. Evidence: `git diff origin/main...HEAD --stat -- src/ui/copy src/lib src/app` empty. SeatsView seat button keeps `data-seat-code`, `aria-haspopup`, `aria-label`, `onClick` (kit default `type="button"`); MemberPicker retry/Load more keep `onRetry`/`onMore`, labels and `disabled={!canMore}`; SeatDetailPanel h2 keeps `ref`, `tabIndex={-1}`, `id`; `data-add-seats`/`data-device-count` unchanged. Removed test lines are only the planned replacements (screen-tokens header comment and DeviceTable test → loop; the two 5b nits).
+- [x] S5c-8 5b nits. Evidence: DeviceDetailView.test.tsx pins `<a … href="/devices">` and asserts `min-h-control` (that tag is DeviceDetailView.tsx:87–88, so removing `min-h-control` there fails the test); DevicesView.test.tsx adds `edits.length > 0`; `rg '\{" "\}' src/ui/devices/PlaceDeviceDialog.tsx`: no hits.
+- [x] S5c-9 Only planned files. Evidence: `git diff --name-only origin/main...HEAD` = 14 screen files, 11 test files, pending JSON, `work/tickets/SIM-071/{plan,impl-log,ticket}.md`; all in the 5c Files tables. No High path (`.github/risk-tiers.yml`) touched.
+- [x] S5c-10 Checks green (above); impl-log "Slice 5c (attempt 1)" lists files, pending before/after with per-key counts and the corrected totals, visible differences, checks (counts match my run), out-of-plan "None", defaults Q-S5c-1..5.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1: new imports are ui → ui (`../table`, `../Button`, `Pill` from `../Chip`); check:layers clean. R3: none. R4: only the 5c Files tables. R5: tests per the plan's Tests table. R2/R6/R7 not touched.
+
+### Blockers from review agents
+None (no review trigger matched).
+
+### Nits (do not block)
+- 💭 DashboardView.test.tsx tokens test: `/<h2[^>]*text-subtitle/` is satisfied by the rooms h2 alone, and `/<p[^>]*text-label/` by any paragraph; the plan row also wanted the export `<h2>` and the holders hint pinned. Matching the `<h2>` that precedes `copy.export.heading` (and the `<p>` before `copy.holders.hint`) would make both checks specific. ExportCard is still covered by `MIGRATED`.
+- 💭 SearchView pill regex (`bg-canvas…><span…rounded-full…></span>`) depends on the Pill's internal markup order; fine today, brittle if Pill changes.
+- 💭 Seat-code buttons sit 16 px right of the header text (kit `px-4`, Q-S5c-5 default accepted); check in the browser.
+
+### Ming verification after merge
+- As in plan "Ming verification after merge (slice 5c)": Admin at 390 / 800 / 1280 px, light and dark — Dashboard (tiles, room grid, deactivated-holders warning, CSV export as Manager+), Rooms (cards, ring readable in dark mode, Edit/Delete), Search (seat, device, deactivated member grey pill); open a room: back link, table scrolls sideways at 390, Tab onto the table shows the green ring unclipped, seat code → panel (labels, device links, actions, Assign → 44 px picker rows, Load more / Try again), Block/Unblock and Tags dialogs; open a seat from check-in once.
+- Not browser-verified by implementer or reviewer.
+
+### Follow-ups (out of scope)
+- Q-S5c-1: toned occupancy arc once Ming sets thresholds (`occupancyTone` in `src/lib/rooms/`).
+- Q-S5c-2: toned seat-status pills, aligned with the slice-6 map legend.
+- Q-S5c-5: negative margin on the seat-code button if the 16 px indent looks wrong.
+
+### Blockers from review agents (slice 5c)
+- None (no review trigger matched).

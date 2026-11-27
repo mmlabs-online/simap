@@ -75,7 +75,7 @@ function DeleteInner({
       onSubmit={submit}
     >
       {impact && (
-        <div className="text-sm font-medium text-on-surface">
+        <div className="text-label text-text-primary">
           {step === "forced" ? (
             <>
               <p>{roomsCopy.forceDeleteIntro(room.code)}</p>

@@ -12,13 +12,13 @@ import { Icon } from "../Icon";
 import { isOutsideRect, splitDevices, statusView, type PanelView } from "./seat-view";
 import { CLIP } from "../clip";
 
-const LABEL = "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant";
+const LABEL = "text-caption font-semibold uppercase tracking-wide text-text-secondary";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
       <dt className={LABEL}>{label}</dt>
-      <dd className="text-sm font-medium text-on-surface">{children}</dd>
+      <dd className="text-label text-text-primary">{children}</dd>
     </div>
   );
 }
@@ -26,14 +26,15 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function Device({ device }: { device: SeatDeviceDto }) {
   return (
     <li className={`max-h-24 ${CLIP}`}>
-      <Link href={deviceDetailHref(device.id)} className="font-bold text-primary underline">
+      <Link
+        href={deviceDetailHref(device.id)}
+        className="font-semibold text-text-primary underline"
+      >
         {device.name}
       </Link>
-      <span className="text-on-surface-variant">
-        {` · ${device.type} · ${device.inventoryNumber}`}
-      </span>
+      <span className="text-text-secondary">{` · ${device.type} · ${device.inventoryNumber}`}</span>
       {device.owner && (
-        <span className="block text-on-surface-variant">
+        <span className="block text-text-secondary">
           {seatsCopy.panel.owner(device.owner.displayName)}
         </span>
       )}
@@ -49,7 +50,7 @@ function SeatBody({ seat, occupantPhoto }: { seat: SeatDto; occupantPhoto: strin
     <dl className="flex flex-col gap-4">
       <Field label={seatsCopy.panel.room}>{seat.roomCode}</Field>
       <Field label={seatsCopy.panel.status}>
-        <span className="inline-flex items-center gap-1.5">
+        <span className="inline-flex items-center gap-1">
           <Icon name={status.icon} size={18} />
           {seatsCopy.status[status.state]}
           {status.blocked && (
@@ -213,7 +214,7 @@ export function SeatDetailPanel({
         }
         pressedOnScrim.current = false;
       }}
-      className="m-0 ml-auto h-dvh max-h-dvh w-full max-w-full sm:max-w-[440px] p-0 bg-surface-high text-on-surface overflow-y-auto shadow-[0_12px_40px_var(--shadow)]"
+      className="m-0 ml-auto h-dvh max-h-dvh w-full max-w-full sm:max-w-110 p-0 bg-surface text-text-primary overflow-y-auto shadow-dialog"
     >
       <div className="flex flex-col gap-4 p-5">
         <div className="flex items-start justify-between gap-3">
@@ -221,7 +222,7 @@ export function SeatDetailPanel({
             ref={headingRef}
             tabIndex={-1}
             id={titleId}
-            className={`text-[20px] font-extrabold text-on-surface max-h-14 outline-none ${CLIP}`}
+            className={`text-subtitle text-text-primary max-h-14 outline-none ${CLIP}`}
           >
             {title}
           </h2>
@@ -229,23 +230,23 @@ export function SeatDetailPanel({
         </div>
 
         {view.kind === "loading" && (
-          <p aria-busy="true" className="text-sm font-medium text-on-surface-variant">
+          <p aria-busy="true" className="text-label text-text-secondary">
             {seatsCopy.panel.loading}
           </p>
         )}
         {view.kind === "notFound" && (
           <div className="flex flex-col gap-1">
-            <p className="text-base font-extrabold text-on-surface">
+            <p className="text-body font-semibold text-text-primary">
               {seatsCopy.panel.notFoundTitle}
             </p>
-            <p className="text-sm font-medium text-on-surface-variant">
+            <p className="text-label text-text-secondary">
               {view.truncated ? seatsCopy.panel.notFoundTruncated : seatsCopy.panel.notFoundBody}
             </p>
           </div>
         )}
         {view.kind === "error" && (
           <div className="flex flex-col items-start gap-3">
-            <p role="alert" className="text-sm font-semibold text-error">
+            <p role="alert" className="text-label font-semibold text-danger">
               {apiErrorMessage(view.code)}
             </p>
             <Button variant="tonal" size="sm" onClick={onRetry}>

@@ -379,7 +379,9 @@ describe("DevicesView tokens", () => {
       actions: { onEdit: noop },
     });
     expect(html).toContain("flex flex-wrap items-center gap-2");
-    for (const b of html.match(/<button[^>]*aria-label="Edit[^>]*>/g) ?? []) {
+    const edits = html.match(/<button[^>]*aria-label="Edit[^>]*>/g) ?? [];
+    expect(edits.length).toBeGreaterThan(0);
+    for (const b of edits) {
       expect(b).toContain("min-h-control");
     }
   });

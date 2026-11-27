@@ -161,7 +161,9 @@ describe("DeviceDetailView tokens", () => {
     );
     expect(html).toMatch(/<dt[^>]*text-caption[^>]*uppercase/);
     expect(html).toMatch(/<h2[^>]*text-subtitle/);
-    expect(html).toMatch(/<a[^>]*min-h-control[^>]*>/);
+    const back = html.match(/<a[^>]*href="\/devices"[^>]*>/)?.[0];
+    expect(back).toBeDefined();
+    expect(back).toContain("min-h-control");
   });
   it("overdue and pending states are toned pills", () => {
     const overdue = render({

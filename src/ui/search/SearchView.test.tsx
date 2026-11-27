@@ -191,4 +191,23 @@ describe("SearchView", () => {
       html.indexOf(`>${copy.groups.members.title}<`),
     );
   });
+  it("tokens: deactivated is a neutral pill with a dot; headings use the scale", () => {
+    const off = render({
+      state: ready({
+        members: {
+          ...INITIAL_SEARCH.members,
+          items: [{ ...member, status: "deactivated" }],
+        },
+      }),
+    });
+    expect(off).toMatch(/<span[^>]*bg-canvas[^>]*><span[^>]*rounded-full[^>]*><\/span>/);
+    expect(off).toContain(copy.deactivated);
+    expect(off).not.toContain("bg-danger-tint");
+    expect(off).not.toContain("error-container");
+    const html = render();
+    expect(html).toMatch(/<h1[^>]*text-display/);
+    expect(html).toMatch(/<h2[^>]*text-subtitle/);
+    expect(html).not.toContain("text-[");
+    expect(html).not.toContain("py-0.5");
+  });
 });

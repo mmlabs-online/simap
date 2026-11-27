@@ -251,3 +251,37 @@ None out of plan. Follow-up: DeskSlotDiagram fill check in a browser; `border-st
 
 ### Scope self-check
 Only the 5b Files tables, tests, pending and this log; no copy, props, ids, `aria-*`, `src/app` or `src/lib` change.
+
+## Slice 5c (attempt 1) — Dashboard, search, rooms and seats chrome
+
+### Files touched (all in the "Slice 5c addendum" Files tables)
+- Dashboard (2): `DashboardView`, `ExportCard` (`StatTile` unchanged, added to `MIGRATED`).
+- Rooms (4): `RoomCard` (code link `hover:underline`, actions `items-center`), `OccupancyRing` (`stroke-divider` track, `stroke-text-primary` arc, `text-caption` percent), `RoomsView`, `DeleteRoomDialog`.
+- Search (1): `SearchView` (Deactivated badge -> neutral `Pill dot`).
+- Seats (7): `SeatsView` (`TABLE_*`, `TH`/`TD` removed, unclipped scroll region, kit `Button variant="text"` seat codes, 44 px back link), `SeatDetailPanel` (`bg-surface` + `shadow-dialog`, Q-S5c-3), `MemberPickerDialog` (44 px radio rows, kit retry / Load more), `SeatActions`, `ConfirmSeatDialog`, `SeatTagsDialog`.
+- 5b nits (3): `PlaceDeviceDialog` (two `{" "}` dropped), `DeviceDetailView.test.tsx` (back link pinned to `href="/devices"`), `DevicesView.test.tsx` (Edit-button count check).
+- Defaults taken for Q-S5c-1..5 (mechanical ring colours, icon + text seat status, `bg-surface` panel, ink links unchanged, seat-code button keeps kit `px-4`).
+
+### Tests
+- `screen-tokens.test.ts`: `MIGRATED` + 18 files, kit-Button list + `SeatsView`/`MemberPickerDialog`, shared-table test now loops over `DeviceTable` and `SeatsView`.
+- New "tokens" tests in `DashboardView`, `RoomsView`, `SearchView`, `SeatsView`, `SeatDetailPanel`, `MemberPickerDialog` (2 tests); extended `SeatActions` notices and `SeatActionDialogs` confirm body. No existing assert removed (the `DeviceDetailView` nit assert is stricter).
+
+### Pending before/after
+`scripts/check-tokens.pending.json`: 8 keys removed (DashboardView 6, ExportCard 4, OccupancyRing 2, RoomCard 6, SearchView 3, MemberPickerDialog 1, SeatDetailPanel 9, SeatsView 10 = 41). 30 keys / 183 -> 22 keys / 142 (corrected totals; the earlier "244 -> 184" and "184 -> 143" were one too high). The diff also drops the trailing comma on the new last entry (`SeatOverlay`). `node scripts/check-tokens.mjs`: `22 files, no violations outside the pending list`.
+
+### Visible differences
+As listed in the plan's "Visible differences to log (slice 5c)": titles 800 -> 600; 13 px hints -> 14 px; ring percent 12 px · 600; Deactivated search badge -> grey dot pill; room table headers/cells on the shared table classes, seat codes are 44 px text buttons, global focus ring around the card; seat panel white with dialog shadow; member picker 44 px rows and kit buttons; place-device retry spacing. Not browser-verified (no browser here).
+
+### Checks
+- format:check: pass ("All matched files use the correct format")
+- typecheck: pass; check:layers: `1033 files, no violations`
+- test: `399 passed | 1 skipped (400) files; 3940 passed | 7 skipped (3947)` (first run had one failure in my new picker test, which counted the search label too; fixed)
+- build: pass
+- `node scripts/check-tokens.mjs`: exit 0
+- Plan step 6 `rg` over dashboard/rooms/search/seats (non-test): no hits other than `text-text-primary` / `stroke-text-primary`.
+
+### Out-of-plan files / Follow-ups
+None out of plan. Follow-ups: browser check of the room table focus ring at 390 px, the `OccupancyRing` ink arc in dark mode, and the seat-code button 16 px indent (Q-S5c-5); toned ring / status pills await thresholds from Ming (Q-S5c-1/2).
+
+### Scope self-check
+Only the 5c Files tables, tests, pending and this log; no copy, props, ids, `data-*`, `aria-*`, `src/app` or `src/lib` change.

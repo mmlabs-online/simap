@@ -6,6 +6,7 @@ import { devicesCopy } from "../copy/devices";
 import { searchCopy as copy } from "../copy/search";
 import { Button } from "../Button";
 import { Card } from "../Card";
+import { Pill } from "../Chip";
 import { FilledInput } from "../FilledInput";
 import {
   GROUP_ORDER,
@@ -23,35 +24,37 @@ export type SearchViewProps = {
   onLoadMore: (group: GroupKey) => void;
 };
 
-const LINK = "font-semibold text-primary hover:underline";
-const META = "text-[13px] font-medium text-on-surface-variant";
+const LINK = "font-semibold text-text-primary hover:underline";
+const META = "text-label text-text-secondary";
 
 function SeatRow({ hit }: { hit: SeatHit }) {
   const href = seatResultHref(hit);
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 text-label font-normal">
       {href ? (
         <Link href={href} className={LINK}>
           {hit.code}
         </Link>
       ) : (
-        <span className="font-semibold text-on-surface">{hit.code}</span>
+        <span className="font-semibold text-text-primary">{hit.code}</span>
       )}
       <span className={META}>{hit.roomCode}</span>
-      <span className="text-on-surface">{hit.occupant?.displayName ?? copy.emptySeat}</span>
+      <span className="text-text-primary">{hit.occupant?.displayName ?? copy.emptySeat}</span>
     </li>
   );
 }
 
 function DeviceRow({ hit }: { hit: DeviceHit }) {
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 text-label font-normal">
       <Link href={deviceDetailHref(hit.id)} className={LINK}>
         {hit.name}
       </Link>
       <span className={META}>{hit.inventoryNumber}</span>
       {hit.mac !== null && <span className={META}>{copy.mac(hit.mac)}</span>}
-      <span className="text-on-surface">{hit.owner?.displayName ?? devicesCopy.orgInventory}</span>
+      <span className="text-text-primary">
+        {hit.owner?.displayName ?? devicesCopy.orgInventory}
+      </span>
       <span className={META}>
         {hit.placement
           ? copy.placement(hit.placement.roomCode, hit.placement.seatCode)
@@ -63,16 +66,12 @@ function DeviceRow({ hit }: { hit: DeviceHit }) {
 
 function MemberRow({ hit }: { hit: MemberHit }) {
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 text-label font-normal">
       <Link href={MEMBERS_HREF} className={LINK}>
         {hit.displayName}
       </Link>
       {hit.employeeCode !== null && <span className={META}>{hit.employeeCode}</span>}
-      {hit.status === "deactivated" && (
-        <span className="rounded-full bg-error-container px-2 py-0.5 text-xs font-bold text-on-error-container">
-          {copy.deactivated}
-        </span>
-      )}
+      {hit.status === "deactivated" && <Pill dot tone="neutral" label={copy.deactivated} />}
     </li>
   );
 }
@@ -91,16 +90,13 @@ function Group({
   const headingId = `search-${group}`;
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <h2
-        id={headingId}
-        className="flex items-baseline gap-2 text-lg font-extrabold text-on-surface"
-      >
+      <h2 id={headingId} className="flex items-baseline gap-2 text-subtitle text-text-primary">
         {text.title}
         <span className={META}>{copy.count(g.items.length, g.nextCursor !== null)}</span>
       </h2>
       <Card className="flex flex-col gap-3 p-4">
         {g.items.length === 0 ? (
-          <p className="text-sm font-medium text-on-surface-variant">{text.empty}</p>
+          <p className="text-label text-text-secondary">{text.empty}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {group === "seats" &&
@@ -113,7 +109,7 @@ function Group({
         )}
         {g.moreError !== null && (
           <div className="flex flex-wrap items-center gap-3">
-            <p role="alert" className="text-sm font-semibold text-error">
+            <p role="alert" className="text-label font-semibold text-danger">
               {apiErrorMessage(g.moreError)}
             </p>
             <Button variant="tonal" size="sm" onClick={() => onLoadMore(group)}>
@@ -142,7 +138,7 @@ function Group({
 export function SearchView({ query, onQueryChange, state, onRetry, onLoadMore }: SearchViewProps) {
   return (
     <div className="page-content flex flex-col gap-4">
-      <h1 className="text-h2 font-extrabold text-on-surface">{copy.title}</h1>
+      <h1 className="text-display text-text-primary">{copy.title}</h1>
       <FilledInput
         type="search"
         aria-label={copy.inputLabel}
@@ -151,9 +147,7 @@ export function SearchView({ query, onQueryChange, state, onRetry, onLoadMore }:
         onChange={(e) => onQueryChange(e.target.value)}
       />
 
-      {state.status === "idle" && (
-        <p className="text-sm font-medium text-on-surface-variant">{copy.prompt}</p>
-      )}
+      {state.status === "idle" && <p className="text-label text-text-secondary">{copy.prompt}</p>}
 
       {state.status === "loading" && (
         <Card className="h-48 animate-pulse">
@@ -163,7 +157,7 @@ export function SearchView({ query, onQueryChange, state, onRetry, onLoadMore }:
 
       {state.status === "error" && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(state.errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>

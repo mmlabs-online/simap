@@ -59,6 +59,27 @@ describe("MemberPickerFields", () => {
   });
 });
 
+describe("MemberPickerFields tokens", () => {
+  it("radio rows are 44 px with a 20 px radio and no legacy radius", () => {
+    const html = render(ready());
+    const labels = (html.match(/<label[^>]*>/g) ?? []).filter((l) => l.includes("cursor-pointer"));
+    expect(labels).toHaveLength(2);
+    for (const l of labels) expect(l).toContain("min-h-control");
+    for (const r of html.match(/<input[^>]*type="radio"[^>]*>/g) ?? []) {
+      expect(r).toContain("size-5");
+    }
+    expect(html).not.toContain("rounded-md3");
+  });
+  it("retry is an outlined kit button; Load more is a 44 px text button", () => {
+    const err = render({ ...INITIAL_PICKER, status: "error", errorCode: "internal" });
+    expect(err).toMatch(/<button[^>]*data-variant="outlined"[^>]*>Try again/);
+    const more = render(ready({ nextCursor: "c" }), null, true);
+    const btn = more.match(/<button[^>]*>Load more/)?.[0] ?? "";
+    expect(btn).toContain('data-variant="text"');
+    expect(btn).toContain("min-h-control");
+  });
+});
+
 describe("MemberPickerFields labels", () => {
   it("default disabled label is still 'sits here' and the list keeps its default name", () => {
     const html = render(ready(), "a");

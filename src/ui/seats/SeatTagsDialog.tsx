@@ -87,7 +87,7 @@ function SeatTagsInner({
           </option>
         ))}
       </DialogSelect>
-      {loading && <p className="text-sm text-on-surface-variant">{copy.tagsLoading}</p>}
+      {loading && <p className="text-label font-normal text-text-secondary">{copy.tagsLoading}</p>}
     </EntityFormDialog>
   );
 }
