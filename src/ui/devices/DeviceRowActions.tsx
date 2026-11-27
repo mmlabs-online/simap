@@ -15,7 +15,7 @@ export function DeviceRowActions({
   const actions = rowActions(device, handlers, busyId);
   if (actions.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap items-center gap-2">
       {actions.map((a) => (
         <Button
           key={a.key}

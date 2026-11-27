@@ -60,3 +60,17 @@ describe("DeviceTypeFormDialog sprite wiring", () => {
     expect(dialog({ hasImage: false })).not.toContain(deviceTypesCopy.form.sprite.hiddenByImage);
   });
 });
+
+describe("DeviceTypeFormFields tokens", () => {
+  it("slot radio rows are 44 px with a 20 px control, legend is a label", () => {
+    const html = render();
+    const rows = html.match(/<label[^>]*>\s*<input[^>]*type="radio"[^>]*>/g) ?? [];
+    expect(rows).toHaveLength(5);
+    for (const r of rows) {
+      expect(r).toContain("min-h-control");
+      expect(r).toContain("size-5");
+    }
+    expect(html).not.toContain("mt-1");
+    expect(html).toMatch(/<legend[^>]*text-label/);
+  });
+});

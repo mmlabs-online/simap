@@ -32,7 +32,7 @@ export function DeviceTypeThumb({ url, alt }: { url: string | null; alt: string 
   }
   return (
     <span
-      className="shrink-0 flex items-center justify-center rounded-md border border-dashed border-outline-variant text-on-surface-variant"
+      className="shrink-0 flex items-center justify-center rounded-md border border-dashed border-divider text-text-secondary"
       style={{ width: SIZE, height: SIZE }}
     >
       <Icon name="category" size={20} />

@@ -23,10 +23,9 @@ import type { DevicesApi } from "./devices-api";
 import { NoteField } from "./NoteField";
 
 const copy = devicesCopy.assign;
-const CAPTION =
-  "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5";
+const CAPTION = "text-label text-text-primary";
 const DATE_INPUT = "input[type=date]";
-const HINT = "text-xs text-on-surface-variant px-0.5";
+const HINT = "text-caption text-text-secondary";
 /** Props only: picker (assign mode) or holder line (edit mode), note, and the expiry fieldset. */
 export function AssignDeviceFields({
   mode,
@@ -56,15 +55,18 @@ export function AssignDeviceFields({
       ) : (
         <div className="flex flex-col gap-1">
           <span className={CAPTION}>{copy.holder}</span>
-          <span className="text-sm font-medium text-on-surface">{device.owner?.displayName}</span>
+          <span className="text-label font-normal text-text-primary">
+            {device.owner?.displayName}
+          </span>
         </div>
       )}
       <NoteField value={form.note} onChange={onNote} label={copy.note} hint={copy.noteHint} />
       <fieldset ref={fieldsetRef} className="flex flex-col gap-2 border-0 p-0 m-0 min-w-0">
         <legend className={CAPTION}>{copy.expiry}</legend>
-        <label className="flex items-center gap-2 text-sm font-medium text-on-surface">
+        <label className="flex min-h-control cursor-pointer items-center gap-2 text-label text-text-primary">
           <input
             type="checkbox"
+            className="size-5 flex-none"
             checked={form.noExpiry}
             onChange={(e) => onNoExpiry(e.target.checked)}
           />

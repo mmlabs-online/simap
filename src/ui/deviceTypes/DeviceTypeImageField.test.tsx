@@ -71,3 +71,24 @@ describe("DeviceTypeImageField", () => {
     expect(html.match(/disabled=""/g)).toHaveLength(2);
   });
 });
+
+describe("DeviceTypeImageField tokens", () => {
+  it("the file picker label is a 44 px field-box and uses no focus-within classes", () => {
+    const html = render();
+    expect(html).toMatch(
+      /<label[^>]*field-box[^>]*min-h-control|<label[^>]*min-h-control[^>]*field-box/,
+    );
+    expect(html).not.toContain("focus-within:");
+  });
+  it("Remove is the kit danger button and Keep current the outlined one", () => {
+    const remove = render({
+      previewUrl: "blob:p",
+      state: "staged",
+      showRemove: true,
+      showUndo: false,
+    });
+    expect(remove).toMatch(/<button[^>]*data-variant="danger"[^>]*>/);
+    const undo = render({ previewUrl: null, state: "remove", showRemove: false, showUndo: true });
+    expect(undo).toMatch(/<button[^>]*data-variant="outlined"[^>]*>/);
+  });
+});

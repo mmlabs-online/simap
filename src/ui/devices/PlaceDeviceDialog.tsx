@@ -5,6 +5,7 @@ import type { Tier } from "@/lib/auth/tier";
 import type { RoomDto } from "@/lib/rooms/types";
 import type { DeviceDto, DeviceRole } from "@/lib/devices/types";
 import { SEAT_LIMITS, type SeatDto } from "@/lib/seats/types";
+import { Button } from "../Button";
 import { devicesCopy } from "../copy/devices";
 import { DialogSelect, EntityFormDialog } from "../EntityFormDialog";
 import type { RoomsApi } from "../rooms/rooms-api";
@@ -23,7 +24,7 @@ import {
 import { usePlaceTargets, type PlaceSeats } from "./usePlaceTargets";
 
 const copy = devicesCopy.place;
-const HINT = "text-on-surface-variant";
+const HINT = "text-text-secondary";
 
 type RoomsState = { status: "loading" | "error" | "ready"; rooms: RoomDto[] };
 
@@ -59,7 +60,7 @@ export function PlaceDeviceFields({
 }) {
   if (mode === "return") {
     return (
-      <p className="text-sm text-on-surface">
+      <p className="text-label font-normal text-text-primary">
         {copy.returnConfirm(device.inventoryNumber, device.placement?.seatCode ?? "")}
       </p>
     );
@@ -85,21 +86,26 @@ export function PlaceDeviceFields({
           </option>
         ))}
       </DialogSelect>
-      {rooms.status === "loading" && <p className={`text-sm ${HINT}`}>{copy.roomsLoading}</p>}
+      {rooms.status === "loading" && (
+        <p className={`text-label font-normal ${HINT}`}>{copy.roomsLoading}</p>
+      )}
       {rooms.status === "ready" && rooms.rooms.length === 0 && (
-        <p className={`text-sm ${HINT}`}>{copy.roomsEmpty}</p>
+        <p className={`text-label font-normal ${HINT}`}>{copy.roomsEmpty}</p>
       )}
       {rooms.status === "error" && (
-        <div role="alert" className="text-sm font-semibold text-error">
+        <div
+          role="alert"
+          className="flex flex-wrap items-center gap-2 text-label font-semibold text-danger"
+        >
           {copy.roomsError}{" "}
-          <button type="button" className="underline cursor-pointer" onClick={onRetryRooms}>
+          <Button variant="outlined" size="sm" onClick={onRetryRooms}>
             {devicesCopy.retry}
-          </button>
+          </Button>
         </div>
       )}
 
       {lent && seats.status === "ready" && lent.occupant && (
-        <p className={`text-sm ${HINT}`}>
+        <p className={`text-label font-normal ${HINT}`}>
           {copy.lentCurrent(lent.code, lent.occupant.displayName)} {copy.lentMoveHint}
         </p>
       )}
@@ -114,10 +120,11 @@ export function PlaceDeviceFields({
           {offered.map((s) => (
             <label
               key={s.id}
-              className="flex items-center gap-3 rounded-md3 px-2 py-1.5 text-sm font-medium text-on-surface"
+              className="flex min-h-control cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-label text-text-primary"
             >
               <input
                 type="radio"
+                className="size-5 flex-none"
                 name="seat"
                 value={s.id}
                 checked={s.id === seatId}
@@ -135,23 +142,30 @@ export function PlaceDeviceFields({
               </span>
             </label>
           ))}
-          {seats.status === "loading" && <p className={`text-sm ${HINT}`}>{copy.seatsLoading}</p>}
+          {seats.status === "loading" && (
+            <p className={`text-label font-normal ${HINT}`}>{copy.seatsLoading}</p>
+          )}
           {seats.status === "ready" && seats.seats.length === 0 && (
-            <p className={`text-sm ${HINT}`}>{copy.seatsEmpty}</p>
+            <p className={`text-label font-normal ${HINT}`}>{copy.seatsEmpty}</p>
           )}
           {seats.status === "ready" && seats.seats.length > 0 && offered.length === 0 && (
-            <p className={`text-sm ${HINT}`}>{copy.noOwnSeats}</p>
+            <p className={`text-label font-normal ${HINT}`}>{copy.noOwnSeats}</p>
           )}
           {seats.status === "error" && (
-            <div role="alert" className="text-sm font-semibold text-error">
+            <div
+              role="alert"
+              className="flex flex-wrap items-center gap-2 text-label font-semibold text-danger"
+            >
               {copy.seatsError}{" "}
-              <button type="button" className="underline cursor-pointer" onClick={onRetrySeats}>
+              <Button variant="outlined" size="sm" onClick={onRetrySeats}>
                 {devicesCopy.retry}
-              </button>
+              </Button>
             </div>
           )}
           {seats.truncated && (
-            <p className={`text-sm ${HINT}`}>{copy.seatsTruncated(SEAT_LIMITS.list)}</p>
+            <p className={`text-label font-normal ${HINT}`}>
+              {copy.seatsTruncated(SEAT_LIMITS.list)}
+            </p>
           )}
         </div>
       )}
@@ -160,9 +174,13 @@ export function PlaceDeviceFields({
         {(["secondary", "primary"] as const)
           .filter((r) => roles.includes(r))
           .map((r) => (
-            <label key={r} className="flex items-center gap-3 text-sm font-medium text-on-surface">
+            <label
+              key={r}
+              className="flex min-h-control cursor-pointer items-center gap-3 text-label text-text-primary"
+            >
               <input
                 type="radio"
+                className="size-5 flex-none"
                 name="role"
                 value={r}
                 checked={role === r}
@@ -172,10 +190,12 @@ export function PlaceDeviceFields({
             </label>
           ))}
         {seat && !roles.includes("primary") && (
-          <p className={`text-sm ${HINT}`}>{copy.primaryUnavailable}</p>
+          <p className={`text-label font-normal ${HINT}`}>{copy.primaryUnavailable}</p>
         )}
         {seat?.occupant && verb === "lend" && (
-          <p className={`text-sm ${HINT}`}>{copy.lendHint(seat.occupant.displayName)}</p>
+          <p className={`text-label font-normal ${HINT}`}>
+            {copy.lendHint(seat.occupant.displayName)}
+          </p>
         )}
       </div>
     </>

@@ -25,10 +25,36 @@ const MIGRATED = [
   "ui/org/ProfileView.tsx",
   "ui/org/OrgPickerView.tsx",
   "ui/org/OrgSwitcherDialog.tsx",
+  "ui/devices/DevicesView.tsx",
+  "ui/devices/DeviceTable.tsx",
+  "ui/devices/device-labels.tsx",
+  "ui/devices/DeviceRowActions.tsx",
+  "ui/devices/OverdueBanner.tsx",
+  "ui/devices/IncomingTransfers.tsx",
+  "ui/devices/PendingReturns.tsx",
+  "ui/devices/PendingExtensions.tsx",
+  "ui/devices/DeviceDetailView.tsx",
+  "ui/devices/DeviceHistory.tsx",
+  "ui/devices/NoteField.tsx",
+  "ui/devices/AssignDeviceDialog.tsx",
+  "ui/devices/ExtendDeviceDialog.tsx",
+  "ui/devices/TransferDeviceDialog.tsx",
+  "ui/devices/ReturnDeviceDialog.tsx",
+  "ui/devices/DeviceFormDialog.tsx",
+  "ui/devices/PlaceDeviceDialog.tsx",
+  "ui/devices/DeleteDeviceDialog.tsx",
+  "ui/devices/TakeBackDeviceDialog.tsx",
+  "ui/deviceTypes/DeviceTypesView.tsx",
+  "ui/deviceTypes/DeviceTypeFormDialog.tsx",
+  "ui/deviceTypes/DeviceTypeImageField.tsx",
+  "ui/deviceTypes/DeviceTypeSpriteField.tsx",
+  "ui/deviceTypes/DeviceTypeThumb.tsx",
+  "ui/deviceTypes/DeskSlotDiagram.tsx",
+  "ui/deviceTypes/DeleteDeviceTypeDialog.tsx",
 ];
 
 const LEGACY =
-  /(?<![\w-])(?:bg|text|border|divide|outline|ring|fill|stroke|placeholder)-(?:primary|on-primary|on-surface(?:-variant)?|on-background|background|surface-(?:high|highest|low|lowest|container)|outline(?:-variant)?|error|secondary[\w-]*|tertiary[\w-]*|accent-orange[\w-]*|[\w-]*-container|status-(?:online|warn|alert)|inverse[\w-]*)(?![\w-])|var\(--(?:primary|on-|surface|outline|error|secondary|tertiary|accent-|status-|inverse-|card-shadow|field-focus)|rounded-md3/;
+  /(?<![\w-])(?:bg|text|border|divide|outline|ring|fill|stroke|placeholder)-(?:primary|on-primary|on-surface(?:-variant)?|on-background|background|surface-(?:high|highest|low|lowest|container[\w-]*)|outline(?:-variant)?|error|secondary[\w-]*|tertiary[\w-]*|accent-orange[\w-]*|[\w-]*-container|status-(?:online|warn|alert)|inverse[\w-]*)(?![\w-])|var\(--(?:primary|on-|surface|outline|error|secondary|tertiary|accent-|status-|inverse-|card-shadow|field-focus)|rounded-md3/;
 const RAW_TYPE =
   /(?<![\w-])(?:text-(?:xs|sm|base|lg|xl|[2-9]xl|h[1-3])|font-(?:bold|extrabold|black|heading))(?![\w-])/;
 const LOW_TARGET = /(?<![\w-])(?:min-h-11|h-11|size-11|h-8|h-9)(?![\w-])/;
@@ -56,9 +82,35 @@ describe("migrated management screens", () => {
   });
 
   it("the invitation entry points use the kit Button only", () => {
-    for (const f of ["ui/invitations/InvitePeople.tsx", "ui/invitations/InviteDialog.tsx"]) {
+    for (const f of [
+      "ui/invitations/InvitePeople.tsx",
+      "ui/invitations/InviteDialog.tsx",
+      "ui/devices/PlaceDeviceDialog.tsx",
+      "ui/deviceTypes/DeviceTypeImageField.tsx",
+    ]) {
       expect(read(f), f).not.toContain("<button");
     }
+  });
+
+  it("device lists switch layout at lg", () => {
+    for (const n of [
+      "DeviceTable",
+      "IncomingTransfers",
+      "PendingReturns",
+      "PendingExtensions",
+      "OverdueBanner",
+    ]) {
+      const text = read(`ui/devices/${n}.tsx`);
+      expect(text, n).not.toMatch(/(?<![\w-])md:/);
+      expect(text, n).toContain("lg:");
+    }
+  });
+
+  it("DeviceTable uses the shared table classes", () => {
+    const text = read("ui/devices/DeviceTable.tsx");
+    expect(text).toContain("TABLE_HEAD");
+    expect(text).toContain("TABLE_CELL");
+    expect(text).not.toMatch(/const (CELL|HEAD)\b/);
   });
 
   it("table.ts exposes the shared table classes", () => {

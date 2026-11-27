@@ -22,14 +22,14 @@ export type DeviceTypesViewProps = {
 /** The Device types page body. Pure: data and handlers come from props. */
 export function DeviceTypesView(props: DeviceTypesViewProps) {
   const title = (
-    <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.deviceTypes.title}</h1>
+    <h1 className="text-display text-text-primary">{shellCopy.pages.deviceTypes.title}</h1>
   );
   if (props.access === "forbidden") {
     return (
       <div className="page-library flex flex-col gap-4">
         {title}
         <Card className="px-6 py-12 text-center">
-          <p role="alert" className="text-sm font-medium text-on-surface-variant">
+          <p role="alert" className="text-label text-text-secondary">
             {deviceTypesCopy.noAccess}
           </p>
         </Card>
@@ -52,13 +52,15 @@ export function DeviceTypesView(props: DeviceTypesViewProps) {
             <div className="flex items-center gap-3 min-w-0">
               <DeviceTypeThumb url={props.imageUrl(t)} alt={DECORATIVE} />
               <div className="flex items-baseline gap-3 min-w-0">
-                <span className="truncate text-sm font-bold text-on-surface">{t.name}</span>
-                <span className="shrink-0 text-sm font-medium text-on-surface-variant">
+                <span className="truncate text-label font-semibold text-text-primary">
+                  {t.name}
+                </span>
+                <span className="shrink-0 text-label text-text-secondary">
                   {deviceTypesCopy.slots[t.slot].label}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Button
                 variant="tonal"
                 size="sm"

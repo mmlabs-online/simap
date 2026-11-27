@@ -5,8 +5,7 @@ import type { Atlas } from "../roomlayout/loadAtlas";
 import { spriteFieldView } from "./device-type-sprite";
 
 const copy = deviceTypesCopy.form.sprite;
-const CAPTION =
-  "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5";
+const CAPTION = "text-label text-text-primary";
 
 /** Picker of the bundled package sprite for a device type. Props only; thumbnails need an atlas. */
 export function DeviceTypeSpriteField({
@@ -28,14 +27,14 @@ export function DeviceTypeSpriteField({
   return (
     <fieldset className="flex flex-col gap-2">
       <legend className={CAPTION}>{copy.legend}</legend>
-      <p className="text-xs text-on-surface-variant">{copy.hint}</p>
+      <p className="text-caption text-text-secondary">{copy.hint}</p>
       {view.hiddenByImage && (
-        <p role="status" className="text-xs font-medium text-on-surface-variant">
+        <p role="status" className="text-caption font-medium text-text-secondary">
           {copy.hiddenByImage}
         </p>
       )}
       {view.unavailable !== null && (
-        <p role="status" className="text-xs font-medium text-error">
+        <p role="status" className="text-caption font-medium text-danger">
           {copy.unavailable(view.unavailable)}
         </p>
       )}
@@ -43,10 +42,11 @@ export function DeviceTypeSpriteField({
         {view.options.map((o) => (
           <label
             key={o.value ?? "built-in"}
-            className="flex items-center gap-2 text-sm text-on-surface"
+            className="flex min-h-control cursor-pointer items-center gap-2 text-label font-normal text-text-primary"
           >
             <input
               type="radio"
+              className="size-5 flex-none"
               name="device-type-sprite"
               checked={o.checked}
               disabled={disabled}
@@ -63,7 +63,7 @@ export function DeviceTypeSpriteField({
             {o.value === null ? (
               <span>{copy.builtIn(deviceTypesCopy.slots[slot].label)}</span>
             ) : (
-              <span className="font-mono text-xs">{o.value}</span>
+              <span className="font-mono text-caption">{o.value}</span>
             )}
           </label>
         ))}

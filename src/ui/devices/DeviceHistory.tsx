@@ -31,26 +31,26 @@ function Entry({ e }: { e: DeviceHistoryEntryDto }) {
   const expiry = historyExpiryText(e);
   const cause = historyCause(e);
   return (
-    <li className="flex flex-col gap-0.5 border-t border-outline-variant py-3 text-sm first:border-t-0">
+    <li className="flex flex-col gap-1 border-t border-divider py-3 text-label font-normal first:border-t-0">
       <span className="flex flex-wrap items-baseline gap-x-2">
-        <span className="font-bold text-on-surface">{historyKindLabel(e.kind)}</span>
-        <time dateTime={e.at} className="text-xs text-on-surface-variant">
+        <span className="font-semibold text-text-primary">{historyKindLabel(e.kind)}</span>
+        <time dateTime={e.at} className="text-caption text-text-secondary">
           {formatAuditTime(e.at)}
         </time>
-        <span className="text-xs text-on-surface-variant">
+        <span className="text-caption text-text-secondary">
           {copy.byActor(historyMemberLabel(e.actor))}
         </span>
       </span>
-      {fromTo && <span className="text-on-surface">{fromTo}</span>}
-      {expiry && <span className="text-xs text-on-surface-variant">{expiry}</span>}
-      {cause && <span className="text-xs text-on-surface-variant">{cause}</span>}
+      {fromTo && <span className="text-text-primary">{fromTo}</span>}
+      {expiry && <span className="text-caption text-text-secondary">{expiry}</span>}
+      {cause && <span className="text-caption text-text-secondary">{cause}</span>}
       {e.confirmedBy && (
-        <span className="text-xs text-on-surface-variant">
+        <span className="text-caption text-text-secondary">
           {copy.confirmedBy(historyMemberLabel(e.confirmedBy))}
         </span>
       )}
       {e.note && (
-        <span className={`text-xs text-on-surface-variant whitespace-pre-line ${CLIP}`}>
+        <span className={`text-caption text-text-secondary whitespace-pre-line ${CLIP}`}>
           {e.note}
         </span>
       )}
@@ -71,7 +71,7 @@ export function DeviceHistory({
 }: DeviceHistoryProps) {
   return (
     <section aria-labelledby="device-history-title" className="flex flex-col gap-2">
-      <h2 id="device-history-title" className="text-h3 font-extrabold text-on-surface">
+      <h2 id="device-history-title" className="text-subtitle text-text-primary">
         {copy.title}
       </h2>
       {status === "loading" && (
@@ -81,7 +81,7 @@ export function DeviceHistory({
       )}
       {status === "error" && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -91,7 +91,7 @@ export function DeviceHistory({
       )}
       {status === "ready" && items.length === 0 && (
         <Card className="px-6 py-8 text-center">
-          <p className="text-sm font-medium text-on-surface-variant">{copy.empty}</p>
+          <p className="text-label text-text-secondary">{copy.empty}</p>
         </Card>
       )}
       {status === "ready" && items.length > 0 && (
@@ -104,7 +104,7 @@ export function DeviceHistory({
         </Card>
       )}
       {status === "ready" && moreError && (
-        <p role="alert" className="text-sm font-semibold text-error">
+        <p role="alert" className="text-label font-semibold text-danger">
           {copy.loadMoreFailed}
         </p>
       )}

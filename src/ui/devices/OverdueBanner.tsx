@@ -1,7 +1,7 @@
 import type { DeviceDto } from "@/lib/devices/types";
 import { Button } from "../Button";
 import { Card } from "../Card";
-import { Chip } from "../Chip";
+import { Pill } from "../Chip";
 import { devicesCopy } from "../copy/devices";
 import type { DeviceRowHandlers } from "./device-actions";
 import { DeviceRowActions } from "./DeviceRowActions";
@@ -31,28 +31,28 @@ export function OverdueBanner({
   const rows = mine.slice(0, MAX_ROWS);
   return (
     <section aria-labelledby="overdue-heading" className="flex flex-col gap-3">
-      <h2 id="overdue-heading" className="text-lg font-extrabold text-on-surface">
+      <h2 id="overdue-heading" className="text-subtitle text-text-primary">
         {copy.heading(mine.length)}
       </h2>
-      <p className="text-sm text-on-surface-variant">{copy.hint}</p>
+      <p className="text-label font-normal text-text-secondary">{copy.hint}</p>
       <ul role="list" className="flex flex-col gap-2">
         {rows.map((d) => {
           const pending = pendingText(d);
           return (
             <li key={d.id}>
-              <Card className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+              <Card className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex min-w-0 flex-col gap-1">
-                  <p className="text-sm text-on-surface">
-                    <span className="font-bold">{d.name}</span>{" "}
+                  <p className="text-label font-normal text-text-primary">
+                    <span className="font-semibold">{d.name}</span>{" "}
                     {devicesCopy.typeLine(d.type, d.inventoryNumber)}
                   </p>
-                  <p className="inline-flex flex-wrap items-center gap-1.5 text-sm text-on-surface-variant">
+                  <p className="inline-flex flex-wrap items-center gap-1 text-label font-normal text-text-secondary">
                     {d.holding && (
                       <span>{devicesCopy.holding.expired(d.holding.expiresOn ?? "")}</span>
                     )}
-                    {pending && <Chip label={pending.chip} />}
+                    {pending && <Pill dot tone="warning" label={pending.chip} />}
                   </p>
-                  {pending?.to && <p className="text-xs text-on-surface-variant">{pending.to}</p>}
+                  {pending?.to && <p className="text-caption text-text-secondary">{pending.to}</p>}
                 </div>
                 <DeviceRowActions device={d} handlers={handlers} busyId={busyId} />
               </Card>

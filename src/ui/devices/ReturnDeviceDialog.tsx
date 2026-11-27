@@ -9,9 +9,8 @@ import { NoteField } from "./NoteField";
 import { emptyReturnForm, settleReturn, toReturnBody, type ReturnForm } from "./return-device";
 
 const copy = devicesCopy.giveBack;
-const CAPTION =
-  "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5";
-const HINT = "text-xs text-on-surface-variant px-0.5";
+const CAPTION = "text-label text-text-primary";
+const HINT = "text-caption text-text-secondary";
 
 /** Props only: current owner, note and what happens next. */
 export function ReturnDeviceFields({
@@ -27,7 +26,9 @@ export function ReturnDeviceFields({
     <>
       <div className="flex flex-col gap-1">
         <span className={CAPTION}>{copy.currentOwner}</span>
-        <span className="text-sm font-medium text-on-surface">{device.owner?.displayName}</span>
+        <span className="text-label font-normal text-text-primary">
+          {device.owner?.displayName}
+        </span>
       </div>
       <NoteField value={form.note} onChange={onNote} label={copy.note} hint={copy.noteHint} />
       <p className={HINT}>{copy.next}</p>

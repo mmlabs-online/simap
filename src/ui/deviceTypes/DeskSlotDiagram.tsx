@@ -6,25 +6,21 @@ export function DeskSlotDiagram({ kind }: { kind: DeviceKind }) {
   const m = slotMarker(kind);
   const { w, h, deskX, deskY, tile, deskH } = DIAGRAM;
   return (
-    <svg
-      aria-hidden="true"
-      viewBox={`0 0 ${w} ${h}`}
-      className="w-40 shrink-0 text-on-surface-variant"
-    >
+    <svg aria-hidden="true" viewBox={`0 0 ${w} ${h}`} className="w-40 shrink-0 text-text-secondary">
       <rect
         x={deskX}
         y={deskY}
         width={tile * 2}
         height={deskH}
         rx={3}
-        className="fill-surface-container-high stroke-outline-variant"
+        className="fill-canvas stroke-divider"
       />
       <line
         x1={deskX + tile}
         y1={deskY}
         x2={deskX + tile}
         y2={deskY + deskH}
-        className="stroke-outline-variant"
+        className="stroke-divider"
       />
       <rect
         x={w / 2 - 10}
@@ -32,13 +28,13 @@ export function DeskSlotDiagram({ kind }: { kind: DeviceKind }) {
         width={20}
         height={8}
         rx={4}
-        className="fill-outline-variant"
+        className="fill-divider"
       />
       <circle
         cx={m.x}
         cy={m.y}
         r={5}
-        className={m.under ? "fill-none stroke-primary" : "fill-primary"}
+        className={m.under ? "fill-none stroke-text-primary" : "fill-text-primary"}
         strokeDasharray={m.under ? "2 2" : undefined}
       />
     </svg>

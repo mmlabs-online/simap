@@ -12,7 +12,7 @@ const copy = deviceTypesCopy.deleteDialog;
 /** The confirm text. Props only, so the markup can be tested without effects. */
 export function DeleteDeviceTypeBody({ name }: { name: string }) {
   return (
-    <div className="text-sm font-medium text-on-surface">
+    <div className="text-label text-text-primary">
       <p>{copy.body(name)}</p>
     </div>
   );

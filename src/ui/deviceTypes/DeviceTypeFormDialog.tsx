@@ -25,8 +25,7 @@ import { DeviceTypeSpriteField } from "./DeviceTypeSpriteField";
 import type { DeviceTypesApi } from "./device-types-api";
 
 const copy = deviceTypesCopy.form;
-const CAPTION =
-  "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5";
+const CAPTION = "text-label text-text-primary";
 
 type Props = {
   /** `null` creates a type. */
@@ -151,19 +150,20 @@ export function DeviceTypeFormFields({
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-2">
             {DEVICE_KINDS.map((kind) => (
-              <label key={kind} className="flex items-start gap-2 text-sm text-on-surface">
+              <label
+                key={kind}
+                className="flex min-h-control cursor-pointer items-start gap-2 text-label font-normal text-text-primary"
+              >
                 <input
                   type="radio"
                   name="device-type-slot"
-                  className="mt-1"
+                  className="size-5 flex-none"
                   checked={form.slot === kind}
                   onChange={() => onSlot(kind)}
                 />
                 <span className="flex flex-col">
                   <span className="font-medium">{deviceTypesCopy.slots[kind].label}</span>
-                  <span className="text-on-surface-variant">
-                    {deviceTypesCopy.slots[kind].hint}
-                  </span>
+                  <span className="text-text-secondary">{deviceTypesCopy.slots[kind].hint}</span>
                 </span>
               </label>
             ))}
