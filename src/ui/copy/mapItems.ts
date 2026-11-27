@@ -3,15 +3,40 @@ import type { Direction } from "@/lib/sprites/types";
 /** English strings of the Map items page (D36). API error messages come from `apiErrorMessage`. */
 export const mapItemsCopy = {
   noAccess: "Only admins can manage map items.",
-  intro: "These items fill the Add items palette in the room editor. Items are never deleted.",
   list: {
     empty: "The map item catalog is not ready yet. Try again in a moment.",
     hidden: "Hidden",
     fixed: "Fixed size",
-    customised: "Customised",
   },
-  edit: "Edit",
   editLabel: (name: string) => `Edit map item ${name}`,
+  header: {
+    eyebrow: "Build your little world",
+    subtitle:
+      "Small details. A space that feels like yours. Manage your room's sprites and objects.",
+  },
+  stats: {
+    label: "Map item totals",
+    total: (n: number) => (n === 1 ? "map item" : "map items"),
+    inPalette: "in palette",
+    customised: "customised",
+    note: "32 px tile system · 4 directional sprites",
+  },
+  tabs: { label: "Item groups", all: "All" },
+  search: { label: "Search items or library key", placeholder: "Search items or library key…" },
+  grid: { heading: "Items", noMatch: "No items match. Try another group or search." },
+  footer: {
+    showing: (n: number, m: number) => `Showing ${n} of ${m} ${m === 1 ? "item" : "items"}`,
+    note: "Items are never deleted. Hide an item to remove it from the local palette.",
+  },
+  card: {
+    size: (w: number, h: number) => `${w} × ${h}`,
+    sizeLabel: (w: number, h: number) => `${w} by ${h} tiles`,
+    source: {
+      image: "Custom image",
+      sprite: "Package sprite",
+      library: "Library sprite",
+    } as Record<"image" | "sprite" | "library", string>,
+  },
   form: {
     key: "Library key",
     name: "Name",

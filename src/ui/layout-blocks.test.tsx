@@ -49,6 +49,48 @@ describe("TabBar", () => {
   });
 });
 
+describe("TabBar pill", () => {
+  const html = renderToStaticMarkup(
+    <TabBar
+      variant="pill"
+      tabs={[
+        { id: "a", label: "Alpha", count: 7 },
+        { id: "b", label: "Beta" },
+      ]}
+      active="a"
+      onSelect={() => {}}
+      ariaLabel="Sections"
+      tabIdOf={(i) => `t-${i}`}
+      panelIdOf={(i) => `p-${i}`}
+    />,
+  );
+  it("wrapper scrolls with a gap and has no underline border", () => {
+    const wrap = html.match(/<div role="tablist"[^>]*>/)![0];
+    expect(wrap).toContain("gap-2 overflow-x-auto");
+    expect(wrap).not.toContain("border-b");
+  });
+
+  it("selected is pixel green, unselected plain; both are rounded 44 px pills", () => {
+    const a = btn(html, "t-a");
+    const b = btn(html, "t-b");
+    expect(a).toContain("bg-pixel-primary text-on-action");
+    expect(b).toContain("text-text-secondary");
+    for (const x of [a, b]) {
+      expect(x).toContain("min-h-control shrink-0 rounded-lg");
+      expect(x).not.toContain("border-b-2");
+    }
+  });
+
+  it("count is a mono span in the button; roving tabindex and aria-controls as underline", () => {
+    const a = btn(html, "t-a");
+    expect(a).toMatch(/<span class="font-mono text-caption">7<\/span>/);
+    expect(btn(html, "t-b")).not.toContain("font-mono");
+    expect(a).toContain('tabindex="0"');
+    expect(btn(html, "t-b")).toContain('tabindex="-1"');
+    expect(a).toContain('aria-controls="p-a"');
+  });
+});
+
 describe("PageHeader", () => {
   it("renders h2 by default, h3 with level=3, subtitle and aside", () => {
     const html = renderToStaticMarkup(
