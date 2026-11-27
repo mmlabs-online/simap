@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-27 |
-| Claimed by | claude@2026-11-27T03:34:53Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/150 |
 
 ## Goal
 Present characters at a desk with a monitor show a small "typing" idle on the check-in room map (PRE-06 / LAY-06),
@@ -53,3 +53,9 @@ split out of SIM-061 by its approved plan.
 - Done: consult (`consult-frontend-developer.md`); `plan.md` Status READY, no blocking questions, no High path, ~120 prod + ~130 test lines.
 - In progress / next: waiting for Ming's plan approval (M-93); then `/run SIM-061.1` resumes at IMPLEMENT.
 - Gotchas: plan adds AC "pause while the tab is hidden" (from SIM-061 plan) and "`onDone` only for walk completion"; `buildDrawList` gets a boolean `art.idle` option instead of the consult's passed-in seat set. M-91/M-92 numbers also exist on the SIM-043 cloud branch (renumber on merge).
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 2 this run (implementer×1 default model 44k; reviewer×1 default model 38k); 4 in total with the planning run.
+- Done: plan approved (M-93); implemented in attempt 1 (`idle.ts` + tests, `placement.ts` `art.idle`, `WalkLayer`, `RoomMap`); review PASS; all Checks green; PR #150.
+- In progress / next: Ming reviews and merges PR #150, then checks the bob in a browser (see the PR's "Needs Ming's decision").
+- Gotchas: branch not rebased (main moved only in `work/backlog.md` and SIM-043.1 files, no overlap). Review nits: `RoomMap.tsx:133` `?? []` allocates per render; the `eslint-disable` comments do nothing.
