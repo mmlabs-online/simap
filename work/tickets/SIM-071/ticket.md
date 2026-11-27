@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | L |
 | Areas | ui, ux, architecture |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-27 |
 | Claimed by | — |
-| PR | — |
+| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 |
 
 ## Goal
 Every screen of simap uses one set of design tokens (colours, type, spacing, radius, elevation, layout, motion) from
@@ -82,4 +82,24 @@ workspace coral) via D87.
 - 2026-11-27: brief given (`brief.md`). Answers: one ticket (planner slices); keep dark mode with derived values;
   DM Sans everywhere, keep Fraunces for the sign-in headline.
 
+- Plan approved (2026-11-27): Ming "duyệt SIM-071, theo mặc định hết" — all 7 slices and defaults Q1–Q17.
+
 ## Handoff
+
+### 2026-11-27 — claude — BLOCKED
+- Agent calls: 3 (frontend-developer×1 50k, ux-architect×1 47k, planner×1 113k; default models)
+- Done: consults; plan READY with 7 slices (slice 1 fully specified: tokens.css + compatibility layer + DM Sans + md 800 + focus ring + reduced motion + contrast tests); plan gate; M-95 added.
+- In progress / next: Ming answers Q1–Q17 (or accepts defaults) → implement slice 1.
+- Gotchas: white on coral fails AA (Q1); brief and AC conflict until Ming decides.
+
+### 2026-11-27 — claude — IN_PROGRESS (slice 1 PR open)
+- Agent calls: 2 (implementer×1 70k, reviewer×1 64k; default models)
+- Done: slice 1 (tokens foundation) implemented, review PASS attempt 1, PR #154.
+- In progress / next: Ming merges #154; then `/run SIM-071` for slice 2 (token guard).
+- Gotchas: border-strong #889282 (plan value failed 3:1); DM Sans has no vietnamese subset.
+
+### 2026-11-27 — claude — IN_PROGRESS (slice 2 PR open)
+- Agent calls: 3 (planner×1 sonnet 45k addendum, implementer×1 42k, reviewer×1 sonnet 39k)
+- Done: slice 2 (token guard, 65 files / 373 violations pending) implemented, review PASS attempt 1, PR #155.
+- In progress / next: Ming merges #155; then `/run SIM-071` for slice 3 (UI kit).
+- Gotchas: slice 7 must read the pending file tolerantly; hex rule widened (accepted).

@@ -51,13 +51,13 @@ provider); rule R3.
 - Manual: dev with the mock provider, open simap as a provider-checked-in member (no popup, seated).
 
 ## Notes / answers from Ming
-- Waiting for Ming: plan approval (High tier: `.env.example`, `src/server/presence/provider/config.ts`; M-95).
-- 2026-11-27: Plan approved (Ming: "duyệt plan SIM-063"; M-95; defaults G1–G9 as planned).
+- Waiting for Ming: plan approval (High tier: `.env.example`, `src/server/presence/provider/config.ts`; M-96).
+- 2026-11-27: Plan approved (Ming: "duyệt plan SIM-063"; M-96; defaults G1–G9 as planned).
 
 ## Handoff
 
 ### 2026-11-27 — claude — BLOCKED
 - Agent calls: 3, ~163k tokens total (software-architect×1 default 50k; api-platform-engineer×1 default 34k; planner×1 default 79k).
 - Done: consults saved; `plan.md` Status READY, defaults G1–G9 for the gate; no migration, no UI change; mock only (no REST client).
-- In progress / next: Ming approves the plan (M-95), then `/run SIM-063` resumes at IMPLEMENT.
+- In progress / next: Ming approves the plan (M-96), then `/run SIM-063` resumes at IMPLEMENT.
 - Gotchas: High paths `.env.example` and `provider/config.ts` (security review will trigger). The planner could not read `.env.example` (deny rule); the implementer adds two names in its existing style.
