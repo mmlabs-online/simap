@@ -162,3 +162,26 @@ Touching the test is justified (plan allows tests whose asserted kit markup chan
 ### Follow-ups (out of scope)
 - Q-S3-1: merge `tonal`/`outlined` (now identical) in a later slice.
 - Q-S3-2: Avatar default background/colour off the compat alias in slice 7.
+
+## Slice 3 — Attempt 2
+Verdict: PASS
+
+Date: 2026-11-27. Scope: rework of Issues 1 and 2 from "Slice 3 — Attempt 1" (commit c133bee); the rest of slice 3 was accepted in attempt 1 and is unchanged.
+
+### Checks (run by reviewer)
+- `pnpm format:check`, `pnpm typecheck`, `pnpm check:layers` (1009 files, no violations), `pnpm test`, `pnpm build`: all exit 0.
+- `node scripts/check-tokens.mjs`: exit 0, `53 files, no violations outside the pending list`.
+
+### Issue resolution
+- Issue 1 (blocker): `DecisionDialog.test.tsx:76` now matches `disabled=""`, same form as `kit.test.tsx:204`; it no longer matches the `disabled:cursor-not-allowed` class. Resolved.
+- Issue 2 (should-fix): `kit.test.tsx` Button loop covers all six variants and asserts `startsWith("enabled:")` only; new IconButton test covers active and inactive. Resolved.
+- Diff of c133bee touches only those two test files plus impl-log; no scope issue. No rule violations (R1-R7).
+
+### Ming verification after merge
+- Unchanged from attempt 1: `/dev/shell` plus Members and Devices at 390 / 800 / 1280 px, light and dark.
+
+### Follow-ups
+- Unchanged (Q-S3-1, Q-S3-2).
+
+### Blockers from review agents (slice 3)
+- None (no review trigger matched).
