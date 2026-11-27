@@ -320,3 +320,177 @@ covers **slice 1**.
    `--accent-*`, `--status-*`, `--scrim`/`--shadow*` → tokens, `--ease-md3`), move `--px-*` art palette into
    tokens.css, `check-tokens.pending.json` empty then deleted (test asserts zero violations), final changelog and the
    brief's self-check (contrast table, focus, 44 px, reduced motion, 800/1024/1280 layouts) in `impl-log.md`.
+
+## Slice 2 addendum — Token guard (ratchet)
+Status: READY. Written against slice 1 as merged (PR #154) and the Split proposal item 2. No new decisions; open
+points are non-blocking questions below with defaults. Closes AC 1b only partly: the guard exists and ratchets; AC 1b
+is fully met in slice 7 (empty pending list). No product code, CSS or markup changes in this slice.
+
+### Scope (from this plan)
+- Split proposal item 2 (above): `scripts/check-tokens.mjs` exporting `findViolations`, `scripts/check-tokens.test.ts`,
+  `scripts/check-tokens.pending.json`; rules and permanent allowlist as listed there; "Runs inside `pnpm test` (no new
+  Checks row)"; no CLAUDE.md change; about 250 lines.
+- AC 1b: "No component file contains a hard-coded hex colour, px radius, box-shadow or font stack (grep check)"; AC 3:
+  "slice 2 guard flags `text-[13px]` and other arbitrary sizes".
+- Q7/Q8 (default): 13 px text and 700/800 weights are removed in later slices; this guard only flags arbitrary
+  `text-[`, not weights (weights are not in the Split proposal rule list, so not added here).
+
+### Files (slice 2)
+None matches a High path in `loop.config.md` (only `scripts/check-layers.mjs` is listed under `scripts/`).
+
+| File | Change | Required because | High path? |
+|---|---|---|---|
+| `scripts/check-tokens.mjs` | create: rules, `findViolations(path, text)`, `isScanned(path)`, `ALLOWLIST`, `main()` CLI | the guard | no |
+| `scripts/check-tokens.test.ts` | create: rule unit tests, repo scan, ratchet tests, allowlist tests, CLI smoke | R5, AC 1b | no |
+| `scripts/check-tokens.pending.json` | create: files still to migrate, with violation counts, generated once from the real repo | ratchet | no |
+| `work/tickets/SIM-071/impl-log.md` | append "Slice 2": rules, allowlist reasons, initial pending table (file, count) | Deliverable 3 | no |
+
+Not touched: `package.json` (no new script; the test runs inside `pnpm test` because `vitest.config.ts:19` already
+includes `scripts/**/*.test.ts`), `CLAUDE.md`, `.claude/loop.config.md` (Checks unchanged), any file under `src/`.
+Style follows `scripts/check-layers.mjs`: Node built-ins only, `export function`, `main()` run only when the file is
+the entry point (`import.meta.url === pathToFileURL(resolve(process.argv[1])).href`), JSDoc types.
+
+### Module contract (`scripts/check-tokens.mjs`)
+- `isScanned(path: string): boolean` — posix path relative to the repo root; true when it starts with `src/`, ends in
+  `.ts`, `.tsx` or `.css`, and does not match `/\.test\.[cm]?[jt]sx?$/` (tests are exempt).
+- `findViolations(path: string, text: string): { line: number; rule: string; match: string }[]` — pure; no fs. Returns
+  `[]` when `!isScanned(path)` or `isAllowed(path)`. One entry per match (two matches on one line are two entries),
+  sorted by line then rule. Line numbers are 1-based.
+- `isAllowed(path: string): boolean` — checks `ALLOWLIST`.
+- `ALLOWLIST: { pattern: string; reason: string }[]` — `pattern` is an exact posix path, or a prefix ending in `/**`
+  (matches everything under that directory). Permanent, one-line reason each (entries, in this order):
+
+  | pattern | reason |
+  |---|---|
+  | `src/styles/tokens.css` | the one file that defines token values (brief Rule 1) |
+  | `src/lib/sprites/**` | pixel-art sprite data and art colours (ticket Out of scope) |
+  | `src/ui/roomlayout/paint.ts` | canvas paint of the room layout, art colours |
+  | `src/ui/portal/photo-canvas.ts` | canvas photo rendering colours |
+  | `src/ui/groups/group-form.ts` | default group colour is user data, not UI chrome |
+
+  `Avatar.tsx` and `SeatOverlay.tsx` are deliberately **not** allowlisted (they mix chrome and art); they start in the
+  pending list and slices 3 and 6 either migrate them or add a justified allowlist entry in that slice's PR.
+- CLI (`node scripts/check-tokens.mjs`): scans `src/` like `check-layers.mjs` (`readdirSync("src", { recursive: true })`,
+  backslashes to `/`, files only), prints `file:line rule match` to stderr for every violation in a file that is not
+  allowlisted and not pending-covered, exits 1 if any; otherwise prints `check-tokens: N files, no violations outside
+  the pending list`. `--list` prints JSON `{ "<path>": <violation count> }` for every scanned file with at least one
+  violation (used once to generate the pending file, and by implementers when shrinking it); exit 0.
+  The pending/ratchet comparison lives in an exported `compareToPending(counts, pending)` returning
+  `{ newViolations: string[]; stale: string[]; shrunk: { path: string; was: number; now: number }[] }` so the CLI and
+  the test share it.
+
+### Rules (exact patterns)
+Applied to the text after comment stripping. `stripComments(path, text)`: for `.css` remove `/* … */`; for `.ts/.tsx`
+remove `/* … */` and `//` line comments where the `//` is at line start or preceded by whitespace (so `http://` in
+strings survives). Removed characters are replaced by spaces and newlines kept, so line numbers stay correct.
+`(?<![\w-])` below is the lookbehind "not part of a longer word or class name"; a Tailwind variant prefix such as
+`md:` or `hover:` and a leading `!` are allowed before it because `:` and `!` are not in `[\w-]`.
+
+| Rule id | Applies to | Regex (JS, flags `g`) | Notes |
+|---|---|---|---|
+| `hex` | ts, tsx, css | `/(?<![\w&])#(?=[0-9a-fA-F]*\d)(?:[0-9a-fA-F]{8}\|[0-9a-fA-F]{6}\|[0-9a-fA-F]{3,4})(?![\w-])/g` | needs a digit, so `href="#bad"` and `&#123;` do not match |
+| `color-fn` | ts, tsx, css | `/\b(?:rgba?\|hsla?)\(/g` | `\b` keeps `mixSrgb(` (src/lib/color/contrast.ts:40) clean |
+| `shadow-arb` | ts, tsx | `/(?<![\w-])shadow-\[/g` | |
+| `rounded-arb` | ts, tsx | `/(?<![\w-])rounded(?:-(?:[trblse]\|tl\|tr\|bl\|br\|ss\|se\|ee\|es))?-\[/g` | |
+| `font-arb` | ts, tsx | `/(?<![\w-])font-\[/g` | |
+| `text-arb` | ts, tsx | `/(?<![\w-])text-\[/g` | flags `text-[13px]` and `text-[var(--x)]` alike |
+| `ease-arb` | ts, tsx | `/(?<![\w-])ease-\[/g` | |
+| `duration-arb` | ts, tsx | `/(?<![\w-])duration-\[/g` | |
+| `arbitrary-px` | ts, tsx | `/\[[^\]\s]*\d(?:px\|rem\|em)[^\]\s]*\]/g` | any `[…Npx]`, e.g. `min-h-[68px]`, `grid-cols-[1fr_44px]` |
+| `spacing-scale` | ts, tsx | `/(?<![\w-])-?(?:p\|px\|py\|pt\|pr\|pb\|pl\|ps\|pe\|m\|mx\|my\|mt\|mr\|mb\|ml\|ms\|me\|gap\|gap-x\|gap-y\|space-x\|space-y)-(\d+(?:\.\d+)?)(?![\w.-])/g` | violation when capture group 1 is not in `0, 1, 2, 3, 4, 5, 6, 8, 12`; so `px-2.5`, `gap-1.5`, `p-7`, `mt-10` flag; `p-4`, `px-card`, `gap-px`, `p-[…]` (other rule) do not |
+| `css-radius` | css | `/(?<![\w-])border-radius\s*:\s*([^;}]*)/g` | violation when the value matches `/\d(?:px\|rem\|em)\b/`; `var(--radius-lg)`, `inherit`, `50%` pass |
+| `css-shadow` | css | `/(?<![\w-])box-shadow\s*:\s*([^;}]*)/g` | violation unless the value (trimmed) is `none`, `inherit`, or consists only of `var(...)` terms (comma-separated allowed) |
+| `css-font-size` | css | `/(?<![\w-])font-size\s*:\s*([^;}]*)/g` | violation when value matches `/\d(?:px\|rem\|em)\b/`; `var(--text-…)` passes |
+| `css-font-family` | css | `/(?<![\w-])font-family\s*:\s*([^;}]*)/g` | violation unless value starts with `var(` or is `inherit`; custom properties such as `--font-family-sans:` never match (lookbehind) |
+
+The CSS rules match whole declarations (value up to `;` or `}`, may span lines); the reported `line` is the line of the
+property name. `hex`/`color-fn` also apply to `@theme`/`:root` blocks in `globals.css`, which is why `globals.css` is
+pending until slice 7 (no CSS file other than `tokens.css` may define colour values at the end).
+
+Known gaps (recorded in impl-log, not fixed here, R4): inline style objects with numbers (`borderRadius: 12`), `style=`
+strings that are not hex/rgb/hsl, and weights `font-bold/extrabold` (handled by the slice sweeps, Q7).
+
+### Pending list format (`scripts/check-tokens.pending.json`)
+```json
+{
+  "src/app/globals.css": 120,
+  "src/ui/Avatar.tsx": 3
+}
+```
+- A flat JSON object: key = posix path of a scanned, non-allowlisted file; value = its current number of violations
+  (positive integer). Keys sorted alphabetically (the test checks this so diffs stay small). Generated once with
+  `node scripts/check-tokens.mjs --list` on the slice-2 branch (numbers above are placeholders, not real).
+- Ratchet semantics: for every scanned non-allowlisted file, actual count `n` and pending value `p` (0 if absent):
+  `n > p` fails ("new violations, fix the code, do not raise the list"); `n < p` fails with "lower the pending value to
+  n" (or "remove the entry" when `n == 0`). So each later slice must update the file in the same PR as the code it
+  cleans, and the list can only shrink. A pending key whose file no longer exists fails.
+- Slice 7 deletes the file; `compareToPending` then treats the pending map as `{}` and the repo scan must have zero
+  violations (the test already handles a missing file as `{}`).
+
+### Tests to write (`scripts/check-tokens.test.ts`, Vitest, node)
+Imports `findViolations`, `isScanned`, `isAllowed`, `ALLOWLIST`, `compareToPending` from `./check-tokens.mjs`, same as
+`scripts/check-layers.test.ts:2`.
+
+| Test (describe › name) | Covers |
+|---|---|
+| rules › flags each rule once with the right id and 1-based line | one fixture line per rule id above: `bg-[#ED5B35]` (hex), `style={{ color: "rgba(0,0,0,.5)" }}` (color-fn), `shadow-[0_1px_2px_#000]` (shadow-arb; also yields hex), `rounded-[10px]` and `rounded-t-[4px]`, `font-[Georgia]`, `text-[13px]`, `ease-[cubic-bezier(.2,0,0,1)]`, `duration-[120ms]`, `min-h-[68px]`, and each spacing case |
+| rules › hex: accepts `#bad`, `&#123;`, `#12`, `#12345` (5 digits) and a hex in a `//` or `/* */` comment; flags `#fff`, `#FFFF`, `#ed5b35`, `#ED5B35AA` | hex edge cases, comment stripping |
+| rules › color-fn: flags `rgb(`, `rgba(`, `hsl(`, `hsla(`; ignores `mixSrgb(` and `color-mix(in srgb, …)` | `\b` guard |
+| rules › spacing-scale: allows `p-0 px-1 gap-2 mt-3 py-4 m-5 gap-x-6 space-y-8 p-12 -mt-4 md:px-6 px-px px-card`; flags `p-7 mt-10 px-2.5 gap-1.5 -mt-0.5 md:gap-16 space-x-9` | allowed scale (0, px, 1, 2, 3, 4, 5, 6, 8, 12) |
+| rules › arbitrary values: `top-[3px]` flagged by `arbitrary-px`; `w-[var(--x)]` and `grid-cols-[1fr_1fr]` not flagged; `text-[var(--x)]` flagged by `text-arb` | arbitrary rules |
+| rules › css: `border-radius: 8px`, `border-radius: 0 0 4px 4px`, `box-shadow: 0 1px 2px var(--c)`, `font-size: 13px`, `font-family: "Manrope", sans-serif` flagged; `border-radius: var(--radius-lg)`, `border-radius: 50%`, `box-shadow: var(--shadow-card)`, `box-shadow: none`, `font-size: var(--text-label)`, `font-family: var(--font-family-sans)`, `--font-family-sans: ui-monospace, monospace` pass | CSS declaration rules; a multi-line `box-shadow:` reports the property's line |
+| rules › class-name look-alikes are not flagged: `px-card`, `p-card-x`, `shadow-card`, `rounded-lg`, `text-label`, `font-heading`, `ease-out`, `duration-150`, `top-2`, `group-hover:flex` | no false positives on token utilities |
+| rules › `.test.ts(x)` files, non-`src/` files and non-ts/tsx/css files return no violations | `isScanned` |
+| rules › two matches on one line give two entries; results sorted by line | counting contract |
+| allowlist › every entry has a non-empty reason, is an exact path or ends in `/**`, and matches at least one file in the repo | stale-entry guard |
+| allowlist › `isAllowed("src/lib/sprites/avatar.ts")` and `isAllowed("src/styles/tokens.css")` true; `isAllowed("src/ui/Avatar.tsx")` false | pattern matching (prefix vs exact) |
+| pending › file is a flat object, keys sorted, values positive integers, every key is a scanned non-allowlisted file that exists | format |
+| pending › `compareToPending` returns `newViolations` for count above pending, `shrunk` for count below, `stale` for a pending key with count 0 or missing file | ratchet unit cases with synthetic maps |
+| repo › every scanned file satisfies `count === pending[path] ?? 0` (messages list file, was, now) | the real ratchet: new violations fail, unrecorded shrink fails |
+| cli › `node scripts/check-tokens.mjs` exits 0 and prints `check-tokens:`; `--list` prints parseable JSON equal to the pending file | wiring; run with `spawnSync(process.execPath, …)` like other script tests |
+
+### Approach (slice 2)
+1. Write `check-tokens.mjs` (rules table as a const array `{ id, exts, re, test? }`; one `matchAll` loop per rule).
+2. Run `node scripts/check-tokens.mjs --list`, review the output (expected: `src/app/globals.css` large, `Avatar.tsx`,
+   `SeatOverlay.tsx`, plus the many files with `text-[`, `rounded-[`, `[Npx]`, off-scale spacing and `p-/gap-` steps),
+   save it as `check-tokens.pending.json` (sorted keys). Spot-check three entries by hand with `rg` to confirm the
+   counts and that no allowlisted file sneaked in.
+3. Write the tests; confirm the repo-ratchet and CLI tests pass.
+4. Mutation check (record in impl-log): add `bg-[#fff]` to a non-pending file and `p-7` to a pending file; the test
+   must fail for both; revert.
+5. Append "Slice 2" to `impl-log.md` (rules, allowlist with reasons, pending table, known gaps, mutation check result).
+6. Checks: `pnpm format:check`, `pnpm typecheck && pnpm check:layers`, `pnpm test`, `pnpm build` (build unaffected;
+   run for the Checks row).
+
+Rules: R1 (`scripts/` is outside the layers; no `src/` imports); R3 (no env); R4 (only the files above, no `src/`
+edits); R5 (the guard is itself tested). R2/R6/R7 not touched. Size: about 250 lines (mjs ~110, test ~140, json 10 to
+40 lines).
+
+### Acceptance → verification (slice 2)
+| # | Criterion | How the reviewer verifies it |
+|---|---|---|
+| S2-1 | Guard flags hex, `rgb(a)/hsl(a)(`, `shadow-[`, `rounded-[`, `font-[`, `text-[`, `ease-[`, `duration-[`, `[Npx]`, off-scale p/m/gap/space, CSS literal radius/shadow/font-size/font-family (AC 1b, AC 3 "flags `text-[13px]`") | `pnpm test scripts/check-tokens.test.ts` › rules (all tests listed above green); read the rules table against the Split proposal list |
+| S2-2 | Permanent allowlist is exactly tokens.css, sprites, paint.ts, photo-canvas.ts, group-form.ts, each with a reason | allowlist tests green; reviewer reads `ALLOWLIST` |
+| S2-3 | Ratchet: new violations anywhere fail; pending only shrinks | repo test green; reviewer's mutation (`bg-[#fff]` in any non-pending `src/ui` file, `p-7` in a pending one) makes `pnpm test` fail, and removing a violation from a pending file without lowering its value also fails |
+| S2-4 | Runs inside `pnpm test`, no new Checks row, no package.json or CLAUDE.md change | `git diff main -- package.json CLAUDE.md .claude/loop.config.md` empty; `pnpm test` output lists `scripts/check-tokens.test.ts` |
+| S2-5 | No product change | `git diff --stat main` shows only the four files in the table |
+| S2-6 | Existing checks green | `pnpm format:check && pnpm typecheck && pnpm check:layers && pnpm test && pnpm build` |
+
+Ming verification after merge: none for this slice (no visible change).
+
+### Assumptions and non-blocking questions (slice 2)
+- Hotspots: none; the slice adds new files only. Later slices each edit `check-tokens.pending.json`; two slice PRs open
+  at once will conflict there and need a rebase (counts are re-generated with `--list`).
+- Q-S2-1 (non-blocking). The Split proposal says "every `PENDING` file still has a violation" (file-level). **Default:
+  store a count per file** (above), which also stops new violations creeping into files that are still pending, at the
+  cost of updating the number in each slice. If Ming prefers the literal file-level list (`string[]`), only
+  `compareToPending` and the JSON shape change.
+- Q-S2-2 (non-blocking). `Avatar.tsx:33` (`"#ffffff"` text on a user-chosen group colour) and `SeatOverlay.tsx`
+  tooltip colour start as pending. **Default: slice 3 replaces the Avatar hex with `var(--color-on-action)` (white,
+  same value) or, if it must stay a literal, adds an allowlist entry with the reason "text on user data colour"; slice
+  6 migrates SeatOverlay to tokens.**
+- Q-S2-3 (non-blocking). Off-scale spacing allowed steps are 0, px, 1, 2, 3, 4, 5, 6, 8, 12 exactly as in the Split
+  proposal; `gap-1.5`/`px-2.5` (common today) are therefore violations and are cleaned in slices 3 to 6 with the rename
+  map. **Default: keep as specified.**
+- The file-level `// token-ok` escape comment is not added (not in the approved plan); anything that must stay literal
+  goes into `ALLOWLIST` with a reason.
