@@ -61,3 +61,44 @@ None.
 
 ### Blockers from review agents
 - None (no review trigger matched).
+
+## Slice 2 — Attempt 1
+Verdict: PASS
+
+### Checks (run by reviewer)
+- format:check pass; typecheck pass; check:layers `1009 files, no violations`; build pass.
+- `pnpm test`: `387 passed | 1 skipped (388) files; 3794 passed | 7 skipped (3801)`; `scripts/check-tokens.test.ts` 15/15. Matches impl-log.
+- Mutations (restored afterwards, tree clean): `bg-[#fff]` appended to non-pending `src/ui/AppShell.tsx` fails the repo test ("now 1, pending 0"); `p-7` in pending `src/ui/Chip.tsx` fails ("now 17, pending 16"); raising `Avatar.tsx` pending 1 to 2 (an unrecorded shrink) fails.
+
+### Acceptance (S2-1..S2-6)
+| # | Result | Evidence |
+|---|---|---|
+| S2-1 | Met | RULES in `scripts/check-tokens.mjs:29-84` equal the plan table (all 14 rule ids, same regexes except hex); rules tests green, including `text-[13px]` flagged |
+| S2-2 | Met | `ALLOWLIST` `check-tokens.mjs:11-20` is exactly the five plan entries, each with a reason; allowlist tests green; Avatar/SeatOverlay not allowlisted |
+| S2-3 | Met | the three mutations above |
+| S2-4 | Met | diff against origin/main has no `package.json`, `CLAUDE.md`, `.claude/loop.config.md` change; test is in the `pnpm test` run |
+| S2-5 | Met | changed files: the 3 new scripts files plus work/ files (impl-log, ticket state, plan); no `src/` change |
+| S2-6 | Met | see Checks |
+
+### Hex deviation: accepted
+The plan regex `(?=[0-9a-fA-F]*\d)` could not flag `#fff`/`#FFFF`, which the plan's own test list requires, and would miss `"#ffffff"` in Avatar.tsx. The implementer's version (6/8 digits always; 3/4 digits need a digit or one repeated letter) satisfies every listed case (`#bad`, `&#123;`, `#12`, `#12345` pass; `#fff`, `#FFFF`, `#ed5b35`, `#ED5B35AA` flag) and is recorded in impl-log. Residual false negative: 3/4-letter non-repeating colours such as `#abc` or `#bad` used as a real colour are not caught (indistinguishable from anchors); acceptable.
+
+### Rules (CLAUDE.md)
+No violations. R1 (no `src/` imports from scripts), R3, R4 (only planned files), R5 (guard tested). R2/R6/R7 not touched.
+
+### Blockers
+None.
+
+### Should-fix / nits (do not block)
+- 💭 `check-tokens.test.ts:16-18` reads the pending file with a bare `readFileSync`, so it throws if slice 7 deletes the file; the plan says the test treats a missing file as `{}`. Slice 7 must make that read tolerant (or empty the file instead of deleting it). The CLI already handles ENOENT.
+- 💭 `compareToPending` `stale` also lists files with count 0 only because `counts` omits them; fine, but a pending key for an allowlisted file is caught only by the "pending" format test (works).
+- 💭 `scanRepo()` runs at module load in the test (outside `it`); a read error would fail the whole file. Cosmetic.
+
+### Ming verification after merge
+None (no visible change).
+
+### Follow-ups
+- Slice 7: delete the pending file and make the test tolerant of its absence; Q-S2-2 (Avatar `#ffffff`) handled in slice 3.
+
+### Blockers from review agents (slice 2)
+- None (no review trigger matched).
