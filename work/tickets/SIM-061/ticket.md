@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-27T00:50Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -50,6 +50,13 @@ checked in by the provider); decision D77 (walk to the new chair on move).
 - Manual: check in/out in a room with and without a door; OS reduced motion on.
 
 ## Notes / answers from Ming
+- Waiting for Ming: plan approval (High tier gate: plan-approval).
 - Carried from SIM-060 (2026-11-26, orchestrator): (1) typing idle animation (PRE-06/LAY-06) moves here — SIM-060 draws a static seated pose; (2) review should-fix: `src/ui/roomlayout/SeatOverlay.tsx:34` treats unknown presence as "present" (green dot before the first poll / after a failed poll) — show no or a neutral marker; (3) review should-fix: `src/lib/sprites/tag-layout.ts:98-107` does not reserve the dot fallback rect in `taken`. See work/tickets/SIM-060/review.md.
 
 ## Handoff
+
+### 2026-11-27 — claude — BLOCKED
+- Agent calls: 2, ~? tokens (frontend-developer×1 default 47k, planner×1 default).
+- Done: consult; plan READY (walk-in/out/move with BFS path from doors, overlay walk canvas, reduced motion, skip; carried SIM-060 fixes; typing idle split to a proposed SIM-061.1).
+- In progress / next: Ming approves the plan (optionally picks the 1a/1b split); then `/run SIM-061`.
+- Gotchas: ~550 product + ~450 test lines; no "photo" in roomlayout/sprites.
