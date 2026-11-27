@@ -350,3 +350,66 @@ describe("hidden seats, skip", () => {
     expect(isSkipEvent({ type: "keyup", key: "a" })).toBe(false);
   });
 });
+
+describe("presenceStep layout change", () => {
+  it("presence arriving before the new room's layout does not walk anyone in", () => {
+    const l1 = layout();
+    const l2 = layout();
+    const first = presenceStep(null, {
+      roomId: "r1",
+      layout: l1,
+      presence: { a: "away" } as P,
+      views: V,
+    });
+    // room switch: new presence answer while the old layout is still current
+    const mid = presenceStep(first.baseline, {
+      roomId: "r2",
+      layout: l1,
+      presence: { a: "present" } as P,
+      views: V,
+    });
+    expect(mid.intents).toEqual([]);
+    // the new layout arrives with the same answer
+    const done = presenceStep(mid.baseline, {
+      roomId: "r2",
+      layout: l2,
+      presence: { a: "present" } as P,
+      views: V,
+    });
+    expect(done.intents).toEqual([]);
+    expect(done.baseline?.layout).toBe(l2);
+    const next = presenceStep(done.baseline, {
+      roomId: "r2",
+      layout: l2,
+      presence: { a: "away" } as P,
+      views: V,
+    });
+    expect(next.intents).toHaveLength(1);
+  });
+
+  it("the same-room layout object keeps the baseline", () => {
+    const l = layout();
+    const first = presenceStep(null, {
+      roomId: "r1",
+      layout: l,
+      presence: { a: "away" } as P,
+      views: V,
+    });
+    const next = presenceStep(first.baseline, {
+      roomId: "r1",
+      layout: l,
+      presence: { a: "present" } as P,
+      views: V,
+    });
+    expect(next.intents).toHaveLength(1);
+  });
+});
+
+describe("finished walk-out", () => {
+  it("is invisible once done", () => {
+    const [w] = run([{ kind: "out", seat: "a", who: who("m1") }]).walks;
+    expect(w.kind).toBe("walk");
+    expect(walkFrame(w, T0).alpha).toBe(1);
+    expect(walkFrame(w, T0 + w.duration)).toMatchObject({ done: true, alpha: 0 });
+  });
+});

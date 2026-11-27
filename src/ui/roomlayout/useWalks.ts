@@ -17,6 +17,7 @@ import type { WalkGrid } from "@/lib/sprites/walk-path";
 
 type Input = {
   roomId: string;
+  layout: object;
   presence: Readonly<Record<string, SeatPresence>> | undefined;
   seatViews: Readonly<Record<string, SeatView>>;
   grid: WalkGrid | null;
@@ -28,18 +29,18 @@ type Input = {
  * layout effect so the seats being walked to are hidden before the browser paints the new presence. A click or any key
  * ends every walk at once; reduced motion shows the end state.
  */
-export function useWalks({ roomId, presence, seatViews, grid, reduced }: Input) {
+export function useWalks({ roomId, layout, presence, seatViews, grid, reduced }: Input) {
   const [state, setState] = useState<WalkState>(NO_WALKS);
   const baseline = useRef<Baseline | null>(null);
 
   useLayoutEffect(() => {
-    const step = presenceStep(baseline.current, { roomId, presence, views: seatViews });
+    const step = presenceStep(baseline.current, { roomId, layout, presence, views: seatViews });
     baseline.current = step.baseline;
     if (step.intents.length === 0 || !grid) return;
     setState((s) => startWalks(s, step.intents, grid, performance.now(), { reduced }));
     // A walk starts only from a change of the answer; the grid, views and motion setting are read as of that change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, presence]);
+  }, [roomId, layout, presence]);
 
   useEffect(() => {
     if (reduced) setState(skipAll);

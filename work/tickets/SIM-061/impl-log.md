@@ -46,3 +46,23 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No (the pure modules, the hook/layer and the two carried fixes are all in the plan; most lines are tests).
 - Diff size: modified files +178 / -28; new files about 1080 lines (of which about 540 are tests). No server, API or schema change; no `keys.json` / `public/sprites` change.
+
+## Attempt 2 (REWORK: review attempt 1)
+
+### Files touched
+| File | Required because |
+| --- | --- |
+| `src/lib/sprites/walk.ts` | Blocker: `Baseline` and `presenceStep` input carry an optional `layout` object; a layout change resets the baseline like a room change. Should-fix: `walkFrame` returns `alpha: 0` for a finished walk-out. |
+| `src/ui/roomlayout/useWalks.ts` | Takes `layout`, passes it to `presenceStep`, effect deps `[roomId, layout, presence]` |
+| `src/ui/roomlayout/RoomMap.tsx` | Passes `layout` to `useWalks` |
+| `src/lib/sprites/walk.test.ts` | Room switch with presence before the new layout (no intents, then a later change walks); same layout keeps baseline; finished walk-out alpha 0 |
+
+### Checks (actual)
+- format:check, typecheck, check:layers ("994 files, no violations"), test, build: all exit 0
+- test:db not run (nothing outside src/ui and src/lib touched)
+
+### Out-of-plan files
+None. "photo" not added to roomlayout/sprites.
+
+### Follow-ups
+None new (review nits left as is).

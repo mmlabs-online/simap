@@ -101,6 +101,7 @@ export function RoomMap({
   );
   const { walks, hidden, finish } = useWalks({
     roomId: presenceView?.roomId ?? "",
+    layout,
     presence,
     seatViews,
     grid,

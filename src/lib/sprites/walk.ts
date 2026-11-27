@@ -24,7 +24,7 @@ type Views = Readonly<Record<string, SeatView>>;
 type Presence = Readonly<Record<string, SeatPresence>>;
 
 /** The last known presence of one room. */
-export type Baseline = { roomId: string; presence: Presence; views: Views };
+export type Baseline = { roomId: string; layout?: object; presence: Presence; views: Views };
 
 /** One character on the walker layer: a walk along `path`, or a fade at `path[0]`. Times in ms. */
 export type ActiveWalk = {
@@ -86,15 +86,22 @@ export function diffPresence(
 
 /**
  * The next baseline and the changes since the previous one. The first answer of a room is only a baseline (a member
- * already checked in is shown seated, PRE-04); an unknown answer (undefined) keeps the baseline; a room change resets it.
+ * already checked in is shown seated, PRE-04); an unknown answer (undefined) keeps the baseline; a room or layout change
+ * resets it (presence can arrive before the new room's layout).
  */
 export function presenceStep(
   baseline: Baseline | null,
-  input: { roomId: string; presence: Presence | undefined; views: Views },
+  input: { roomId: string; layout?: object; presence: Presence | undefined; views: Views },
 ): { baseline: Baseline | null; intents: Intent[] } {
-  const same = baseline !== null && baseline.roomId === input.roomId;
+  const same =
+    baseline !== null && baseline.roomId === input.roomId && baseline.layout === input.layout;
   if (input.presence === undefined) return { baseline: same ? baseline : null, intents: [] };
-  const next = { roomId: input.roomId, presence: input.presence, views: input.views };
+  const next = {
+    roomId: input.roomId,
+    layout: input.layout,
+    presence: input.presence,
+    views: input.views,
+  };
   return { baseline: next, intents: same ? diffPresence(baseline, next) : [] };
 }
 
@@ -206,7 +213,7 @@ export function walkFrame(walk: ActiveWalk, now: number): WalkFrame {
     x: a.x + (b.x - a.x) * f,
     y: a.y + (b.y - a.y) * f,
     view,
-    alpha: 1,
+    alpha: walk.mode === "out" && done ? 0 : 1,
     bob: Math.floor(pos * 2) % 2,
     done,
   };
