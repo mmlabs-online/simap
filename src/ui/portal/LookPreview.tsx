@@ -11,12 +11,14 @@ export type LookPreviewProps = {
   atlas: Atlas | null;
   look: PixelLook;
   view: AvatarView;
-  scale: 1 | 2;
+  scale: 1 | 2 | 4;
+  /** Hide the canvas from assistive tech (the surrounding control already has a name). */
+  decorative?: boolean;
   label: string;
 };
 
 /** One preview of the character, drawn from the same atlas frames and tints as the room map. */
-export function LookPreview({ atlas, look, view, scale, label }: LookPreviewProps) {
+export function LookPreview({ atlas, look, view, scale, label, decorative }: LookPreviewProps) {
   const ref = useRef<HTMLCanvasElement>(null);
   const box = useMemo(
     () => (atlas ? previewOps(atlas.manifest, look, view) : null),
@@ -48,8 +50,9 @@ export function LookPreview({ atlas, look, view, scale, label }: LookPreviewProp
   return (
     <canvas
       ref={ref}
-      role="img"
-      aria-label={label}
+      role={decorative ? undefined : "img"}
+      aria-label={decorative ? undefined : label}
+      aria-hidden={decorative ? true : undefined}
       width={width}
       height={height}
       style={{ width, height, imageRendering: "pixelated" }}
