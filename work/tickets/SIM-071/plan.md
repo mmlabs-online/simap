@@ -1060,3 +1060,319 @@ Helpers in `AppShellView.test.tsx`: `classesOf(html, re)` returns the class toke
   **Default: keep the header as is (no IA change).**
 - Q-S4-6 (non-blocking). `LEGACY` is duplicated from `kit.test.tsx` into `AppShellView.test.tsx`. **Default: accept the
   copy; slice 7 (which removes the aliases) replaces both with the token guard.**
+
+## Slice 5 addendum — Management screens
+Status: READY. Written against slices 1–4 as merged (#154, #155, #158, #160), Split proposal item 5 and Ming's approved
+defaults Q1–Q17 (ticket.md:85, "theo mặc định hết"). No new decisions; open points are non-blocking questions at the end,
+each with a default. Closes AC 2, AC 3 and AC 6b for the management screens (clean kit, coral; D52). The end-user and
+pixel surfaces (`portal/**`, `checkin/**`, `roomlayout/**`, `mapItems/**`, `auth/**` chrome) stay in slice 6.
+
+### Size and split
+Measured on `main` after #160 (non-test `.tsx` in the slice-5 folders): ~430 lines carry a legacy alias, raw Tailwind
+size, 700/800 weight or arbitrary value, in 63 files, plus 101 guard violations in 20 pending files. One PR would be
+well over ~1000 changed lines, so slice 5 ships as **three PRs by screen group** (Split proposal allowed 5a/5b; 5b as
+one PR would still be ~800 changed lines, so it is cut once more):
+
+| Sub-slice | Screens (folders) | Pending files → 0 | Pending total |
+|---|---|---|---|
+| **5a** (this addendum, fully specified) | Members + invitations, Groups, Approvals, Audit, Org (profile, picker, switcher), Credits | 5 files, 17 violations | 261 → 244 |
+| 5b (outlined) | Devices (incl. incoming transfers, returns, extensions, overdue), Device types | 16 files, 60 | 244 → 184 |
+| 5c (outlined) | Dashboard, Search, Rooms, Seats / room-detail chrome (`SeatDetailPanel`, `SeatsView`, seat dialogs) | 8 files, 41 | 184 → 143 |
+
+5a ≈ 470 changed lines (screens ~240, `table.ts` ~20, tests ~170, pending 5, impl-log ~40). 5b and 5c each get a short
+addendum (files and line numbers re-read on the then-current `main`) using the rules below unchanged. "Admin pages
+under `src/app/**/page.tsx`" have no class strings (`rg -l className src/app` → only `layout.tsx`, `dev/roommap`,
+`dev/shell`), so no `src/app` page is edited in slice 5.
+
+### Scope (from this plan, the brief and slice-4 review)
+- Split proposal item 5: "Management screens (clean kit, coral; mechanical class sweep with a rename map, off-scale sizes
+  snapped, 700/800 → 600) … and their `*.test.tsx` class assertions."
+- Approved defaults: Q1 (filled = `workspace-action`, coral only non-text), Q2 (buttons 8 px, chips 6 px, badges full or
+  4 px), Q6 (control boundaries `border-border-strong`), Q7 (600 headings/titles/metrics, 500 labels/buttons, 400 body),
+  Q8 (no 13 px: labels/controls 14, metadata 12), Q13 (pending/warn → amber), Q15 (cards keep a divider border), Q16
+  (page headings Display 32/40 · 600).
+- AC 3: "Interactive targets are at least 44×44 px; body and control labels at least 14 px; metadata 12 px; every status
+  has a text label". brief.md:132 "badges … Always include a text label".
+- Slice-3 interim (plan, "Visible differences to log (slice 3)", last bullet): "`InvitePeople.tsx:123` (slice 5)" is a
+  hand-built `bg-primary` (near-black) button.
+- Slice-4 review follow-ups (review.md:220, 238–239): "Slice 5 should replace it with a recursive scan
+  (`readdirSync(..., { recursive: true })`, filter `.tsx` and not `.test.`)"; "Possibly cramped layouts … (`md:` device
+  cards/tables at 800 …): slices 5/6 if Ming confirms." The recursive scan is in 5a; the device tables are devices
+  screens, so they are in 5b (rule below, default Q-S5-6).
+
+### Rules for every slice-5 file (5a, 5b, 5c)
+Same as slice 3 "Rules for every kit file" 1–5 and slice 4 rules 6–7 (token utilities only, no legacy alias, no
+700/800, token transition string, `enabled:hover:` on buttons, no per-component focus classes, no Tailwind palette
+colours, behaviour/props/copy/ids/`aria-*` unchanged). Plus:
+
+**R-a Class rename map** (old → new; apply as whole class tokens, including after a variant prefix such as `hover:` or
+`md:`; `text-primary` only where it is the whole class, never inside `text-text-primary`):
+
+| Old | New |
+|---|---|
+| `text-on-surface`, `text-on-background`, `text-on-secondary-container`, `text-primary` (ink) | `text-text-primary` |
+| `text-on-surface-variant`, `text-secondary` | `text-text-secondary` |
+| `text-error`, `text-on-error-container`, `text-status-alert` · `bg-error-container` · `border-error` | `text-danger` · `bg-danger-tint` · `border-danger` |
+| `text-on-success-container`, `text-status-online` · `bg-success-container` | `text-success` · `bg-success-tint` |
+| `text-on-warning-container`, `text-status-warn` · `bg-warning-container` | `text-warning` · `bg-warning-tint` |
+| `text-tertiary`, `text-on-tertiary-container` · `bg-tertiary-container` | `text-info` · `bg-info-tint` |
+| `bg-status-online` / `-warn` / `-alert` (dots, bars) | `bg-success` / `bg-warning` / `bg-danger`, with an adjacent visible text label (R-e) |
+| `bg-background`, `bg-surface-container`, `bg-surface-high`, `bg-secondary-container` | `bg-canvas` |
+| `bg-surface-lowest`, `bg-surface-low` | `bg-surface` |
+| `bg-surface-highest` (skeleton/track fills) | `bg-divider` |
+| `border-outline-variant`, `divide-outline-variant` | `border-divider`, `divide-divider` |
+| `border-outline` | `border-border-strong` on input/select/checkbox/radio boundaries (Q6), `border-border` elsewhere |
+| `bg-primary text-on-primary` on a `<button>`/`<a>` | kit `<Button>` (`variant="filled"`), see R-f |
+| `bg-primary text-on-primary`, `bg-inverse-surface text-inverse-on-surface` on a static badge | `bg-text-primary text-surface` (RoleBadge admin pattern, AA pair already tested) |
+| `bg-`/`border-`/`text-accent-orange` on icons, bars, rings (non-text) | `bg-`/`border-`/`text-workspace-primary` |
+| `text-accent-orange` on text | `text-text-primary` (coral text is below 4.5:1 on canvas) |
+| `bg-accent-orange-soft` | `bg-canvas` |
+| `var(--on-surface)` etc. inside `style` | `var(--color-…)` per the same rows |
+| Tailwind palette (`red-600`, `amber-100`, …) | the matching status token (`danger`, `warning-tint`, …) |
+
+**R-b Type snap (13 px and raw sizes; Q7, Q8, Q16).** Weights are preserved except 700/800 → 600:
+
+| Old | New |
+|---|---|
+| `text-h2 …` on a page `<h1>`; `text-2xl`/`text-3xl` on a page `<h1>` | `text-display` (32/40 · 600; drop the weight class) |
+| `text-h3`, `text-lg`, `text-xl` (section `<h2>`/`<h3>`, card titles) | `text-subtitle` (18/28 · 600; drop the weight class) |
+| `text-2xl` metric values | `text-title` |
+| `text-base` | `text-body` |
+| `text-sm` (no weight) | `text-label font-normal` |
+| `text-sm font-medium` | `text-label` |
+| `text-sm font-semibold` / `font-bold` / `font-extrabold` | `text-label font-semibold` |
+| `text-xs` (+ weight) | `text-caption` (+ `font-semibold` if it had 600–800, `font-medium` if 500) |
+| `text-[13px]`, `text-[14px]` | `text-label` (weight per the `text-sm` rows) |
+| `text-[10px]`, `text-[11px]`, `text-[12px]` | `text-caption` |
+| `text-[15px]`, `text-[16px]` | `text-body` (`text-label` when it is a control label) |
+| table header `text-[11px] font-extrabold uppercase` | `TABLE_HEAD` (R-g): 12 px · 600 uppercase `tracking-wide` |
+| `font-bold`, `font-extrabold`, `font-black` anywhere else | `font-semibold` |
+| `font-heading`, `font-[inherit]`, `leading-[…]` | delete; `tracking-[…]` → delete, or `tracking-wide` on uppercase text |
+
+**R-c Arbitrary-value sweep.** `[Nrem]` on `w/min-w/max-w/h/min-h/max-h` → spacing step N×4 (`min-w-[56rem]` →
+`min-w-224`, `[40rem]` → `min-w-160`, `[32rem]` → `min-w-128`, `[14rem]` → `min-w-56`); `[Npx]` sizes → N/4 step,
+rounded to the nearest whole step (44 px controls → `min-h-control`/`size-control`); `rounded-[Npx]` → nearest radius
+(≤ 5 `sm`, 6 `md`, 7–10 `lg`, 11–14 `xl`, ≥ 15 `2xl`); `rounded-md3-sm`/`rounded-md3` → `rounded-lg` on controls,
+`rounded-xl` on cards; `rounded-md3-lg` → `rounded-xl`; `rounded-md3-xl` → `rounded-2xl`; `rounded-full` on a button →
+`rounded-lg` (Q2); `shadow-[…]`, `shadow-sm|md|lg` → `shadow-card` (cards, popovers) or `shadow-dialog` (dialogs);
+`duration-[…]`/`ease-[…]` → the `TRANSITION` string of `src/ui/Button.tsx:8–9`; hex/`rgb()` in screen code → the
+matching token. Arbitrary values the guard does not flag (`z-[70]`, `max-w-[40vw]`, `w-[var(--x)]`) stay. A flagged
+`rem`/`px` inside a grid template (e.g. `grid-cols-[1fr_300px]`) becomes the v4 spacing function
+(`grid-cols-[1fr_--spacing(75)]`, same width), recorded in impl-log; 5a has none.
+
+**R-d Spacing snap** (allowed 0, px, 1, 2, 3, 4, 5, 6, 8, 12): half steps round **up** for padding (keeps touch area:
+`py-2.5` → `py-3`, `px-1.5` → `px-2`) and **down** for gap/margin/space (`gap-1.5` → `gap-1`, `mt-0.5` → `mt-1` is the
+one exception: 0.5 → 1 everywhere because 0 would remove it); `7` → `8` padding / `6` gap; `9`, `10` → `8`; `11` → `12`;
+`> 12` → `12`. Every snap that moves a visible edge by ≥ 4 px goes into impl-log "Visible differences".
+
+**R-e Status text labels (AC 3).** Every status shown by colour (dot, tinted row, icon colour, ring) has visible text
+next to it. Status values render as `Pill` (`src/ui/Chip.tsx:96`) with `dot` and this tone map, the label string
+unchanged from the copy file: **success** — active, approved, available, returned/on time; **warning** — pending, due
+soon, awaiting confirmation; **danger** — rejected, overdue, failed; **info** — in transfer/informational; **neutral** —
+cancelled, deactivated, archived. Requests reuse `requestStatusLook` (`src/ui/portal/my-requests.ts:23–33`) so
+Approvals and My requests agree. No `opacity-*` dimming of text rows (it drops text below 4.5:1); a dimmed state becomes
+`bg-canvas` on the row plus the neutral pill.
+
+**R-f 44 px row actions and hand-built controls.** Every row action is a kit `Button size="sm"` or `IconButton` (both
+44 px since slice 3). Remove now-redundant height overrides (`className="min-h-11"`), never add a smaller height
+(`h-8`, `h-9`, `py-1` on a button). Action groups: `flex flex-wrap items-center gap-2`. Any hand-built `<button>` with
+its own fill/radius/padding becomes a kit `Button` with the same `type`, handler, label and `aria-*` (variant: filled →
+`filled`, bordered → `outlined`, bare → `text`). Radio/checkbox rows: the `<label>` gets `min-h-control cursor-pointer`
+and the input `size-5 flex-none` (Q-S3-5 default).
+
+**R-g Shared table classes.** New `src/ui/table.ts` (pure constants, no imports) replaces the five copies of `CELL`/
+`HEAD` (`AuditView.tsx:25–26`, `MembersView.tsx:40–42`, `PendingInvitations.tsx:8–9`, `DeviceTable.tsx:8–9` (5b),
+`portal/MyDevicesTable.tsx:21–22` (slice 6)):
+```ts
+/** Table cell classes for management tables (brief type scale; 12 px uppercase head, 14 px cells). */
+export const TABLE_HEAD =
+  "px-3 py-2 text-left text-caption font-semibold uppercase tracking-wide text-text-secondary";
+export const TABLE_CELL = "px-3 py-2 align-top text-label font-normal text-text-primary";
+export const TABLE_ROW = "border-b border-divider last:border-b-0";
+/** Small reference list under a cell value (seat codes, device refs). */
+export const TABLE_REFS = "mt-1 list-none p-0 text-caption text-text-secondary";
+```
+Callers keep their extra classes (`${TABLE_CELL} break-all`, `${TABLE_CELL} whitespace-nowrap`).
+
+**R-h Pending list.** Each touched pending file must reach 0 and its key is removed in the same PR. A file that cannot
+reach 0 (a literal that must stay) stops the PR: the implementer records why in impl-log and the orchestrator decides
+(allowlist entry with a reason, per slice 2 rules). No count may rise; no non-slice key may change.
+
+### Files (slice 5a)
+None matches a High path (`.github/risk-tiers.yml`: `src/ui/**`, `scripts/check-tokens.pending.json`, `*.test.ts(x)`
+are not listed).
+
+| File | Change (R-x = rule above) | Pending before → after |
+|---|---|---|
+| `src/ui/table.ts` | create (R-g) | new, 0 |
+| `src/ui/members/MembersView.tsx` | delete local `CELL`/`HEAD`/`REFS` (40–42), use `TABLE_*`; h1 (51) → `text-display text-text-primary`; note (54) `text-label text-text-secondary`; search `min-w-[14rem]` → `min-w-56` (58); error (84) `text-label font-semibold text-danger`; empty (95) `text-label text-text-secondary`; table `min-w-[56rem]` → `min-w-224` (103); head row (105) `border-b border-divider`; row (144) `TABLE_ROW` + `bg-canvas` when deactivated, no `opacity-60` (R-e); name cell (146) `font-bold` → `font-semibold`; swatch (159) `border-divider`; status cell (168) → `<Pill dot tone={m.status === "active" ? "success" : "neutral"} label={membersCopy.statusLabels[m.status]} />` (R-e); action group (200) `flex flex-wrap items-center gap-2` | 4 → 0 (remove key) |
+| `src/ui/members/PendingInvitations.tsx` | `TABLE_*` (8–9, 42, 51); h2 (16) `text-subtitle text-text-primary`; note (17), empty (35) `text-label text-text-secondary`; error (25) `text-label font-semibold text-danger`; `min-w-[32rem]` → `min-w-128` (40) | 3 → 0 (remove) |
+| `src/ui/members/MemberPhotoSection.tsx` | 60 `text-label text-text-secondary`; 78 `text-label text-danger` | not pending |
+| `src/ui/members/DeactivateMemberDialog.tsx` | 86 `text-label text-text-primary` | not pending |
+| `src/ui/members/ReactivateMemberDialog.tsx` | 63 `text-label text-text-primary` | not pending |
+| `src/ui/invitations/InvitePeople.tsx` | 120–126 hand-built near-black button → `<Button onClick={() => setOpen(true)}>{invitationsCopy.open}</Button>` (import `Button` from `../Button`; default `filled`, `md`, `type="button"`) (R-f) | 2 → 0 (remove) |
+| `src/ui/invitations/InviteDialog.tsx` | notices (47, 53) `text-[13px] font-semibold text-on-surface` → `text-label font-semibold text-text-primary`; retry (56–62) → `<Button variant="outlined" size="sm" onClick={p.onRetryRecord}>` (R-f; import `Button`) | 5 → 0 (remove) |
+| `src/ui/groups/GroupsView.tsx` | h1 (46) `text-display text-text-primary`; no-access (53) `text-label text-text-secondary`; RowActions wrapper (32) `flex flex-wrap items-center gap-2 shrink-0`; swatch (76) `border-divider`; group name (79) `text-label font-semibold text-text-primary`; project code (101) `text-label font-semibold text-text-primary`; project name (102) `text-label text-text-secondary` | not pending |
+| `src/ui/groups/ListSection.tsx` | h2 (36) `text-h3 font-extrabold text-on-surface` → `text-subtitle text-text-primary` (`text-h3` is not defined anywhere: `rg "\.text-h3" src` → no hit, so it rendered at the inherited 16 px); error (54) `text-label font-semibold text-danger`; empty (65) `text-label text-text-secondary` | not pending |
+| `src/ui/groups/DeleteDialog.tsx` | 35, 41 `text-label text-text-primary`; 48 `mt-2 text-text-secondary` | not pending |
+| `src/ui/requests/ApprovalsView.tsx` | h1 (49) `text-display text-text-primary outline-none` (programmatic focus target, `tabIndex=-1`: keeps `outline-none`); no-access (59), empty (115) `text-label text-text-secondary`; error notices (73, 104) `text-label font-semibold text-danger`; status notice (77) `text-label font-semibold text-text-primary`; summary (91) `text-label font-normal text-text-secondary`; name (127) `text-label font-semibold text-text-primary`; status (130) `<Chip …>` → `<Pill dot tone={requestStatusLook(it.status).tone} label={requestsCopy.statusLabel[it.status]} />` (import `Pill` from `../Chip`, `requestStatusLook` from `../portal/my-requests`; R-e); seat line (132) `text-label font-normal text-text-primary`; occupant (138) `text-label font-normal text-text-secondary`; times (145, 151) `text-caption text-text-secondary` | not pending |
+| `src/ui/requests/RequestRowActions.tsx` | remove `className="min-h-11"` (27, 37) (R-f) | not pending |
+| `src/ui/requests/DecisionDialog.tsx` | 51, 55 `text-label font-normal break-words` | not pending |
+| `src/ui/audit/AuditView.tsx` | `TABLE_*` (25–26, 149, 161); h1 (44) `text-display text-text-primary`; no-access (51), empty (139) `text-label text-text-secondary`; errors (115, 128) `text-label font-semibold text-danger`; `min-w-[40rem]` → `min-w-160` (147); entity id (168) `text-caption text-text-secondary`; meta (175) `text-caption` | 3 → 0 (remove) |
+| `src/ui/credits/CreditsPage.tsx` | h1 (9) `font-heading text-2xl font-extrabold text-on-surface` → `text-display text-text-primary`; intro/empty (10, 12) `text-label font-normal text-text-secondary`; h2 (16) `text-subtitle text-text-primary`; rows (17, 21, 32, 36) `text-label font-normal text-text-primary`; link (27) `text-primary underline` → `text-text-primary underline` (inline link in a sentence: WCAG 2.5.8 inline exception, no 44 px box) | not pending |
+| `src/ui/org/ProfileView.tsx` | intro (51) `break-words text-label font-normal text-text-secondary`; label (55) `text-label text-text-primary` (same as auth `Field`, slice 3); error (75) `text-caption text-danger`; hint (79) `text-caption text-text-secondary` | not pending |
+| `src/ui/org/OrgPickerView.tsx` | support badge (40) `ml-2 text-caption text-text-secondary` | not pending |
+| `src/ui/org/OrgSwitcherDialog.tsx` | legend (63) `mb-1 text-label font-semibold text-text-primary`; radio label (65) `flex min-h-control cursor-pointer items-center gap-2 text-label font-normal text-text-primary`; radio input (66–72) add `className="size-5 flex-none"` (R-f); marks (75, 80) `text-caption text-text-secondary` | not pending |
+| `scripts/check-tokens.pending.json` | remove the 5 keys above (`--list` output) | 261 → 244 |
+| `src/ui/page-container.test.ts` | first test → recursive scan (Tests) | test |
+| `src/ui/screen-tokens.test.ts` | create (Tests) | test |
+| `src/ui/members/MembersView.test.tsx`, `src/ui/requests/ApprovalsView.test.tsx`, `src/ui/requests/RequestRowActions.test.tsx`, `src/ui/invitations/InviteDialog.test.tsx`, `src/ui/audit/AuditView.test.tsx`, `src/ui/groups/GroupsView.test.tsx`, `src/ui/org/org-views.test.tsx` | update/extend (Tests) | test |
+| `work/tickets/SIM-071/impl-log.md` | append "Slice 5a": files, rename map (R-a/R-b copied once, reused by 5b/5c), pending before/after, visible differences, checks | deliverable |
+
+Not touched (read, no class strings or nothing to change): `EditMemberDialog.tsx`, `TagFormDialog.tsx` (only kit
+dialog fields), `MembersPage.tsx`, `GroupsPage.tsx`, `AuditPage.tsx`, `ApprovalsPage.tsx` (only `page-content`, slice 4),
+`useRequestBadge.tsx`, `RequestsRedirect.tsx`, every `*-api.ts`/`*-state.ts`/`*-flow.ts`, `src/ui/copy/**` (no copy
+change), `src/ui/Chip.tsx` (Pill already has every tone), `src/ui/portal/my-requests.ts` (imported only),
+`src/app/**`, `src/app/globals.css` (no CSS change in 5a; stays 65), `src/styles/tokens.css`,
+`scripts/check-tokens.mjs`. Line numbers above are from `main` after #160; the implementer re-reads each file first.
+
+### Approach (slice 5a)
+1. Create `src/ui/table.ts` (R-g).
+2. Members, invitations, groups, requests, audit, credits, org: apply the Files table, which is R-a…R-f applied to
+   every class string in those files. After each file, `rg -n "on-surface|outline-variant|text-error|text-\[|text-(xs|sm|base|lg|xl|2xl)\b|font-(bold|extrabold|heading)|text-h[23]|min-h-11|rounded-md3|<button" <file>` → no hits
+   (in ApprovalsView `text-h2` must not remain either).
+3. **InvitePeople** (slice-3 interim item): the near-black pill `bg-primary text-on-primary font-bold rounded-md3
+   py-2.5 font-[inherit]` button becomes the kit primary `Button`; it now matches every other page-header primary action
+   (coral action fill `#D3441F`, white text 4.55:1, 8 px radius, 44 px tall, 14 px · 500). Behaviour unchanged: same
+   label, `onClick`, `type="button"`, still hidden for the User tier and dev-token mode (lines 31–33 untouched).
+4. **Status pills** (R-e): member status and request status as above. `opacity-60` on deactivated member rows is
+   replaced by `bg-canvas` (the row stays readable at AA; the neutral "Deactivated" pill carries the state). Pending
+   approval rows keep showing no pill (unchanged: the selected filter chip names the status, `ApprovalsView.tsx:130`).
+5. **Pending file:** `node scripts/check-tokens.mjs --list`; confirm the 5 keys are gone and every other count is
+   unchanged (globals.css 65); delete the 5 keys; keys sorted; `node scripts/check-tokens.mjs` exits 0.
+6. Tests (below), impl-log "Slice 5a", checks: `pnpm format:check`, `pnpm typecheck && pnpm check:layers`, `pnpm test`,
+   `pnpm build`.
+
+Rules: R1 (ui only; new imports `../table`, `../Button`, `../Chip`, `../portal/my-requests` are ui → ui; `table.ts`
+imports nothing), R3 (none), R4 (only the Files table), R5 (tests below). R2/R6/R7 not touched.
+
+### Tests to write / update (slice 5a)
+`src/ui/screen-tokens.test.ts` (new, node; reads files like `page-container.test.ts:4`). `MIGRATED` = the 18 screen
+files of the Files table plus `src/ui/table.ts` (5b and 5c append theirs; slice 7 replaces this test with the empty
+guard). Patterns (JS, applied to file text; `(?<![\w-])` = not inside a longer class such as `text-text-primary`):
+```ts
+const LEGACY =
+  /(?<![\w-])(?:bg|text|border|divide|outline|ring|fill|stroke|placeholder)-(?:primary|on-primary|on-surface(?:-variant)?|on-background|background|surface-(?:high|highest|low|lowest|container)|outline(?:-variant)?|error|secondary[\w-]*|tertiary[\w-]*|accent-orange[\w-]*|[\w-]*-container|status-(?:online|warn|alert)|inverse[\w-]*)(?![\w-])|var\(--(?:primary|on-|surface|outline|error|secondary|tertiary|accent-|status-|inverse-|card-shadow|field-focus)|rounded-md3/;
+const RAW_TYPE = /(?<![\w-])(?:text-(?:xs|sm|base|lg|xl|[2-9]xl|h[1-3])|font-(?:bold|extrabold|black|heading))(?![\w-])/;
+const LOW_TARGET = /(?<![\w-])(?:min-h-11|h-11|size-11|h-8|h-9)(?![\w-])/;
+const PALETTE = /(?<![\w-])(?:bg|text|border)-(?:red|amber|orange|yellow|green|blue|gray|slate|zinc|neutral|stone)-\d{2,3}(?![\w-])/;
+```
+
+| Test (file › name) | Covers |
+|---|---|
+| `screen-tokens.test.ts` › every migrated file exists and matches none of `LEGACY`, `RAW_TYPE`, `LOW_TARGET`, `PALETTE`, `opacity-60`, `focus-visible:`, `focus-within:` (message names file and match) | R-a, R-b, R-f, Rules |
+| screen-tokens › no migrated file is a key of `scripts/check-tokens.pending.json` (missing file treated as `{}`, for slice 7) | R-h: every touched file reached 0 |
+| screen-tokens › `InvitePeople.tsx` and `InviteDialog.tsx` contain no `<button` (kit `Button` only) | R-f, slice-3 interim item |
+| screen-tokens › `table.ts`: `TABLE_HEAD` has `text-caption` `font-semibold` `uppercase` `text-text-secondary`; `TABLE_CELL` has `text-label` `font-normal` `text-text-primary`; `TABLE_ROW` has `border-divider`; `TABLE_REFS` has `text-caption` (import from `./table`) | R-g |
+| `page-container.test.ts` › "no page wrapper keeps the old padding" becomes a recursive scan: every non-test `.tsx` under `src/ui` and `src/app` (`readdirSync(new URL("../ui/", import.meta.url), { recursive: true, encoding: "utf8" })` and the same for `../app/`, backslashes → `/`, keep `.tsx` not `.test.tsx`) lacks `p-4 lg:p-6`; also asserts more than 100 files were scanned (guards an empty scan); the LIBRARY/CONTENT test unchanged | slice-4 review follow-up |
+| `MembersView.test.tsx` › status pills: active row has `bg-success-tint` and "Active"; deactivated row (`gone`) has `bg-canvas` on its `<tr>`, the neutral pill with "Deactivated", and no `opacity-60` (extend the test at 97–130) | R-e |
+| MembersView.test › page h1 has `text-display`; table header cells have `text-caption` and `uppercase`; table has `min-w-224`; row action buttons (manager) each contain `min-h-control` | R-b, R-c, R-f |
+| `ApprovalsView.test.tsx` › decided rows (extend 76–94): approved → `bg-success-tint`, rejected → `bg-danger-tint`, cancelled → `bg-canvas`, each with its `requestsCopy.statusLabel` text (`>Approved<` still matches); pending rows render no pill (`bg-warning-tint` absent) | R-e |
+| ApprovalsView.test › h1 has `text-display` and `tabindex="-1"` (extend 108–111) | Q16 |
+| `RequestRowActions.test.tsx` › 30–37: title "… both enabled, 44 px", assert `min-h-control` and `not.toContain("min-h-11")` | R-f |
+| `InviteDialog.test.tsx` › sentNotRecorded (extend 54–58): retry button has `data-variant="outlined"` and `min-h-control`; notices have `text-label`; markup has no `text-[` | R-b, R-f |
+| `AuditView.test.tsx` › ready table: `<th>` has `text-caption`, table has `min-w-160`, no `text-[` | R-b, R-c |
+| `GroupsView.test.tsx` › section h2 has `text-subtitle`; group name has `font-semibold`; no `font-bold`/`font-extrabold` | R-b |
+| `org-views.test.tsx` › OrgSwitcherDialog (extend 49–55): each radio `<label>` has `min-h-control`, each radio input `size-5` | R-f, 44 px |
+| `scripts/check-tokens.test.ts` (unchanged) › repo ratchet green with the 5 keys removed | pending only shrinks |
+
+### Acceptance → verification (slice 5a)
+| # | Criterion | How the reviewer verifies it |
+|---|---|---|
+| S5a-1 | 5a screens use token utilities only; rename map applied (R-a/R-b/R-c) | `screen-tokens.test.ts` green; `rg -n "on-surface\|outline-variant\|text-error\|text-\[\|font-(bold\|extrabold)\|text-h[23]\|rounded-md3" src/ui/{members,invitations,groups,requests,audit,credits,org}/*.tsx -g '!*.test.tsx'` → no hits |
+| S5a-2 | No 13 px (or other off-scale) text; labels 14, metadata 12, page h1 Display, section titles Subtitle (Q8, Q16) | test rows above; `rg -n "text-(xs\|sm\|lg\|2xl)\b" <same glob>` → no hits |
+| S5a-3 | Row actions and controls ≥ 44 px; no hand-built buttons left; org switcher radio rows 44 px (AC 3) | RequestRowActions, MembersView, InviteDialog, org-views tests; `rg -n "<button" src/ui/invitations` → no hits |
+| S5a-4 | InvitePeople uses the kit primary Button (coral action, white text) | screen-tokens InvitePeople test; read `InvitePeople.tsx` diff: only the button JSX + import changed |
+| S5a-5 | Every status has a text label; member and request statuses are toned pills; no opacity dimming of text (AC 3, R-e) | MembersView/ApprovalsView pill tests |
+| S5a-6 | Pending shrinks by exactly the 5 keys (261 → 244), nothing else changes; every touched pending file at 0 | `git diff main -- scripts/check-tokens.pending.json` shows 5 removed keys only; `node scripts/check-tokens.mjs` exits 0; screen-tokens pending test |
+| S5a-7 | Recursive container scan (slice-4 follow-up) | page-container test reads the directory tree, not a list; mutation: add `p-4 lg:p-6` to any unlisted `.tsx` → test fails |
+| S5a-8 | No behaviour, copy, prop or `aria-*` change | existing tests in the 7 test files unchanged except the listed asserts; `git diff main -- src/ui/copy src/lib src/app` empty |
+| S5a-9 | Only planned files | `git diff --stat main` ⊆ Files table |
+| S5a-10 | Checks green; impl-log "Slice 5a" complete (rename map, pending, visible differences) | `pnpm format:check && pnpm typecheck && pnpm check:layers && pnpm test && pnpm build`; read impl-log |
+
+### Visible differences to log (slice 5a)
+- Members: "Invite people" button near-black pill → coral action fill, 8 px corners, 44 px, 14 px · 500 (was 14 px ·
+  700). Status column plain text → green "Active" / grey "Deactivated" pills with a dot; deactivated rows no longer
+  faded to 60 % but sit on the light canvas background. Table headers 11 px · 800 → 12 px · 600 uppercase; member name
+  700 → 600; borders divider. Pending invitations heading 18 px · 800 → 18 px · 600.
+- Invite dialog: sent / not-recorded notices 13 → 14 px; "Retry" button pill → 8 px outlined, 44 px.
+- Groups: section headings (were unstyled 16 px · 800 because `text-h3` does not exist) → 18 px · 600; names and project
+  codes 700/800 → 600.
+- Approvals: Approved / Rejected / Cancelled grey chip → green / red / grey pill with a dot; Approve/Reject row buttons
+  unchanged in size (already 44 px); request times 12 px secondary.
+- Audit: table headers as Members; entity id and metadata 12 px.
+- Credits: page title 24 px · 800 → 32 px · 600 (Display, like every page title); pack names 18 px · 700 → 600.
+- Profile (first visit) and org picker/switcher: field label 12 px secondary → 14 px ink; hint/error 12 px; switcher
+  radio rows 44 px tall with a 20 px radio.
+- Page titles on Members, Groups, Approvals, Audit: 32 px · 800 → 32 px · 600.
+
+### Ming verification after merge (slice 5a)
+- As Admin at 390 / 800 / 1280 px, light and dark: Members (Invite people is coral, status pills, a deactivated member
+  row still easy to read, Edit/Deactivate 44 px), invite dialog including the "sent but not recorded" state if
+  reproducible, Groups, Approvals with the Approved and Rejected filters (pills), Audit table (scrolls sideways at 390),
+  Credits, the org switcher dialog (if you have two orgs) and a first-visit profile page.
+- Keyboard-tab through Members: green ring on search, filter chips, row buttons, Invite people.
+
+### Slice 5b outline — Devices and device types (addendum before it starts)
+- Files: `src/ui/devices/**` (`DevicesView`, `DeviceTable`, `DeviceDetailView`, `DeviceHistory`, `device-labels`,
+  `DeviceRowActions`, `IncomingTransfers`, `PendingReturns`, `PendingExtensions`, `OverdueBanner`, `NoteField`, and the
+  dialogs `Assign`/`Delete`/`DeviceForm`/`Extend`/`Place`/`Return`/`TakeBack`/`Transfer`), `src/ui/deviceTypes/**`
+  (`DeviceTypesView`, `DeviceTypeFormDialog`, `DeviceTypeImageField`, `DeviceTypeSpriteField`, `DeviceTypeThumb`,
+  `DeskSlotDiagram`, `DeleteDeviceTypeDialog`), their tests, `screen-tokens.test.ts` `MIGRATED`, pending (16 keys, 60
+  violations → 0), impl-log. Rules R-a…R-h unchanged; `DeviceTable` adopts `TABLE_*`.
+- **Cramped device tables at 800–1023 (slice-4 follow-up, default Q-S5-6):** the 7–8 column `DeviceTable` and the
+  row-card layouts get 536–759 px of content there. Switch the wide layout from `md` to `lg`: `DeviceTable.tsx:34`
+  `hidden md:block` → `hidden lg:block`, `:83` `md:hidden` → `lg:hidden`; the `md:flex-row md:items-center
+  md:justify-between` cards and `md:flex-row` action groups in `IncomingTransfers.tsx:60,75`, `PendingReturns.tsx:60,75`,
+  `PendingExtensions.tsx:60,78`, `OverdueBanner.tsx:43` → `lg:`. Below 1024 they use the existing stacked list/cards
+  (no new markup). Tests: the existing `md:` class asserts in their tests move to `lg:`.
+- Status labels: device states in `device-labels.tsx` (overdue, due, returned, in transfer) → pills per R-e; overdue banner
+  keeps its text.
+- Device types is a sprite library (`page-library`, slice 4) but **not** pixel-green scope (Q4 list), so coral actions;
+  sprite/thumbnail backgrounds stay as they are until slice 6 decides `bg-tile` for previews.
+- Expected size ~450–500 changed lines; if larger, device types move to 5c.
+
+### Slice 5c outline — Dashboard, search, rooms and seats chrome (addendum before it starts)
+- Files: `src/ui/dashboard/{DashboardView,ExportCard}.tsx`, `src/ui/search/{SearchView,SearchPage}.tsx`,
+  `src/ui/rooms/{RoomsView,RoomCard,OccupancyRing,RoomFormDialog,DeleteRoomDialog}.tsx`,
+  `src/ui/seats/{SeatsView,SeatDetailPanel,SeatActions,MemberPickerDialog,AddSeatsDialog,SeatTagsDialog,
+  CannotSeatDialog,ConfirmSeatDialog}.tsx`, their tests, `MIGRATED`, pending (8 keys, 41 → 0), impl-log.
+- Dashboard metrics use `StatTile` (Title, slice 3); chart/occupancy colours → status tokens with text labels;
+  `OccupancyRing` ring colours → `success/warning/danger` with the percentage text kept (R-e). Room cards: `rounded-xl
+  shadow-card border-divider` via `Card`. Search result types → neutral pills with text.
+- Seats: only the chrome around the map (`SeatDetailPanel` panel, seat dialogs, `SeatsView` header and lists);
+  `RoomMap`, `SeatOverlay` and the editor stay in slice 6. `CheckinView` `1fr 300px` at 1024 (slice-4 follow-up) is
+  check-in, so slice 6.
+- After 5c the pending list holds only slice-6 files and `globals.css` (143 violations).
+
+### Assumptions and non-blocking questions (slice 5)
+- Hotspots: no other open ticket (IN_PROGRESS/REVIEW/DONE) edits 5a files; SIM-066.1 (DONE) touches `portal/**`, which 5a
+  only imports from (`my-requests.ts`, unchanged). `scripts/check-tokens.pending.json` changes in every sub-slice;
+  5a/5b/5c merge in order, so no conflict inside this ticket. `screen-tokens.test.ts` `MIGRATED` grows in 5b/5c.
+- Q-S5-1 (non-blocking). **Default: three PRs 5a/5b/5c as above** (5b alone would be ~800 changed lines). Alternative:
+  5a/5b with 5b ≈ 800 lines.
+- Q-S5-2 (non-blocking). Page `<h1>`s move to `text-display` (token utility) instead of the legacy `.text-h2` class
+  (same 32/40 · 600 result). **Default: `text-display` in slice-5 files; `.text-h2` stays for `PageSkeleton.tsx` and
+  `AppShellView.tsx` until slice 7 removes it.**
+- Q-S5-3 (non-blocking). Deactivated member rows: **default `bg-canvas` row + neutral "Deactivated" pill instead of 60 %
+  opacity** (opacity puts secondary text below AA). Alternative: keep opacity (fails AC 6).
+- Q-S5-4 (non-blocking). Approvals pending rows: **default no pill** (unchanged structure; the filter names the status).
+  Adding an amber "Pending" pill is a one-line follow-up.
+- Q-S5-5 (non-blocking). Credits title is 24 px today, other page titles 30 px. **Default: Display 32 like every page
+  title (Q16).**
+- Q-S5-6 (non-blocking, 5b). **Default: device tables and handoff cards switch to the wide layout at 1024 (`lg`)
+  instead of 800**, so 800–1023 uses the stacked list. Alternative: keep `md` and let the table scroll sideways.
+- Q-S5-7 (non-blocking). Table headers stay uppercase (CSS transform, copy unchanged) at 12 px · 600 with `tracking-wide`.
+  **Default: keep uppercase.**
+- Q-S5-8 (non-blocking). `src/ui/table.ts` is a small new shared module (not in the Split proposal file list) to avoid
+  five drifting copies of the same class strings. **Default: add it in 5a; 5b and slice 6 adopt it.**
