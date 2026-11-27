@@ -3,7 +3,6 @@ import {
   deviceDetailHref,
   homeFor,
   isActive,
-  isCheckinView,
   navItemsFor,
   roomDetailHref,
   roomEditorHref,
@@ -116,15 +115,6 @@ describe("home per tier", () => {
     expect(isActive(find("manager", "checkin"), "/checkin")).toBe(true);
     expect(isActive(find("manager", "dashboard"), "/checkin")).toBe(false);
     expect(isActive(find("manager", "dashboard"), "/")).toBe(true);
-  });
-  it("isCheckinView: /checkin for every tier; / only for user; /rooms never", () => {
-    for (const tier of ["user", "manager", "admin"] as const) {
-      expect(isCheckinView("/checkin", tier)).toBe(true);
-      expect(isCheckinView("/rooms", tier)).toBe(false);
-    }
-    expect(isCheckinView("/", "user")).toBe(true);
-    expect(isCheckinView("/", "manager")).toBe(false);
-    expect(isCheckinView("/", "admin")).toBe(false);
   });
 });
 

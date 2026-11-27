@@ -82,11 +82,6 @@ export function homeFor(tier: Tier): "checkin" | "dashboard" {
   return atLeastTier(tier, "manager") ? "dashboard" : "checkin";
 }
 
-/** True where the check-in room view renders (it has its own room switcher). */
-export function isCheckinView(pathname: string, tier: Tier): boolean {
-  return pathname === CHECKIN_PATH || (pathname === "/" && homeFor(tier) === "checkin");
-}
-
 export function isActive(item: NavItem, pathname: string): boolean {
   if (item.href === "/") return pathname === "/";
   return pathname === item.href || pathname.startsWith(`${item.href}/`);

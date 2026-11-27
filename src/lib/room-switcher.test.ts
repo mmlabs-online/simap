@@ -3,9 +3,7 @@ import type { RoomDto } from "./rooms/types";
 import {
   checkinGoTarget,
   checkinRoomHref,
-  goTarget,
   keepGoodRooms,
-  roomCodeFromPath,
   roomCodeFromQuery,
   visibleSelection,
 } from "./room-switcher";
@@ -18,37 +16,6 @@ const room = (code: string): RoomDto => ({
   floor: null,
   seatCount: 0,
   occupiedCount: 0,
-});
-
-describe("roomCodeFromPath", () => {
-  it("reads the code from detail and edit paths", () => {
-    expect(roomCodeFromPath("/rooms/C302")).toBe("C302");
-    expect(roomCodeFromPath("/rooms/C302/edit")).toBe("C302");
-  });
-  it("returns null elsewhere", () => {
-    for (const p of ["/rooms", "/", "/rooms/", "/rooms/C302/x"]) {
-      expect(roomCodeFromPath(p)).toBeNull();
-    }
-  });
-  it("does not decode", () => {
-    expect(roomCodeFromPath("/rooms/A%201")).toBe("A%201");
-    expect(roomCodeFromPath("/rooms/%")).toBe("%");
-    expect(roomCodeFromPath("/rooms/Ph%C3%B2ng1")).toBe("Ph%C3%B2ng1");
-  });
-});
-
-describe("goTarget", () => {
-  it("is null for empty, current and dot targets", () => {
-    expect(goTarget("", null)).toBeNull();
-    expect(goTarget("C302", "C302")).toBeNull();
-    expect(goTarget(".", null)).toBeNull();
-    expect(goTarget("..", "C1")).toBeNull();
-  });
-  it("returns the encoded href otherwise", () => {
-    expect(goTarget("C302", null)).toBe("/rooms/C302");
-    expect(goTarget("A 1", null)).toBe("/rooms/A%201");
-    expect(goTarget("B1", "C302")).toBe("/rooms/B1");
-  });
 });
 
 describe("keepGoodRooms", () => {
@@ -72,7 +39,7 @@ describe("visibleSelection", () => {
     expect(visibleSelection([], "B")).toBe("");
   });
   it("leaves Go with no target when the code is not listed", () => {
-    expect(goTarget(visibleSelection([], "B"), null)).toBeNull();
+    expect(checkinGoTarget("/checkin", visibleSelection([], "B"), null)).toBeNull();
   });
 });
 
