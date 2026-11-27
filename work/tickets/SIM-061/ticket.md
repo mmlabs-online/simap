@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P1 |
 | Size | M |
 | Areas | ui |
@@ -51,6 +51,7 @@ checked in by the provider); decision D77 (walk to the new chair on move).
 
 ## Notes / answers from Ming
 - Plan approved (2026-11-27): "duyệt plan SIM-061" — defaults: one PR (no 1a/1b split); typing idle split to SIM-061.1.
+- Merge approved (2026-11-27): "merge #148"; squash-merged by claude.
 - Waiting for Ming: plan approval (High tier gate: plan-approval).
 - Carried from SIM-060 (2026-11-26, orchestrator): (1) typing idle animation (PRE-06/LAY-06) moves here — SIM-060 draws a static seated pose; (2) review should-fix: `src/ui/roomlayout/SeatOverlay.tsx:34` treats unknown presence as "present" (green dot before the first poll / after a failed poll) — show no or a neutral marker; (3) review should-fix: `src/lib/sprites/tag-layout.ts:98-107` does not reserve the dot fallback rect in `taken`. See work/tickets/SIM-060/review.md.
 
