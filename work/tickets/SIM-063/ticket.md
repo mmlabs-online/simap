@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-27T05:03:17Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/156 |
 
 ## Goal
 simap can take check-ins from a third-party check-in system through a server-side adapter that pulls its REST API;
@@ -61,3 +61,9 @@ provider); rule R3.
 - Done: consults saved; `plan.md` Status READY, defaults G1–G9 for the gate; no migration, no UI change; mock only (no REST client).
 - In progress / next: Ming approves the plan (M-96), then `/run SIM-063` resumes at IMPLEMENT.
 - Gotchas: High paths `.env.example` and `provider/config.ts` (security review will trigger). The planner could not read `.env.example` (deny rule); the implementer adds two names in its existing style.
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 7 this run (implementer×3 default model: attempt 1, `.env.example` try (denied), rework 22k; reviewer×2 default model 76k/26k; security-ai-generated-code-auditor×2 60k/30k); plus consult×2 and planner×1 in the planning run.
+- Done: attempt 1 implemented; `.env.example` names appended by the orchestrator with Ming's permission (7d194aaa; the agent was denied by `Read(**/.env.*)`); review 1 PASS, but security 🔴 (mock not refused under `pnpm dev:prod`) → REWORK; attempt 2 adds the `SIMAP_DB_TARGET=production` guard; review 2 PASS, security 2 PASS; merged origin/main (SIM-070, SIM-071 slices 1–2), checks green; PR #156.
+- In progress / next: Ming reviews and merges PR #156, then the manual mock check in dev (PR "Needs Ming's decision").
+- Gotchas: SIM-063's plan-approval item renumbered M-95 → M-96 on merge (SIM-071 used M-95 on main); review.md still says M-95. The ticket title mentions a REST pull adapter, but the approved plan ships the mock only (OQ-69a–c). Real-provider preconditions are in the PR follow-ups.
