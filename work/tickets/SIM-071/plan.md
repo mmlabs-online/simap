@@ -1376,3 +1376,252 @@ const PALETTE = /(?<![\w-])(?:bg|text|border)-(?:red|amber|orange|yellow|green|b
   **Default: keep uppercase.**
 - Q-S5-8 (non-blocking). `src/ui/table.ts` is a small new shared module (not in the Split proposal file list) to avoid
   five drifting copies of the same class strings. **Default: add it in 5a; 5b and slice 6 adopt it.**
+
+## Slice 5b addendum — Devices and device types
+Status: READY. Written against `main` after #161 (slices 1–4 and 5a merged). Applies the "Slice 5 addendum" rules
+R-a…R-h **unchanged** to the 5b screens outlined there ("Slice 5b outline"), plus the device-table breakpoint default
+Q-S5-6 ("device tables and handoff cards switch to the wide layout at 1024 (`lg`) instead of 800, so 800–1023 uses the
+stacked list"). No new decisions; open points are non-blocking questions at the end, each with a default. Closes AC 2,
+AC 3 and AC 6b for Devices (list, detail, history, incoming transfers, pending returns, pending extensions, overdue
+banner, all device dialogs) and Device types (list, form, image and sprite fields, delete). No `src/app/**`,
+`src/app/globals.css`, `src/styles/tokens.css`, copy, `*-state.ts`/`*-api.ts`/`*-flow.ts` or kit change.
+
+### Size
+26 screen files (≈ 230 changed lines), `screen-tokens.test.ts` (≈ 50), 12 test files (≈ 160), pending (16 lines),
+impl-log (≈ 40): ≈ 500 changed lines, inside the outline's 450–500 estimate, so device types stay in 5b (no move to 5c).
+
+### Pending list (R-h): 16 keys, 60 violations → 0 (244 → 184)
+Counts read from `scripts/check-tokens.pending.json` on `main`; the cause per file is what the guard flags today
+(`text-[11px]` counts twice: `text-arb` + `arbitrary-px`; `tracking-[0.05em]` once; off-scale `gap-0.5/1.5`,
+`px-0.5/3.5`, `py-1.5` once each).
+
+| Key | Count | Cause (all removed by the Files table) |
+|---|---|---|
+| `src/ui/devices/AssignDeviceDialog.tsx` | 5 | `CAPTION` (27: 4), `HINT` `px-0.5` (29) |
+| `src/ui/devices/DeviceDetailView.tsx` | 4 | `LABEL` (13: 3), `gap-1.5` (56) |
+| `src/ui/devices/DeviceFormDialog.tsx` | 4 | `CAPTION` (21) |
+| `src/ui/devices/DeviceHistory.tsx` | 1 | `gap-0.5` (34) |
+| `src/ui/devices/DeviceRowActions.tsx` | 1 | `gap-1.5` (18) |
+| `src/ui/devices/DeviceTable.tsx` | 2 | `HEAD` `text-[11px]` (9) |
+| `src/ui/devices/ExtendDeviceDialog.tsx` | 5 | `CAPTION` (20: 4), `HINT` (21) |
+| `src/ui/devices/NoteField.tsx` | 7 | `CAPTION` (7: 4), `HINT` (8), `gap-1.5` (26), `px-3.5` (37) |
+| `src/ui/devices/OverdueBanner.tsx` | 1 | `gap-1.5` (49) |
+| `src/ui/devices/PlaceDeviceDialog.tsx` | 1 | `py-1.5` (117) |
+| `src/ui/devices/ReturnDeviceDialog.tsx` | 5 | `CAPTION` (13: 4), `HINT` (14) |
+| `src/ui/devices/TransferDeviceDialog.tsx` | 5 | `CAPTION` (22: 4), `HINT` (23) |
+| `src/ui/devices/device-labels.tsx` | 4 | `gap-1.5` (28, 52), `gap-0.5` (51, 86) |
+| `src/ui/deviceTypes/DeviceTypeFormDialog.tsx` | 4 | `CAPTION` (29) |
+| `src/ui/deviceTypes/DeviceTypeImageField.tsx` | 7 | `CAPTION` (10: 4), `BTN` `py-1.5` (12), Remove/Keep `py-1.5` (61, 71) |
+| `src/ui/deviceTypes/DeviceTypeSpriteField.tsx` | 4 | `CAPTION` (9) |
+
+All 16 keys are deleted; every other key keeps its count (`globals.css` stays 65; slice-5c and slice-6 keys untouched).
+
+### Shared values used in 5b (from R-a/R-b; written out so every file uses the same strings)
+- **Form caption** (control labels and legends in dialogs, and the label of a read-only value inside a dialog):
+  `const CAPTION = "text-label text-text-primary";` — identical to the kit `FIELD_CAPTION`
+  (`src/ui/EntityFormDialog.tsx:112`), so device dialogs match the `DialogField` captions next to them (Q-S5b-2).
+  Replaces every `"text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5"`.
+- **Form hint:** `const HINT = "text-caption text-text-secondary";` (was `text-xs … px-0.5`; 12 px unchanged, `px-0.5`
+  dropped like the kit field hints).
+- **Read-only value in a dialog** (holder, current owner, current expiry): `"text-label font-normal text-text-primary"`.
+- **Detail-page field label** (`DeviceDetailView` `<dt>`): `"text-caption font-semibold uppercase tracking-wide
+  text-text-secondary"` (same look as `TABLE_HEAD`, Q-S5-7).
+- **Notices:** error `text-label font-semibold text-danger`; status `text-label font-semibold text-text-primary`;
+  summary/hint/empty/truncated lines `text-label font-normal text-text-secondary` (`text-label text-text-secondary`
+  where the old class had `font-medium`).
+- **Section headings** (`<h2>`: history, incoming, returns, extensions, overdue, detail sections): `text-subtitle
+  text-text-primary` (+ `outline-none` where the `<h2>` is a `tabIndex={-1}` focus target). **Page `<h1>`:**
+  `text-display text-text-primary` (+ `outline-none` on the focusable ones).
+- **Status pills (R-e)** — `Pill` from `../Chip` with `dot`, label string unchanged:
+  `devicesCopy.overdueChip` → `tone="danger"`; `pendingText(d).chip` (Transfer / Return / Extension pending) →
+  `tone="warning"` (Q-S5b-1). Not statuses, so they stay `Chip`: the "You" chip and the placement role chip
+  (Primary/Secondary).
+- **Kit textarea box** (NoteField): wrapper `field-box rounded-lg border border-border-strong bg-surface` + the
+  `TRANSITION` string of `src/ui/Button.tsx:8–9`; the textarea itself `block w-full resize-y bg-transparent px-4 py-2
+  text-label font-normal text-text-primary outline-none`. The focus ring comes from the existing
+  `.field-box:focus-within` rule (`globals.css:344–347`, slice 3) — the global `:focus-visible` rule
+  (`globals.css:339`) does not list `textarea`, so the ring must sit on the wrapper; no CSS change.
+- **Radio/checkbox rows (R-f):** `<label>` gets `min-h-control cursor-pointer`, the input `className="size-5 flex-none"`.
+
+### Files (slice 5b)
+None matches a High path (`.github/risk-tiers.yml`; `src/ui/**`, `scripts/check-tokens.pending.json` and tests are not
+listed). Line numbers are from `main` after #161; the implementer re-reads each file first. "→" = replace the whole
+class string with the given one unless "add"/"drop" says otherwise.
+
+**Devices — list, table, labels**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/devices/DevicesView.tsx` | h1 (51) → `text-display text-text-primary outline-none`; error notices (65, 101) `text-label font-semibold text-danger`; status notice (69) `text-label font-semibold text-text-primary`; summary (84) `text-label font-normal text-text-secondary`; empty (112) `text-label text-text-secondary`; truncated (122) `text-label font-normal text-text-secondary` | not pending |
+| `src/ui/devices/DeviceTable.tsx` | delete `CELL`/`HEAD` (8–9), import `TABLE_CELL, TABLE_HEAD, TABLE_ROW` from `../table` (R-g); `<th>` (41, 46) `TABLE_HEAD`; head `<tr>` (39) add `className="border-b border-divider"`; body `<tr>` (54) `TABLE_ROW`; cells (55–73) `TABLE_CELL` — the name cell (55) drops its extra `font-semibold` (the link already has it; avoids `font-normal`+`font-semibold` on one element); **breakpoint (Q-S5-6):** 34 `hidden md:block` → `hidden lg:block`, 83 `md:hidden flex flex-col gap-2` → `flex flex-col gap-2 lg:hidden`; doc comment (21) "at `md` and up" → "at `lg` (1024 px) and up"; card (86) `flex flex-col gap-1 p-3 text-label font-normal text-text-primary`; name (87) `font-bold` → `font-semibold`; type line (90) `text-text-secondary` | 2 → 0 (remove) |
+| `src/ui/devices/device-labels.tsx` | import `Pill` with `Chip` (4); links (11, 30) `font-semibold text-text-primary underline`; inventory (25) `text-text-secondary`; gaps (28, 52) `gap-1.5` → `gap-1`, (51, 86) `gap-0.5` → `gap-1`; pending (55) → `<Pill dot tone="warning" label={pending.chip} />`; overdue (56–62) → `<Pill dot tone="danger" label={devicesCopy.overdueChip} />` (removes `var(--error-container)`/`var(--on-error-container)`); metadata (64, 67, 71, 88) `text-xs text-on-surface-variant` → `text-caption text-text-secondary` (keep `whitespace-pre-line ${clamp} ${CLIP}` on 71 and `break-all` on 88) | 4 → 0 (remove) |
+| `src/ui/devices/DeviceRowActions.tsx` | wrapper (18) `flex flex-wrap items-center gap-2` (R-f) | 1 → 0 (remove) |
+| `src/ui/devices/OverdueBanner.tsx` | import `Pill` instead of `Chip` (4); h2 (34) `text-subtitle text-text-primary`; hint (37) `text-label font-normal text-text-secondary`; card (43) `md:` → `lg:` (`flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between`); name line (45) `text-label font-normal text-text-primary`, (46) `font-bold` → `font-semibold`; expiry line (49) `inline-flex flex-wrap items-center gap-1 text-label font-normal text-text-secondary`; pending (53) → `<Pill dot tone="warning" label={pending.chip} />`; to-line (55) `text-caption text-text-secondary` | 1 → 0 (remove) |
+| `src/ui/devices/IncomingTransfers.tsx` | h2 (39) `text-subtitle text-text-primary outline-none`; hint (43) `text-label font-normal text-text-secondary`; error (47) `text-label font-semibold text-danger`; card (60) `lg:` instead of `md:`; name line (62) `text-label font-normal text-text-primary`, (63) `font-semibold`; from (66) and note (70, keep `whitespace-pre-line line-clamp-3`) `text-label font-normal text-text-secondary`; actions (75) `flex flex-col gap-2 lg:flex-row`; truncated (114) `text-label font-normal text-text-secondary` | not pending |
+| `src/ui/devices/PendingReturns.tsx` | same lines and changes as IncomingTransfers (39, 43, 47, 60, 62, 63, 66, 70, 75, 114) | not pending |
+| `src/ui/devices/PendingExtensions.tsx` | same as IncomingTransfers at 39, 43, 47, 60, 62, 63, 66; change line (69) `text-label font-normal text-text-secondary`; note (73); actions (78) `flex flex-col gap-2 lg:flex-row`; truncated (117) | not pending |
+
+**Devices — detail and history**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/devices/DeviceDetailView.tsx` | import `Pill` instead of `Chip` (6); `LABEL` (13) → detail-page field label (above); `<dd>` (34) `break-all text-label text-text-primary`; section h2 (44) `text-subtitle text-text-primary`; pending line (56) `inline-flex flex-wrap items-center gap-1 text-label font-normal text-text-primary`; pending chip (57) → `<Pill dot tone="warning" label={text.chip} />`; requested-by (60) `text-caption text-text-secondary`; h1 (83) `text-display text-text-primary outline-none`; back link (90) `inline-flex min-h-control items-center self-start text-label font-semibold text-text-primary hover:underline` (standalone link → 44 px, AC 3); notices (97, 119) error, (101) status; not-found body (131) `text-label font-normal text-text-secondary`; where/holder (152, 157) `text-label font-normal text-text-primary`; holder since (161) `text-caption text-text-secondary` | 4 → 0 (remove) |
+| `src/ui/devices/DeviceHistory.tsx` | entry (34) `flex flex-col gap-1 border-t border-divider py-3 text-label font-normal first:border-t-0`; kind (36) `font-semibold text-text-primary`; time/actor/expiry/cause/confirmed/note (37, 40, 45, 46, 48, 53; keep `whitespace-pre-line ${CLIP}` on 53) `text-caption text-text-secondary`; from-to (44) `text-text-primary`; h2 (74) `text-subtitle text-text-primary`; errors (84, 107) `text-label font-semibold text-danger`; empty (94) `text-label text-text-secondary` | 1 → 0 (remove) |
+
+**Devices — dialogs**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/devices/NoteField.tsx` | `CAPTION`/`HINT` (6–8) → shared values; wrapper (26) `gap-1.5` → `gap-1`; textarea (30–38) wrapped in `<div className={BOX}>` with `const BOX = "field-box rounded-lg border border-border-strong bg-surface transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out"` and textarea class `block w-full resize-y bg-transparent px-4 py-2 text-label font-normal text-text-primary outline-none` (drops `rounded-md3`, `border-outline-variant`, `focus:border-primary`, `px-3.5`); `id`, `rows`, `maxLength`, `aria-describedby`, `onChange` unchanged | 7 → 0 (remove) |
+| `src/ui/devices/AssignDeviceDialog.tsx` | `CAPTION`/`HINT` (26–29) → shared values; holder value (59) read-only value class; checkbox label (65) `flex min-h-control cursor-pointer items-center gap-2 text-label text-text-primary`; checkbox input (66–70) add `className="size-5 flex-none"` | 5 → 0 (remove) |
+| `src/ui/devices/ExtendDeviceDialog.tsx` | `CAPTION`/`HINT` (19–21); current expiry value (41) read-only value class | 5 → 0 (remove) |
+| `src/ui/devices/TransferDeviceDialog.tsx` | `CAPTION`/`HINT` (21–23); current owner value (50) read-only value class; **52 unchanged** (`flex flex-col gap-3`, matched by `TransferDeviceDialog.test.tsx:64`) | 5 → 0 (remove) |
+| `src/ui/devices/ReturnDeviceDialog.tsx` | `CAPTION`/`HINT` (12–14); current owner value (30) read-only value class | 5 → 0 (remove) |
+| `src/ui/devices/DeviceFormDialog.tsx` | `CAPTION` (20–21); owner value (192) read-only value class; read-only note (193) `text-label font-normal text-text-secondary` | 4 → 0 (remove) |
+| `src/ui/devices/PlaceDeviceDialog.tsx` | import `Button` from `../Button`; `HINT` (26) `text-text-secondary`; every `text-sm ${HINT}` (88, 90, 102, 138, 140, 143, 154, 175, 178) → `text-label font-normal ${HINT}`; return confirm (62) `text-label font-normal text-text-primary`; error alerts (93, 146) `flex flex-wrap items-center gap-2 text-label font-semibold text-danger`, the inline `<button className="underline cursor-pointer">` retries (95–97, 148–150) → `<Button variant="outlined" size="sm" onClick={onRetryRooms}>` / `onRetrySeats` (R-f; same label `devicesCopy.retry`, `type="button"` default); seat radio label (117) `flex min-h-control cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-label text-text-primary` (`rounded-md3` → `rounded-lg`, `py-1.5` → `py-2`); role radio label (163) `flex min-h-control cursor-pointer items-center gap-3 text-label text-text-primary`; both radio inputs (119–125, 164–170) add `className="size-5 flex-none"`; `max-h-[35dvh]` (112) stays (not flagged, R-c) | 1 → 0 (remove) |
+| `src/ui/devices/DeleteDeviceDialog.tsx` | body (15) `flex flex-col gap-1 text-label text-text-primary` | not pending |
+| `src/ui/devices/TakeBackDeviceDialog.tsx` | body (16) `flex flex-col gap-1 text-label text-text-primary` | not pending |
+
+**Device types** (a sprite library page, `page-library` from slice 4, but not pixel-green scope (Q4): actions stay
+workspace coral; thumbnails/previews unchanged until slice 6)
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/deviceTypes/DeviceTypesView.tsx` | h1 (25) `text-display text-text-primary`; no-access (32) `text-label text-text-secondary`; name (55) `truncate text-label font-semibold text-text-primary`; slot (56) `shrink-0 text-label text-text-secondary`; row actions (61) `flex flex-wrap items-center gap-2 shrink-0` (R-f) | not pending |
+| `src/ui/deviceTypes/DeviceTypeFormDialog.tsx` | `CAPTION` (28–29); slot radio label (154) `flex min-h-control cursor-pointer items-start gap-2 text-label font-normal text-text-primary`; radio input (155–161) `className="mt-1"` → `"size-5 flex-none"` (20 px radio = one 20 px label line, so top-aligned without `mt-1`); option name (163) `font-medium` unchanged; option hint (164) `text-text-secondary` | 4 → 0 (remove) |
+| `src/ui/deviceTypes/DeviceTypeImageField.tsx` | import `Button` from `../Button`; `CAPTION` (9–10); `BTN` (11–12) → `"field-box inline-flex min-h-control cursor-pointer items-center rounded-lg border border-border bg-surface px-4 text-label text-text-primary transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out"` (looks like the kit secondary button; focus ring of the hidden file input via `.field-box:focus-within`, replacing `focus-within:ring-2 focus-within:ring-primary`; Q-S5b-4); Remove (57–65) → `<Button variant="danger" size="sm" disabled={disabled} onClick={onRemove}>{copy.remove}</Button>`; Keep current (66–75) → `<Button variant="outlined" size="sm" disabled={disabled} onClick={onUndo}>{copy.keepCurrent}</Button>`; hint/pending notes (78, 80) `text-caption text-text-secondary`; error (83) `text-caption font-medium text-danger` (keep `id`, `role`) | 7 → 0 (remove) |
+| `src/ui/deviceTypes/DeviceTypeSpriteField.tsx` | `CAPTION` (8–9); hint (31) `text-caption text-text-secondary`; hidden-by-image (33) `text-caption font-medium text-text-secondary`; unavailable (38) `text-caption font-medium text-danger`; option label (46) `flex min-h-control cursor-pointer items-center gap-2 text-label font-normal text-text-primary`; radio input (48–54) add `className="size-5 flex-none"`; sprite key (66) `font-mono text-caption` | 4 → 0 (remove) |
+| `src/ui/deviceTypes/DeviceTypeThumb.tsx` | placeholder (35) `border-outline-variant text-on-surface-variant` → `border-divider text-text-secondary` (rest unchanged; inline `width/height` style is a number, not flagged) | not pending |
+| `src/ui/deviceTypes/DeskSlotDiagram.tsx` | svg (12) `w-40 shrink-0 text-text-secondary`; desk (20) `fill-canvas stroke-divider` (`fill-surface-container-high` maps to no theme key: there is no `--color-surface-container-high`, so today the rect likely falls back to the SVG default fill — implementer checks in the browser and logs what it was); divider line (27) `stroke-divider`; chair (35) `fill-divider`; marker (41) `fill-none stroke-text-primary` / `fill-text-primary` (ink, same colour as today's `primary`) | not pending |
+| `src/ui/deviceTypes/DeleteDeviceTypeDialog.tsx` | body (15) `text-label text-text-primary` | not pending |
+
+**Pending, tests, log**
+
+| File | Change |
+|---|---|
+| `scripts/check-tokens.pending.json` | delete the 16 keys above (244 → 184); nothing else changes |
+| `src/ui/screen-tokens.test.ts` | extend (Tests) |
+| `src/ui/devices/DevicesView.test.tsx`, `DeviceDetailView.test.tsx`, `DeviceHistory.test.tsx`, `IncomingTransfers.test.tsx`, `PendingReturns.test.tsx`, `PendingExtensions.test.tsx`, `OverdueBanner.test.tsx`, `AssignDeviceDialog.test.tsx`, `PlaceDeviceDialog.test.tsx`; `src/ui/deviceTypes/DeviceTypesView.test.tsx`, `DeviceTypeFormDialog.test.tsx`, `DeviceTypeImageField.test.tsx`, `DeviceTypeSpriteField.test.tsx` | extend (Tests); no existing assert is removed |
+| `work/tickets/SIM-071/impl-log.md` | append "Slice 5b": files, pending before/after (244 → 184, 16 keys), visible differences, the DeskSlotDiagram observation, checks |
+
+Not touched (read; no class strings, or only kit components): `DevicesPage.tsx`, `DeviceDetailPage.tsx`,
+`useDeviceDetailActions.tsx`, `useHandoffBadge.tsx`, `DeviceTypesPage.tsx`, every `*.ts` in both folders,
+`src/ui/table.ts`, `src/ui/Chip.tsx`, `src/ui/Button.tsx`, `src/ui/EntityFormDialog.tsx`, `src/ui/groups/ListSection.tsx`
+(5a), `src/ui/seats/MemberPickerDialog.tsx` (5c), `src/ui/mapItems/FramePreview.tsx` (slice 6), `src/ui/copy/**`,
+`src/app/**`, `src/app/globals.css`, `src/styles/tokens.css`, `scripts/check-tokens.mjs`.
+
+### Approach (slice 5b)
+1. Device list: `DeviceTable` adopts `TABLE_*` and the `lg` switch; `device-labels` status pills; `DevicesView`,
+   `DeviceRowActions`.
+2. Handoff sections and the overdue banner: same class set in all four, `md:` → `lg:` on the card and its action group.
+3. Detail page and history.
+4. Dialogs: `NoteField` first (shared by assign/transfer/return/extend), then the CAPTION/HINT swap in each dialog, then
+   `PlaceDeviceDialog` (kit retry buttons, 44 px radio rows).
+5. Device types: view, form fields, image field (kit buttons, `field-box` file picker), sprite field, thumb, diagram,
+   delete body.
+6. After each file: `rg -n "on-surface|outline-variant|text-error|text-primary\b|text-\[|tracking-\[|text-(xs|sm|base|lg|xl|2xl)\b|font-(bold|extrabold|heading)|text-h[23]|rounded-md3|surface-container|secondary-container|focus(-within|-visible)?:|<button|\bmd:" <file>`
+   → no hits (`text-primary\b` also matches inside `text-text-primary`; read those hits, only the bare class is wrong).
+7. Pending: `node scripts/check-tokens.mjs --list`; confirm the 16 files report 0 and every other count is unchanged;
+   delete the 16 keys (sorted order kept); `node scripts/check-tokens.mjs` exits 0.
+8. Tests (below), impl-log "Slice 5b", checks: `pnpm format:check`, `pnpm typecheck && pnpm check:layers`, `pnpm test`,
+   `pnpm build`.
+
+Rules: R1 (ui → ui only: new imports `../table`, `../Button`, `Pill` from `../Chip`), R3 none, R4 (Files tables only),
+R5 (tests below). R2/R6/R7 not touched.
+
+### Tests to write / update (slice 5b)
+| Test (file › name) | Covers |
+|---|---|
+| `screen-tokens.test.ts` › `MIGRATED` gains the 26 screen files of the Files tables (19 `ui/devices/…`, 7 `ui/deviceTypes/…`); the existing "every file exists and matches no legacy…" and "no migrated file is still on the pending list" tests then cover them | R-a…R-c, R-h |
+| screen-tokens › `LEGACY`: `surface-(?:high\|highest\|low\|lowest\|container)` → `surface-(?:high\|highest\|low\|lowest\|container[\w-]*)` so `fill-surface-container-high` is caught (5a files have no such class; the 5a set stays green) | R-a gap found in DeskSlotDiagram |
+| screen-tokens › "former hand-built buttons use the kit Button only": the existing invitation test's list gains `ui/devices/PlaceDeviceDialog.tsx` and `ui/deviceTypes/DeviceTypeImageField.tsx` (no `<button`) | R-f |
+| screen-tokens › "device lists switch layout at lg": `DeviceTable`, `IncomingTransfers`, `PendingReturns`, `PendingExtensions`, `OverdueBanner` match no `/(?<![\w-])md:/` and each contains `lg:` | Q-S5-6 |
+| screen-tokens › `DeviceTable.tsx` contains `TABLE_HEAD` and `TABLE_CELL` and no `const CELL`/`const HEAD` | R-g |
+| `DevicesView.test.tsx` › new describe "tokens": h1 has `text-display` (plus the existing tabindex test); table wrapper class contains `hidden lg:block`, card list contains `lg:hidden`, markup has no `md:block`/`md:hidden`; `<th` has `text-caption` and `uppercase`; no `text-[` in the markup | R-b, R-g, Q-S5-6 |
+| DevicesView.test › overdue row (extend 258–267): markup has `bg-danger-tint` and no `--error-container`; the split count of 4 stays; plain row has no `bg-danger-tint` | R-e |
+| DevicesView.test › pending transfer (extend 299–304): `bg-warning-tint` present, chip count stays 2 | R-e |
+| DevicesView.test › row actions (any test with actions, e.g. 269–280): each action button has `min-h-control`; wrapper has `gap-2` | R-f |
+| `DeviceDetailView.test.tsx` › h1 `text-display` with `tabindex="-1"`; `<dt` has `text-caption` and `uppercase`; section `<h2` has `text-subtitle`; back link has `min-h-control`; overdue (extend 88–102) `bg-danger-tint`; pending (extend 104–125) `bg-warning-tint` | R-b, R-e, AC 3 |
+| `DeviceHistory.test.tsx` › title `<h2` has `text-subtitle`; entries have `border-divider`; markup has no `font-bold`/`text-xs` | R-a, R-b |
+| `IncomingTransfers.test.tsx`, `PendingReturns.test.tsx`, `PendingExtensions.test.tsx` › card has `lg:flex-row` and no `md:`; heading has `text-subtitle` and `tabindex="-1"`; buttons have `min-h-control` | Q-S5-6, R-b, R-f |
+| `OverdueBanner.test.tsx` › card has `lg:flex-row`, no `md:`; pending extension (extend 57–70) shows its chip inside `bg-warning-tint` | Q-S5-6, R-e |
+| `AssignDeviceDialog.test.tsx` › the no-expiry checkbox `<label` has `min-h-control`, the checkbox has `size-5`; the Expiry legend has `text-label` (existing regex at 43 still matches); the textarea sits inside an element with `field-box` and itself has `outline-none`; markup has no `text-[11px]` | R-f, NoteField |
+| `PlaceDeviceDialog.test.tsx` › error states (extend 199–205): retry is a `<button` with `data-variant="outlined"` and `min-h-control`; seat and role radio `<label`s have `min-h-control`, radios `size-5` | R-f, AC 3 |
+| `DeviceTypesView.test.tsx` › h1 `text-display`; type name `font-semibold`; no `font-bold`; Edit/Delete buttons have `min-h-control` | R-b, R-f |
+| `DeviceTypeFormDialog.test.tsx` › slot radio `<label`s have `min-h-control`, radios `size-5`, no `mt-1`; legend `text-label` (the legend-first test at 29–33 unchanged) | R-f |
+| `DeviceTypeImageField.test.tsx` › file label has `field-box` and `min-h-control` (regex at 31 still matches); with `showRemove` the Remove button has `data-variant="danger"`; with `showUndo` Keep current has `data-variant="outlined"`; no `focus-within:`; the disabled count of 2 at 71 unchanged | R-f, Rules |
+| `DeviceTypeSpriteField.test.tsx` › option `<label`s have `min-h-control`, radios `size-5` | R-f |
+| `scripts/check-tokens.test.ts` (unchanged) › repo ratchet green with 16 keys removed | pending only shrinks |
+
+Existing asserts that must keep passing unchanged (and why they do): `DevicesView.test.tsx:101/103` (`>You<`: "You"
+stays a `Chip`), `:111` (5 `<button` = filter chips only), `:261/:301` (pill renders its label once per layout);
+`TransferDeviceDialog.test.tsx:64` (class of line 52 untouched); `IncomingTransfers.test.tsx:69` (`whitespace-pre-line`
+kept); `DeviceDetailView.test.tsx:98` (no `line-clamp` with `clamp=""`).
+
+### Acceptance → verification (slice 5b)
+| # | Criterion | How the reviewer verifies it |
+|---|---|---|
+| S5b-1 | 5b screens use token utilities only; R-a/R-b/R-c applied | `screen-tokens.test.ts` green with 26 more files; `rg -n "on-surface\|outline-variant\|text-error\|text-\[\|tracking-\[\|font-(bold\|extrabold)\|text-h[23]\|rounded-md3\|surface-container\|secondary-container\|error-container" src/ui/devices src/ui/deviceTypes -g '*.tsx' -g '!*.test.tsx'` → no hits |
+| S5b-2 | No off-scale type: labels 14, metadata 12, h1 Display, h2 Subtitle, dialog captions 14 like `DialogField` | `rg -n "text-(xs\|sm\|lg\|2xl)\b" <same paths>` → no hits; DevicesView/DeviceDetailView/DeviceHistory/handoff tests |
+| S5b-3 | Every interactive target ≥ 44 px: row actions, retry buttons, image-field buttons and file picker, all radio/checkbox rows, detail back link (AC 3) | tests above; `rg -n "<button\|min-h-11\|py-1\.5" <same paths>` → no hits |
+| S5b-4 | Device table and handoff/overdue cards use the wide layout from 1024, stacked list/cards at 800–1023 (Q-S5-6) | screen-tokens lg test; `rg -n "\bmd:" src/ui/devices -g '!*.test.tsx'` → no hits; Ming check at 800 and 1024 |
+| S5b-5 | Overdue and pending handoff states are toned pills with their text; no `var(--error-container)` | DevicesView/DeviceDetailView/OverdueBanner pill tests |
+| S5b-6 | Focus stays visible without per-component focus classes: NoteField textarea and the image file picker ring via `.field-box:focus-within` | AssignDeviceDialog and ImageField tests; `rg -n "focus(-within\|-visible)?:" <same paths>` → no hits; manual Tab through the Assign dialog and the device-type form |
+| S5b-7 | Pending shrinks by exactly the 16 keys (244 → 184); every touched pending file at 0 | `git diff main -- scripts/check-tokens.pending.json` shows 16 removed lines only; `node scripts/check-tokens.mjs` exits 0; screen-tokens pending test |
+| S5b-8 | No behaviour, copy, prop, id or `aria-*` change; `data-handoff-confirm` attributes kept | existing tests unchanged except the listed additions; `git diff main -- src/ui/copy src/lib src/app` empty; read PlaceDeviceDialog/ImageField diffs: same handlers, labels, `disabled` |
+| S5b-9 | Only planned files | `git diff --stat main` ⊆ Files tables |
+| S5b-10 | Checks green; impl-log "Slice 5b" complete | `pnpm format:check && pnpm typecheck && pnpm check:layers && pnpm test && pnpm build`; read impl-log |
+
+### Visible differences to log (slice 5b)
+- Devices list: at 800–1023 px the table is replaced by the stacked device cards (was a squeezed 7–8-column table);
+  the table appears from 1024. Incoming transfers, pending returns, pending extensions and the overdue banner keep their
+  stacked card layout (buttons under the text) up to 1023 and go side-by-side from 1024 (was 800).
+- Table headers 11 px · 800 → 12 px · 600 uppercase; a divider under the header row; row borders divider.
+- "Overdue" grey-red chip → red pill with a dot; "Transfer / Return / Extension pending" grey chip → amber pill with a
+  dot (list, cards, detail page, overdue banner). "You" and Primary/Secondary chips unchanged.
+- Device name and room links ink (unchanged colour, now a token); detail "Back" link 44 px tall.
+- Page titles (Devices, device detail, Device types) 32 px · 800 → 32 px · 600; section headings (history, detail
+  sections, handoff sections, overdue) 18 px · 800 → 18 px · 600 (history/detail `text-h3` was undefined, so they were
+  16 px · 800 → now 18 px · 600). Device names in cards and history kinds 700 → 600.
+- Small gaps in owner/details cells 2 → 4 px and chip rows 6 → 4 px.
+- Dialogs (assign, note/expiry, transfer, give back, extend, device form, device type form): captions and legends
+  uppercase 11 px · 800 grey → 14 px · 500 ink, matching the text-field captions already in the same dialogs; note box
+  8 px corners, stronger border, green focus ring around the box (was a border-colour change); "No expiry" checkbox and
+  every radio row 44 px tall with a 20 px control.
+- Place dialog: "Retry" underlined text → 44 px outlined button next to the error; seat rows 8 px corners.
+- Device types: "Choose/Replace image" pill (grey fill, 700) → 8 px secondary button with border, 44 px; "Remove" →
+  red danger button, "Keep current image" → outlined button (were bare coloured text); type names 700 → 600; desk
+  diagram uses canvas/divider colours (record what it looked like before, see Files table).
+
+### Ming verification after merge (slice 5b)
+- As Admin at 390 / 800 / 1024 / 1280 px, light and dark: Devices list (at 800 the card list, at 1024 the table —
+  it may scroll sideways a little inside its card at exactly 1024), an overdue device (red "Overdue" pill), a device
+  with a pending transfer (amber pill), the device detail page with history and "Load more", Incoming transfers /
+  Pending returns / Pending extensions if any are open (buttons beside the text only from 1024).
+- Open each device dialog (New/Edit device, Assign, Note / expiry, Transfer, Give back, Extend, Place/Move, Take back,
+  Delete): captions readable, Tab shows a green ring on the note box, the checkbox and radio rows are easy to tap on a
+  phone.
+- Device types: list, New type form (slot radios, sprite options, Choose image → Remove / Keep current), delete
+  dialog; keyboard Tab onto "Choose image" shows the green ring.
+
+### Assumptions and non-blocking questions (slice 5b)
+- Hotspots: no other ticket is IN_PROGRESS/REVIEW/DONE (`work/backlog.md`: only SIM-071). `screen-tokens.test.ts` and
+  `scripts/check-tokens.pending.json` change again in 5c; 5b merges first.
+- The `LEGACY` widening only adds `surface-container-*` names; the 18 5a files contain none
+  (`rg surface-container src/ui` → only `checkin/**`, `roomlayout/SeatOverlay.tsx`, `DeskSlotDiagram.tsx`).
+- Q-S5b-1 (non-blocking). Pending handoff chips ("Transfer/Return/Extension pending") are awaiting someone's
+  confirmation: **default amber `warning` pill** (R-e "pending … awaiting confirmation", Q13). Alternative: blue `info`
+  for "Transfer pending" only (R-e "in transfer").
+- Q-S5b-2 (non-blocking). Dialog captions: **default 14 px label like the kit `DialogField`** so one dialog has one
+  caption style; the detail page keeps uppercase 12 px labels (data sheet, like table headers). Alternative: uppercase
+  12 px everywhere (then dialogs mix two caption styles).
+- Q-S5b-3 (non-blocking). Device-name and room links inside table cells and cards stay text links (WCAG 2.5.8 spacing
+  exception; making them 44 px would double every row). **Default: only the standalone detail "Back" link gets 44 px.**
+- Q-S5b-4 (non-blocking). The image file picker is a `<label>` around a hidden file input; **default: reuse the
+  `.field-box` class for its focus-within ring** (no CSS change in 5b). Alternative: a new CSS rule (globals.css
+  change, slice 7).
+- Q-S5b-5 (non-blocking). Desk diagram strokes on the divider token are faint but the diagram is decorative
+  (`aria-hidden`). **Default: divider (R-a)**; `border-strong` is a one-word follow-up if Ming finds it too light.
+- Q-S5b-6 (non-blocking). At exactly 1024 the content column is ~760 px (216 px sidebar), so the 8-column table may
+  still scroll sideways inside its card. **Default: accept (Card already `overflow-x-auto`)**; a `xl` (1280) switch is
+  the alternative if Ming finds it cramped.
