@@ -37,3 +37,20 @@ None.
 
 ### Scope self-check
 - Could the diff be smaller? No.
+
+## Attempt 2 (REWORK: security-review finding 1)
+
+### Files touched
+| File | Required because |
+|---|---|
+| src/lib/audit/route.ts | map any canonical UUID to `:id` first (isCanonicalUuid); kept-word rule now `^[a-z][a-z-]{0,40}$` (no digits), so hex-like ids are not kept |
+| src/lib/audit/route.test.ts | UUIDs starting with a letter and with a digit, hex-like segment, kept word segments |
+
+### Checks
+- format:check, typecheck, check:layers (998 files, no violations), test: all exit 0
+
+### Out-of-plan files
+None.
+
+### Scope self-check
+- Only finding 1 fixed. Note: word segments containing digits (e.g. `v2`) now become `:id`.
