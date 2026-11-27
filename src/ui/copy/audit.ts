@@ -27,6 +27,7 @@ export const auditCopy = {
     "room.create": "Created a room",
     "room.update": "Updated a room",
     "room.delete": "Deleted a room",
+    "access.super_admin": "Support access (mmlabs)",
   } as Record<string, string>,
 } as const;
 

@@ -2,17 +2,17 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | security, api, architecture |
 | Gate | plan-approval |
 | Depends on | — |
 | Needs Ming | M-83, M-84 |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-26 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/149 |
 
 ## Goal
 An account that holds an app-wide simap admin role in Identity can open and manage any org in simap without being
@@ -75,4 +75,26 @@ supersedes these points (M-83) and Identity can mint such tokens (M-84). Raised 
 
 - 2026-11-27: M-84 answered by org-admin-api (ADR-0030) and marked done by Ming. Contract in D86: role key `simap:super-admin`, check `org_access == "super_admin"`, `org_roles: []`, picker items have `access`, handle 429 on `/auth/token`. Release waits for M-90 (org-admin-api deploy + setup).
 
+- Plan approved (2026-11-27): Ming "duyệt SIM-043, tách slice 2" — plan slice 1 with defaults Q1–Q15; slice 2 split into SIM-043.1.
+
+- 2026-11-27: Ming "sửa luôn trong PR này": fix security-review.md finding 🟡 1 (auditRoute keeps UUIDs that start with a–f) in PR #149.
+
 ## Handoff
+
+### 2026-11-27 — claude — BLOCKED
+- Agent calls: 3 (api-platform-engineer×1 36k, software-architect×1 54k, planner×1 90k; default models)
+- Done: consults, plan READY (slice 1 of a proposed split; follows D86 over the older ticket wording); plan gate (High paths); M-92 added (renumbered from M-91: main used M-91 for SIM-061).
+- In progress / next: Ming approves the plan and Q1–Q15 → implement slice 1; create the slice-2 ticket if the split is approved.
+- Gotchas: ticket Scope/Notes/AC1 still say the old role key and lack the `org_access` condition; D86 wins.
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 3 this run (implementer×1 67k, reviewer×1 75k, security-ai-generated-code-auditor×1 54k; default models)
+- Done: slice 1 implemented; review PASS attempt 1; security no 🔴 (one 🟡: auditRoute keeps a–f-leading UUIDs); PR #149 (High tier, Ming merges).
+- In progress / next: Ming decides on the 🟡 (fix now or follow-up) and merges #149; release after M-90 + M-93.
+- Gotchas: Ming items renumbered M-91/M-92 → M-92/M-93 (main used M-91 for SIM-061).
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 3 (implementer×1 21k, reviewer×1, security-ai-generated-code-auditor×1 27k; default models)
+- Done: REWORK attempt 2 per Ming: auditRoute maps every UUID to `:id`, word rule has no digits; review PASS; security no 🔴/🟡. PR #149 updated.
+- In progress / next: Ming merges #149 (High); release after M-90 + M-93.
+- Gotchas: a future route segment containing a digit (e.g. `v2`) is recorded as `:id`.

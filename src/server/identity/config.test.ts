@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loadIdentityConfig } from "./config";
+import { loadIdentityConfig, loadSuperAdminRole } from "./config";
 
 const ISS = "https://api.mmlabs.online";
 const prod = { NODE_ENV: "production" };
@@ -49,6 +49,38 @@ describe("loadIdentityConfig", () => {
     );
     for (const v of ["http://127.0.0.1:8000", "http://example.com", "http://localhost"]) {
       expect(() => loadIdentityConfig({ MM_IDENTITY_ISSUER: v })).toThrow(/MM_IDENTITY_ISSUER/);
+    }
+  });
+});
+
+describe("loadSuperAdminRole", () => {
+  it("unset or empty -> null; a valid key -> value", () => {
+    expect(loadSuperAdminRole({})).toBeNull();
+    expect(loadSuperAdminRole({ SIMAP_SUPER_ADMIN_ROLE: "" })).toBeNull();
+    expect(loadSuperAdminRole({ SIMAP_SUPER_ADMIN_ROLE: "simap:super-admin" })).toBe(
+      "simap:super-admin",
+    );
+  });
+  it("membership keys, uppercase, spaces, other scopes and a bare prefix throw without the value", () => {
+    for (const v of [
+      "simap:admin",
+      "simap:manager",
+      "simap:user",
+      "simap:member",
+      "simap:Super-Admin",
+      "simap:super admin",
+      " simap:super-admin",
+      "admin:super-admin",
+      "simap:",
+    ]) {
+      expect(() => loadSuperAdminRole({ SIMAP_SUPER_ADMIN_ROLE: v })).toThrow(
+        /SIMAP_SUPER_ADMIN_ROLE/,
+      );
+      try {
+        loadSuperAdminRole({ SIMAP_SUPER_ADMIN_ROLE: v });
+      } catch (e) {
+        expect((e as Error).message).not.toContain(v.trim() || "@@");
+      }
     }
   });
 });

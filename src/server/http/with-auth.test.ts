@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Tier } from "@/lib/auth/tier";
 import type { VerifyCode, VerifyResult } from "@/server/identity/verify";
+import type { AccessAudit } from "@/server/audit/access";
+import { writeAccessAudit } from "@/server/audit/access";
 import { dbMemberGate } from "@/server/members/gate";
 import {
   WITH_AUTH_MARK,
@@ -17,13 +19,26 @@ const EMAIL = "someone@example.com";
 
 const okResult = (
   orgRoles: string[] | null,
-  over: Partial<{ org: string | null; email: string | null }> = {},
+  over: Partial<{
+    org: string | null;
+    email: string | null;
+    appRoles: string[];
+    orgAccess: string | null;
+    lifetimeS: number;
+  }> = {},
 ): VerifyResult => ({
   ok: true,
   identity: { sub: SUB, email: EMAIL, org: ORG, orgRoles, ...over },
 });
 
-function setup(result: VerifyResult | (() => never), gate?: MemberGate) {
+const SA_KEY = "simap:super-admin";
+const SA = { appRoles: [SA_KEY], orgAccess: "super_admin", lifetimeS: 3600 };
+
+function setup(
+  result: VerifyResult | (() => never),
+  gate?: MemberGate,
+  opts: { superAdminRole?: string | null; accessAudit?: AccessAudit | null } = {},
+) {
   const logs: Array<Record<string, unknown>> = [];
   const configLogs: Array<Record<string, unknown>> = [];
   const verify = vi.fn(async (_h: string | null) => {
@@ -31,22 +46,28 @@ function setup(result: VerifyResult | (() => never), gate?: MemberGate) {
     return result;
   });
   const memberGate = vi.fn<MemberGate>(gate ?? (async () => "active"));
+  const accessAudit = vi.fn<AccessAudit>(async () => {});
   const deps: AuthDeps = {
     verifier: { verify },
     memberGate,
     log: (e) => logs.push(e),
+    superAdminRole: "superAdminRole" in opts ? opts.superAdminRole : SA_KEY,
+    ...(opts.accessAudit !== null && { accessAudit: opts.accessAudit ?? accessAudit }),
   };
   const withAuth = createWithAuth(
     () => deps,
     (e) => configLogs.push(e),
   );
   const handler = vi.fn(async (_req: Request, ctx: AuthContext) => Response.json(ctx));
-  const call = (tier: Tier) =>
+  const call = (tier: Tier, method = "GET") =>
     withAuth(handler, { tier })(
-      new Request("http://x/api/t", { headers: { authorization: "Bearer a.b.c" } }),
+      new Request(`http://x/api/t/${ORG}?q=1`, {
+        method,
+        headers: { authorization: "Bearer a.b.c" },
+      }),
       { params: Promise.resolve({}) },
     );
-  return { logs, configLogs, verify, memberGate, handler, call, withAuth };
+  return { logs, configLogs, verify, memberGate, handler, call, withAuth, accessAudit };
 }
 
 const body = async (r: Response) => JSON.stringify(await r.json());
@@ -99,6 +120,7 @@ describe("withAuth", () => {
       email: EMAIL,
       org: ORG,
       tier: "manager",
+      access: "member",
       scope: { orgId: ORG },
     });
     expect(t.verify).toHaveBeenCalledWith("Bearer a.b.c");
@@ -251,9 +273,9 @@ describe("withAuth", () => {
         { params: Promise.resolve({}) },
       );
       expect(r.status).toBe(401);
-      expect((globalThis.__simapAuth as { deps: AuthDeps } | undefined)?.deps.memberGate).toBe(
-        dbMemberGate,
-      );
+      const deps = (globalThis.__simapAuth as { deps: AuthDeps } | undefined)?.deps;
+      expect(deps?.memberGate).toBe(dbMemberGate);
+      expect(deps?.accessAudit).toBe(writeAccessAudit);
     } finally {
       globalThis.__simapAuth = undefined;
       vi.unstubAllEnvs();
@@ -304,10 +326,15 @@ describe("withAuth", () => {
       setup(okResult(["simap:user"]), async () => {
         throw new Error(`${SUB} ${EMAIL}`);
       }),
+      setup(okResult([], SA), undefined, {
+        accessAudit: async () => {
+          throw new Error(`${SUB} ${ORG}`);
+        },
+      }),
       setup(okResult(["simap:user"])),
     ];
-    cases[2].handler.mockRejectedValueOnce(new Error(`${SUB} ${EMAIL} ${ORG} a.b.c`));
-    for (const c of cases) await c.call("user");
+    cases[3].handler.mockRejectedValueOnce(new Error(`${SUB} ${EMAIL} ${ORG} a.b.c`));
+    for (const c of cases) await c.call("user", c === cases[2] ? "POST" : "GET");
     const out = JSON.stringify([
       ...cases.flatMap((c) => c.logs),
       ...spies.flatMap((s) => s.mock.calls),
@@ -316,6 +343,110 @@ describe("withAuth", () => {
     expect(out).not.toContain(EMAIL);
     expect(out).not.toContain(ORG);
     expect(out).not.toContain("a.b.c");
-    expect(cases.flatMap((c) => c.logs).length).toBe(3);
+    expect(cases.flatMap((c) => c.logs).length).toBe(4);
+  });
+
+  describe("super admin (D86)", () => {
+    const withSa = (over = {}) => okResult([], { ...SA, ...over });
+
+    it("reaches an admin route with tier admin, access super_admin", async () => {
+      const t = setup(withSa());
+      const r = await t.call("admin");
+      expect(r.status).toBe(200);
+      const ctx = t.handler.mock.calls[0][1];
+      expect(ctx.tier).toBe("admin");
+      expect(ctx.access).toBe("super_admin");
+    });
+
+    it("near-miss role / org_access member / role unset in config -> 403 forbidden, handler and gate not called", async () => {
+      const cases = [
+        setup(withSa({ appRoles: ["simap:admin"] })),
+        setup(withSa({ appRoles: ["simap:super-admin "] })),
+        setup(withSa({ orgAccess: "member" })),
+        setup(withSa({ lifetimeS: 3601 })),
+        setup(withSa(), undefined, { superAdminRole: null }),
+        setup(okResult(["simap:user"], SA), undefined, {}),
+      ];
+      for (const t of cases) {
+        const r = await t.call("user", "POST");
+        expect(r.status).toBe(403);
+        expect(await r.json()).toEqual({ error: { code: "forbidden" } });
+        expect(t.handler).not.toHaveBeenCalled();
+        expect(t.memberGate).not.toHaveBeenCalled();
+        expect(t.accessAudit).not.toHaveBeenCalled();
+      }
+    });
+
+    it("claims without org -> 403 org_required", async () => {
+      const t = setup(withSa({ org: null }));
+      const r = await t.call("user");
+      expect(r.status).toBe(403);
+      expect(await r.json()).toEqual({ error: { code: "org_required" } });
+    });
+
+    it("ctx.scope is {orgId: org}, frozen, same object given to gate and audit", async () => {
+      const t = setup(withSa());
+      await t.call("admin", "POST");
+      const ctx = t.handler.mock.calls[0][1];
+      expect(ctx.scope).toEqual({ orgId: ORG });
+      expect(Object.isFrozen(ctx.scope)).toBe(true);
+      expect(t.memberGate.mock.calls[0][0]).toBe(ctx.scope);
+      expect(t.accessAudit.mock.calls[0][0]).toBe(ctx.scope);
+    });
+
+    it("write (POST/PUT/PATCH/DELETE) calls accessAudit once before the handler with scope, sub, {method, route}", async () => {
+      for (const m of ["POST", "PUT", "PATCH", "DELETE"]) {
+        const t = setup(withSa());
+        const order: string[] = [];
+        t.accessAudit.mockImplementation(async () => void order.push("audit"));
+        t.handler.mockImplementation(async () => {
+          order.push("handler");
+          return new Response("ok");
+        });
+        expect((await t.call("admin", m)).status).toBe(200);
+        expect(order).toEqual(["audit", "handler"]);
+        expect(t.accessAudit).toHaveBeenCalledTimes(1);
+        expect(t.accessAudit).toHaveBeenCalledWith({ orgId: ORG }, SUB, {
+          method: m,
+          route: "/api/t/:id",
+        });
+      }
+    });
+
+    it("GET/HEAD: no access audit; member token write: no access audit", async () => {
+      for (const m of ["GET", "HEAD"]) {
+        const t = setup(withSa());
+        await t.call("admin", m);
+        expect(t.accessAudit).not.toHaveBeenCalled();
+      }
+      const t = setup(okResult(["simap:admin"]));
+      await t.call("admin", "POST");
+      expect(t.accessAudit).not.toHaveBeenCalled();
+    });
+
+    it("accessAudit throws or is missing -> 503 unavailable, handler not called, log access_audit_failed", async () => {
+      const boom = setup(withSa(), undefined, {
+        accessAudit: async () => {
+          throw new Error("db down");
+        },
+      });
+      const missing = setup(withSa(), undefined, { accessAudit: null });
+      for (const t of [boom, missing]) {
+        const r = await t.call("admin", "POST");
+        expect(r.status).toBe(503);
+        expect(await r.json()).toEqual({ error: { code: "unavailable" } });
+        expect(t.handler).not.toHaveBeenCalled();
+        expect(t.logs).toEqual([{ event: "access_audit_failed" }]);
+      }
+    });
+
+    it("deactivated row -> 403 member_deactivated, no access audit, handler not called", async () => {
+      const t = setup(withSa(), async () => "deactivated");
+      const r = await t.call("admin", "POST");
+      expect(r.status).toBe(403);
+      expect(await r.json()).toEqual({ error: { code: "member_deactivated" } });
+      expect(t.accessAudit).not.toHaveBeenCalled();
+      expect(t.handler).not.toHaveBeenCalled();
+    });
   });
 });

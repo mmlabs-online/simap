@@ -36,7 +36,8 @@ Do not change the stack without Ming's explicit decision.
 - R2 Every schema change ships with a reviewed forward-only SQL migration (tudocuatui rules: expand then contract, so
   the previous image keeps working); never edit an applied migration (D3).
 - R6 Every org table has `org_id`; every query of org data is scoped by the verified token's `org` claim and roles come
-  only from `org_roles` (D5).
+  only from `org_roles`, except the D86 super-admin grant (`org_access == "super_admin"` + configured role in `roles`),
+  which gives Admin in the token's `org` only (D5, D75).
 - R7 Route handlers return 401/403 auth codes (`unauthenticated`, `forbidden`, `member_deactivated`,
   `org_required`) only from the auth wrapper, before any side effect; never after a write or other side effect. Domain
   refusals use 409/422 (e.g. `not_allowed`). (`apiFetch` re-sends once on 401/403, so a late 401/403 can repeat a

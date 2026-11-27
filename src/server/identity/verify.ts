@@ -35,6 +35,10 @@ export type VerifiedIdentity = {
   email: string | null;
   org: string | null;
   orgRoles: string[] | null;
+  /** Raw claims for the D86 super-admin check; set only when `org` is present. Absent = no grant. */
+  appRoles?: readonly string[];
+  orgAccess?: string | null;
+  lifetimeS?: number;
 };
 
 export type VerifyResult =
@@ -137,7 +141,8 @@ export function createIdentityVerifier({
         if (!isCanonicalUuid(sub)) return { ok: false, code: "sub_invalid" };
         const email =
           typeof payload.email === "string" && payload.email !== "" ? payload.email : null;
-        // `roles` (app scope) is never read; org access comes only from `org` + `org_roles`.
+        // `roles` and `org_access` are read only when `org` is present and only returned as claims (D86);
+        // a bad shape never fails the token, it only removes the grant. Policy lives in `accessFromToken`.
         // `ent` is ignored on purpose (D9: simap does not read or enforce it).
         const { org, org_roles: orgRoles } = payload;
         if (org === undefined) {
@@ -148,7 +153,23 @@ export function createIdentityVerifier({
         if (orgRoles === undefined) return { ok: false, code: "org_roles_missing" };
         if (!Array.isArray(orgRoles) || !orgRoles.every((r) => typeof r === "string"))
           return { ok: false, code: "org_roles_invalid" };
-        return { ok: true, identity: { sub, email, org, orgRoles: orgRoles as string[] } };
+        const { roles, org_access: orgAccess } = payload;
+        const appRoles =
+          Array.isArray(roles) && roles.every((r) => typeof r === "string")
+            ? (roles as string[])
+            : [];
+        return {
+          ok: true,
+          identity: {
+            sub,
+            email,
+            org,
+            orgRoles: orgRoles as string[],
+            appRoles,
+            orgAccess: typeof orgAccess === "string" ? orgAccess : null,
+            lifetimeS: (payload.exp as number) - (payload.iat as number),
+          },
+        };
       } catch (err) {
         const code = codeOf(err);
         return code === "jwks_unavailable"
