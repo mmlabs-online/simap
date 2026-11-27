@@ -16,20 +16,20 @@ export function Notice({
 }) {
   const tone =
     kind === "error"
-      ? "border-error/40 bg-error-container text-on-error-container"
-      : "border-outline-variant bg-surface-container text-on-surface";
+      ? "border-danger/40 bg-danger-tint text-danger"
+      : "border-border bg-canvas text-text-primary";
   return (
     <div
       role={kind === "error" ? "alert" : "status"}
       aria-busy={busy ? true : undefined}
-      className={`rounded-md3 border p-3 text-sm ${tone}`}
+      className={`rounded-lg border p-3 text-label font-normal ${tone}`}
     >
       <p className="break-words">{children}</p>
     </div>
   );
 }
 
-export const linkClass = "self-center text-sm font-semibold text-on-surface underline";
+export const linkClass = "self-center text-label font-semibold text-text-primary underline";
 
 export function Field({
   id,
@@ -51,7 +51,7 @@ export function Field({
   const errorId = `${id}-error`;
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-xs font-semibold text-on-surface-variant">
+      <label htmlFor={id} className="text-label text-text-primary">
         {label}
       </label>
       <FilledInput
@@ -63,7 +63,7 @@ export function Field({
         {...input}
       />
       {error && (
-        <small id={errorId} className="text-xs text-error">
+        <small id={errorId} className="text-caption text-danger">
           {error}
         </small>
       )}
@@ -79,7 +79,7 @@ export function ShowPasswordToggle({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex min-h-[44px] items-center gap-2 text-xs text-on-surface-variant">
+    <label className="flex min-h-control items-center gap-2 text-label font-normal text-text-secondary">
       <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       {authCopy.fields.showPassword}
     </label>

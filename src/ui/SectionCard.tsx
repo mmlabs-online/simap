@@ -36,23 +36,23 @@ export function SectionCard({
         <div
           className={[
             "flex flex-wrap items-start justify-between gap-3 p-4 sm:p-5",
-            divided ? "border-b border-outline-variant" : "",
+            divided ? "border-b border-divider" : "",
           ].join(" ")}
         >
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              {icon && <Icon name={icon} size={20} className="text-primary" />}
-              <h3 id={headingId} className="text-base font-extrabold text-on-surface">
+              {icon && <Icon name={icon} size={20} className="text-text-primary" />}
+              <h3 id={headingId} className="text-body font-semibold text-text-primary">
                 {title}
               </h3>
               {titleAdornment}
             </div>
-            {subtitle && <p className="text-xs text-on-surface-variant">{subtitle}</p>}
+            {subtitle && <p className="text-caption text-text-secondary">{subtitle}</p>}
           </div>
           {aside}
         </div>
         <div className={flush ? "" : "p-4 sm:p-5"}>{children}</div>
-        {footer && <div className="border-t border-outline-variant p-4 sm:p-5">{footer}</div>}
+        {footer && <div className="border-t border-divider p-4 sm:p-5">{footer}</div>}
       </section>
     </Card>
   );

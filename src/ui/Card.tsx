@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
 /**
- * MD3 tonal card: large radius, low tonal surface, hairline outline and soft
- * elevation on hover when interactive.
+ * Brief card: radius-xl, surface, card shadow and a divider border; the border
+ * darkens on hover when interactive.
  */
 export function Card({
   children,
@@ -18,9 +18,9 @@ export function Card({
   return (
     <As
       className={[
-        "rounded-md3-lg border border-outline-variant bg-surface-low shadow-[var(--card-shadow)]",
+        "rounded-xl border border-divider bg-surface shadow-card",
         interactive
-          ? "transition-[transform,box-shadow,border-color] duration-150 ease-[cubic-bezier(0.2,0.7,0.2,1)] hover:-translate-y-0.5 hover:border-outline hover:shadow-[var(--card-shadow-hover)]"
+          ? "transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out hover:-translate-y-0.5 hover:border-border-strong"
           : "",
         className,
       ].join(" ")}

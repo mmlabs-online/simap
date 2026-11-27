@@ -29,7 +29,7 @@ export function TabBar<T extends string>({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className="flex w-full overflow-x-auto border-b border-outline-variant"
+      className="flex w-full overflow-x-auto border-b border-divider"
     >
       {tabs.map((tab, i) => {
         const selected = tab.id === active;
@@ -54,11 +54,11 @@ export function TabBar<T extends string>({
               refs.current[next]?.focus();
             }}
             className={[
-              "state-layer -mb-px border-b-2 min-h-11 px-3 whitespace-nowrap flex-1 sm:flex-none",
-              "inline-flex items-center justify-center gap-2 text-sm font-semibold cursor-pointer",
+              "state-layer -mb-px border-b-2 min-h-control px-3 whitespace-nowrap flex-1 sm:flex-none",
+              "inline-flex items-center justify-center gap-2 text-label cursor-pointer",
               selected
-                ? "border-primary text-primary"
-                : "border-transparent text-on-surface-variant",
+                ? "border-workspace-primary text-text-primary font-semibold"
+                : "border-transparent text-text-secondary",
             ].join(" ")}
           >
             {tab.icon && <Icon name={tab.icon} size={18} />}

@@ -247,34 +247,14 @@ h3 {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--surface-container-highest);
-  border-radius: 8px;
+  background: var(--color-border);
+  border-radius: var(--radius-lg);
   border: 2px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--outline);
+  background: var(--color-border-strong);
   background-clip: content-box;
-}
-
-/* Status dot (always accompanied by a text label in the markup). */
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: none;
-}
-.status-dot.online {
-  background: var(--status-online);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-online) 15%, transparent);
-}
-.status-dot.warn {
-  background: var(--status-warn);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-warn) 18%, transparent);
-}
-.status-dot.alert {
-  background: var(--status-alert);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-alert) 15%, transparent);
 }
 
 /* ---- Motion (fast ease-out) ---- */
@@ -319,10 +299,10 @@ dialog::backdrop {
   pointer-events: none;
   z-index: 0;
 }
-.state-layer:hover::after {
+.state-layer:not(:disabled):hover::after {
   opacity: 0.06;
 }
-.state-layer:active::after {
+.state-layer:not(:disabled):active::after {
   opacity: 0.1;
 }
 .state-layer > * {
@@ -333,6 +313,21 @@ dialog::backdrop {
 :where(button, a, [tabindex], input, select, summary):focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+}
+/* Text fields: the ring sits on the whole box (icon + input), not on the bare input. */
+.field-box:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.field-box :where(input, select):focus-visible {
+  outline: none;
+}
+/* Checkboxes and radios: native filled indicator in the action colour (brief: explicit selected state). */
+@layer base {
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-workspace-action);
+  }
 }
 
 /* Honor reduced motion. */

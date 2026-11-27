@@ -29,19 +29,17 @@ export function FormFooterBar({
 }) {
   const isError = status.tone === "error";
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant pt-4">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-divider pt-4">
       <p
         role={isError ? "alert" : "status"}
         className={[
-          "flex items-center gap-2 text-sm font-semibold",
-          isError ? "text-error" : "text-on-surface",
+          "flex items-center gap-2 text-label font-semibold",
+          isError ? "text-danger" : "text-text-primary",
         ].join(" ")}
       >
-        {status.tone === "saved" && <Icon name="check" size={18} className="text-primary" />}
+        {status.tone === "saved" && <Icon name="check" size={18} className="text-success" />}
         <span>{status.text}</span>
-        {status.detail && (
-          <span className="font-normal text-on-surface-variant">{status.detail}</span>
-        )}
+        {status.detail && <span className="font-normal text-text-secondary">{status.detail}</span>}
       </p>
       <div className="flex items-center gap-2">
         <Button type="button" variant="tonal" disabled={!canCancel || busy} onClick={onCancel}>

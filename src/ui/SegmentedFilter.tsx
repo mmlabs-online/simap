@@ -17,7 +17,7 @@ export function SegmentedFilter<T extends string>({
     <div
       role="group"
       aria-label={ariaLabel}
-      className="inline-flex flex-wrap gap-0.5 rounded-xl bg-surface-high p-1"
+      className="inline-flex flex-wrap gap-1 rounded-xl border border-border bg-canvas p-1"
     >
       {options.map((opt) => {
         const active = opt.value === value;
@@ -28,11 +28,11 @@ export function SegmentedFilter<T extends string>({
             aria-pressed={active}
             onClick={() => onChange(opt.value)}
             className={[
-              "min-h-11 cursor-pointer rounded-lg px-3 text-sm font-semibold font-[inherit] transition-colors duration-150",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+              "min-h-control cursor-pointer rounded-lg border px-3 text-label",
+              "transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out",
               active
-                ? "bg-surface text-primary shadow-sm"
-                : "text-on-surface-variant hover:text-on-surface",
+                ? "border-border-strong bg-surface text-text-primary shadow-card"
+                : "border-transparent text-text-secondary hover:text-text-primary",
             ].join(" ")}
           >
             {opt.label}

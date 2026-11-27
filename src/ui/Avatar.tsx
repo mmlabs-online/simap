@@ -25,12 +25,12 @@ export function Avatar({
   const showPhoto = !!src && failed !== src;
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full font-extrabold flex-none"
+      className="inline-flex items-center justify-center rounded-full font-semibold flex-none"
       style={{
         width: size,
         height: size,
         background: color ?? "var(--secondary-container)",
-        color: color ? "#ffffff" : "var(--on-secondary-container)",
+        color: color ? "var(--color-on-action)" : "var(--on-secondary-container)",
         fontSize: Math.round(size * 0.34),
       }}
       aria-hidden

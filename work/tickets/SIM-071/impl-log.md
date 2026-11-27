@@ -83,3 +83,59 @@ None. Follow-ups: none.
 
 ### Scope self-check
 Only the four planned files; no `src/` edits.
+
+## Slice 3 (attempt 1) — UI kit
+
+### Files touched
+Kit (per plan Files table): `src/ui/{Button,Chip,Card,SectionCard,FilledInput,EntityFormDialog,RoleBadge,SegmentedFilter,TabBar,FormFooterBar,PageHeader,PageSkeleton,Avatar}.tsx`, `src/ui/auth/fields.tsx`, `src/ui/dashboard/StatTile.tsx`, `src/app/globals.css` (`.state-layer:not(:disabled)`, `.field-box` focus rules, checkbox/radio accent-color, `.status-dot` removed, scrollbar tokens), `src/app/dev/shell/KitGallery.tsx` + `src/ui/copy/gallery.ts` (pixel button, six pills, checkbox, SegmentedFilter), `scripts/check-tokens.pending.json`.
+Tests: `kit.test.tsx`, `layout-blocks.test.tsx`, `SegmentedFilter.test.tsx`, `Avatar.test.tsx`, `portal/MyRequestRow.test.tsx`, `lib/color/tokens.test.ts`.
+Defaults used for Q-S3-1..5.
+
+### Out-of-plan files
+`src/ui/requests/DecisionDialog.test.tsx:76`: asserted attribute order `<button type="submit" disabled`; the kit Button now emits `class`/`data-variant` between, so the regex became `/<button type="submit"[^>]*disabled/`. Assertion intent unchanged (plan allows tests asserting changed kit markup).
+
+### Rename map (old -> new)
+`bg-primary text-on-primary` (filled) -> `bg-workspace-action text-on-action` (hover `enabled:hover:bg-workspace-action-hover`); `text-on-surface` -> `text-text-primary`; `text-on-surface-variant` -> `text-text-secondary`; `border-outline-variant` -> `border-divider` (cards, dividers) / `border-border` (controls); `border-outline` -> `border-border-strong`; `bg-surface-high|low` -> `bg-canvas|bg-surface`; `rounded-md3(-lg)` -> `rounded-lg|rounded-xl`; `rounded-full` buttons -> `rounded-lg`; `*-container` pills -> `bg-{success,warning,danger,info}-tint text-{...}`; `text-error` -> `text-danger`; `font-extrabold|bold` -> `font-semibold|font-medium`; `text-[13px]|text-sm` -> `text-label`, `text-[11px]|text-xs` -> `text-caption`; `min-h-11|min-h-[44px]` -> `min-h-control`; `focus-within:*` field glow -> `.field-box`.
+
+### Pending before -> after
+373 -> 293. Removed keys (11): Avatar 1, Button 12, Card 3, Chip 16, EntityFormDialog 28, FilledInput 4, RoleBadge 6, SectionCard 1, SegmentedFilter 2, auth/fields 1, StatTile 2. `globals.css` 69 -> 65. Regenerated with `node scripts/check-tokens.mjs --list`; diff confirmed only these changes. `node scripts/check-tokens.mjs` exits 0.
+
+### Built-CSS confirmations
+Tailwind accepts `duration-(--duration-ui)` (emitted `transition-duration:var(--duration-ui)`); preflight `font:inherit` present, so `font-[inherit]` was safely dropped; `.field-box` in the built CSS.
+
+### Visible differences
+- Filled buttons, selected FilterChip, dialog Save, Tab "You" pill: ink -> coral action #D3441F (hover #B93B19), white text. Sign-in/check-in buttons keep their colour (`.aw-card`/`.px-card` overrides until slice 6) but get 14 px labels and 44/48 px height.
+- Buttons/IconButtons: pill -> 8 px corners; `sm` 36 -> 44 px tall (row actions grow ~8 px); labels 13/15 -> 14 px; weight 700 -> 500; disabled opacity 40 -> 50 % with not-allowed cursor and no hover/state layer.
+- Secondary border divider -> border, hover border-strong; danger button on danger-tint.
+- FilterChips: 8 px track, 6 px chips, 44 px tall. SegmentedFilter: bordered canvas track, selected = border + surface + card shadow, 44 px.
+- Cards 16 -> 12 px radius; hover darkens border instead of a larger shadow.
+- Dialogs 20 -> 16 px, surface background, dialog shadow, title 18 px/600, width 448 px, captions 14 px sentence case, strong field borders, green 2 px focus ring on the field box (no glow); footer uses kit Buttons.
+- Role badges 12 px/500, 4 px radius, Manager info-blue tint, Admin solid ink. Pills 12 px, neutral on canvas, new `info` tone.
+- PageHeader 18 px/600; section card titles 600; stat values 24 px Title, labels 14 px; auth labels 14 px ink, errors 12 px danger, notices 8 px radius.
+- Tabs: underline coral (workspace-primary), active label ink 600. Scrollbar thumb uses border tokens. Checkbox/radio fill with the action colour.
+- Interim: hand-rolled `bg-primary` buttons outside the kit stay ink (InvitePeople, AppShellView skip link, SeatOverlay tag).
+
+### Checks
+- format:check: `All matched files use the correct format`
+- typecheck: pass
+- check:layers: `1009 files, no violations`
+- test: `387 passed | 1 skipped (388) files; 3809 passed | 7 skipped (3816)`
+- build: pass
+
+### Scope self-check
+Only the planned files plus the one test noted above. Follow-ups: none.
+
+## Slice 3 (attempt 2) — rework of review "Slice 3 — Attempt 1"
+
+### Files touched
+- `src/ui/requests/DecisionDialog.test.tsx:76`: regex now `/<button type="submit"[^>]*disabled=""/`. Required because the attempt-1 regex also matched `disabled:cursor-not-allowed` in the class list and was vacuous (issue 1). This corrects the attempt-1 "Out-of-plan files" note, which wrongly said the assertion intent was unchanged.
+- `src/ui/kit.test.tsx`: Button disabled test loops all six variants and requires the `enabled:` prefix only (dropped the `hover:` branch and the filled-only bare-hover line); new IconButton test applies the same check to inactive and active (issue 2).
+
+### Checks
+- format:check: `All matched files use the correct format`
+- typecheck: pass
+- check:layers: `1009 files, no violations`
+- test: `387 passed | 1 skipped (388) files; 3810 passed | 7 skipped (3817)`
+
+### Scope self-check
+Only the two test files named in review issues 1 and 2, plus this log. Follow-ups: none.

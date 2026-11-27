@@ -28,13 +28,13 @@ export function PageHeader({
             id={id}
             ref={headingRef}
             tabIndex={headingRef ? -1 : undefined}
-            className={`text-xl font-extrabold text-on-surface${headingRef ? " outline-none" : ""}`}
+            className={`text-subtitle text-text-primary${headingRef ? " outline-none" : ""}`}
           >
             {title}
           </Heading>
           {titleAdornment}
         </div>
-        {subtitle && <p className="text-sm text-on-surface-variant">{subtitle}</p>}
+        {subtitle && <p className="text-label font-normal text-text-secondary">{subtitle}</p>}
       </div>
       {aside && <div className="sm:ml-auto">{aside}</div>}
     </div>

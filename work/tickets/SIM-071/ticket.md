@@ -9,10 +9,10 @@
 | Gate | plan-approval |
 | Depends on | — |
 | Needs Ming | — |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-27 |
 | Claimed by | — |
-| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 |
+| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 |
 
 ## Goal
 Every screen of simap uses one set of design tokens (colours, type, spacing, radius, elevation, layout, motion) from
@@ -103,3 +103,9 @@ workspace coral) via D87.
 - Done: slice 2 (token guard, 65 files / 373 violations pending) implemented, review PASS attempt 1, PR #155.
 - In progress / next: Ming merges #155; then `/run SIM-071` for slice 3 (UI kit).
 - Gotchas: slice 7 must read the pending file tolerantly; hex rule widened (accepted).
+
+### 2026-11-27 — claude — IN_PROGRESS (slice 3 PR open)
+- Agent calls: 5 (planner×1 138k addendum, implementer×2 70k+31k, reviewer×2 63k + sonnet 20k)
+- Done: slice 3 (UI kit) implemented; REWORK on attempt 1 (DecisionDialog regex always passed; kit disabled test too weak); PASS on attempt 2; PR #158.
+- In progress / next: Ming merges #158; then `/run SIM-071` for slice 4 (216 px sidebar).
+- Gotchas: Attempts now 1 (one rework used on this ticket).

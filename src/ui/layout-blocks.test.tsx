@@ -25,7 +25,7 @@ const btn = (html: string, id: string) =>
   html.match(new RegExp(`<button[^>]*id="${id}"[^>]*>.*?</button>`))![0];
 
 describe("TabBar", () => {
-  it("renders tablist, roving tabIndex, aria-controls, selected tab has border-primary text-primary", () => {
+  it("renders tablist, roving tabIndex, aria-controls, selected tab has border-workspace-primary text-text-primary", () => {
     const html = bar("b");
     expect(html).toContain('role="tablist"');
     expect(html).toContain('aria-label="Sections"');
@@ -33,10 +33,12 @@ describe("TabBar", () => {
     const b = btn(html, "t-b");
     expect(a).toContain('tabindex="-1"');
     expect(a).toContain('aria-controls="p-a"');
-    expect(a).not.toContain("border-primary");
+    expect(a).toContain("border-transparent text-text-secondary");
+    expect(a).toContain("min-h-control");
     expect(b).toContain('tabindex="0"');
     expect(b).toContain('aria-selected="true"');
-    expect(b).toContain("border-primary text-primary");
+    expect(b).toContain("border-workspace-primary text-text-primary");
+    expect(b).toContain("min-h-control");
   });
 
   it("icons and chip are aria-hidden; chip text is inside the selected tab button", () => {
@@ -102,7 +104,7 @@ describe("SectionCard", () => {
     expect(full).toContain('<section aria-labelledby="h1"');
     expect(full).toMatch(/<h3 id="h1"[^>]*>Title<\/h3>/);
     for (const m of ["Sub", "aside-m", "footer-m", "body-m"]) expect(full).toContain(m);
-    expect(full).toContain("border-b border-outline-variant");
+    expect(full).toContain("border-b border-divider");
     const bare = renderToStaticMarkup(
       <SectionCard headingId="h2" title="Title" divided={false}>
         body-m
@@ -118,12 +120,15 @@ describe("SectionCard", () => {
 describe("Pill", () => {
   it("tones map to classes; decorative sets aria-hidden", () => {
     const r = (p: Parameters<typeof Pill>[0]) => renderToStaticMarkup(<Pill {...p} />);
-    expect(r({ label: "x", tone: "accent" })).toContain("bg-primary-container");
-    expect(r({ label: "x", tone: "neutral" })).toContain("bg-surface-high");
-    expect(r({ label: "x", tone: "success" })).toContain("bg-success-container");
-    expect(r({ label: "x", tone: "warning" })).toContain("bg-warning-container");
-    expect(r({ label: "x", tone: "danger" })).toContain("bg-error-container");
-    expect(r({ label: "x" })).toContain("bg-surface-high");
+    expect(r({ label: "x", tone: "accent" })).toContain("bg-workspace-action");
+    expect(r({ label: "x", tone: "neutral" })).toContain("bg-canvas");
+    expect(r({ label: "x", tone: "success" })).toContain("bg-success-tint");
+    expect(r({ label: "x", tone: "warning" })).toContain("bg-warning-tint");
+    expect(r({ label: "x", tone: "danger" })).toContain("bg-danger-tint");
+    expect(r({ label: "x", tone: "info" })).toContain("bg-info-tint");
+    expect(r({ label: "x" })).toContain("rounded-full");
+    expect(r({ label: "x" })).toContain("text-caption");
+    expect(r({ label: "x" })).toContain("bg-canvas");
     expect(r({ label: "x" })).not.toContain("rounded-full bg-current");
     expect(r({ label: "x", dot: true })).toMatch(
       /<span aria-hidden="true"[^>]*bg-current"><\/span>/,

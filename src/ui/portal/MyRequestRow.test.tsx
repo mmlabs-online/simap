@@ -32,7 +32,7 @@ describe("MyRequestRow", () => {
   it("pending: history icon, Pending warning pill with a dot, Requested 06 Mar 2026, 00:30 (UTC+7) in <time dateTime>, no decision line, Cancel request button", () => {
     const html = render(req());
     expect(html).toContain(">history<");
-    expect(html).toMatch(/bg-warning-container[^>]*><span aria-hidden="true"[^>]*><\/span>Pending/);
+    expect(html).toMatch(/bg-warning-tint[^>]*><span aria-hidden="true"[^>]*><\/span>Pending/);
     expect(html).toContain(
       `<time dateTime="2026-03-05T17:30:00.000000Z">${requestsCopy.requestedAt("06 Mar 2026, 00:30")}</time>`,
     );
@@ -49,7 +49,7 @@ describe("MyRequestRow", () => {
   it('approved: check icon, success pill, decidedLine("approved","Nguyễn Thị Hương",…) in <time>, no button', () => {
     const html = render(decided("approved", "Nguyễn Thị Hương"));
     expect(html).toContain(">check<");
-    expect(html).toContain("bg-success-container");
+    expect(html).toContain("bg-success-tint");
     expect(html).toContain(
       `<time dateTime="${DECIDED}">${requestsCopy.decidedLine("approved", "Nguyễn Thị Hương", formatRequestTime(DECIDED))}</time>`,
     );
@@ -58,7 +58,7 @@ describe("MyRequestRow", () => {
   it('rejected: close icon, danger pill, "Rejected by … on …", no button', () => {
     const html = render(decided("rejected", "Bob"));
     expect(html).toContain(">close<");
-    expect(html).toContain("bg-error-container");
+    expect(html).toContain("bg-danger-tint");
     expect(html).toContain("Rejected by Bob on 06 Mar 2026, 01:00");
     expect(html).not.toContain("<button");
   });
