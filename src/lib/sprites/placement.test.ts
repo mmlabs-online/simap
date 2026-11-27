@@ -640,4 +640,52 @@ describe("presence view (PRE-06)", () => {
     const plain = buildDrawList(room({ seats: [desk] }), occupied, manifest, devices("Monitor"));
     expect(draw(undefined, ["Monitor"])).toEqual(plain);
   });
+
+  const drawIdle = (
+    presence: Record<string, "present" | "away">,
+    types: string[],
+    views: Record<string, SeatView> = occupied,
+  ) =>
+    buildDrawList(room({ seats: [desk] }), views, manifest, devices(...types), undefined, {
+      presence,
+      idle: true,
+    });
+
+  it("idle option: present seat with a monitor moves its avatar ops to list.idle and keeps the screen ops", () => {
+    const off = draw({ s1: "present" }, ["Monitor"]);
+    const list = drawIdle({ s1: "present" }, ["Monitor"]);
+    expect(avatarKeys(list)).toEqual([]);
+    expect(list.idle).toHaveLength(1);
+    expect(list.idle![0].seatId).toBe("s1");
+    expect(list.idle![0].ops).toEqual(off.ops.filter((o) => o.layer === "avatar"));
+    expect(screens(list)).toEqual(screens(off));
+    expect(list.bounds).toEqual(off.bounds);
+  });
+
+  it("idle option: away, unassigned and present-without-monitor seats are not idle", () => {
+    const away = drawIdle({ s1: "away" }, ["Monitor"]);
+    expect(away.idle).toEqual([]);
+    expect(avatarKeys(away)).toEqual([]);
+    expect(drawIdle({}, ["Monitor"], { s1: view() }).idle).toEqual([]);
+    const pc = drawIdle({ s1: "present" }, ["PC"]);
+    expect(pc.idle).toEqual([]);
+    expect(avatarKeys(pc)).not.toEqual([]);
+  });
+
+  it("idle option off gives exactly today's list", () => {
+    const today = draw({ s1: "present" }, ["Monitor"]);
+    const off = buildDrawList(
+      room({ seats: [desk] }),
+      occupied,
+      manifest,
+      devices("Monitor"),
+      undefined,
+      {
+        presence: { s1: "present" },
+        idle: false,
+      },
+    );
+    expect(off).toEqual(today);
+    expect("idle" in off).toBe(false);
+  });
 });

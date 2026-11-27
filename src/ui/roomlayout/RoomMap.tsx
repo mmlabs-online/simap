@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { catalogFootprints } from "@/lib/map-items/footprints";
 import type { SeatPresence } from "@/lib/presence/seat-presence";
 import {
@@ -11,6 +11,7 @@ import {
   type SeatView,
   type Zoom,
 } from "@/lib/sprites/layout";
+import { idleOn } from "@/lib/sprites/idle";
 import { buildDrawList } from "@/lib/sprites/placement";
 import { drawPresence } from "@/lib/sprites/walk";
 import { walkGrid } from "@/lib/sprites/walk-path";
@@ -110,6 +111,13 @@ export function RoomMap({
   // The static layer shows a character walking in as away until it has sat down.
   const drawn = useMemo(() => drawPresence(presence, hidden), [presence, hidden]);
 
+  const [idleFailed, setIdleFailed] = useState(false);
+  const idleEnabled = idleOn({
+    presenceView: presenceView !== undefined,
+    reduced,
+    failed: idleFailed,
+  });
+
   const list = useMemo(
     () =>
       atlas
@@ -117,10 +125,12 @@ export function RoomMap({
             items,
             image: catalogImages?.itemSize,
             presence: drawn,
+            idle: idleEnabled,
           })
         : null,
-    [atlas, layout, seatViews, seatDevices, items, drawn, catalogImages?.version],
+    [atlas, layout, seatViews, seatDevices, items, drawn, idleEnabled, catalogImages?.version],
   );
+  const idle = list?.idle ?? [];
 
   const allowed = useMemo(() => (list ? allowedZooms(list.bounds) : []), [list]);
   const effective = clampZoom(zoom, allowed);
@@ -175,13 +185,15 @@ export function RoomMap({
             className="block"
             style={{ width, height, imageRendering: "pixelated" }}
           />
-          {walks.length > 0 && (
+          {(walks.length > 0 || idle.length > 0) && (
             <WalkLayer
               atlas={atlas}
               walks={walks}
+              idle={idle}
               bounds={list.bounds}
               zoom={effective}
               onDone={finish}
+              onIdleFail={() => setIdleFailed(true)}
             />
           )}
           <SeatOverlay
