@@ -86,6 +86,12 @@ export async function getOrCreateMember(
   return row ? { ok: true, value: toDto(row) } : forbidden;
 }
 
+/** Read-only: the caller's own row or null; never inserts (D86 super admins have no row). */
+export async function getMember(db: Db, scope: OrgScope, sub: string): Promise<MeMemberDto | null> {
+  const row = await find(db, scope, sub);
+  return row ? toDto(row) : null;
+}
+
 export function setOwnDisplayName(
   db: Db,
   scope: OrgScope,

@@ -121,7 +121,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | BUG-004 | manage.db deactivate test expects the old audit meta (no cancelledHandoffs) | MERGED | P1 | XS | db | — | none | 0 | 2026-11-26 |
 | BUG-005 | map-items list order differs between Postgres collation and the test's JS sort | MERGED | P1 | XS | db, api | — | none | 0 | 2026-11-26 |
 | BUG-006 | CI `image` job always fails at `compose config` on the self-hosted runner (false positive on /Users/mingming) | MERGED | P1 | XS | security | — | none | 0 | 2026-11-26 |
-| SIM-043 | Let an app-wide simap admin access every org | BLOCKED | P2 | M | security, api, architecture | — | plan-approval | 0 | 2026-11-26 |
+| SIM-043 | Let an app-wide simap admin access every org | MERGED | P2 | M | security, api, architecture | — | plan-approval | 1 | 2026-11-26 |
+| SIM-043.1 | Super-admin org picker badge and 429 Retry-After (D86 client contract) | BACKLOG | P2 | S | ui, api | SIM-043 | none | 0 | 2026-11-27 |
 | SIM-044 | Restrict User device visibility and add a "my devices" API | MERGED | P1 | M | api, architecture, security | — | plan-approval | 1 | 2026-11-26 |
 | SIM-044.1 | Limit device data in seat, member and layout responses for Users | MERGED | P1 | M | api, architecture, security | SIM-044 | plan-approval | 0 | 2026-11-26 |
 | SIM-045 | My Portal part 1: My seat, My devices, display name | MERGED | P2 | M | ui, ux | SIM-044 | none | 1 | 2026-11-26 |
@@ -144,8 +145,8 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-059 | Pixel check-in popup | MERGED | P1 | M | ui, ux | SIM-057, SIM-058 | plan-approval | 0 | 2026-11-26 |
 | SIM-060 | Present and away on the map, name tags, open desk tags, "Who's here" and polling | MERGED | P1 | M | ui, api | SIM-057, SIM-058 | plan-approval | 0 | 2026-11-26 |
 | SIM-061 | Simple walk-in and walk-out | MERGED | P1 | M | ui | SIM-060 | plan-approval | 1 | 2026-11-26 |
-| SIM-061.1 | Typing idle animation for present characters | PLANNING | P1 | S | ui | SIM-061 | plan-approval | 0 | 2026-11-27 |
-| SIM-062 | Multi-direction walking avatar frames | BACKLOG | P2 | M | ui | SIM-061 | none | 0 | 2026-11-26 |
+| SIM-061.1 | Typing idle animation for present characters | DONE | P1 | S | ui | SIM-061 | plan-approval | 0 | 2026-11-27 |
+| SIM-062 | Multi-direction walking avatar frames | PLANNING | P2 | M | ui | SIM-061 | none | 0 | 2026-11-26 |
 | SIM-063 | Third-party check-in provider: REST pull adapter and mock | BACKLOG | P2 | M | architecture, api, security | SIM-058 | plan-approval | 0 | 2026-11-26 |
 | SIM-064 | Layout editor warning for unreachable chairs | BACKLOG | P2 | S | ui, ux | SIM-061 | none | 0 | 2026-11-26 |
 | SIM-065 | Choose GitHub-hosted or macbook runner for simap workflows | MERGED | P2 | S | architecture, security | — | plan-approval | 1 | 2026-11-26 |
@@ -155,6 +156,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-068 | Redesign the sign-in page as a "small world" landing (Ming's mockup) | MERGED | P2 | M | ui, ux, security | — | none | 0 | 2026-11-26 |
 | SIM-068.1 | Four pixel rooms, paths and notes around the sign-in card | MERGED | P2 | M | ui, ux | SIM-068 | none | 0 | 2026-11-26 |
 | SIM-069 | Redesign My Portal → My devices layout (summary tiles and device table) | MERGED | P2 | M | ui, ux | SIM-066 | none | 0 | 2026-11-26 |
+| SIM-070 | Redesign the Map items page and merge item edit and art into one Item editor | PLANNING | P2 | M | ui, ux | — | none | 0 | 2026-11-27 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.
 

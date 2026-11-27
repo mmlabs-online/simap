@@ -41,7 +41,8 @@ Everyone signs in with an **mmlabs Identity** account. simap has no local accoun
 - An *organization* (org) is the tenant. Every simap row except global config belongs to exactly one org, and every
   read and write is scoped by the `org` claim of the caller's token. Data of one org is never visible to another.
 - mmlabs **Super Admin** (Identity staff, in the mmlabs admin portal) creates orgs and appoints each org's admin. simap
-  has no Super Admin screen of its own.
+  has no Super Admin screen of its own. A Super Admin can also open and manage any org inside simap (D75, D86), see
+  *Roles*.
 - An org's **admin** manages that org inside simap. Admins are appointed in the admin portal, never inside simap (as
   ricotdin's admin role, D5).
 - Managers and users join an org by **invitation** (D11): an org admin or manager invites an email from simap
@@ -51,10 +52,16 @@ Everyone signs in with an **mmlabs Identity** account. simap has no local accoun
 - Only Super Admin creates orgs (D10); simap has no "create organization" screen.
 
 **Roles.** Roles come from the token's `org_roles` claim (the roles held in that org only), mapped through simap's role
-catalog. Per the contract, org data is never authorized from `roles`, and a token with `org` but no `org_roles` is
-refused. Role keys registered in org-admin-api (D14):
+catalog. Per the contract, org data is never authorized from `roles`, except the D86 grant below, and a token with `org` but
+no `org_roles` is refused. Role keys registered in org-admin-api (D14):
 - `simap:member`: app-scope default role on join; grants no org access.
 - `simap:admin` (org owner role), `simap:manager`, `simap:user`: org scope. Admin and manager hold `simap:org:invite`.
+- Super-admin grant (D75, D86): a verified token with `org`, `org_access == "super_admin"` exactly, the app-scope role
+  `simap:super-admin` (configurable: `SIMAP_SUPER_ADMIN_ROLE`; unset = feature off) in `roles`, empty `org_roles` and a
+  lifetime of at most 3600 s gets full Admin in the token's `org` only, never in another org. Any other combination
+  grants nothing (403 `forbidden`). Such an account has no member row (it is not listed, cannot be assigned seats and is
+  not counted), and every non-GET request it makes writes an audit row `access.super_admin` (actor `sub`, meta
+  `{method, route}`). A deactivated member row still blocks it.
 
 
 | seatMGT role | Identity org role (proposed) | Granted by | Can do (from seatMGT `features.md` + code) |
@@ -176,12 +183,12 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
 - [ ] A signed-in user stays signed in across page loads and tabs until the Identity session ends. The access token is
   renewed before it expires.
 - [ ] Every `/api/*` route handler gets the caller's verified identity: `sub`, email, `org`, simap tier (from
-  `org_roles`), linked member. Org data is read and written only with that `org`.
+  `org_roles`, or Admin via the D86 grant), linked member. Org data is read and written only with that `org`.
 - [ ] Token rules, following org-admin-api `consumers.md` as tudocuatui applies them: ES256 only; keys from the JWKS
   URL, cached; a header carrying `jku`/`x5u`/`jwk`/`x5c` is refused; exact `iss`; `aud` = `simap`; `typ` = `at+jwt`;
   `exp`/`iat`/`sub`/`jti` required; small clock leeway; `email_verified` true; `sub` is a UUID. Any failure is 401.
   `org` present without `org_roles` is 401. A valid token without `org` or without a simap org role gets 403 on org
-  routes. If the JWKS is unavailable the answer is 503, so the client keeps the session instead of signing out.
+  routes, unless the D86 super-admin condition holds (see *Roles*). If the JWKS is unavailable the answer is 503, so the client keeps the session instead of signing out.
 - [ ] The token is kept in browser memory and sent as a bearer header (D4). It is never put in a cookie, in
   `localStorage` or in a URL, and never logged. Several tabs stay in step (tudocuatui refresh lock + channel).
 - [ ] After a 403 from simap the client re-mints the token once and retries; a second 403 shows "no permission" (D7).
@@ -196,7 +203,7 @@ depend on a 🟡 open decision link to their open question. "Manager+" means Man
   exactly the invited address). An inviter never offers a role above their own.
 
 **AUT-04 Role assignment**
-- [ ] Each account maps to exactly one simap tier per org: the highest simap role in `org_roles` (OQ-4).
+- [ ] Each account maps to exactly one simap tier per org: the highest simap role in `org_roles` (OQ-4), or Admin via the D86 super-admin grant.
 - [ ] Roles are granted in Identity. simap shows them read-only ("managed in mmlabs"). A change takes effect when the
   token is re-minted (D7).
 
@@ -1032,6 +1039,7 @@ New questions get the next free number (OQ-71).
 
 | Date | Change |
 |---|---|
+| 2026-11-27 | SIM-043 (D75, D86): Super Admin access in simap. §2 Organizations and Roles, AUT-02 and AUT-04 amended: a token with `org_access == "super_admin"` and the `simap:super-admin` role in `roles` gets Admin in the token's org only, no member row, every write audited as `access.super_admin`; off when `SIMAP_SUPER_ADMIN_ROLE` is unset. |
 | 2026-11-26 | D76–D83 (Ming's answers to OQ-62 to OQ-69): PRE approved and in scope (D76; §9 non-goal changed, OQ-54 answer amended, polling amends D24 for the presence view); several seats in one room: lowest seat code plus open desk tags to move seat (D77, new move-seat call); presence display-only (D78); D35 kept, UTC+7 for every org, Org settings entity and per-org time zone removed (D79); name tags always visible in the presence view (D80, amends D50 there); same-day re-check-in reopens the row (D81); losing the seat ends the check-in (D82); provider is a pulled REST API, no webhook (D83). "Proposed" markers removed from §4, LAY-06, SHL-01, PRE, §10 and "v1 done means"; §8 and §9 updated. OQ-62 to OQ-68 answered, OQ-69 narrowed, OQ-70 (retention) added. |
 | 2026-11-26 | PRE — presence and check-in room view drafted from a brainstorm on 2026-11-26 and an approved mockup (User home = check-in room view, "Check in" nav entry for Manager/Admin; pixel check-in popup; self check-in/out, idempotent, one active per member; third-party source behind a provider interface with a mock; end-of-day check-out; present/away on the map, "Who's here", polling; walk-in/out on the tile grid with skip, reduced-motion and fade fallbacks). Presence entity, LAY-06, SHL-01, §9, §10 touched; OQ-62 to OQ-69 opened. |
 | 2026-11-26 | D74: "My requests" leaves the nav for every tier; own requests live only in My Portal → My seat, `/requests` redirects client-side to `/portal?tab=seat`, the request-decision badge joins the My Portal badge (incoming transfers + overdue devices + unseen decisions) and opening My seat marks decisions seen. Approvals unchanged, no new API. REG-02, POR-01, POR-02, SHL-01 and OQ-59 amended. |

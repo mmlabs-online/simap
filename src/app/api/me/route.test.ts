@@ -3,8 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const getPool = vi.fn<() => unknown>(() => ({}));
 const getOrCreateMember = vi.fn();
 const setOwnDisplayName = vi.fn();
+const getMember = vi.fn();
 vi.mock("@/server/db/pool", () => ({ getPool: () => getPool() }));
 vi.mock("@/server/members/members", () => ({
+  getMember: (...a: unknown[]) => getMember(...a),
   getOrCreateMember: (...a: unknown[]) => getOrCreateMember(...a),
   setOwnDisplayName: (...a: unknown[]) => setOwnDisplayName(...a),
 }));
@@ -14,7 +16,8 @@ const { GET, PATCH } = await import("./route");
 const ISSUER = "https://api.mmlabs.online";
 const MEMBER = { id: "m1", displayName: "a", status: "active", needsProfile: true };
 
-const fakeAuth = (orgRoles: string[] = ["simap:user"]) => {
+const SA_KEY = "simap:super-admin";
+const fakeAuth = (orgRoles: string[] = ["simap:user"], superAdmin = false) => {
   vi.stubEnv("MM_IDENTITY_ISSUER", ISSUER);
   globalThis.__simapAuth = {
     issuer: ISSUER,
@@ -22,11 +25,19 @@ const fakeAuth = (orgRoles: string[] = ["simap:user"]) => {
       verifier: {
         verify: async () => ({
           ok: true,
-          identity: { sub: "s1", email: "a@example.com", org: "o1", orgRoles },
+          identity: {
+            sub: "s1",
+            email: "a@example.com",
+            org: "o1",
+            orgRoles,
+            ...(superAdmin && { appRoles: [SA_KEY], orgAccess: "super_admin", lifetimeS: 3600 }),
+          },
         }),
       },
       memberGate: async () => "active",
       log: () => {},
+      superAdminRole: SA_KEY,
+      accessAudit: async () => {},
     },
   };
 };
@@ -48,6 +59,7 @@ beforeEach(() => {
   getPool.mockImplementation(() => ({}));
   getOrCreateMember.mockReset();
   setOwnDisplayName.mockReset();
+  getMember.mockReset();
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -74,6 +86,7 @@ describe("GET /api/me wiring", () => {
       email: "a@example.com",
       org: "o1",
       tier: "user",
+      access: "member",
       member: MEMBER,
     });
     expect(getOrCreateMember.mock.calls[0]![2]).toEqual({ sub: "s1", email: "a@example.com" });
@@ -153,6 +166,7 @@ describe("PATCH /api/me", () => {
       email: "a@example.com",
       org: "o1",
       tier: "user",
+      access: "member",
       member: m,
     });
     expect(setOwnDisplayName.mock.calls[0]![2]).toEqual({ sub: "s1", email: "a@example.com" });
@@ -165,5 +179,50 @@ describe("PATCH /api/me", () => {
     const r = await patch({ displayName: "An" });
     expect(r.status).toBe(403);
     expect(await r.json()).toEqual({ error: { code: "member_deactivated" } });
+  });
+});
+
+describe("super admin (D86) on /api/me", () => {
+  it("without row: GET returns member null + access super_admin, never calls getOrCreateMember", async () => {
+    fakeAuth([], true);
+    getMember.mockResolvedValue(null);
+    const r = await get();
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({
+      sub: "s1",
+      email: "a@example.com",
+      org: "o1",
+      tier: "admin",
+      access: "super_admin",
+      member: null,
+    });
+    expect(getOrCreateMember).not.toHaveBeenCalled();
+  });
+
+  it("with an existing row: GET returns that row, no create", async () => {
+    fakeAuth([], true);
+    getMember.mockResolvedValue(MEMBER);
+    const r = await get();
+    expect((await r.json()).member).toEqual(MEMBER);
+    expect(getMember.mock.calls[0]![2]).toBe("s1");
+    expect(getOrCreateMember).not.toHaveBeenCalled();
+  });
+
+  it("without row: PATCH -> 422 no_linked_member, setOwnDisplayName not called", async () => {
+    fakeAuth([], true);
+    getMember.mockResolvedValue(null);
+    const r = await patch({ displayName: "An" });
+    expect(r.status).toBe(422);
+    expect(await r.json()).toEqual({ error: { code: "no_linked_member" } });
+    expect(setOwnDisplayName).not.toHaveBeenCalled();
+  });
+
+  it("member token: GET calls getOrCreateMember and returns access member", async () => {
+    fakeAuth();
+    getOrCreateMember.mockResolvedValue({ ok: true, value: MEMBER });
+    const r = await get();
+    expect((await r.json()).access).toBe("member");
+    expect(getOrCreateMember).toHaveBeenCalledTimes(1);
+    expect(getMember).not.toHaveBeenCalled();
   });
 });
