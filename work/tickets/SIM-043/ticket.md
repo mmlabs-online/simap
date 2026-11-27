@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P2 |
 | Size | M |
 | Areas | security, api, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | M-83, M-84 |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-27T01:44:44Z |
 | PR | — |
 
 ## Goal
