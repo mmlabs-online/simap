@@ -37,6 +37,21 @@ describe("loadProviderConfig", () => {
     ).toThrow(ProviderConfigError);
   });
 
+  it("refuses mock when SIMAP_DB_TARGET is production, without echoing values", () => {
+    let message = "";
+    try {
+      loadProviderConfig({
+        SIMAP_PRESENCE_PROVIDER: "mock",
+        NODE_ENV: "development",
+        SIMAP_DB_TARGET: "production",
+      });
+    } catch (e) {
+      expect(e).toBeInstanceOf(ProviderConfigError);
+      message = (e as Error).message;
+    }
+    expect(message).toContain("not allowed in production");
+  });
+
   it("unknown kind, malformed entry and too many entries throw without echoing the value", () => {
     const secret = "secret-kind-value";
     const bad: Record<string, string>[] = [

@@ -52,3 +52,26 @@
 ### Scope self-check
 - Could the diff be smaller? No; the only addition beyond the plan list is `index.test.ts` (plan test "provider off -> no-op" needs it) and shared validators exported from `provider-checkin.ts` (reused by config.ts).
 - Diff size: see `git diff --stat` on the commit.
+
+## Attempt 2 (REWORK: review attempt 1 + security-review finding 1)
+
+### Files touched
+- `src/server/presence/provider/config.ts` - mock is now also refused when `SIMAP_DB_TARGET === "production"` (message unchanged, no value echoed); doc comment updated. Required because: security-review finding 1 (dev server pointed at production data).
+- `src/server/presence/provider/config.test.ts` - new case: mock + `NODE_ENV=development` + `SIMAP_DB_TARGET=production` throws `ProviderConfigError`.
+
+### Checks (actual output summary)
+- format:check: exit 0
+- typecheck: exit 0
+- check:layers: "check-layers: 1014 files, no violations"
+- test: exit 0; "Test Files 388 passed | 1 skipped (389), Tests 3771 passed | 9 skipped (3780)"
+- build: exit 0
+- test:db (local compose Postgres): "Test Files 23 passed (23), Tests 373 passed (373)"
+
+### Out-of-plan files
+None.
+
+### Follow-ups
+None new.
+
+### Scope self-check
+Two source lines plus one test and a comment; nothing else changed.
