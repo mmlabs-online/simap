@@ -1625,3 +1625,224 @@ kept); `DeviceDetailView.test.tsx:98` (no `line-clamp` with `clamp=""`).
 - Q-S5b-6 (non-blocking). At exactly 1024 the content column is ~760 px (216 px sidebar), so the 8-column table may
   still scroll sideways inside its card. **Default: accept (Card already `overflow-x-auto`)**; a `xl` (1280) switch is
   the alternative if Ming finds it cramped.
+
+## Slice 5c addendum — Dashboard, search, rooms and seats chrome
+Status: READY. Written against `main` after #163 (slices 1–4, 5a, 5b merged). Applies the "Slice 5 addendum" rules
+R-a…R-h and "Rules for every slice-5 file" **unchanged** to the screens in the "Slice 5c outline". Ming approved the plan
+and the split with all defaults ("duyệt SIM-071, theo mặc định hết"). No new decisions; open points are non-blocking
+questions at the end, each with a default. Closes AC 2, AC 3 and AC 6b for the Dashboard (tiles, deactivated-holders
+warning, room grid, CSV export), Search, Rooms (list, card, occupancy ring, delete dialog) and the room page chrome
+(`SeatsView` header and table, `SeatDetailPanel`, `SeatActions`, seat dialogs, member picker). `RoomMap`, `SeatOverlay`,
+the layout editor and check-in stay in slice 6 (outline). Also folds in the three optional slice-5b review nits
+(review.md:333–335), each a one- or two-line test/markup change. No `src/app/**`, `src/app/globals.css`,
+`src/styles/tokens.css`, copy, `*-state.ts`/`*-api.ts`/`*-flow.ts`, `src/lib/**` or kit change.
+
+### Size
+14 screen files (≈ 200 changed lines), `screen-tokens.test.ts` (≈ 30), 9 test files (≈ 150), the 3 slice-5b nits (≈ 10),
+pending (8 lines), impl-log (≈ 40): **≈ 440 changed lines**, below the ~600 limit, so 5c ships as **one PR** (no
+sub-split).
+
+### Pending list (R-h): 8 keys, 41 violations → 0 (183 → 142)
+Counts read from `scripts/check-tokens.pending.json` on `main`. The JSON sums to **30 keys / 183** today (the "244 → 184"
+and "184 → 143" totals in this plan were one too high, review.md:315; the 5b delta was right). After 5c: **22 keys /
+142**, i.e. `globals.css` (65) plus slice-6 files only. Cause per key, as the guard counts it (`text-[Npx]` twice:
+`text-arb` + `arbitrary-px`; `tracking-[0.05em]`, `[Nrem]`/`[Npx]` sizes, `font-[inherit]` and off-scale spacing once
+each; `shadow-[0_12px_40px_…]` twice: `shadow-arb` + `arbitrary-px`):
+
+| Key | Count | Cause (all removed by the Files table) |
+|---|---|---|
+| `src/ui/dashboard/DashboardView.tsx` | 6 | `text-[13px]` (38, 63, 148) |
+| `src/ui/dashboard/ExportCard.tsx` | 4 | `text-[13px]` (23, 44) |
+| `src/ui/rooms/OccupancyRing.tsx` | 2 | `text-[11px]` (40) |
+| `src/ui/rooms/RoomCard.tsx` | 6 | `text-[18px]` (16), `text-[13px]` (27, 29) |
+| `src/ui/search/SearchView.tsx` | 3 | `META` `text-[13px]` (27), badge `py-0.5` (72) |
+| `src/ui/seats/MemberPickerDialog.tsx` | 1 | radio label `py-1.5` (70) |
+| `src/ui/seats/SeatDetailPanel.tsx` | 9 | `LABEL` (15: 3), `gap-1.5` (52), `sm:max-w-[440px]` (216), `shadow-[…]` (216: 2), `text-[20px]` (224: 2) |
+| `src/ui/seats/SeatsView.tsx` | 10 | `TH` (25: `py-2.5`, `text-[11px]` 2, `tracking-[…]`), `TD` `py-2.5` (26), `min-w-[34rem]` (130), `font-[inherit]` (161), `gap-1.5` (167), `max-w-[14rem]` (179), `max-w-[18rem]` (186) |
+
+All 8 keys are deleted; every other key keeps its count (`globals.css` stays 65; slice-6 keys untouched).
+
+### Shared values used in 5c (same strings as 5b "Shared values"; listed so every file agrees)
+- **Page `<h1>`:** `text-display text-text-primary`. **Section / card / dialog `<h2>`:** `text-subtitle text-text-primary`
+  (+ `outline-none` where the heading is a `tabIndex={-1}` focus target; kit dialog titles use the same class,
+  `EntityFormDialog.tsx:77`).
+- **Notices:** error `text-label font-semibold text-danger`; status `text-label font-semibold text-text-primary`;
+  hint / empty / truncated / metadata lines `text-label text-text-secondary` (old class had `font-medium`) or
+  `text-label font-normal text-text-secondary` (old class had no weight).
+- **Detail field label** (`SeatDetailPanel` `<dt>`): `text-caption font-semibold uppercase tracking-wide
+  text-text-secondary` (same as `DeviceDetailView` `<dt>`, 5b, and `TABLE_HEAD`, Q-S5-7).
+- **Ink links** (`text-primary` was ink): `text-text-primary`, keeping each link's existing `font-*` (700/800 → 600) and
+  its existing `underline` / `hover:underline`.
+- **Standalone back link:** `inline-flex min-h-control items-center self-start text-label font-semibold
+  text-text-primary hover:underline` (identical to `DeviceDetailView.tsx:88`, 5b).
+- **Radio rows (R-f):** `<label>` `flex min-h-control cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-label
+  text-text-primary` (identical to the `PlaceDeviceDialog` seat radio, 5b), input `className="size-5 flex-none"`.
+- **Status pill (R-e):** `Pill` from `../Chip` with `dot`; "Deactivated" → `tone="neutral"` (R-e tone map, same as
+  Members in 5a).
+
+### Files (slice 5c)
+None matches a High path (`.github/risk-tiers.yml`: `src/ui/**`, `scripts/check-tokens.pending.json` and tests are not
+listed). Line numbers are from `main` after #163; the implementer re-reads each file first. "→" = replace the whole
+class string with the given one unless "add"/"drop"/"keep" says otherwise.
+
+**Dashboard**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/dashboard/DashboardView.tsx` | HoldersWarning: title row (34) `flex items-center gap-2 text-danger`; title h2 (36) `text-label font-semibold`; hints (38, 63) `text-label text-text-secondary`; holder row (41) `flex flex-wrap items-center gap-x-2 gap-y-1 text-label font-normal`; name (42) `font-semibold text-text-primary`; seat count / more seats (43, 55) `text-text-secondary`; seat link (47) `font-medium text-text-primary hover:underline`. Page: h1 (85) `text-display text-text-primary`; error (99) `text-label font-semibold text-danger`; rooms h2 (135) `text-subtitle text-text-primary`; no-rooms (138) and truncated (148) `text-label text-text-secondary`. Tiles already use `StatTile` (Title, slice 3): unchanged | 6 → 0 (remove) |
+| `src/ui/dashboard/ExportCard.tsx` | h2 (22) `text-subtitle text-text-primary`; hint (23) and notice (44) `text-label text-text-secondary`; error (39) `text-label font-semibold text-danger` | 4 → 0 (remove) |
+| `src/ui/dashboard/StatTile.tsx` | no change (already token-only); added to `MIGRATED` | not pending |
+
+**Rooms**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/rooms/RoomCard.tsx` | h2 (16) `text-subtitle text-text-primary`; code link (18) `hover:text-primary` → `hover:underline` (the ink-on-ink hover had no visible effect; Q-S5c-4); name (25) `truncate text-label text-text-primary`; floor (27) `text-label text-text-secondary`; seat summary (29) `mt-1 text-label text-text-secondary`; actions (35) `flex flex-wrap items-center gap-2` (R-f). Card already `Card as="article"` (rounded-xl, divider border, `shadow-card`): unchanged | 6 → 0 (remove) |
+| `src/ui/rooms/OccupancyRing.tsx` | track (24) `stroke-outline-variant` → `stroke-divider`; arc (33) `stroke-primary` → `stroke-text-primary` (ink, same colour as today; Q-S5c-1); percent (40) `absolute inset-0 flex items-center justify-center text-caption font-semibold text-text-primary`. `role="img"`, `aria-label` and the percent text unchanged (R-e: the ring always has its number) | 2 → 0 (remove) |
+| `src/ui/rooms/RoomsView.tsx` | h1 (36) `text-display text-text-primary`; error (56) `text-label font-semibold text-danger`; empty (67) `text-label text-text-secondary` | not pending |
+| `src/ui/rooms/DeleteRoomDialog.tsx` | body (78) `text-label text-text-primary` | not pending |
+
+**Search**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/search/SearchView.tsx` | import `Pill` from `../Chip`; `LINK` (26) `font-semibold text-text-primary hover:underline`; `META` (27) `text-label text-text-secondary`; rows (32, 48, 66) `flex flex-wrap items-center gap-x-3 gap-y-1 text-label font-normal`; seat code without link (38) `font-semibold text-text-primary`; occupant / owner (41, 54) `text-text-primary`; deactivated badge (72–74) → `<Pill dot tone="neutral" label={copy.deactivated} />` (R-e; was a red `error-container` badge); group h2 (96) `flex items-baseline gap-2 text-subtitle text-text-primary`; empty (103) and prompt (155) `text-label text-text-secondary`; errors (116, 166) `text-label font-semibold text-danger`; h1 (145) `text-display text-text-primary` | 3 → 0 (remove) |
+
+**Seats / room page chrome**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/seats/SeatsView.tsx` | delete `TH`/`TD` (24–26), import `TABLE_CELL, TABLE_HEAD, TABLE_ROW` from `../table` (R-g); `<thead>` (132) add `className="border-b border-divider"` (on `<thead>`, not the head `<tr>`, so `SeatsView.test.tsx:120` still counts 3 `<tr ` rows); `<th>` (134–143) `TABLE_HEAD`; body `<tr>` (153) `TABLE_ROW`; `<td>` (154–183) `TABLE_CELL`. BackLink (30) → standalone back link (shared value; 44 px). h1 (62) `text-display text-text-primary`; room name span (65) `` `block text-label ${CLIP} max-h-12` ``; notice (76) and error (99) `text-label font-semibold text-danger`; not-found icon (83) `text-text-secondary`, title (84) `text-body font-semibold text-text-primary`, body (85) `text-label text-text-secondary`; truncated (109) `text-label font-semibold text-text-secondary`; empty (118) `text-label text-text-secondary`. **Scroll region (123–128):** `<Card className="overflow-hidden">` → `<Card>`; region class `overflow-x-auto outline-none focus-visible:ring-2 focus-visible:ring-primary` → `overflow-x-auto rounded-xl` (focus ring now from the global `:where(…, [tabindex]):focus-visible` rule, globals.css:339, which is unlayered and already beats `outline-none`; without `overflow-hidden` on the Card the 2 px offset ring is no longer clipped; `rounded-xl` keeps the table inside the card corners). Table (130) `min-w-[34rem]` → `min-w-136`. **Seat code button (155–164):** hand-built `<button>` → `<Button variant="text" size="sm" className="font-semibold" data-seat-code={seat.code} aria-haspopup="dialog" aria-label={seatsCopy.openSeat(seat.code)} onClick={() => onOpen(seat.code)}>{seat.code}</Button>` (R-f; import `Button` already present; `type="button"` is the kit default; 44 px). Status (167) `gap-1.5` → `gap-1`; occupant (179) `max-w-[14rem]` → `max-w-56`; devices (186) `max-w-[18rem]` → `max-w-72` | 10 → 0 (remove) |
+| `src/ui/seats/SeatDetailPanel.tsx` | `LABEL` (15) → detail field label (shared value); `<dd>` (21) `text-label text-text-primary`; device link (29) `font-semibold text-text-primary underline`; device meta / owner (32, 36) `text-text-secondary`; status (52) `gap-1.5` → `gap-1`; dialog (216) `m-0 ml-auto h-dvh max-h-dvh w-full max-w-full sm:max-w-110 p-0 bg-surface text-text-primary overflow-y-auto shadow-dialog` (440 px unchanged; `bg-surface` + `shadow-dialog` like the kit `EntityFormDialog.tsx:72`, Q-S5c-3); title h2 (224) `` `text-subtitle text-text-primary max-h-14 outline-none ${CLIP}` `` (keeps `tabIndex={-1}`, `ref`, `id`); loading (232) `text-label text-text-secondary`; not-found title (238) `text-body font-semibold text-text-primary`, body (241) `text-label text-text-secondary`; error (248) `text-label font-semibold text-danger`. Seat status keeps icon + text (no pill; Q-S5c-2) | 9 → 0 (remove) |
+| `src/ui/seats/MemberPickerDialog.tsx` | import `Button` from `../Button`; radio label (70) → radio row (shared value; `rounded-md3` → `rounded-lg`, `py-1.5` → `py-2`); radio input (72–79) add `className="size-5 flex-none"`; code / occupant suffix (83, 85) `text-text-secondary`; loading / empty (91, 94) `text-label font-normal text-text-secondary`; error (97) `flex flex-wrap items-center gap-2 text-label font-semibold text-danger`, `{copy.pickerError}` then `<Button variant="outlined" size="sm" onClick={onRetry}>{seatsCopy.retry}</Button>` (no `{" "}`: the flex gap spaces it; R-f); more-failed (105) `text-label font-semibold text-danger`; Load more (110–117) → `<Button variant="text" size="sm" className="self-start" disabled={!canMore} onClick={onMore}>{copy.pickerLoadMore}</Button>` (R-f: bare → `text`). Radiogroup wrapper (63) **unchanged** (`max-h-[35dvh]` is not flagged and `MemberPickerDialog.test.tsx:47` asserts it). Also rendered inside `AssignDeviceDialog`/`TransferDeviceDialog` (5b), which gain the same 44 px rows | 1 → 0 (remove) |
+| `src/ui/seats/SeatActions.tsx` | alert (42) `text-label font-semibold text-danger`; status (47) `text-label font-semibold text-text-primary`; button row (61) **unchanged** (`flex flex-wrap gap-2` is token-only, every child is a 44 px kit `Button`, and `SeatActions.test.tsx:171` matches the exact class) | not pending |
+| `src/ui/seats/ConfirmSeatDialog.tsx` | body (34) `` `max-h-32 text-label text-text-primary ${CLIP}` `` (`SeatActionDialogs.test.tsx:49` still matches) | not pending |
+| `src/ui/seats/SeatTagsDialog.tsx` | loading (90) `text-label font-normal text-text-secondary` | not pending |
+
+**Slice-5b review nits (review.md:333–335; optional, folded in because each is trivial)**
+
+| File | Change |
+|---|---|
+| `src/ui/devices/DeviceDetailView.test.tsx` | 164: replace `expect(html).toMatch(/<a[^>]*min-h-control[^>]*>/)` with `const back = html.match(/<a[^>]*href="\/devices"[^>]*>/)?.[0]; expect(back).toBeDefined(); expect(back).toContain("min-h-control");` (pins the back link) |
+| `src/ui/devices/DevicesView.test.tsx` | 382–384: `const edits = html.match(/<button[^>]*aria-label="Edit[^>]*>/g) ?? []; expect(edits.length).toBeGreaterThan(0);` then the existing per-button `min-h-control` loop |
+| `src/ui/devices/PlaceDeviceDialog.tsx` | 100, 159: drop the `{" "}` after `{copy.roomsError}` / `{copy.seatsError}` (flex `gap-2` spaces the retry button; `PlaceDeviceDialog.test.tsx:204, 211` use `toContain` on the message and stay green) |
+
+**Pending, tests, log**
+
+| File | Change |
+|---|---|
+| `scripts/check-tokens.pending.json` | delete the 8 keys above (183 → 142, 30 → 22 keys); nothing else changes |
+| `src/ui/screen-tokens.test.ts` | extend (Tests) |
+| `src/ui/dashboard/DashboardView.test.tsx`, `src/ui/rooms/RoomsView.test.tsx`, `src/ui/search/SearchView.test.tsx`, `src/ui/seats/SeatsView.test.tsx`, `SeatDetailPanel.test.tsx`, `MemberPickerDialog.test.tsx`, `SeatActions.test.tsx`, `SeatActionDialogs.test.tsx`; plus the two 5b nit files above | extend (Tests); no existing assert is removed (the nit at `DeviceDetailView.test.tsx:164` replaces one assert with a stricter one) |
+| `work/tickets/SIM-071/impl-log.md` | append "Slice 5c": files, pending before/after (183 → 142, 8 keys, with the corrected totals note), visible differences, checks |
+
+Not touched (read; no class strings, only kit components, or out of 5c): `DashboardPage.tsx`, `RoomsPage.tsx`,
+`RoomFormDialog.tsx` (only `DialogField`s), `SearchPage.tsx` (only `page-content`), `AddSeatsDialog.tsx`,
+`CannotSeatDialog.tsx` (no `className`), `SeatsPage.tsx` (only `page-library`), every `*.ts` in the four folders,
+`src/ui/table.ts`, `src/ui/Chip.tsx`, `src/ui/Button.tsx`, `src/ui/Card.tsx`, `src/ui/clip.ts`, `src/ui/roomlayout/**`
+(`RoomMap`, `SeatOverlay`, editor: slice 6), `src/ui/checkin/**` (slice 6; it renders `SeatDetailPanel`, which changes
+here), `src/ui/copy/**`, `src/lib/**`, `src/app/**`, `src/app/globals.css`, `src/styles/tokens.css`,
+`scripts/check-tokens.mjs`.
+
+### Approach (slice 5c)
+1. Dashboard: `DashboardView`, `ExportCard`.
+2. Rooms: `RoomCard`, `OccupancyRing` (also seen on the Dashboard), `RoomsView`, `DeleteRoomDialog`.
+3. Search: `SearchView` (Deactivated pill).
+4. Room page: `SeatsView` (`TABLE_*`, scroll region, kit seat-code button, back link), then `SeatDetailPanel`,
+   `MemberPickerDialog` (kit retry / Load more, 44 px radio rows), `SeatActions`, `ConfirmSeatDialog`, `SeatTagsDialog`.
+5. The three 5b nits.
+6. After each screen file: `rg -n "on-surface|outline-variant|text-error|error-container|text-primary\b|text-\[|tracking-\[|text-(xs|sm|base|lg|xl|2xl)\b|font-(bold|extrabold|heading)|font-\[|text-h[23]|rounded-md3|surface-(high|container)|shadow-\[|(min|max)-w-\[|focus(-within|-visible)?:|<button|py-(0|1|2)\.5|gap-1\.5" <file>`
+   → no hits (`text-primary\b` also matches inside `text-text-primary`/`stroke-text-primary`; read those hits, only the
+   bare class is wrong; `max-h-[35dvh]` is not matched).
+7. Pending: `node scripts/check-tokens.mjs --list`; confirm the 8 files report 0 and every other count is unchanged;
+   delete the 8 keys (sorted order kept); `node scripts/check-tokens.mjs` exits 0.
+8. Tests (below), impl-log "Slice 5c", checks: `pnpm format:check`, `pnpm typecheck && pnpm check:layers`, `pnpm test`,
+   `pnpm build`.
+
+Rules: R1 (ui → ui only: new imports `../table`, `../Button`, `Pill` from `../Chip`), R3 none, R4 (Files tables only),
+R5 (tests below). R2/R6/R7 not touched.
+
+### Tests to write / update (slice 5c)
+| Test (file › name) | Covers |
+|---|---|
+| `screen-tokens.test.ts` › `MIGRATED` gains 18 files: `ui/dashboard/{DashboardView,ExportCard,StatTile}.tsx`, `ui/rooms/{RoomCard,OccupancyRing,RoomsView,DeleteRoomDialog,RoomFormDialog}.tsx`, `ui/search/{SearchView,SearchPage}.tsx`, `ui/seats/{SeatsView,SeatDetailPanel,MemberPickerDialog,SeatActions,ConfirmSeatDialog,SeatTagsDialog,AddSeatsDialog,CannotSeatDialog}.tsx` (the five unchanged ones are already clean, `rg` checked); the existing "every file exists and matches no legacy…" and "no migrated file is still on the pending list" tests then cover them; the header comment "5b and 5c append theirs" → "slice 7 replaces this test" | R-a…R-c, R-h |
+| screen-tokens › "the invitation entry points use the kit Button only": list gains `ui/seats/SeatsView.tsx` and `ui/seats/MemberPickerDialog.tsx` (no `<button`) | R-f |
+| screen-tokens › `SeatsView.tsx` contains `TABLE_HEAD` and `TABLE_CELL` and no `const TH`/`const TD` (extend the DeviceTable shared-table test into a loop over both files) | R-g |
+| `DashboardView.test.tsx` › new "tokens" test: h1 has `text-display`; rooms `<h2` has `text-subtitle`; with holders (fixture at 85–102) the warning h2 sits in a `text-danger` row and the hint has `text-label`; with `canExport` the export `<h2` has `text-subtitle`; markup has no `text-[`, `font-extrabold`, `text-on-surface` | R-a, R-b |
+| `RoomsView.test.tsx` › new "tokens" test: h1 `text-display`; each card `<h2` has `text-subtitle`; ring has `stroke-divider` and `stroke-text-primary`, the percent `<span` has `text-caption`; no `text-[`; manager view: action wrapper `flex flex-wrap items-center gap-2`, Edit/Delete buttons (match `aria-label="Edit`/`aria-label="Delete`, length > 0) each contain `min-h-control` | R-b, R-f, R-e |
+| `SearchView.test.tsx` › deactivated member (extend 138–146): markup has `bg-canvas` and the dot span next to `copy.deactivated`, no `bg-danger-tint`/`error-container`; ready state: h1 `text-display`, group `<h2` `text-subtitle`, no `text-[`/`py-0.5` | R-e, R-b |
+| `SeatsView.test.tsx` › new "tokens" test: h1 `text-display`; back link (`<a[^>]*href="/rooms"[^>]*>`, defined) contains `min-h-control`; `<th` has `text-caption` and `uppercase`; table has `min-w-136`; each `data-seat-code` button tag (count = `seats.length`) contains `min-h-control` and `data-variant="text"`; the `role="region"` tag contains `rounded-xl` and no `focus-visible:`/`outline-none`; markup has no `text-[`, `max-w-[`, `font-[`. Existing 120 (`<tr ` × 3) and 121 (`data-seat-code`) unchanged and green | R-b, R-c, R-f, R-g, AC 3 |
+| `SeatDetailPanel.test.tsx` › new "tokens" test: ready view `<dt` has `text-caption` and `uppercase`; `<dialog` tag has `bg-surface`, `shadow-dialog`, `sm:max-w-110`, no `shadow-[`; title `<h2` has `text-subtitle` (existing 120 tabindex test unchanged); device link has `font-semibold`, no `font-bold`. Existing 102 (one `<button`) unchanged | R-a, R-b, R-c |
+| `MemberPickerDialog.test.tsx` › radio `<label`s have `min-h-control`, radios `size-5`; error state retry `<button` has `data-variant="outlined"`; Load more has `data-variant="text"` and `min-h-control`; no `rounded-md3`. Existing 39/41 (`<button type="button"[^>]*>Load more` / `Try again`: kit `Button` renders `type` first) and 47 (`max-h-[35dvh]`) unchanged | R-f, AC 3 |
+| `SeatActions.test.tsx` › notices (extend 174–180): alert has `text-danger`, status has `text-text-primary`; no `text-error` | R-a |
+| `SeatActionDialogs.test.tsx` › confirm body (extend 49): has `text-label`, no `text-sm` | R-b |
+| `DeviceDetailView.test.tsx`, `DevicesView.test.tsx` › 5b nits (Files table) | review.md:333–334 |
+| `scripts/check-tokens.test.ts` (unchanged) › repo ratchet green with the 8 keys removed | pending only shrinks |
+
+### Acceptance → verification (slice 5c)
+| # | Criterion | How the reviewer verifies it |
+|---|---|---|
+| S5c-1 | 5c screens use token utilities only; R-a/R-b/R-c applied | `screen-tokens.test.ts` green with 18 more files; `rg -n "on-surface\|outline-variant\|text-error\|error-container\|text-\[\|tracking-\[\|font-(bold\|extrabold)\|font-\[\|text-h[23]\|rounded-md3\|surface-high\|shadow-\[" src/ui/dashboard src/ui/rooms src/ui/search src/ui/seats -g '*.tsx' -g '!*.test.tsx'` → no hits |
+| S5c-2 | No off-scale type: labels 14, metadata 12, h1 Display, section/card/panel titles Subtitle (Q8, Q16) | `rg -n "text-(xs\|sm\|base\|lg\|2xl)\b" <same paths>` → no hits; Dashboard/Rooms/Search/SeatsView/SeatDetailPanel token tests |
+| S5c-3 | Every interactive target ≥ 44 px: seat-code buttons, back link, picker retry and Load more, picker radio rows, room card actions (AC 3) | SeatsView, MemberPickerDialog, RoomsView tests; `rg -n "<button\|py-1\.5\|py-0\.5" <same paths>` → no hits |
+| S5c-4 | Room table uses the shared table classes; keyboard focus on the scroll region is visible without per-component focus classes | screen-tokens shared-table test; SeatsView region test; `rg -n "focus(-within\|-visible)?:" <same paths>` → no hits; manual Tab onto the room table at 390 px shows the green ring |
+| S5c-5 | Every status has text: Deactivated (search) is a neutral pill with its label; seat status keeps icon + text; occupancy ring keeps its percentage and `aria-label` (R-e) | SearchView pill test; SeatsView "status has text" (existing 128–133); RoomsView ring test + existing 66–69 |
+| S5c-6 | Pending shrinks by exactly the 8 keys (183 → 142, 30 → 22 keys); every touched pending file at 0 | `git diff main -- scripts/check-tokens.pending.json` shows 8 removed lines only; `node scripts/check-tokens.mjs` exits 0; screen-tokens pending test |
+| S5c-7 | No behaviour, copy, prop, id, `data-*` or `aria-*` change (`data-seat-code`, `data-add-seats`, `data-device-count`, `data-reason`, `aria-haspopup`, heading `tabIndex`/`ref`) | existing tests unchanged except the listed additions and the stricter nit assert; `git diff main -- src/ui/copy src/lib src/app` empty; read SeatsView/MemberPickerDialog diffs: same handlers, labels, `disabled` |
+| S5c-8 | 5b review nits applied: back-link assert pinned to `href="/devices"`, Edit-button count check, no `{" "}` before the Place dialog retries | read the three diffs; `rg -n '\{" "\}' src/ui/devices/PlaceDeviceDialog.tsx` → no hits; mutation: remove `min-h-control` from `DeviceDetailView.tsx:88` → test fails |
+| S5c-9 | Only planned files | `git diff --stat main` ⊆ Files tables |
+| S5c-10 | Checks green; impl-log "Slice 5c" complete | `pnpm format:check && pnpm typecheck && pnpm check:layers && pnpm test && pnpm build`; read impl-log |
+
+### Visible differences to log (slice 5c)
+- Page titles (Dashboard, Rooms, Search, room page) 32 px · 800 → 32 px · 600. Section headings (Dashboard "Rooms",
+  CSV export, search groups) 18 px · 800 → 18 px · 600; room card codes 18 px · 800 → 18 px · 600.
+- 13 px grey hints and metadata (dashboard hints, room floor and seat summary, search metadata, export notice) → 14 px.
+- Occupancy ring: percentage 11 px · 800 → 12 px · 600; track on the divider colour; arc colour unchanged (ink).
+- Search: the red "Deactivated" badge → grey pill with a dot (same as Members).
+- Room page: "Back to rooms" link 44 px tall, 14 px · 600 (was 14 px · 700); table headers 11 px · 800 → 12 px · 600
+  uppercase with a divider under the header row; cell padding 16/10 px → 12/8 px; seat codes become 44 px text buttons
+  (14 px · 600, was 14 px · 800 in a smaller box), so rows are taller; the table's keyboard focus ring is the global
+  green ring around the card (was an inset ring clipped by the card); occupant and devices columns keep their widths
+  (224 / 288 px).
+- Seat panel: white surface with the dialog shadow (was the slightly darker surface-high); title 20 px · 800 →
+  18 px · 600; field labels 11 px · 800 → 12 px · 600 uppercase; device links 700 → 600. Also seen from check-in.
+- Member picker (assign seat, and the device assign/transfer dialogs): radio rows 44 px with a 20 px radio, 8 px corners;
+  "Try again" underlined text → outlined 44 px button; "Load more" bold coloured text → 44 px text button.
+- Room card actions vertically centred; room code link underlines on hover.
+- Place-device dialog (5b nit): no extra space before the "Retry" button (gap unchanged).
+
+### Ming verification after merge (slice 5c)
+- As Admin at 390 / 800 / 1280 px, light and dark: Dashboard (tiles, a room grid, the deactivated-holders warning if
+  any, CSV export buttons as Manager+), Rooms (cards, ring readable in dark mode, Edit/Delete), Search for a seat, a
+  device and a deactivated member (grey pill).
+- Open a room: back link, room table (scrolls sideways at 390; Tab onto it shows the green ring, not clipped), click a
+  seat code → panel (labels, device links, actions, Assign → member picker with 44 px rows, Load more / Try again if
+  reproducible), Block/Unblock and Tags dialogs. Open a seat from check-in once to confirm the panel looks the same.
+
+### Assumptions and non-blocking questions (slice 5c)
+- Hotspots: no other ticket is IN_PROGRESS/REVIEW/DONE (`work/backlog.md`). `MemberPickerFields` is shared with the 5b
+  device dialogs and `SeatDetailPanel` with check-in (slice 6); both change only in classes, so their tests stay green.
+  `screen-tokens.test.ts` and `scripts/check-tokens.pending.json` change again in slice 6; 5c merges first.
+- The outline's "Dashboard metrics use `StatTile`" and "Room cards … via `Card`" are already true on `main` (slice 3);
+  nothing to do. "Search result types → neutral pills" maps to the only status-like badge in search results
+  (Deactivated); result groups are already named by their headings, and adding type pills would be new markup.
+- Q-S5c-1 (non-blocking). The outline said "`OccupancyRing` ring colours → `success/warning/danger`", but no occupancy
+  thresholds exist in the spec (docs/spec-v1.md:627 "an occupancy ring as in seatMGT"), `work/decisions.md` or the brief,
+  and the ring shows a quantity (with its number), not a status. **Default: mechanical R-a (track `stroke-divider`, arc
+  `stroke-text-primary`, same ink as today).** Alternative: toned arc by threshold (e.g. < 80 % success, 80–99 %
+  warning, 100 % danger) via a pure `occupancyTone` in `src/lib/rooms/occupancy.ts` with unit tests: a follow-up once
+  Ming picks the thresholds.
+- Q-S5c-2 (non-blocking). Seat status (Occupied / Empty / Cannot seat) is icon + text with no colour today, so R-e is
+  already met. **Default: keep icon + text** in the table and panel. Alternative: toned pills (a follow-up; the map
+  legend in slice 6 should agree first).
+- Q-S5c-3 (non-blocking). The seat panel is a side-sheet `<dialog>`; R-a maps `bg-surface-high` to `bg-canvas`, but the
+  kit dialogs use `bg-surface` + `shadow-dialog`. **Default: `bg-surface` + `shadow-dialog`** so every dialog reads the
+  same. Alternative: `bg-canvas` (mechanical).
+- Q-S5c-4 (non-blocking). Ink links keep their current underline behaviour (dashboard seat links and search links
+  underline on hover only, as today). **Default: unchanged; the room card code link gets `hover:underline`** (its old
+  `hover:text-primary` was ink on ink, no visible effect). Always-underlined links are a follow-up if Ming wants them.
+- Q-S5c-5 (non-blocking). The seat-code button gets kit `px-4`, so codes sit 16 px further right than the header
+  text. **Default: accept** (a negative margin to re-align it would be a one-off class). Alternative: a small negative
+  left margin on that button, checked in the browser (it must not be clipped by the scroll region).
+
+Status: READY
