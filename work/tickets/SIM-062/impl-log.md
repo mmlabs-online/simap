@@ -35,3 +35,9 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No.
 - Diff size: ~+560 / -70 excluding atlas json/png
+
+## Merge main (after SIM-061.1)
+
+- Merged origin/main (SIM-061.1 typing idle, PR #150). One conflict, `src/ui/roomlayout/WalkLayer.tsx`: kept main's version (`idlePainters` spread, `!ok` / `walksDone` handling) and added SIM-062's trailing `f.walk` argument to the `walkerOps(...)` call. Nothing else from SIM-062 in that file was lost (diff against origin/main is that one line).
+- Idle avatars (`idlePainters`) still compile: `walkerOps`' new `walk` parameter is optional (default `null`), so seated callers are unchanged.
+- Checks: `pnpm format:check` clean; `pnpm typecheck` and `pnpm check:layers` (1001 files, no violations) pass; `pnpm test` 382 files passed, 1 skipped (3725 tests passed, 9 skipped); `pnpm build` succeeds.
