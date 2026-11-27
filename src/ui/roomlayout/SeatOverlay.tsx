@@ -20,6 +20,7 @@ const TAG_LOOK: Record<SeatPresence, string> = {
   present: "bg-[rgba(22,27,37,.92)] text-white",
   away: "bg-surface-container-high text-on-surface-variant",
 };
+const TAG_NEUTRAL = "bg-surface-container-high text-on-surface";
 
 /** The always-visible name tag (D80): a filled dot when present, a hollow ring when away, so the state is a shape and a word, not colour. */
 function NameTag({
@@ -31,19 +32,20 @@ function NameTag({
   name: string;
   presence: SeatPresence | undefined;
 }) {
-  const state = presence ?? "present";
+  const look = presence ? TAG_LOOK[presence] : TAG_NEUTRAL;
+  // Before the first presence answer there is no marker: unknown is not "present".
   const marker =
-    state === "present" ? (
+    presence === "present" ? (
       <span data-marker="dot" className="size-2 shrink-0 rounded-full bg-emerald-400" />
-    ) : (
+    ) : presence === "away" ? (
       <span data-marker="ring" className="size-2 shrink-0 rounded-full border-2 border-current" />
-    );
+    ) : null;
   if (placed.kind === "dot") {
     return (
       <span
         aria-hidden="true"
         data-presence={presence}
-        className={`${TAG_BASE} z-10 flex justify-center ${TAG_LOOK[state]}`}
+        className={`${TAG_BASE} z-10 flex justify-center ${look}`}
         style={{
           left: placed.left,
           top: placed.top,
@@ -60,7 +62,7 @@ function NameTag({
     <span
       aria-hidden="true"
       data-presence={presence}
-      className={`${TAG_BASE} z-10 flex ${TAG_LOOK[state]}`}
+      className={`${TAG_BASE} z-10 flex ${look}`}
       style={{ left: placed.left, top: placed.top, width: placed.width, height: TAG_H }}
     >
       {marker}

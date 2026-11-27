@@ -184,6 +184,9 @@ describe("SeatOverlay presence view (D80, D77)", () => {
   it("before the first presence answer the tags show without a present/away split", () => {
     const html = renderAlways({}, null);
     expect(html).not.toContain("data-presence");
+    expect(html).not.toContain('data-marker="dot"');
+    expect(html).not.toContain('data-marker="ring"');
+    expect(html).not.toContain("bg-emerald-400");
     expect(visibleTags(html)).toHaveLength(2);
   });
 });

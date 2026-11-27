@@ -1,4 +1,4 @@
-import type { DrawList } from "@/lib/sprites/placement";
+import type { DrawList, DrawOp, Rect } from "@/lib/sprites/placement";
 import { fitsCanvas } from "@/lib/sprites/zoom";
 import type { Atlas } from "./loadAtlas";
 
@@ -111,14 +111,62 @@ export function paintRoom(
       ctx.stroke();
       continue;
     }
-    const frame = atlas.manifest.frames[op.key];
-    if (!frame) continue;
-    if (op.tint) {
-      const tinted = tintedFrame(atlas, op.key, op.tint, createCanvas);
-      if (tinted) ctx.drawImage(tinted, 0, 0, frame.w, frame.h, op.x, op.y, frame.w, frame.h);
-    } else {
-      ctx.drawImage(atlas.image, frame.x, frame.y, frame.w, frame.h, op.x, op.y, frame.w, frame.h);
-    }
+    drawFrameOp(ctx, atlas, op, createCanvas);
   }
+  return true;
+}
+
+type FrameOp = Extract<DrawOp, { type: "frame" }>;
+
+/** One atlas frame, tinted when the op has a tint. A key missing from the atlas draws nothing. */
+function drawFrameOp(
+  ctx: CanvasRenderingContext2D,
+  atlas: Atlas,
+  op: FrameOp,
+  createCanvas: () => HTMLCanvasElement,
+): void {
+  const frame = atlas.manifest.frames[op.key];
+  if (!frame) return;
+  if (op.tint) {
+    const tinted = tintedFrame(atlas, op.key, op.tint, createCanvas);
+    if (tinted) ctx.drawImage(tinted, 0, 0, frame.w, frame.h, op.x, op.y, frame.w, frame.h);
+  } else {
+    ctx.drawImage(atlas.image, frame.x, frame.y, frame.w, frame.h, op.x, op.y, frame.w, frame.h);
+  }
+}
+
+/**
+ * Draws the walking characters on their own canvas, over the room at the same zoom and origin. The canvas is resized
+ * only when its size changed (a resize clears it anyway), then cleared. Returns false over the canvas budget or
+ * without a 2D context.
+ */
+export function paintWalkers(
+  canvas: HTMLCanvasElement,
+  atlas: Atlas,
+  bounds: Rect,
+  zoom: number,
+  walkers: readonly { ops: readonly FrameOp[]; alpha: number }[],
+  createCanvas: () => HTMLCanvasElement = defaultCanvas,
+): boolean {
+  const w = bounds.w * zoom;
+  const h = bounds.h * zoom;
+  if (!fitsCanvas(w, h)) return false;
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+    if (canvas.width !== w || canvas.height !== h) return false;
+  }
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return false;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  ctx.imageSmoothingEnabled = false;
+  ctx.scale(zoom, zoom);
+  ctx.translate(-bounds.x, -bounds.y);
+  for (const walker of walkers) {
+    ctx.globalAlpha = walker.alpha;
+    for (const op of walker.ops) drawFrameOp(ctx, atlas, op, createCanvas);
+  }
+  ctx.globalAlpha = 1;
   return true;
 }
