@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-27 |
-| Claimed by | — |
-| PR | https://github.com/mmlabs-online/simap/pull/154 (slice 1) |
+| Claimed by | claude@2026-11-27T07:33:16Z |
+| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged) |
 
 ## Goal
 Every screen of simap uses one set of design tokens (colours, type, spacing, radius, elevation, layout, motion) from
