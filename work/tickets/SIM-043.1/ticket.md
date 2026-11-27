@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | PLANNING |
 | Priority | P2 |
 | Size | S |
 | Areas | ui, api |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-27 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-27T04:08:28Z |
 | PR | — |
 
 ## Goal
