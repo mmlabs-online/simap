@@ -2,16 +2,16 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | REWORK |
 | Priority | P2 |
 | Size | M |
 | Areas | security, api, architecture |
 | Gate | plan-approval |
 | Depends on | — |
 | Needs Ming | M-83, M-84 |
-| Attempts | 0 |
+| Attempts | 1 |
 | Created | 2026-11-26 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-27T03:34:54Z |
 | PR | https://github.com/mmlabs-online/simap/pull/149 |
 
 ## Goal
@@ -76,6 +76,8 @@ supersedes these points (M-83) and Identity can mint such tokens (M-84). Raised 
 - 2026-11-27: M-84 answered by org-admin-api (ADR-0030) and marked done by Ming. Contract in D86: role key `simap:super-admin`, check `org_access == "super_admin"`, `org_roles: []`, picker items have `access`, handle 429 on `/auth/token`. Release waits for M-90 (org-admin-api deploy + setup).
 
 - Plan approved (2026-11-27): Ming "duyệt SIM-043, tách slice 2" — plan slice 1 with defaults Q1–Q15; slice 2 split into SIM-043.1.
+
+- 2026-11-27: Ming "sửa luôn trong PR này": fix security-review.md finding 🟡 1 (auditRoute keeps UUIDs that start with a–f) in PR #149.
 
 ## Handoff
 
