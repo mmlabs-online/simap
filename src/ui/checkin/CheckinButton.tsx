@@ -20,13 +20,13 @@ export function CheckinButton({ action, busy, errorCode, onPress }: CheckinButto
         ? checkinPopupCopy.button.retry
         : checkinPopupCopy.button.checkIn;
   return (
-    <span className="px-card pointer-events-auto flex flex-col items-end gap-2">
+    <span className="pointer-events-auto flex flex-col items-end gap-2">
       {errorCode !== null && (
-        <span role="alert" className="text-xs font-semibold text-error">
+        <span role="alert" className="text-label font-semibold text-danger">
           {apiErrorMessage(errorCode)}
         </span>
       )}
-      <Button variant="filled" onClick={onPress} disabled={busy} aria-busy={busy}>
+      <Button variant="pixel" onClick={onPress} disabled={busy} aria-busy={busy}>
         {label}
       </Button>
     </span>

@@ -60,14 +60,14 @@ export function AcceptDoneView() {
 }
 
 export function AcceptSignInIntro() {
-  return <p className="text-sm">{copy.signInHint}</p>;
+  return <p className="text-label font-normal">{copy.signInHint}</p>;
 }
 
 /** The links open a new tab so this tab keeps the token in memory. */
 export function AcceptSignInFooter() {
   return (
     <>
-      <p className="text-sm text-on-surface-variant">{copy.newAccountHint}</p>
+      <p className="text-label font-normal text-text-secondary">{copy.newAccountHint}</p>
       <a href="/sign-up" target="_blank" rel="noopener noreferrer" className={linkClass}>
         {copy.createAccount}
       </a>

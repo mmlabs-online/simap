@@ -128,6 +128,9 @@ const TEXT_PAIRS: [string, string][] = [
   ["text-secondary", "surface"],
   ["text-pixel", "cream"],
   ["text-pixel", "tile"],
+  ["text-primary", "cream"],
+  ["text-secondary", "cream"],
+  ["text-secondary", "tile"],
   ["on-action", "workspace-action"],
   ["on-action", "workspace-action-hover"],
   ["on-action", "pixel-primary"],
@@ -147,7 +150,12 @@ const NON_TEXT_PAIRS: [string, string][] = [
   ["workspace-primary", "canvas"],
   ["workspace-action", "surface"],
   ["workspace-action", "canvas"],
+  ["pixel-primary", "cream"],
+  ["pixel-primary", "tile"],
+  ["pixel-primary", "surface"],
 ];
+// serif part of the sign-in headline, Display/Hero >= 24 px (WCAG large text)
+const LARGE_TEXT_PAIRS: [string, string][] = [["pixel-primary", "cream"]];
 
 describe.each([
   ["light", lightMap],
@@ -160,6 +168,12 @@ describe.each([
   it(`${theme} pairs pass AA (text 4.5:1)`, () => {
     for (const [fg, bg] of TEXT_PAIRS) {
       expect(ratio(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it(`${theme}: large text pairs pass 3:1`, () => {
+    for (const [fg, bg] of LARGE_TEXT_PAIRS) {
+      expect(ratio(fg, bg), `${fg} on ${bg}`).toBeGreaterThanOrEqual(3);
     }
   });
 
@@ -217,5 +231,70 @@ describe("globals.css", () => {
     for (const name of names) {
       expect(lightMap.has(name), name).toBe(false);
     }
+  });
+});
+
+describe("auth world and pixel chrome (replaces world-palette.test.ts)", () => {
+  const aw = globalsCss.slice(globalsCss.indexOf(".aw-stage"));
+  const rule = (selector: string) => {
+    const start = globalsCss.indexOf(`${selector} {`);
+    expect(start, selector).toBeGreaterThanOrEqual(0);
+    return globalsCss.slice(start, globalsCss.indexOf("}", start));
+  };
+
+  it("defines no --aw- tokens", () => {
+    expect(globalsCss).not.toContain("--aw-");
+  });
+
+  it("the aw rules read tokens only and have no motion", () => {
+    expect(aw).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(/);
+    expect(aw).not.toMatch(/animation|transition|@keyframes/);
+    for (const m of aw.matchAll(/var\((--[\w-]+)/g)) {
+      expect(m[1]).toMatch(/^--(color|text|space|radius|shadow)-|^--font-serif$/);
+    }
+  });
+
+  it("the aw block comes once, before the aw-world rules", () => {
+    expect(globalsCss.split(".aw-stage {")).toHaveLength(2);
+    expect(globalsCss.indexOf(".aw-world {")).toBeGreaterThan(globalsCss.indexOf(".aw-stage {"));
+  });
+
+  it("surfaces use cream and tile", () => {
+    expect(rule(".aw-stage")).toContain("background: var(--color-cream)");
+    expect(rule(".aw-card")).toContain("background: var(--color-cream)");
+    expect(rule(".aw-strip")).toContain("var(--color-tile)");
+  });
+
+  it("the headline is Display below 1024 px and Hero from 1024 px", () => {
+    expect(rule(".aw-headline")).toContain("var(--text-display)");
+    const media = /@media \(width >= 1024px\)\s*\{\s*\.aw-headline\s*\{([^}]*)\}/.exec(globalsCss);
+    expect(media).not.toBeNull();
+    expect(media![1]).toContain("var(--text-hero)");
+  });
+
+  it("the serif word keeps Fraunces in pixel green", () => {
+    const r = rule(".aw-serif");
+    expect(r).toContain("font-family: var(--font-serif)");
+    expect(r).toContain("color: var(--color-pixel-primary)");
+  });
+
+  it("filled buttons in the auth card are pixel green with hover and ledge", () => {
+    const base = rule('.aw-card [data-variant="filled"]');
+    expect(base).toContain("var(--color-pixel-primary)");
+    expect(base).toContain("box-shadow: var(--shadow-pixel)");
+    expect(rule('.aw-card [data-variant="filled"]:enabled:hover')).toContain(
+      "var(--color-pixel-hover)",
+    );
+    expect(rule('.aw-card [data-variant="filled"]:disabled')).toContain("box-shadow: none");
+  });
+
+  it(".px-frame is a pixel-green frame with the pixel ledge", () => {
+    const r = rule(".px-frame");
+    expect(r).toContain("var(--color-pixel-primary)");
+    expect(r).toContain("box-shadow: var(--shadow-pixel)");
+  });
+
+  it("the old pixel button, strip and title rules are gone", () => {
+    expect(globalsCss).not.toMatch(/\.px-(card|strip|title)\b/);
   });
 });

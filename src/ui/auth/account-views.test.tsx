@@ -21,6 +21,7 @@ describe("SignUpView", () => {
       expect(out).toContain(`id="${id}"`);
     }
     expect(out).toContain('id="ts-slot"');
+    expect(out).toContain('min-h-16.25"><div id="ts-slot"');
     expect(out).toContain('href="/sign-in"');
   });
 
@@ -52,6 +53,7 @@ describe("ForgotPasswordView", () => {
     const out = html(<ForgotPasswordView status={idle} onSubmit={noop} turnstileSlot={slot} />);
     expect(out).toContain('id="forgot-email"');
     expect(out).toContain('id="ts-slot"');
+    expect(out).toContain('min-h-16.25"><div id="ts-slot"');
     expect(out).toContain('href="/sign-in"');
   });
 

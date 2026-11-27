@@ -104,7 +104,9 @@ export function SignInView({
               </Button>
             ))}
           </section>
-          <p className="text-center text-sm text-on-surface-variant">{copy.otherAccount}</p>
+          <p className="text-center text-label font-normal text-text-secondary">
+            {copy.otherAccount}
+          </p>
         </>
       )}
       <form method="post" noValidate onSubmit={submit} className="flex flex-col gap-3">
@@ -135,7 +137,7 @@ export function SignInView({
           }}
         />
         <ShowPasswordToggle checked={showPassword} onChange={setShowPassword} />
-        {showTurnstile && <div className="min-h-[65px]">{turnstileSlot}</div>}
+        {showTurnstile && <div className="min-h-16.25">{turnstileSlot}</div>}
         <Button type="submit" size="lg" fullWidth disabled={submitting}>
           {submitting ? copy.submitting : copy.submit}
         </Button>
@@ -178,7 +180,7 @@ export function JoinView({
       {pending ? (
         <Notice kind="info">{copy.pending}</Notice>
       ) : (
-        <p className="text-sm">{copy.body}</p>
+        <p className="text-label font-normal">{copy.body}</p>
       )}
       {error && <Notice kind="error">{authErrorMessage(error)}</Notice>}
       {!pending && (
@@ -250,7 +252,7 @@ export function NoOrgView({
     <AuthLayout title={orgCopy.none.title}>
       {notice && <Notice kind="info">{orgCopy.notices[notice]}</Notice>}
       <Notice kind="info">{orgCopy.none.body(email)}</Notice>
-      <p className="text-sm text-on-surface-variant">{orgCopy.none.howTo}</p>
+      <p className="text-label font-normal text-text-secondary">{orgCopy.none.howTo}</p>
       <Button variant="tonal" onClick={onSignOut}>
         {authCopy.actions.signOut}
       </Button>

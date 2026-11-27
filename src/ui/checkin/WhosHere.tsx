@@ -22,7 +22,7 @@ export function WhosHere({
 }) {
   if (status === "loading") {
     return (
-      <p aria-busy="true" role="status" className="mt-2 text-sm text-on-surface-variant">
+      <p aria-busy="true" role="status" className="mt-2 text-label font-normal text-text-secondary">
         {presenceCopy.loading}
       </p>
     );
@@ -30,7 +30,7 @@ export function WhosHere({
   if (status === "error") {
     return (
       <div className="mt-2 flex flex-col items-start gap-3">
-        <p role="alert" className="text-sm font-semibold text-error">
+        <p role="alert" className="text-label font-semibold text-danger">
           {presenceCopy.error}
         </p>
         <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -42,12 +42,12 @@ export function WhosHere({
   return (
     <div className="mt-2 flex flex-col gap-2">
       {stale && (
-        <p role="status" className="text-sm font-semibold text-on-surface-variant">
+        <p role="status" className="text-label font-semibold text-text-secondary">
           {presenceCopy.stale}
         </p>
       )}
       {rows.length === 0 ? (
-        <p className="text-sm text-on-surface-variant">{presenceCopy.empty}</p>
+        <p className="text-label font-normal text-text-secondary">{presenceCopy.empty}</p>
       ) : (
         <ul className="flex flex-col gap-1">
           {rows.map((row) => {
@@ -59,12 +59,14 @@ export function WhosHere({
                   disabled={!row.focusable}
                   aria-label={presenceCopy.focusLabel(name, row.seatCode)}
                   onClick={() => onFocus(row.seatCode)}
-                  className="flex min-h-11 w-full items-center gap-3 rounded-md px-2 text-left enabled:cursor-pointer enabled:hover:bg-surface-container-high focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-70"
+                  className="flex min-h-control w-full items-center gap-3 rounded-lg px-2 text-left enabled:cursor-pointer enabled:hover:bg-canvas disabled:cursor-not-allowed transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out"
                 >
                   <PixelHead atlas={atlas} look={row.look} />
                   <span className="flex min-w-0 flex-col">
-                    <span className="truncate text-sm font-bold text-on-surface">{name}</span>
-                    <span className="text-xs text-on-surface-variant">
+                    <span className="truncate text-label font-semibold text-text-primary">
+                      {name}
+                    </span>
+                    <span className="text-caption text-text-secondary">
                       {row.seatCode} · <time dateTime={row.checkedInAt}>{row.time}</time> ·{" "}
                       {presenceCopy.source[row.source]}
                       {row.focusable ? null : ` · ${presenceCopy.notOnMap}`}

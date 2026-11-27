@@ -42,10 +42,18 @@ describe("WhosHere", () => {
     expect(html).toContain("A1");
   });
 
+  it("rows are 44 px with the global focus ring and a semibold name", () => {
+    const html = render({ rows: [row()] });
+    expect(html).toMatch(/<button[^>]*min-h-control/);
+    expect(html).not.toContain("focus-visible:");
+    expect(html).toMatch(/<span class="[^"]*font-semibold[^"]*">Nguyễn Thị Ánh/);
+  });
+
   it("a row whose seat is not on the map is disabled with the hint", () => {
     const html = render({ rows: [row({ focusable: false })] });
     expect(html).toMatch(/<button[^>]*disabled/);
     expect(html).toContain(presenceCopy.notOnMap);
+    expect(html).not.toContain("opacity-");
   });
 
   it("empty shows the empty text; loading is aria-busy; error has an alert and a retry button; stale shows a notice", () => {

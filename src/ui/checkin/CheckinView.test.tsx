@@ -18,10 +18,21 @@ describe("CheckinView", () => {
     expect(html).toContain(`<h2 id="${labelledBy}"`);
     expect(html).toContain(checkinCopy.whosHereTitle.replace("'", "&#x27;"));
   });
-  it("grid: lg:grid-cols-[minmax(0,1fr)_300px], single column below lg; Who's here after the map in DOM order", () => {
+  it("grid: lg:grid-cols-[minmax(0,1fr)_--spacing(75)], single column below lg; Who's here after the map in DOM order", () => {
     const html = render(room);
-    expect(html).toContain("lg:grid-cols-[minmax(0,1fr)_300px]");
+    expect(html).toContain("lg:grid-cols-[minmax(0,1fr)_--spacing(75)]");
     expect(html.indexOf("map-marker")).toBeLessThan(html.indexOf("<section"));
+  });
+  it("tokens: Display h1, Subtitle h2, 44 px no-seat link, floating slot clears the tab bar", () => {
+    const html = render(room);
+    expect(html).toMatch(/<h1 class="[^"]*text-display/);
+    expect(html).toMatch(/<h2 [^>]*class="[^"]*text-subtitle/);
+    expect(html).toContain("bottom-[calc(--spacing(20)+env(safe-area-inset-bottom))]");
+    expect(html).not.toContain("text-[");
+    expect(html).not.toContain("font-extrabold");
+    expect(render({ kind: "noSeat" })).toMatch(
+      /<a [^>]*href="\/rooms"[^>]*min-h-control|<a [^>]*min-h-control[^>]*href="\/rooms"/,
+    );
   });
   it("noSeat state shows the PRE-02 copy and a Request a seat link to /rooms, no map", () => {
     const html = render({ kind: "noSeat" });
