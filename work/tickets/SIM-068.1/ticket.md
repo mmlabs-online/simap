@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | DONE |
+| State | MERGED |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -53,6 +53,7 @@ D45/D66, D36; style guide §1 and §4.
 
 ## Notes / answers from Ming
 - 2026-11-26: split from SIM-068 (Ming: "theo mặc định", Q9).
+- Merge approved (2026-11-27): "merge #147"; squash-merged by claude.
 
 ## Handoff
 
