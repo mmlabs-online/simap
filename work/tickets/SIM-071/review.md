@@ -102,3 +102,63 @@ None (no visible change).
 
 ### Blockers from review agents (slice 2)
 - None (no review trigger matched).
+
+## Slice 3 — Attempt 1
+Verdict: REWORK
+
+Date: 2026-11-27. Scope: slice 3 (UI kit) only, against plan.md "## Slice 3 addendum — UI kit".
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format."
+- `pnpm typecheck`: exit 0.
+- `pnpm check:layers`: exit 0, `check-layers: 1009 files, no violations`.
+- `pnpm test`: exit 0, `Test Files 387 passed | 1 skipped (388)`, `Tests 3809 passed | 7 skipped (3816)`. Matches impl-log.
+- `pnpm build`: exit 0.
+- `node scripts/check-tokens.mjs`: exit 0, `53 files, no violations outside the pending list`.
+
+### Acceptance criteria (S3-1..S3-10)
+- [x] S3-1 Button variants. Evidence: `src/ui/Button.tsx` variants map equals Approach 1 (filled `bg-workspace-action text-on-action enabled:hover:bg-workspace-action-hover`, pixel `bg-pixel-primary ... shadow-pixel`, tonal/outlined surface + border, danger tint); kit.test "variants map to brief tokens and keep data-variant" green. `/dev/shell` visual check in light/dark is listed for Ming below.
+- [x] S3-2 44 px / 14-12 px / no 700-800. Evidence: plan grep over the 15 kit files returns only `rounded-full` in Avatar.tsx:28,45 and Chip.tsx:113,115 (Pill and dot), exactly as expected; kit/layout-blocks/SegmentedFilter tests assert `min-h-control`/`size-control`.
+- [x] S3-3 Fields and focus. Evidence: `EntityFormDialog.tsx` FIELD_BOX and `FilledInput.tsx` use `field-box ... border-border-strong rounded-lg`, no `focus-within:`; globals.css adds `.field-box:focus-within` after the global `:focus-visible` rule and the `@layer base` accent-color rule; tokens.test "field box ring, checkbox accent, state layer and no status-dot" green. Keyboard-tab through the gallery dialog is a Ming check.
+- [x] S3-4 Cards/dialog/badges. Evidence: Card.tsx `rounded-xl border border-divider bg-surface shadow-card`; dialog `rounded-2xl bg-surface shadow-dialog max-w-md`; RoleBadge class map per Approach 5, no inline style; Pill tints incl. `info`; corresponding kit/layout-blocks tests green.
+- [x] S3-5 No legacy aliases. Evidence: plan grep (`on-surface|outline-variant|surface-high|primary-container|error-container|rounded-md3|field-focus|card-shadow`) over kit files: no hits; kit.test "no legacy alias or weight" green. Avatar default inline values kept on the compat alias per Q-S3-2.
+- [x] S3-6 Pending shrink. Evidence: `git diff origin/main...HEAD -- scripts/check-tokens.pending.json` shows only the 11 kit keys removed and `src/app/globals.css` 69 -> 65; guard exits 0.
+- [x] S3-7 No caller API change. Evidence: typecheck green; only additions `pixel`/`info`, IconButton `size` removed (no caller passes it: `rg` for `IconButton` with `size=` has no hits). Diff stat lists only Files-table files plus the one out-of-plan test (judged below) and work/ files.
+- [x] S3-8 Contrast. Evidence: 4 new `NON_TEXT_PAIRS` in `src/lib/color/tokens.test.ts`, suite green.
+- [ ] S3-9 Checks green; existing tests changed only for class strings. Checks are green, but the DecisionDialog.test.tsx edit is not a class-string update: it turned an assertion vacuous. See Issue 1.
+- [x] S3-10 impl-log "Slice 3" has files, rename map, pending before/after, visible differences, built-CSS confirmations and checks. (Its claim "Assertion intent unchanged" for DecisionDialog.test is wrong; see Issue 1.)
+
+### Out-of-plan test edit (DecisionDialog.test.tsx): not accepted as written
+Touching the test is justified (plan allows tests whose asserted kit markup changed, and the kit Button now emits `class` before `disabled`). The new regex is not: `/<button type="submit"[^>]*disabled/` matches the class token `disabled:cursor-not-allowed` that every kit Button now carries, so it passes whether or not the button is disabled. Reviewer probe (temporary test file, removed, tree clean): `renderToStaticMarkup(<Button type="submit">Save</Button>)` with no `disabled` prop MATCHES the regex. The test named "...disables submit" therefore no longer checks that DecisionDialog passes `submitting` through.
+
+### Issues
+#### Issue 1 — 🔴 blocker — vacuous test assertion (R5)
+- **Where**: `src/ui/requests/DecisionDialog.test.tsx:76`
+- **Expected**: the assertion fails when the submit button is not disabled.
+- **Actual**: `/<button type="submit"[^>]*disabled/` also matches `class="... disabled:cursor-not-allowed ..."`, so it always passes.
+- **Fix instruction**: change it to `expect(html).toMatch(/<button type="submit"[^>]*disabled=""/);` (same form as `src/ui/kit.test.tsx:204`). Optionally also assert `render(target(), { submitting: false })` does not match it. Correct the impl-log "Out-of-plan files" note accordingly.
+
+#### Issue 2 — 🟡 should-fix — Button disabled-hover test weaker than the plan
+- **Where**: `src/ui/kit.test.tsx:112-114`
+- **Expected** (plan Tests table, "Button disabled"): every class token containing `hover:` starts with `enabled:`, for every variant.
+- **Actual**: the loop covers only `filled, pixel, tonal, text` (omits `outlined`, `danger`) and accepts `c.startsWith("enabled:") || c.startsWith("hover:")`, so a bare `hover:` class (which would style disabled buttons) passes for every variant except `filled` (line 115).
+- **Fix instruction**: loop over all six variants and assert `expect(c.startsWith("enabled:")).toBe(true)`; drop the `|| c.startsWith("hover:")` branch. Also apply the same check to IconButton (inactive state uses `enabled:hover:*`). The current code already satisfies the stricter test.
+
+### Rules (CLAUDE.md)
+- R5: Issue 1 (a changed test no longer tests its behaviour).
+- R1: no violations (`check:layers` clean; edits in ui/pages/lib only, KitGallery imports `@/ui`). R3, R4: no violations (only planned files plus the one justified-in-principle test file). R2/R6/R7 not touched.
+
+### Blockers from review agents
+- None (no review trigger matched).
+
+### Nits (do not block)
+- 💭 `src/ui/PageSkeleton.tsx:17` and `KitGallery.tsx` h1 keep `text-h2` (plan only asked for the weight/colour change, so in-plan); slices 4-7 should map it to `text-display`/`text-title` per Q16.
+- 💭 `DialogSelect` input gained `placeholder:text-text-secondary`, which has no effect on a `<select>`. Harmless.
+- 💭 FilterChips with `min-h-control` chips plus `p-1` give a ~54 px track; fine for targets, worth a look in Ming's visual pass.
+
+### Ming verification after merge
+- Open `/dev/shell` and two management screens (Members, Devices) at 390 / 800 / 1280 px in light and dark; check coral filled buttons, pixel button, 44 px row actions, a dialog with keyboard focus (one ring per field box, none doubled), checkbox fill, badges and pills.
+
+### Follow-ups (out of scope)
+- Q-S3-1: merge `tonal`/`outlined` (now identical) in a later slice.
+- Q-S3-2: Avatar default background/colour off the compat alias in slice 7.
