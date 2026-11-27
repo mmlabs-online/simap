@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | architecture, api, security |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-27T05:03:17Z |
 | PR | — |
 
 ## Goal
@@ -52,6 +52,7 @@ provider); rule R3.
 
 ## Notes / answers from Ming
 - Waiting for Ming: plan approval (High tier: `.env.example`, `src/server/presence/provider/config.ts`; M-95).
+- 2026-11-27: Plan approved (Ming: "duyệt plan SIM-063"; M-95; defaults G1–G9 as planned).
 
 ## Handoff
 
