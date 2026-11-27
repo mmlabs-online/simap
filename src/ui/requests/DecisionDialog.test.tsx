@@ -73,7 +73,7 @@ describe("DecisionDialog", () => {
     );
     const html = render(target(), { submitting: true });
     expect(html).toContain(kitCopy.saving);
-    expect(html).toMatch(/<button type="submit"[^>]*disabled/);
+    expect(html).toMatch(/<button type="submit"[^>]*disabled=""/);
   });
   it("Vietnamese name (Nguyễn Thị Ánh) rendered unchanged", () => {
     expect(render(target({ item: item("Nguyễn Thị Ánh") }))).toContain(

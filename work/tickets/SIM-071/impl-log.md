@@ -124,3 +124,18 @@ Tailwind accepts `duration-(--duration-ui)` (emitted `transition-duration:var(--
 
 ### Scope self-check
 Only the planned files plus the one test noted above. Follow-ups: none.
+
+## Slice 3 (attempt 2) — rework of review "Slice 3 — Attempt 1"
+
+### Files touched
+- `src/ui/requests/DecisionDialog.test.tsx:76`: regex now `/<button type="submit"[^>]*disabled=""/`. Required because the attempt-1 regex also matched `disabled:cursor-not-allowed` in the class list and was vacuous (issue 1). This corrects the attempt-1 "Out-of-plan files" note, which wrongly said the assertion intent was unchanged.
+- `src/ui/kit.test.tsx`: Button disabled test loops all six variants and requires the `enabled:` prefix only (dropped the `hover:` branch and the filled-only bare-hover line); new IconButton test applies the same check to inactive and active (issue 2).
+
+### Checks
+- format:check: `All matched files use the correct format`
+- typecheck: pass
+- check:layers: `1009 files, no violations`
+- test: `387 passed | 1 skipped (388) files; 3810 passed | 7 skipped (3817)`
+
+### Scope self-check
+Only the two test files named in review issues 1 and 2, plus this log. Follow-ups: none.

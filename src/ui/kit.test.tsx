@@ -109,10 +109,9 @@ describe("Button", () => {
     for (const c of ["disabled:opacity-50", "disabled:cursor-not-allowed", "disabled:shadow-none"])
       expect(h).toContain(c);
     expect(h).not.toContain("pointer-events-none");
-    for (const v of ["filled", "pixel", "tonal", "text"] as const)
+    for (const v of ["filled", "pixel", "tonal", "outlined", "text", "danger"] as const)
       for (const c of classes(html(v), "button").filter((c) => c.includes("hover:")))
-        expect(c.startsWith("enabled:") || c.startsWith("hover:")).toBe(true);
-    expect(classes(html("filled"), "button").some((c) => /^hover:/.test(c))).toBe(false);
+        expect(c.startsWith("enabled:")).toBe(true);
   });
 });
 
@@ -125,6 +124,14 @@ describe("IconButton", () => {
     expect(h).toContain('title="Search"');
     expect(h.match(/<button[^>]*>/)![0]).not.toContain("style=");
     expect(r(<IconButton icon="search" label="Search" active />)).toContain("border-border");
+  });
+  it("hover styles apply only when enabled", () => {
+    for (const active of [false, true])
+      for (const c of classes(
+        r(<IconButton icon="search" label="Search" active={active} />),
+        "button",
+      ).filter((c) => c.includes("hover:")))
+        expect(c.startsWith("enabled:")).toBe(true);
   });
 });
 
