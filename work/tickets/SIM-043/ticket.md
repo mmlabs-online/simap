@@ -73,4 +73,6 @@ supersedes these points (M-83) and Identity can mint such tokens (M-84). Raised 
 - 2026-11-26 Ming (M-83, D75): role key `admin:super-admin`; full Admin access (read and CRUD) in every org. Still open for the plan gate: member row on first visit, audit shape.
 <Answers to blocking questions and "Plan approved (YYYY-MM-DD)" lines go here.>
 
+- 2026-11-27: M-84 answered by org-admin-api (ADR-0030) and marked done by Ming. Contract in D86: role key `simap:super-admin`, check `org_access == "super_admin"`, `org_roles: []`, picker items have `access`, handle 429 on `/auth/token`. Release waits for M-90 (org-admin-api deploy + setup).
+
 ## Handoff
