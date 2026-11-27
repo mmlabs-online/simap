@@ -143,7 +143,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-058 | Presence record and check-in, check-out and move-seat API | MERGED | P1 | M | db, api, architecture, security | — | plan-approval | 0 | 2026-11-26 |
 | SIM-059 | Pixel check-in popup | MERGED | P1 | M | ui, ux | SIM-057, SIM-058 | plan-approval | 0 | 2026-11-26 |
 | SIM-060 | Present and away on the map, name tags, open desk tags, "Who's here" and polling | MERGED | P1 | M | ui, api | SIM-057, SIM-058 | plan-approval | 0 | 2026-11-26 |
-| SIM-061 | Simple walk-in and walk-out | IN_PROGRESS | P1 | M | ui | SIM-060 | plan-approval | 0 | 2026-11-26 |
+| SIM-061 | Simple walk-in and walk-out | DONE | P1 | M | ui | SIM-060 | plan-approval | 1 | 2026-11-26 |
 | SIM-061.1 | Typing idle animation for present characters | BACKLOG | P1 | S | ui | SIM-061 | plan-approval | 0 | 2026-11-27 |
 | SIM-062 | Multi-direction walking avatar frames | BACKLOG | P2 | M | ui | SIM-061 | none | 0 | 2026-11-26 |
 | SIM-063 | Third-party check-in provider: REST pull adapter and mock | BACKLOG | P2 | M | architecture, api, security | SIM-058 | plan-approval | 0 | 2026-11-26 |
