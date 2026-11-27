@@ -291,3 +291,59 @@ None (no review trigger matched).
 
 ### Blockers from review agents (slice 5a)
 - None (no review trigger matched).
+
+## Slice 5b — Attempt 1
+Verdict: PASS
+
+Date: 2026-11-27. Scope: slice 5b (Devices and device types), commit e1864fd against plan.md "Slice 5b addendum — Devices and device types" (rules R-a..R-h, 5b Files tables, S5b-1..S5b-10).
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0 (1091 files checked).
+- `pnpm typecheck`: exit 0. `pnpm check:layers`: exit 0, "1033 files, no violations".
+- `pnpm test`: exit 0, "399 passed | 1 skipped (400)" files, "3933 passed | 7 skipped (3940)" tests (matches impl-log).
+- `pnpm build`: exit 0.
+- `node scripts/check-tokens.mjs`: exit 0, "30 files, no violations outside the pending list". `--list` output is identical to the committed `check-tokens.pending.json`.
+- `pnpm test:db`: CI-only, not affected (no server/DB change).
+
+### Acceptance criteria
+- [x] S5b-1 Token utilities only. Evidence: `screen-tokens.test.ts` green with the 26 files added to `MIGRATED` (19 `ui/devices`, 7 `ui/deviceTypes`, exactly the Files tables); `LEGACY` widened to `container[\w-]*` as planned. The plan's rg (`on-surface|outline-variant|text-error|text-\[|tracking-\[|font-(bold|extrabold)|text-h[23]|rounded-md3|surface-container|secondary-container|error-container`) over both folders, non-test `.tsx`: no hits. Bare `text-primary` check: only `text-text-primary`/`stroke-text-primary`/`fill-text-primary`.
+- [x] S5b-2 No off-scale type. Evidence: `rg "text-(xs|sm|lg|2xl)\b"`: no hits. h1s `text-display` (DevicesView.tsx:48, DeviceDetailView.tsx:80, DeviceTypesView.tsx:25); h2s `text-subtitle`; dialog captions `text-label text-text-primary` (= kit `FIELD_CAPTION`, Q-S5b-2 default); `<dt>` `text-caption font-semibold uppercase tracking-wide text-text-secondary`. Tests: DevicesView/DeviceDetailView/DeviceHistory/handoff "tokens" describes.
+- [x] S5b-3 44 px targets. Evidence: `rg "<button|min-h-11|py-1\.5"`: no hits. Kit `Button` base has `min-h-control` (Button.tsx:57) for retry, Remove, Keep current; radio/checkbox labels `min-h-control` + inputs `size-5 flex-none` (AssignDeviceDialog, PlaceDeviceDialog seat+role, DeviceTypeFormDialog, DeviceTypeSpriteField); file picker label `field-box ... min-h-control`; back link `inline-flex min-h-control` (DeviceDetailView.tsx:88). Tests: PlaceDeviceDialog, AssignDeviceDialog, DeviceTypeFormDialog (5 rows), DeviceTypeSpriteField (7 rows), DeviceTypesView, ImageField, DeviceDetailView.
+- [x] S5b-4 Wide layout from 1024. Evidence: `rg "\bmd:" src/ui/devices src/ui/deviceTypes -g '!*.test.tsx'`: no hits; DeviceTable `hidden lg:block` / `flex flex-col gap-2 lg:hidden`; four card sections `lg:flex-row`; screen-tokens "device lists switch layout at lg" green. Ming checks 800/1024 after merge.
+- [x] S5b-5 Toned pills. Evidence: device-labels.tsx `Pill dot tone="warning"` (pending) / `tone="danger"` (overdue), no `var(--error-container)`; OverdueBanner and DeviceDetailView pending use warning Pill; "You" and role chips stay `Chip`. Tests assert `bg-danger-tint`/`bg-warning-tint` in DevicesView, DeviceDetailView, OverdueBanner; plain row has no `bg-danger-tint`.
+- [x] S5b-6 Focus without per-component classes. Evidence: `rg "focus(-within|-visible)?:"`: no hits; NoteField textarea wrapped in `field-box` div, textarea `outline-none` (AssignDeviceDialog test `field-box[^>]*><textarea[^>]*outline-none`); ImageField label `field-box`, test asserts no `focus-within:`. Manual Tab check is in Ming's list.
+- [x] S5b-7 Pending shrinks by exactly 16 keys. Evidence: `git diff origin/main...HEAD -- scripts/check-tokens.pending.json` = 16 removed lines, nothing added/changed; per-key counts match the plan table (60 violations). Note: summing the JSON gives 46 keys / 243 on main → 30 / 183 now (plan says 244 → 184); the difference is exactly 16 keys / 60 either way, so the off-by-one is in how the total was stated, not in the change.
+- [x] S5b-8 No behaviour/copy/prop/id/aria change. Evidence: `git diff origin/main...HEAD --stat -- src/ui/copy src/lib src/app` empty. PlaceDeviceDialog retries: same `onRetryRooms`/`onRetrySeats`, same `devicesCopy.retry` label, kit default `type="button"`, still inside the `role="alert"` div. ImageField Remove/Keep: same `onRemove`/`onUndo`, labels, `disabled`. NoteField `id`, `rows`, `maxLength`, `aria-describedby`, `onChange` unchanged. Test diffs have no removed lines in `*.test.tsx`; the 2 removed lines in `screen-tokens.test.ts` are the planned `LEGACY` widening and the kit-Button list extension.
+- [x] S5b-9 Only planned files. Evidence: `git diff --stat origin/main...HEAD` = 26 screen files, 13 test files, `screen-tokens.test.ts`, pending json, `work/tickets/SIM-071/{plan,impl-log,ticket}.md`; all in the 5b Files tables. No High path touched.
+- [x] S5b-10 Checks green (above); impl-log "Slice 5b (attempt 1)" has files, pending before/after with per-key counts, visible differences matching the plan list, the DeskSlotDiagram observation (honestly recorded as not browser-checked), checks, out-of-plan "None".
+
+### Judgement: looser back-link assertion (DeviceDetailView.test.tsx)
+The test asserts `/<a[^>]*min-h-control[^>]*>/` instead of pinning the back link (`href="/devices"`). In the rendered detail page the only other `<a>` elements are the room link from `PlacementLabel` (device-labels.tsx, `font-semibold text-text-primary underline`, no `min-h-control`); `DeviceNameLink` is not rendered on the detail page. So the regex can only match the back link today, and removing `min-h-control` from DeviceDetailView.tsx:88 would fail the test. Adequate for the plan row ("back link has `min-h-control`"); not a blocker. Tightening is a nit below.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1: new imports are ui → ui (`../table`, `../Button`, `Pill` from `../Chip`); check:layers clean. R3: none. R4: only the 5b Files tables. R5: tests extended per the plan's Tests table. R2/R6/R7 not touched.
+
+### Blockers from review agents
+None (no review trigger matched).
+
+### Nits (do not block)
+- 💭 DeviceDetailView.test.tsx back-link assert: pin it, e.g. match the `<a>` tag containing `href="/devices"` and then assert it contains `min-h-control` (two checks on the same tag, order-proof), so a future 44 px link elsewhere on the page cannot satisfy it.
+- 💭 DevicesView.test.tsx "row action buttons are 44 px": `html.match(...) ?? []` with no length check would pass vacuously if the Edit button stopped rendering; add `expect(buttons.length).toBeGreaterThan(0)` like the handoff tests do.
+- 💭 PlaceDeviceDialog retry: the `{" "}` text node before the kit Button is now redundant inside a `flex gap-2` container (harmless).
+- 💭 Pending totals in plan/impl-log (244 → 184) differ by one from the JSON sum (243 → 183); the delta (60) is right.
+
+### Ming verification after merge
+- As in plan "Ming verification after merge (slice 5b)": Admin at 390 / 800 / 1024 / 1280 px, light and dark — Devices list (cards at 800, table at 1024), red Overdue pill, amber pending pill, detail page with history and Load more, Incoming transfers / Pending returns / Pending extensions (buttons beside text only from 1024); every device dialog (captions, green ring on the note box with Tab, 44 px checkbox/radio rows); Device types list, New type form (slot radios, sprite options, Choose image → Remove / Keep current), delete dialog, Tab onto "Choose image" shows the green ring.
+- DeskSlotDiagram: compare with the previous look (old `fill-surface-container-high` had no theme key; implementer could not check in a browser).
+- Not browser-verified by implementer or reviewer.
+
+### Follow-ups (out of scope)
+- Q-S5b-5: `border-strong` for the desk diagram strokes if divider is too light.
+- Q-S5b-6: `xl` switch for the device table if 1024 is cramped.
+- Q-S5b-1: blue `info` pill for "Transfer pending" if Ming prefers.
+
+### Blockers from review agents (slice 5b)
+- None (no review trigger matched).
