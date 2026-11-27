@@ -96,14 +96,10 @@ export function layoutTags({
       truncated = true;
     }
     if (!r) {
-      return {
-        id: s.id,
-        kind: "dot",
-        left: Math.round(s.left + (s.w - DOT) / 2),
-        top: Math.round(s.top),
-        width: DOT,
-        truncated: false,
-      };
+      const left = Math.round(s.left + (s.w - DOT) / 2);
+      const top = Math.round(s.top);
+      taken.push({ x: left, y: top, w: DOT, h: DOT });
+      return { id: s.id, kind: "dot", left, top, width: DOT, truncated: false };
     }
     taken.push(r);
     return { id: s.id, kind: "tag", left: r.x, top: r.y, width: r.w, truncated };

@@ -119,6 +119,25 @@ describe("layoutTags", () => {
     }
   });
 
+  it("a dot is never covered by a later tag", () => {
+    // Seat a finds no room beside the obstacle and becomes a dot; seat b's first candidate would cover that dot.
+    const area = { w: 300, h: 30 };
+    const a: TagSeat = {
+      id: "a",
+      left: 0,
+      top: 0,
+      w: 64,
+      h: 32,
+      text: "Nguyễn Thị Ánh Dương Long",
+    };
+    const b = seat("b", 2, 0, "Nguyen Anh");
+    const tags = layoutTags({ seats: [a, b], area, obstacles: [{ x: 0, y: 0, w: 20, h: 30 }] });
+    const [ta, tb] = tags;
+    expect(ta.kind).toBe("dot");
+    expect(tb.kind).toBe("tag");
+    expect(hit(rectOf(ta), rectOf(tb))).toBe(false);
+  });
+
   it("is deterministic and follows the input (reading) order", () => {
     const area = { w: 8 * 32, h: 8 * 32 };
     const seats = [seat("a", 2, 3, "Anh"), seat("b", 3, 3, "Binh"), seat("c", 4, 3, "Chi")];

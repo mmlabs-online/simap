@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { catalogFootprints } from "@/lib/map-items/footprints";
 import type { SeatPresence } from "@/lib/presence/seat-presence";
 import {
   ZOOM_LEVELS,
@@ -11,12 +12,18 @@ import {
   type Zoom,
 } from "@/lib/sprites/layout";
 import { buildDrawList } from "@/lib/sprites/placement";
+import { drawPresence } from "@/lib/sprites/walk";
+import { walkGrid } from "@/lib/sprites/walk-path";
 import { allowedZooms, clampZoom } from "@/lib/sprites/zoom";
+import { registryFootprints } from "@/lib/validate/layout";
 import { roomlayoutCopy } from "../copy/roomlayout";
 import type { CatalogImages } from "./catalog-images";
 import { paintRoom } from "./paint";
 import { SeatOverlay } from "./SeatOverlay";
 import { useAtlas } from "./useAtlas";
+import { useReducedMotion } from "./useReducedMotion";
+import { useWalks } from "./useWalks";
+import { WalkLayer } from "./WalkLayer";
 import { ZoomControl } from "./ZoomControl";
 
 const STATUS = "rounded-md border border-outline-variant p-4 text-sm text-on-surface";
@@ -39,6 +46,8 @@ export function RoomMapStatus({ status }: { status: "loading" | "error" | "tooLa
 
 /** The presence view of the map (PRE-06): present/away, always-visible tags, open tags and a seat to focus. */
 export type PresenceMapProps = {
+  /** The room shown; a change of room starts a new baseline for the walk animations (PRE-07). */
+  roomId: string;
   /** Undefined until the first room answer: the map draws as today, with tags always on. */
   presence?: Readonly<Record<string, SeatPresence>>;
   /** Seat ids that show an open tag. */
@@ -83,22 +92,39 @@ export function RoomMap({
   const presence = presenceView?.presence;
   const focusSeat = presenceView?.focusSeat ?? null;
 
+  const reduced = useReducedMotion();
+  const grid = useMemo(
+    () =>
+      presenceView ? walkGrid(layout, catalogFootprints(items ?? [], registryFootprints)) : null,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [layout, items, presenceView !== undefined],
+  );
+  const { walks, hidden, finish } = useWalks({
+    roomId: presenceView?.roomId ?? "",
+    presence,
+    seatViews,
+    grid,
+    reduced,
+  });
+  // The static layer shows a character walking in as away until it has sat down.
+  const drawn = useMemo(() => drawPresence(presence, hidden), [presence, hidden]);
+
   const list = useMemo(
     () =>
       atlas
         ? buildDrawList(layout, seatViews, atlas.manifest, seatDevices, catalogImages?.ready, {
             items,
             image: catalogImages?.itemSize,
-            presence,
+            presence: drawn,
           })
         : null,
-    [atlas, layout, seatViews, seatDevices, items, presence, catalogImages?.version],
+    [atlas, layout, seatViews, seatDevices, items, drawn, catalogImages?.version],
   );
 
   const allowed = useMemo(() => (list ? allowedZooms(list.bounds) : []), [list]);
   const effective = clampZoom(zoom, allowed);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!atlas || !list || !canvas || effective === null) return;
     if (!paintRoom(canvas, atlas, list, effective, undefined, catalogImages?.source)) {
@@ -148,6 +174,15 @@ export function RoomMap({
             className="block"
             style={{ width, height, imageRendering: "pixelated" }}
           />
+          {walks.length > 0 && (
+            <WalkLayer
+              atlas={atlas}
+              walks={walks}
+              bounds={list.bounds}
+              zoom={effective}
+              onDone={finish}
+            />
+          )}
           <SeatOverlay
             list={list}
             views={seatViews}

@@ -132,6 +132,7 @@ function CheckinPageInner() {
   const presenceView =
     mapView && roomId !== null
       ? {
+          roomId,
           presence,
           openTags: openTagSeats({
             layout: mapView.layout,
