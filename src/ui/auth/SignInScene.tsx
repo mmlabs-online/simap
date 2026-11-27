@@ -5,8 +5,9 @@ import { signinDrawList } from "@/lib/sprites/signin-scene";
 import type { Atlas } from "../roomlayout/loadAtlas";
 import { paintRoom } from "../roomlayout/paint";
 import { useAtlas } from "../roomlayout/useAtlas";
+import { MEDIA } from "@/lib/breakpoints";
 
-const WIDE = "(min-width: 768px)";
+const WIDE = MEDIA.md;
 
 function subscribe(onChange: () => void) {
   const mq = window.matchMedia(WIDE);

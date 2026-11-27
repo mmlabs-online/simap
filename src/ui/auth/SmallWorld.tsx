@@ -22,9 +22,10 @@ import { authCopy } from "../copy/auth";
 import type { Atlas } from "../roomlayout/loadAtlas";
 import { paintRoom } from "../roomlayout/paint";
 import { useAtlas } from "../roomlayout/useAtlas";
+import { MEDIA } from "@/lib/breakpoints";
 
 /** Same query as the aw-world CSS block: the decoration and the atlas fetch exist only from here up. */
-export const WORLD_MEDIA = "(min-width: 1280px)";
+export const WORLD_MEDIA = MEDIA.xl;
 
 function subscribe(onChange: () => void) {
   const mq = window.matchMedia(WORLD_MEDIA);
