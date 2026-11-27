@@ -43,7 +43,7 @@ export function WalkLayer({ atlas, walks, idle, bounds, zoom, onDone, onIdleFail
     const ok = paintWalkers(canvas, cur.atlas, cur.bounds, cur.zoom, [
       ...idlePainters(cur.idle, now),
       ...frames.map(({ w, f }) => ({
-        ops: walkerOps(cur.atlas.manifest, w.who, f.view, f.x, f.y, f.bob),
+        ops: walkerOps(cur.atlas.manifest, w.who, f.view, f.x, f.y, f.bob, f.walk),
         alpha: f.alpha,
       })),
     ]);

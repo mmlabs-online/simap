@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { SeatPresence } from "@/lib/presence/seat-presence";
-import { avatarFrames, avatarView } from "./avatar";
+import { avatarFrames, avatarView, avatarWalkFrames } from "./avatar";
 import type { RoomLayout, Rotation, SeatView } from "./layout";
 import { buildDrawList } from "./placement";
 import { resolveLook } from "./pixel-look";
@@ -266,6 +266,32 @@ describe("walkFrame", () => {
     expect(walkFrame(down, T0 + 150).bob).toBe(1);
   });
 
+  it("walk pose: dir from the segment (n/e/s/w), step alternates, seated pose at start/end and in fades", () => {
+    const path = [
+      { x: 1, y: 3 },
+      { x: 1, y: 2 },
+      { x: 2, y: 2 },
+      { x: 2, y: 3 },
+      { x: 1, y: 3 },
+    ];
+    const base = { ...w, path, startView: null, endView: null, duration: 1000 };
+    // Segment i covers t in [250 i, 250 (i + 1)); sample its first half and its second half.
+    const dirs = ["n", "e", "s", "w"];
+    dirs.forEach((dir, i) => {
+      expect(walkFrame(base, T0 + 250 * i + 50).walk).toEqual({ dir, step: 0 });
+      expect(walkFrame(base, T0 + 250 * i + 150).walk).toEqual({ dir, step: 1 });
+    });
+    const seated = { ...base, startView: "front" as const, endView: "back" as const };
+    expect(walkFrame(seated, T0).walk).toBeNull();
+    expect(walkFrame(seated, T0).view).toBe("front");
+    expect(walkFrame(seated, T0 + 1000).walk).toBeNull();
+    expect(walkFrame(seated, T0 + 1000).view).toBe("back");
+    expect(walkFrame(seated, T0 + 500).walk).not.toBeNull();
+    const noDoor = layout({ fixtures: [] });
+    const [fin] = run([{ kind: "in", seat: "a", who: who("m1") }], noDoor).walks;
+    expect(walkFrame(fin, T0 + 100).walk).toBeNull();
+  });
+
   it("fades in from 0 to 1 and out from 1 to 0 over FADE_MS", () => {
     const noDoor = layout({ fixtures: [] });
     const [fin] = run([{ kind: "in", seat: "a", who: who("m1") }], noDoor).walks;
@@ -316,6 +342,21 @@ describe("walkerOps", () => {
     const still = walkerOps(manifest, who("m1"), "front", 2.25, 1, 0);
     expect(ops[0].y).toBe(still[0].y - 1);
     expect(Number.isInteger(ops[0].x) && Number.isInteger(ops[0].y)).toBe(true);
+  });
+  it("walkerOps draws the walk keys for the pose and falls back per layer to the seated key when the manifest lacks one", () => {
+    const look = resolveLook(null, "m1");
+    const pose = { dir: "e" as const, step: 0 };
+    const ops = walkerOps(manifest, who("m1"), "front", 2, 1, 0, pose);
+    expect(ops.map((o) => o.key)).toEqual(avatarWalkFrames(look, pose).map((f) => f.key));
+    const missing = structuredClone(manifest);
+    delete missing.frames["avatar.shirt.walk.e.0"];
+    const fb = walkerOps(missing, who("m1"), "front", 2, 1, 0, pose);
+    const seated = avatarFrames(look, "front");
+    expect(fb.map((o) => o.key)).toEqual([
+      avatarWalkFrames(look, pose)[0].key,
+      seated[1].key,
+      avatarWalkFrames(look, pose)[2].key,
+    ]);
   });
 });
 
