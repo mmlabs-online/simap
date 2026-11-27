@@ -46,3 +46,40 @@ None.
 ### Scope self-check
 - Could the diff be smaller? No; mostly declarative tokens and tests.
 - Diff size: see commit.
+
+## Slice 2 — Token guard (attempt 1)
+
+### Files touched
+- `scripts/check-tokens.mjs` (new): rules table, `findViolations`, `isScanned`, `isAllowed`, `ALLOWLIST`, `compareToPending`, `scanRepo`, CLI (`--list`). Required because: the guard.
+- `scripts/check-tokens.test.ts` (new): rule, allowlist, pending, ratchet, repo and CLI tests (15 tests). Required because: R5, AC 1b.
+- `scripts/check-tokens.pending.json` (new): generated with `node scripts/check-tokens.mjs --list`: 65 files, 373 violations in total. Required because: ratchet.
+- No `package.json`, `CLAUDE.md`, loop.config or `src/` change; the test runs inside `pnpm test`.
+
+### Rules
+hex, color-fn, shadow-arb, rounded-arb, font-arb, text-arb, ease-arb, duration-arb, arbitrary-px, spacing-scale (allowed steps 0,1,2,3,4,5,6,8,12 and px), css-radius, css-shadow, css-font-size, css-font-family; patterns as in the plan, comments stripped first.
+Permanent allowlist: `src/styles/tokens.css` (defines token values), `src/lib/sprites/**` (pixel-art data), `src/ui/roomlayout/paint.ts` (canvas art colours), `src/ui/portal/photo-canvas.ts` (canvas photo colours), `src/ui/groups/group-form.ts` (default group colour is user data).
+
+### Deviation
+- The plan's `hex` regex required a digit, which contradicts its own test list (`#fff`, `#FFFF` must flag; `#bad` must not) and missed `"#ffffff"` in Avatar.tsx. Used: 6 or 8 hex digits always; 3 or 4 digits need a digit or one repeated letter (`#fff`, `#FFFF`). `href="#bad"` and `&#123;` still pass.
+
+### Pending list (file: count)
+Largest: `src/app/globals.css` 69, `AppShellView.tsx` 32, `EntityFormDialog.tsx` 28, `Chip.tsx` 16, `Button.tsx` 12, `MapItemEditor.tsx` 11, `SeatOverlay.tsx` 10, `SeatsView.tsx` 10, `SeatDetailPanel.tsx` 9, `MapItemEditorDetails.tsx` 8. `Avatar.tsx` 1 (`"#ffffff"`, Q-S2-2). The other 55 files have 1 to 7 each; full table = `scripts/check-tokens.pending.json`. Spot-checked: Chip.tsx and Button.tsx (arbitrary hits consistent with rg), SeatOverlay.tsx (rgba tooltip, lines 20/165/166), Avatar.tsx:33; no allowlisted file is listed (test enforces).
+
+### Mutation check
+`bg-[#fff]` appended to non-pending `src/ui/AppShell.tsx` and `p-7` to pending `src/ui/Chip.tsx`: the repo test failed for both ("now 1, pending 0", "now 17, pending 16"); reverted (git status clean of src changes).
+
+### Known gaps (not fixed, R4)
+Inline style numbers (`borderRadius: 12`), non-hex/rgb/hsl style strings, `font-bold/extrabold` weights (slice sweeps, Q7).
+
+### Checks
+- format:check: pass (`All matched files use the correct format`)
+- typecheck: pass
+- check:layers: `1009 files, no violations`
+- test: `387 passed | 1 skipped (388) files; 3794 passed | 7 skipped (3801)`
+- build: pass
+
+### Out-of-plan files
+None. Follow-ups: none.
+
+### Scope self-check
+Only the four planned files; no `src/` edits.
