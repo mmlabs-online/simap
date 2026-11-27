@@ -151,13 +151,13 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-064 | Layout editor warning for unreachable chairs | MERGED | P2 | S | ui, ux | SIM-061 | none | 0 | 2026-11-27 |
 | SIM-065 | Choose GitHub-hosted or macbook runner for simap workflows | MERGED | P2 | S | architecture, security | — | plan-approval | 1 | 2026-11-26 |
 | SIM-066 | Redesign My Portal → Profile layout and the portal tab bar | MERGED | P2 | M | ui, ux | — | none | 0 | 2026-11-26 |
-| SIM-066.1 | Pixel character card polish (stage, Front/Back toggle, hairstyle cards) | DONE | P2 | S | ui, ux | SIM-066 | none | 0 | 2026-11-27 |
+| SIM-066.1 | Pixel character card polish (stage, Front/Back toggle, hairstyle cards) | MERGED | P2 | S | ui, ux | SIM-066 | none | 0 | 2026-11-27 |
 | SIM-067 | Redesign My Portal → My seat layout (seat cards and My requests list) | MERGED | P2 | M | ui, ux | SIM-066 | none | 0 | 2026-11-26 |
 | SIM-068 | Redesign the sign-in page as a "small world" landing (Ming's mockup) | MERGED | P2 | M | ui, ux, security | — | none | 0 | 2026-11-26 |
 | SIM-068.1 | Four pixel rooms, paths and notes around the sign-in card | MERGED | P2 | M | ui, ux | SIM-068 | none | 0 | 2026-11-26 |
 | SIM-069 | Redesign My Portal → My devices layout (summary tiles and device table) | MERGED | P2 | M | ui, ux | SIM-066 | none | 0 | 2026-11-26 |
 | SIM-070 | Redesign the Map items page and merge item edit and art into one Item editor | MERGED | P2 | M | ui, ux | — | none | 0 | 2026-11-27 |
-| SIM-070.1 | Map items page header, stats bar, group tabs, search and card grid | BACKLOG | P2 | M | ui, ux | SIM-070 | none | 0 | 2026-11-27 |
+| SIM-070.1 | Map items page header, stats bar, group tabs, search and card grid | PLANNING | P2 | M | ui, ux | SIM-070 | none | 0 | 2026-11-27 |
 | SIM-071 | Restyle the whole app to the Simap design tokens | IN_PROGRESS | P2 | L | ui, ux, architecture | — | plan-approval | 0 | 2026-11-27 |
 
 D47 is lifted for the room map tickets (D58). SIM-033 is re-scoped to D66 (ship the bundled package + Credits); per-item art is SIM-039.x.
