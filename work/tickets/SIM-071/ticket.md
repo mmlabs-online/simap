@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | PLANNING |
+| State | BLOCKED |
 | Priority | P2 |
 | Size | L |
 | Areas | ui, ux, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-27 |
-| Claimed by | claude@2026-11-27T06:58:13Z |
+| Claimed by | — |
 | PR | — |
 
 ## Goal
@@ -82,4 +82,12 @@ workspace coral) via D87.
 - 2026-11-27: brief given (`brief.md`). Answers: one ticket (planner slices); keep dark mode with derived values;
   DM Sans everywhere, keep Fraunces for the sign-in headline.
 
+Waiting for Ming: plan approval (M-95)
+
 ## Handoff
+
+### 2026-11-27 — claude — BLOCKED
+- Agent calls: 3 (frontend-developer×1 50k, ux-architect×1 47k, planner×1 113k; default models)
+- Done: consults; plan READY with 7 slices (slice 1 fully specified: tokens.css + compatibility layer + DM Sans + md 800 + focus ring + reduced motion + contrast tests); plan gate; M-95 added.
+- In progress / next: Ming answers Q1–Q17 (or accepts defaults) → implement slice 1.
+- Gotchas: white on coral fails AA (Q1); brief and AC conflict until Ming decides.
