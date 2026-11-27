@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-27 |
 | Claimed by | — |
-| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 |
+| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 |
 
 ## Goal
 Every screen of simap uses one set of design tokens (colours, type, spacing, radius, elevation, layout, motion) from
@@ -115,3 +115,9 @@ workspace coral) via D87.
 - Done: slice 4 (shell, 216 px sidebar, page containers) implemented, review PASS attempt 1, PR #160.
 - In progress / next: Ming merges #160; then `/run SIM-071` for slice 5 (management screens).
 - Gotchas: width table is computed, not measured; one rework left on this ticket.
+
+### 2026-11-27 — claude — IN_PROGRESS (slice 5a PR open)
+- Agent calls: 3 (planner×1 183k addendum, implementer×1 76k, reviewer×1 78k)
+- Done: slice 5 split into 5a/5b/5c; 5a (members, invitations, groups, approvals, audit, org, credits) implemented, review PASS attempt 1, PR #161; pending 261 → 244.
+- In progress / next: Ming merges #161; then `/run SIM-071` for 5b (devices, device types) — needs a short addendum first.
+- Gotchas: one rework left on this ticket.

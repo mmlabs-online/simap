@@ -32,20 +32,20 @@ export function DeleteImpactBody({
   const copy = groupsCopy[kind];
   if (deleteStep(impact) === "plain") {
     return (
-      <div className="text-sm font-medium text-on-surface">
+      <div className="text-label text-text-primary">
         <p>{copy.deleteBody(label)}</p>
       </div>
     );
   }
   return (
-    <div className="text-sm font-medium text-on-surface">
+    <div className="text-label text-text-primary">
       <p>{copy.forceDeleteIntro(label)}</p>
       <ul className="list-disc pl-5 mt-1">
         {impactLines(impact).map((line) => (
           <li key={line}>{line}</li>
         ))}
       </ul>
-      <p className="mt-2 text-on-surface-variant">{copy.forceDeleteNote}</p>
+      <p className="mt-2 text-text-secondary">{copy.forceDeleteNote}</p>
     </div>
   );
 }

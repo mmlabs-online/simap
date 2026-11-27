@@ -3,6 +3,7 @@
 import type { Tier } from "@/lib/auth/tier";
 import { inviteRoleOptions } from "@/lib/invitations/roles";
 import { invitationsCopy } from "../copy/invitations";
+import { Button } from "../Button";
 import { DialogField, DialogSelect, EntityFormDialog } from "../EntityFormDialog";
 
 export type InviteNotice = { kind: "sent"; text: string } | { kind: "sentNotRecorded" };
@@ -44,22 +45,18 @@ export function InviteDialog(p: InviteDialogProps) {
       }}
     >
       {p.notice?.kind === "sent" && (
-        <div role="status" className="text-[13px] font-semibold text-on-surface px-1">
+        <div role="status" className="text-label font-semibold text-text-primary px-1">
           {p.notice.text}
         </div>
       )}
       {p.notice?.kind === "sentNotRecorded" && (
         <div role="status" className="flex flex-col items-start gap-2 px-1">
-          <span className="text-[13px] font-semibold text-on-surface">
+          <span className="text-label font-semibold text-text-primary">
             {invitationsCopy.sentNotRecorded}
           </span>
-          <button
-            type="button"
-            onClick={p.onRetryRecord}
-            className="state-layer px-4 py-2 rounded-md3 border border-outline text-on-surface font-bold text-sm cursor-pointer font-[inherit]"
-          >
+          <Button variant="outlined" size="sm" onClick={p.onRetryRecord}>
             {invitationsCopy.retryRecord}
-          </button>
+          </Button>
         </div>
       )}
       <DialogField

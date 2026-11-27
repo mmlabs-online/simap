@@ -33,7 +33,7 @@ export function ListSection<T>({
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-h3 font-extrabold text-on-surface">{title}</h2>
+        <h2 className="text-subtitle text-text-primary">{title}</h2>
         <Button icon="add" size="sm" onClick={onNew}>
           {newLabel}
         </Button>
@@ -51,7 +51,7 @@ export function ListSection<T>({
 
       {list.status === "error" && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(list.errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -62,7 +62,7 @@ export function ListSection<T>({
 
       {list.status === "ready" && list.items.length === 0 && (
         <Card className="px-6 py-8 text-center">
-          <p className="text-sm font-medium text-on-surface-variant">{emptyText}</p>
+          <p className="text-label text-text-secondary">{emptyText}</p>
         </Card>
       )}
 

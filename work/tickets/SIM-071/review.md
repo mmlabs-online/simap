@@ -240,3 +240,54 @@ None (no review trigger matched).
 
 ### Blockers from review agents (slice 4)
 - None (no review trigger matched).
+
+## Slice 5a — Attempt 1
+Verdict: PASS
+
+Date: 2026-11-27. Scope: slice 5a (Members + invitations, Groups, Approvals, Audit, Credits, Org), commit eac0b23 against plan.md "Slice 5 addendum — Management screens" (rules R-a..R-h, 5a Files table, S5a-1..S5a-10).
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format".
+- `pnpm typecheck`: exit 0. `pnpm check:layers`: exit 0, "1029 files, no violations".
+- `pnpm test`: exit 0, "397 passed | 1 skipped (398)" files, "3874 passed | 7 skipped (3881)" tests (matches impl-log).
+- `pnpm build`: exit 0.
+- `node scripts/check-tokens.mjs`: exit 0, "52 files, no violations outside the pending list".
+- `pnpm test:db`: CI-only, not affected (no server/DB change).
+
+### Acceptance criteria
+- [x] S5a-1 Token utilities only; R-a/R-b/R-c applied. Evidence: `screen-tokens.test.ts` green (19 MIGRATED files: the 18 screen files + `table.ts`, plan patterns copied verbatim, plus `opacity-60|focus-visible:|focus-within:`). The plan's rg over `src/ui/{members,invitations,groups,requests,audit,credits,org}/*.tsx` gives hits only in test files (`not.toContain("text-[")` literals). A wider sweep (legacy aliases, `font-heading`, `leading-[`, `tracking-[`, half-step spacing, `[Nrem|px]`) over the same folders: no hits.
+- [x] S5a-2 No off-scale text. Evidence: `rg "text-(xs|sm|lg|2xl)\b"` on the glob: no hits. h1s on Members/Groups/Approvals/Audit/Credits are `text-display`; section h2s (ListSection, PendingInvitations, Credits) `text-subtitle`; metadata `text-caption`. Tests: MembersView "uses the token type scale…", ApprovalsView h1, GroupsView h2, AuditView `<th>`.
+- [x] S5a-3 44 px targets, no hand-built buttons. Evidence: `rg "<button" src/ui/invitations` hits only a test regex; RequestRowActions test asserts `min-h-control` and no `min-h-11`; MembersView row actions each `min-h-control`; InviteDialog retry `data-variant="outlined"` + `min-h-control`; org-views: 2 radio labels `min-h-control`, 2 inputs `size-5`.
+- [x] S5a-4 InvitePeople uses kit Button. Evidence: diff is only the `Button` import and `<Button onClick={() => setOpen(true)}>{invitationsCopy.open}</Button>`; `Button.tsx:37,43` defaults `variant="filled"`, `type="button"`; screen-tokens "invitation entry points use the kit Button only".
+- [x] S5a-5 Status text labels, toned pills, no dimming. Evidence: `MembersView.tsx:163-167` Pill success/neutral with `statusLabels`; deactivated row `bg-canvas`, no `opacity-60`; `ApprovalsView.tsx:125-130` Pill with `requestStatusLook(it.status).tone` (`my-requests.ts:25-33`: approved success, rejected danger, cancelled neutral); pending rows render no pill (Q-S5-4 default). Tests: MembersView "status pills…", ApprovalsView "decided rows carry a toned pill…".
+- [x] S5a-6 Pending shrinks by exactly 5 keys. Evidence: `git diff origin/main...HEAD -- scripts/check-tokens.pending.json` removes only AuditView 3, InviteDialog 5, InvitePeople 2, MembersView 4, PendingInvitations 3; totals 52 keys / 261 → 47 keys / 244; keys sorted; globals.css 65; check-tokens exits 0; screen-tokens pending test green.
+- [x] S5a-7 Recursive container scan. Evidence: `page-container.test.ts:6-9,41-43` uses `readdirSync(..., { recursive: true, encoding: "utf8" })` on `../ui/` and `../app/`, backslash-normalised, `.tsx` not `.test.tsx`, asserts > 100 files. Reviewer reproduction of the scan: 194 files, includes unlisted `app/layout.tsx`, 0 hits of `p-4 lg:p-6`, so adding the string to any unlisted file fails the test.
+- [x] S5a-8 No behaviour/copy/prop/aria change. Evidence: `git diff origin/main...HEAD --stat -- src/ui/copy src/lib src/app` empty; screen diffs are class strings, the planned Pill swaps, two kit Button swaps (same handler, label, type) and removal of `className="min-h-11"`; ids, `aria-*`, `tabIndex`, `ref` unchanged. Existing test asserts unchanged except the RequestRowActions `min-h-11` row the plan rewrites.
+- [x] S5a-9 Only planned files. Evidence: `git diff --stat origin/main...HEAD` = 19 screen/kit files + pending json + 9 test files + `work/tickets/SIM-071/{plan,impl-log,ticket}.md`; all in the 5a Files table (ticket.md is workflow state). No High path touched.
+- [x] S5a-10 Checks green; impl-log "Slice 5a (attempt 1)" has files, pending before/after (with per-key counts), visible differences matching the plan list, checks, out-of-plan "None". The rename map is referenced, not copied ("rename map as in the plan's R-a/R-b"); acceptable since the plan section is the single source 5b/5c reuse.
+
+Additional reviewer check: `TABLE_CELL` carries `font-normal` and the member name cell adds `font-semibold`. Built CSS (`.next/static/chunks/05r_sc27f7bbx.css`) orders `.font-normal` (offset 35698) before `.font-semibold` (35792), so the name renders at 600 as planned.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1: new imports are ui → ui (`../table`, `../Button`, `../Chip`, `../portal/my-requests`); `table.ts` imports nothing; check:layers clean. R3: none. R4: only the 5a Files table. R5: new and extended tests cover every rule row. R2/R6/R7 not touched.
+
+### Blockers from review agents
+None (no review trigger matched).
+
+### Nits (do not block)
+- 💭 `ApprovalsView.test.tsx` cancelled case asserts `bg-canvas` anywhere in the page; a tighter form would match it inside the pill (`/<span[^>]*bg-canvas[^>]*>.*Cancelled/`).
+- 💭 `InviteDialog.test.tsx:58` regex depends on attribute order (`min-h-control` before `data-variant`); two separate matches on the `<button>` tag would be order-proof.
+- 💭 `screen-tokens.test.ts` failure message uses `re.source.slice(0, 20)`; the matched text is already in the assertion value, so this is fine, just terse.
+
+### Ming verification after merge
+- As in plan "Ming verification after merge (slice 5a)": Admin at 390 / 800 / 1280 px, light and dark — Members (coral Invite people, status pills, readable deactivated row, 44 px Edit/Deactivate), invite dialog incl. "sent but not recorded", Groups, Approvals with Approved/Rejected filters, Audit table sideways scroll at 390, Credits, org switcher (two orgs), first-visit profile; keyboard-tab through Members (green focus ring). Not browser-verified by implementer or reviewer.
+
+### Follow-ups (out of scope)
+- Q-S5-4: an amber "Pending" pill on Approvals pending rows, if Ming wants it.
+- 5b / 5c per the plan outlines (DeviceTable adopts `TABLE_*`; `md` → `lg` device layouts).
+
+### Blockers from review agents (slice 5a)
+- None (no review trigger matched).

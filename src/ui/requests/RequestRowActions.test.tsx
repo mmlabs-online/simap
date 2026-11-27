@@ -27,13 +27,14 @@ const render = (
 const buttons = (html: string) => html.match(/<button[^>]*>.*?<\/button>/g) ?? [];
 
 describe("RequestRowActions", () => {
-  it("pending, empty seat: Approve then Reject, both enabled, min-h-11", () => {
+  it("pending, empty seat: Approve then Reject, both enabled, 44 px", () => {
     const [a, r] = buttons(render(item()));
     expect(a).toContain(">Approve<");
     expect(r).toContain(">Reject<");
     for (const b of [a, r]) {
       expect(b).not.toContain(DIS);
-      expect(b).toContain("min-h-11");
+      expect(b).toContain("min-h-control");
+      expect(b).not.toContain("min-h-11");
     }
   });
   it("non-pending item renders nothing", () => {

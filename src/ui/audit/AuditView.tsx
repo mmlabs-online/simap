@@ -5,6 +5,7 @@ import { actionLabel, auditCopy } from "../copy/audit";
 import { shellCopy } from "../copy/shell";
 import { Button } from "../Button";
 import { Card } from "../Card";
+import { TABLE_CELL, TABLE_HEAD, TABLE_ROW } from "../table";
 import { actorLabel, formatAuditTime, metaEntries, type AuditFilterState } from "./audit-state";
 
 export type AuditViewProps = {
@@ -22,9 +23,6 @@ export type AuditViewProps = {
   onLoadMore: () => void;
 };
 
-const CELL = "px-3 py-2 align-top text-sm text-on-surface";
-const HEAD = "px-3 py-2 text-left text-[11px] font-extrabold uppercase text-on-surface-variant";
-
 /** The Audit page body (D52: clean kit, no pixel font). Pure: data and handlers come from props. */
 export function AuditView({
   status,
@@ -40,15 +38,13 @@ export function AuditView({
   onRetry,
   onLoadMore,
 }: AuditViewProps) {
-  const title = (
-    <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.audit.title}</h1>
-  );
+  const title = <h1 className="text-display text-text-primary">{shellCopy.pages.audit.title}</h1>;
   if (status === "forbidden") {
     return (
       <div className="page-content flex flex-col gap-4">
         {title}
         <Card className="px-6 py-12 text-center">
-          <p role="alert" className="text-sm font-medium text-on-surface-variant">
+          <p role="alert" className="text-label text-text-secondary">
             {auditCopy.noAccess}
           </p>
         </Card>
@@ -112,7 +108,7 @@ export function AuditView({
       </Card>
 
       {rangeInvalid && (
-        <p role="alert" className="text-sm font-semibold text-error">
+        <p role="alert" className="text-label font-semibold text-danger">
           {auditCopy.rangeInvalid}
         </p>
       )}
@@ -125,7 +121,7 @@ export function AuditView({
 
       {status === "error" && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -136,7 +132,7 @@ export function AuditView({
 
       {status === "ready" && items.length === 0 && !rangeInvalid && (
         <Card className="px-6 py-12 text-center">
-          <p className="text-sm font-medium text-on-surface-variant">
+          <p className="text-label text-text-secondary">
             {filtered ? auditCopy.emptyFiltered : shellCopy.pages.audit.empty}
           </p>
         </Card>
@@ -144,35 +140,35 @@ export function AuditView({
 
       {status === "ready" && items.length > 0 && (
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[40rem] border-collapse">
+          <table className="w-full min-w-160 border-collapse">
             <thead>
-              <tr className="border-b border-outline-variant">
-                <th className={HEAD}>{auditCopy.columns.when}</th>
-                <th className={HEAD}>{auditCopy.columns.who}</th>
-                <th className={HEAD}>{auditCopy.columns.action}</th>
-                <th className={HEAD}>{auditCopy.columns.entity}</th>
-                <th className={HEAD}>{auditCopy.columns.details}</th>
+              <tr className="border-b border-divider">
+                <th className={TABLE_HEAD}>{auditCopy.columns.when}</th>
+                <th className={TABLE_HEAD}>{auditCopy.columns.who}</th>
+                <th className={TABLE_HEAD}>{auditCopy.columns.action}</th>
+                <th className={TABLE_HEAD}>{auditCopy.columns.entity}</th>
+                <th className={TABLE_HEAD}>{auditCopy.columns.details}</th>
               </tr>
             </thead>
             <tbody>
               {items.map((it) => {
                 const meta = metaEntries(it.meta);
                 return (
-                  <tr key={it.id} className="border-b border-outline-variant last:border-b-0">
-                    <td className={`${CELL} whitespace-nowrap`}>{formatAuditTime(it.at)}</td>
-                    <td className={CELL}>{actorLabel(it.actor)}</td>
-                    <td className={CELL}>{actionLabel(it.action)}</td>
-                    <td className={CELL}>
+                  <tr key={it.id} className={TABLE_ROW}>
+                    <td className={`${TABLE_CELL} whitespace-nowrap`}>{formatAuditTime(it.at)}</td>
+                    <td className={TABLE_CELL}>{actorLabel(it.actor)}</td>
+                    <td className={TABLE_CELL}>{actionLabel(it.action)}</td>
+                    <td className={TABLE_CELL}>
                       {it.entity}
                       {it.entityId !== null && (
-                        <span className="block break-all text-xs text-on-surface-variant">
+                        <span className="block break-all text-caption text-text-secondary">
                           {it.entityId}
                         </span>
                       )}
                     </td>
-                    <td className={`${CELL} break-words`}>
+                    <td className={`${TABLE_CELL} break-words`}>
                       {meta.map(([k, v]) => (
-                        <span key={k} className="block text-xs">
+                        <span key={k} className="block text-caption">
                           {k}: {v}
                         </span>
                       ))}

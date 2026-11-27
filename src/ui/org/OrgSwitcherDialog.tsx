@@ -60,11 +60,17 @@ export function OrgSwitcherDialog({
           <Notice kind="info">{orgCopy.switcher.only}</Notice>
         ) : (
           <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
-            <legend className="mb-1 text-sm font-semibold">{orgCopy.switcher.legend}</legend>
+            <legend className="mb-1 text-label font-semibold text-text-primary">
+              {orgCopy.switcher.legend}
+            </legend>
             {state.orgs.map((o) => (
-              <label key={o.id} className="flex items-center gap-2 text-sm">
+              <label
+                key={o.id}
+                className="flex min-h-control cursor-pointer items-center gap-2 text-label font-normal text-text-primary"
+              >
                 <input
                   type="radio"
+                  className="size-5 flex-none"
                   name="org"
                   value={o.id}
                   checked={selected === o.id}
@@ -72,12 +78,12 @@ export function OrgSwitcherDialog({
                 />
                 <span className="min-w-0 break-words">{o.name}</span>
                 {o.access === "super_admin" && (
-                  <span className="text-xs text-on-surface-variant">
+                  <span className="text-caption text-text-secondary">
                     {orgCopy.badge.supportAccess}
                   </span>
                 )}
                 {o.id === currentId && (
-                  <span className="text-xs text-on-surface-variant">
+                  <span className="text-caption text-text-secondary">
                     {orgCopy.switcher.current}
                   </span>
                 )}

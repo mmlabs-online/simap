@@ -48,11 +48,11 @@ export function DecisionDialog({
         onConfirm();
       }}
     >
-      <p className="text-sm break-words">
+      <p className="text-label font-normal break-words">
         {(approve ? d.approveBody : d.rejectBody)(who, item.seat.code, item.seat.roomCode)}
       </p>
       {approve && rivals.length > 0 && (
-        <p className="text-sm break-words">
+        <p className="text-label font-normal break-words">
           {d.rivalsLine(
             rivals.slice(0, MAX_NAMES),
             Math.max(0, rivals.length - MAX_NAMES),

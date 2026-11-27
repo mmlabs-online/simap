@@ -60,7 +60,7 @@ function ReactivateInner({
       onClose={onClose}
       onSubmit={submit}
     >
-      <p className="text-sm font-medium text-on-surface">{d.body(member.displayName)}</p>
+      <p className="text-label text-text-primary">{d.body(member.displayName)}</p>
     </EntityFormDialog>
   );
 }

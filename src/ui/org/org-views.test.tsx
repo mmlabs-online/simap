@@ -52,6 +52,8 @@ describe("OrgSwitcherDialog", () => {
     expect(out.match(/checked=""/g)).toHaveLength(1);
     expect(out).toContain(orgCopy.switcher.current);
     expect(out).toContain("Tổ chức Á");
+    expect(out.match(/<label [^>]*min-h-control/g)).toHaveLength(2);
+    expect(out.match(/<input [^>]*size-5/g)).toHaveLength(2);
   });
 
   it("loading and failed states; failed offers Try again", () => {
