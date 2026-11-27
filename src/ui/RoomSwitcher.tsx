@@ -34,7 +34,7 @@ export function RoomSwitcherView({
         id={SELECT_ID}
         value={selected}
         onChange={(e) => onSelect(e.target.value)}
-        className="min-w-0 flex-1 lg:max-w-xs h-10 rounded-md3 border border-outline-variant bg-surface px-3 text-sm font-semibold text-on-surface"
+        className="min-w-0 flex-1 md:max-w-xs min-h-control rounded-lg border border-border-strong bg-surface px-3 text-label text-text-primary cursor-pointer transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out"
       >
         <option value="">{copy.placeholder}</option>
         {rooms.map((r) => (

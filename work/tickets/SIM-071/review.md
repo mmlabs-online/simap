@@ -185,3 +185,58 @@ Date: 2026-11-27. Scope: rework of Issues 1 and 2 from "Slice 3 — Attempt 1" (
 
 ### Blockers from review agents (slice 3)
 - None (no review trigger matched).
+
+## Slice 4 — Attempt 1
+Verdict: PASS
+
+Date: 2026-11-27. Scope: slice 4 (shell, sidebar, page containers), commit 05a29b1 against plan.md "Slice 4 addendum" S4-1..S4-10.
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format".
+- `pnpm typecheck`: exit 0. `pnpm check:layers`: exit 0, "1027 files, no violations".
+- `pnpm test`: exit 0, "396 passed | 1 skipped (397)" files, "3867 passed | 7 skipped (3874)" tests (matches impl-log).
+- `pnpm build`: exit 0.
+- `node scripts/check-tokens.mjs`: exit 0, "52 files, no violations outside the pending list"; `--list` has no `AppShellView.tsx` entry.
+
+### Acceptance criteria
+- [x] S4-1 Sidebar from 800 replaces the rail. Evidence: test "sidebar from md, no lg: classes in the nav"; `rg "88px|lg:w-|lg:flex-col|useState" src/ui/AppShellView.tsx` returns no hits; no collapse state; built CSS contains `.md\:w-sidebar`.
+- [x] S4-2 Selected entry is explicit. Evidence: test "active entry has one indicator inside its link" (admin `/rooms/A1` → `/rooms`, user `/` → `/`; `aria-hidden`, `bg-workspace-primary`); link has `aria-[current=page]:bg-canvas font-semibold`, icon `filled={active}`; slice-3 contrast tests green.
+- [x] S4-3 Targets of at least 44 px and the type scale. Evidence: nav links `md:min-h-control`/`min-h-16`, Credits `min-h-control min-w-control`, skip link `focus:min-h-control`, select `min-h-control` (AppShellView and RoomSwitcher tests); `rg "text-\[" AppShellView.tsx RoomSwitcher.tsx` returns no hits.
+- [x] S4-4 Tokens only. Evidence: test "uses tokens only" (6 renders: LEGACY, PALETTE, 700/800, arbitrary text/rounded/shadow/tracking/leading, arbitrary px); brand-mark `style` removed (diff); pending key gone.
+- [x] S4-5 Page container. Evidence: `page-container.test.ts`, tokens.test "page containers cap the width…"; built CSS: `.page-content{width:100%;max-width:var(--width-content);padding:var(--space-4);margin-inline:auto}` plus `@media (min-width:800px){.page-content{padding:var(--space-6)}` and `@media (min-width:1280px){.page-content{padding-inline:var(--space-8)}`; the same for `.page-library` with `--width-library`.
+- [x] S4-6 No behaviour change. Evidence: the earlier AppShellView/RoomSwitcher tests are unchanged apart from the 3 dev-badge class asserts; `git diff origin/main...HEAD -- src/ui/copy src/lib` touches only `tokens.test.ts` (planned test); `git diff -U0` of the 20 feature files, PageSkeleton and KitGallery shows only `p-4 lg:p-6` → `page-content`/`page-library` (CreditsPage and LayoutEditorPage put the container first, other classes kept); library/content split matches Q-S4-1. `rg "p-4 lg:p-6" src` finds only the test's own literal.
+- [x] S4-7 Pending: one key removed (`src/ui/AppShellView.tsx: 32`); check-tokens exits 0; globals.css stays 65.
+- [x] S4-8 Width table recorded (computed, not measured in a browser; stated honestly and moved to Ming's verification). `git diff --stat` shows only files from the Files table plus work files.
+- [x] S4-9 Checks green; the test diffs are class-string updates plus new tests.
+- [x] S4-10 impl-log "Slice 4" has files, rename map, pending, built CSS, width table, visible differences and checks.
+
+Note: the plan's "31 lines" for the wrapper swaps is a plan miscount; its own table lists 29, and the diff swaps all 29 with zero left over.
+
+### Recorded deviation: nav `style=` assertion (accepted)
+The plan asks that "the `<nav>` markup has no `style=`". The test asserts no `style` that contains `background`/`color`. Reason: the kit `Icon` (`src/ui/Icon.tsx:27`) always sets `style={{ fontSize: size }}`, and the plan keeps the `Icon` call unchanged, so a blanket ban cannot pass without changing the kit outside the plan. The narrowed assertion still catches the brand-mark inline fill this slice removed. Accepted. A tighter form is in Nits.
+
+### Issues
+None blocking. One 🟡 test-strength gap, carried forward rather than reworked because the criterion is met today (rg: zero hits) and slice 5 edits these same files.
+- `src/ui/page-container.test.ts:35-37`: the plan asks for a scan of every non-test `.tsx` under `src/ui` and `src/app` for `p-4 lg:p-6`. The test checks only the 23 listed files, so a new page with the old padding would not fail. Slice 5 should replace it with a recursive scan (`readdirSync(..., { recursive: true })`, filter `.tsx` and not `.test.`).
+
+### Rules (CLAUDE.md)
+No violations found. R1: check:layers clean, no new imports. R3: none. R4: only planned files. R5: new tests cover the shell, select, containers and the globals rule. R2/R6/R7 not touched.
+
+### Blockers from review agents
+None (no review trigger matched).
+
+### Nits (do not block)
+- 💭 `AppShellView.test.tsx` "sidebar from md": `expect(classesOf(html, /<\/?div/)).toBeDefined()` and `expect(nav).toBeDefined()` are always true (dead asserts); drop them.
+- 💭 "header controls" test does not assert the version span's `text-caption` (plan row lists it).
+- 💭 The nav `style=` assertion could be stricter: every `style="…"` inside `<nav>` matches `^font-size:\d+px;?$`.
+
+### Ming verification after merge
+- As in the plan's "Ming verification after merge (slice 4)": Admin at 390 / 800 / 1023 / 1024 / 1280 px, light and dark (bottom bar below 800, sidebar from 800, all 11 entries reachable, clear active entry, readable badges); skip link on the first Tab; room map and layout editor at 1024 (456 px canvas column, Q-S4-4); Devices and My Portal at 800; a monitor of at least 1600 px (1320 / 1600 caps); dev and prod token badges with `pnpm dev`.
+- The width table in impl-log was computed, not measured. Ming's browser pass is the real check.
+
+### Follow-ups (out of scope)
+- Slice 5: recursive `p-4 lg:p-6` scan in `page-container.test.ts` (see Issues).
+- Possibly cramped layouts named in the impl-log width table (`md:` device cards/tables at 800, `CheckinView` `1fr 300px` at 1024): slices 5/6 if Ming confirms.
+
+### Blockers from review agents (slice 4)
+- None (no review trigger matched).

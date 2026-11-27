@@ -31,7 +31,7 @@ export function RoomsView({
   onDelete,
 }: RoomsViewProps) {
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-4">
+    <div className="page-content flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.rooms.title}</h1>
         {canManage && (

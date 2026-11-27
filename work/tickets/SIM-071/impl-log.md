@@ -139,3 +139,47 @@ Only the planned files plus the one test noted above. Follow-ups: none.
 
 ### Scope self-check
 Only the two test files named in review issues 1 and 2, plus this log. Follow-ups: none.
+
+## Slice 4 (attempt 1) — Shell, sidebar and page containers
+
+### Files touched
+- `src/ui/AppShellView.tsx`: all shell class strings per Approach 1, new `data-slot="nav-indicator"` span, brand-mark `style` removed, signed-out wrapper `page-content`, doc comment. Required because it is the slice's subject.
+- `src/ui/RoomSwitcher.tsx`: select classes (Approach 2).
+- `src/app/globals.css`: `@utility page-content` / `page-library` (nested `@media`, accepted by Tailwind 4.3), `--accent-shadow` deleted.
+- 20 feature files + `PageSkeleton.tsx` + `src/app/dev/shell/KitGallery.tsx`: `p-4 lg:p-6` → `page-content` / `page-library` only (the pre-edit `rg` gave exactly the 31 expected lines; all swapped, none left). Library: DeviceTypesView, MapItemsView, SeatsPage, SeatsView, LayoutEditorPage. `CreditsPage` / `LayoutEditorPage` class order changed to put the container first (wrapper only).
+- `scripts/check-tokens.pending.json`: removed `src/ui/AppShellView.tsx`.
+- Tests: `AppShellView.test.tsx` (3 asserts updated, 7 new tests), `RoomSwitcher.test.tsx` (1), `src/ui/page-container.test.ts` (new), `src/lib/color/tokens.test.ts` (1).
+- The extra `rg -ln "lg:p-|md:p-"` hits were all the same files already in the table; no other page wrapper found.
+
+### Rename map additions
+`border-outline-variant` → `border-divider`; `text-on-surface(-variant)` → `text-text-primary/secondary`; `bg-error-container text-on-error-container` → `bg-danger-tint text-danger`; `p-4 lg:p-6` → `page-content`/`page-library`; dev badge amber/red palette → `warning`/`danger` tints.
+
+### Pending before/after
+`node scripts/check-tokens.mjs --list` diffed against the committed file: only `src/ui/AppShellView.tsx: 32` removed; globals.css stays 65; every other count unchanged.
+
+### Built CSS
+`pnpm build`; in `.next/static/chunks/*.css`: `.page-content{width:100%;max-width:var(--width-content);padding:var(--space-4);margin-inline:auto}` plus `@media (min-width:800px){…padding:var(--space-6)}` and `@media (min-width:1280px){…padding-inline:var(--space-8)}`; `.page-library` identical with `--width-library`. Nested `@media` worked, no `@variant` fallback needed.
+
+### Width table
+Not measured in a browser (no browser in this environment); computed from the plan formula (viewport − 216 − 2 × padding) and the code read in Approach 4. Needs Ming's eyes at 800/1024 (Q-S4-4).
+| Content width | 390 | 800 | 1024 | 1280 |
+|---|---|---|---|---|
+| Content px | 358 (bottom bar) | 536 | 760 | 1000 |
+- Layout editor: 800 desktop-only state (unchanged); 1024 canvas column 456 px, scrolls (expected usable).
+- Room map: scrolls horizontally at 800 (536 px).
+- Possibly cramped at 800 (switch to wide layout with 536 px): `md:` device cards/tables, pending extension/return lists; at 1024 `CheckinView` `1fr 300px` (444 px). Follow-up for slices 5/6 if confirmed.
+
+### Visible differences
+As the plan list "Visible differences to log (slice 4)", unchanged: 216 px sidebar from 800 with icon+label rows and coral left indicator; 64 px bottom-bar cells with top indicator; brand mark 8 px radius with card shadow; badges 12 px 600; header type scale, 44 px Credits target, 24 px padding from 800; dev/prod badge now tinted warning/danger; room select 44 px; skip link coral; pages centred and capped (1320 / 1600) with 24/32 px padding.
+
+### Checks
+- format:check: `All matched files use the correct format`
+- typecheck: pass; check:layers: `1027 files, no violations`
+- test: `396 passed | 1 skipped (397) files; 3867 passed | 7 skipped (3874)`
+- build: pass
+
+### Out-of-plan files / Follow-ups
+None out of plan. Follow-up: browser width check at 800/1024 (see table). The "tokens only" test asserts no `style=` containing background/color in the nav (not any `style=`), because `Icon` itself emits `style="font-size:…"`.
+
+### Scope self-check
+Only plan files. AppShell.tsx untouched as planned.

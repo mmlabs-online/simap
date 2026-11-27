@@ -141,7 +141,7 @@ function Group({
 /** The Search page body. Pure: state and handlers come from props. Names render as stored (D36). */
 export function SearchView({ query, onQueryChange, state, onRetry, onLoadMore }: SearchViewProps) {
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-4">
+    <div className="page-content flex flex-col gap-4">
       <h1 className="text-h2 font-extrabold text-on-surface">{copy.title}</h1>
       <FilledInput
         type="search"

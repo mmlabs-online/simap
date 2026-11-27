@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-27 |
 | Claimed by | — |
-| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 |
+| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 |
 
 ## Goal
 Every screen of simap uses one set of design tokens (colours, type, spacing, radius, elevation, layout, motion) from
@@ -109,3 +109,9 @@ workspace coral) via D87.
 - Done: slice 3 (UI kit) implemented; REWORK on attempt 1 (DecisionDialog regex always passed; kit disabled test too weak); PASS on attempt 2; PR #158.
 - In progress / next: Ming merges #158; then `/run SIM-071` for slice 4 (216 px sidebar).
 - Gotchas: Attempts now 1 (one rework used on this ticket).
+
+### 2026-11-27 — claude — IN_PROGRESS (slice 4 PR open)
+- Agent calls: 3 (planner×1 129k addendum, implementer×1 55k, reviewer×1 54k)
+- Done: slice 4 (shell, 216 px sidebar, page containers) implemented, review PASS attempt 1, PR #160.
+- In progress / next: Ming merges #160; then `/run SIM-071` for slice 5 (management screens).
+- Gotchas: width table is computed, not measured; one rework left on this ticket.

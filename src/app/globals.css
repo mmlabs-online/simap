@@ -24,7 +24,6 @@
 
   /* accent ring helpers still used by fields and the shell logo */
   --field-focus: color-mix(in srgb, var(--accent-orange) 15%, transparent);
-  --accent-shadow: color-mix(in srgb, var(--accent-orange) 30%, transparent);
 
   /* ---- primary = ink (near-black buttons until the kit rework, slice 3) ---- */
   --primary: var(--color-text-primary);
@@ -221,6 +220,33 @@ h3 {
 }
 @utility shadow-pixel {
   box-shadow: var(--shadow-pixel);
+}
+
+/* Page container (brief): centred, capped width, --space-6 to --space-8 side padding from md. 800/1280 are the
+   md/xl breakpoints (CSS variables cannot be used in media queries). */
+@utility page-content {
+  width: 100%;
+  max-width: var(--width-content);
+  margin-inline: auto;
+  padding: var(--space-4);
+  @media (width >= 800px) {
+    padding: var(--space-6);
+  }
+  @media (width >= 1280px) {
+    padding-inline: var(--space-8);
+  }
+}
+@utility page-library {
+  width: 100%;
+  max-width: var(--width-library);
+  margin-inline: auto;
+  padding: var(--space-4);
+  @media (width >= 800px) {
+    padding: var(--space-6);
+  }
+  @media (width >= 1280px) {
+    padding-inline: var(--space-8);
+  }
 }
 
 /* Material Symbols icon face (loaded via <link> in layout head). */

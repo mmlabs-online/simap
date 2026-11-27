@@ -51,4 +51,19 @@ describe("RoomSwitcherView", () => {
     expect(btn).toContain('type="button"');
     expect(btn).not.toMatch(/ disabled[ =>]/);
   });
+  it("select uses the control scale", () => {
+    const tag = /<select [^>]*>/.exec(render(""))![0];
+    for (const c of [
+      "min-h-control",
+      "rounded-lg",
+      "border-border-strong",
+      "bg-surface",
+      "text-label",
+      "text-text-primary",
+      "md:max-w-xs",
+    ]) {
+      expect(tag, c).toContain(c);
+    }
+    expect(tag).not.toMatch(/\bh-10\b|rounded-md3|lg:/);
+  });
 });

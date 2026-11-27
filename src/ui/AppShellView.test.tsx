@@ -72,11 +72,14 @@ describe("AppShellView", () => {
       );
     const dev = shell(devTokenCopy.badge);
     expect(dev).toContain(devTokenCopy.badge.label);
-    expect(dev).toContain("bg-amber-300");
+    expect(dev).toContain("bg-warning-tint text-warning");
+    expect(dev).toContain("border-warning");
+    expect(dev).toContain("rounded-sm");
     expect(dev).not.toContain(shellCopy.actions.signOut);
     const prod = shell({ ...devTokenCopy.prodBadge, prod: true });
     expect(prod).toContain("Production data");
-    expect(prod).toContain("bg-red-600");
+    expect(prod).toContain("bg-danger-tint text-danger");
+    expect(prod).toContain("border-danger");
     expect(prod).not.toContain(devTokenCopy.badge.label);
     expect(prod).not.toContain(shellCopy.actions.signOut);
   });
@@ -84,7 +87,7 @@ describe("AppShellView", () => {
   it("no devToken: no badge, sign-out still rendered", () => {
     const html = render("user");
     expect(html).not.toContain(devTokenCopy.badge.label);
-    expect(html).not.toContain("bg-amber-300");
+    expect(html).not.toContain("bg-warning-tint");
     expect(html).toContain(shellCopy.actions.signOut);
   });
 
@@ -334,5 +337,147 @@ describe("AppShellView", () => {
       expect(html).not.toContain("/approvals");
       expect(html).not.toContain("2 new decisions");
     });
+  });
+});
+
+const LEGACY =
+  /^(?:[\w-]+:)*(?:bg|text|border|outline|shadow)-(?:primary|on-primary|on-surface(?:-variant)?|surface-(?:high|highest|low|lowest|container)|outline(?:-variant)?|error|secondary[\w-]*|tertiary[\w-]*|accent-orange[\w-]*|[\w-]*-container)(?:\/\d+)?$|^rounded-md3/;
+const PALETTE =
+  /^(?:[\w-]+:)*(?:bg|text|border)-(?:red|amber|orange|yellow|green|blue|gray|slate|zinc|neutral|stone)-\d{2,3}$/;
+
+const classesOf = (html: string, re: RegExp) => {
+  const tag = new RegExp(`<[a-z0-9]+ [^>]*${re.source}[^>]*>`).exec(html)?.[0] ?? "";
+  return (/class="([^"]*)"/.exec(tag)?.[1] ?? "").split(/\s+/).filter(Boolean);
+};
+const navHtml = (html: string) => /<nav[\s\S]*<\/nav>/.exec(html)?.[0] ?? "";
+const allClasses = (html: string) =>
+  [...html.matchAll(/class="([^"]*)"/g)].flatMap((m) => m[1].split(/\s+/).filter(Boolean));
+
+describe("AppShellView slice 4: sidebar, controls, tokens", () => {
+  it("sidebar from md, no lg: classes in the nav", () => {
+    const html = render("admin");
+    expect(classesOf(html, /<\/?div/)).toBeDefined();
+    expect(html).toContain("flex-col-reverse md:flex-row");
+    const nav = classesOf(html, /aria-label="[^"]*"[^>]*class="flex-none/);
+    const navTag = /<nav [^>]*>/.exec(html)![0];
+    for (const c of [
+      "md:w-sidebar",
+      "md:flex-col",
+      "md:border-r",
+      "border-divider",
+      "bg-surface",
+      "md:overflow-y-auto",
+    ]) {
+      expect(navTag, c).toContain(c);
+    }
+    expect(nav).toBeDefined();
+    expect(allClasses(navHtml(html)).filter((c) => c.startsWith("lg:"))).toEqual([]);
+  });
+
+  it("nav links and labels use the control scale", () => {
+    const nav = navHtml(render("admin"));
+    const links = [...nav.matchAll(/<a [^>]*>/g)].map((m) => m[0]);
+    expect(links.length).toBeGreaterThan(0);
+    for (const l of links) {
+      for (const c of ["min-h-16", "md:min-h-control", "md:flex-row", "md:w-full", "rounded-lg"]) {
+        expect(l, c).toContain(c);
+      }
+    }
+    const labels = [...nav.matchAll(/<span class="text-caption md:text-label[^"]*"/g)];
+    expect(labels).toHaveLength(links.length);
+  });
+
+  it("active entry has one indicator inside its link", () => {
+    for (const [tier, path, href] of [
+      ["admin", "/rooms/A1", "/rooms"],
+      ["user", "/", "/"],
+    ] as const) {
+      const nav = navHtml(render(tier, path));
+      const hits = nav.match(/data-slot="nav-indicator"/g) ?? [];
+      expect(hits).toHaveLength(1);
+      const link = new RegExp(`<a [^>]*href="${href}"[^>]*>([\\s\\S]*?)</a>`).exec(nav)![1];
+      expect(link).toContain('data-slot="nav-indicator"');
+      expect(link).toMatch(
+        /<span aria-hidden="true" data-slot="nav-indicator" class="[^"]*bg-workspace-primary/,
+      );
+    }
+  });
+
+  it("header controls and skip link", () => {
+    const html = render("user");
+    const credits = classesOf(html, /href="\/credits"/);
+    expect(credits).toContain("min-h-control");
+    expect(credits).toContain("min-w-control");
+    expect(html).toMatch(/<span class="text-subtitle /);
+    expect(/<header [^>]*>/.exec(html)![0]).toContain("md:px-6 bg-surface border-b border-divider");
+    const skip = classesOf(html, /href="#main"/);
+    for (const c of [
+      "sr-only",
+      "focus:bg-workspace-action",
+      "focus:text-on-action",
+      "focus:min-h-control",
+      "focus:rounded-lg",
+    ]) {
+      expect(skip, c).toContain(c);
+    }
+  });
+
+  it("nav badge uses the danger tint at caption size", () => {
+    const html = renderToStaticMarkup(
+      <AppShellView
+        session={{ tier: "manager", email: "a@example.invalid" }}
+        pathname="/"
+        actions={{}}
+        badges={{ approvals: 3 }}
+      >
+        <p>x</p>
+      </AppShellView>,
+    );
+    expect(html).toMatch(/class="absolute[^"]*bg-danger-tint text-danger text-caption/);
+  });
+
+  it("signed out placeholder sits in the page container", () => {
+    expect(render(null)).toContain('<div class="page-content">');
+  });
+
+  it("uses tokens only", () => {
+    const withDev = (tier: Tier | null, prod: boolean) =>
+      renderToStaticMarkup(
+        <AppShellView
+          session={
+            tier
+              ? {
+                  tier,
+                  email: "a@example.invalid",
+                  devToken: prod ? { ...devTokenCopy.prodBadge, prod: true } : devTokenCopy.badge,
+                }
+              : null
+          }
+          pathname="/rooms/A1"
+          actions={{ switchOrg: () => {} }}
+          roomSwitcher={<span>rs</span>}
+          badges={{ approvals: 2 }}
+        >
+          <p>x</p>
+        </AppShellView>,
+      );
+    const htmls = [
+      render("admin"),
+      render("manager"),
+      render("user"),
+      render(null),
+      withDev("admin", false),
+      withDev("user", true),
+    ];
+    for (const html of htmls) {
+      for (const c of allClasses(html)) {
+        expect(c, c).not.toMatch(LEGACY);
+        expect(c, c).not.toMatch(PALETTE);
+        expect(["font-bold", "font-extrabold"]).not.toContain(c);
+        expect(c, c).not.toMatch(/^(?:[\w-]+:)*(?:text|rounded|shadow|tracking|leading)-\[/);
+        expect(c, c).not.toMatch(/\[[^\]\s]*\d(?:px|rem|em)[^\]\s]*\]/);
+      }
+      expect(navHtml(html)).not.toMatch(/style="[^"]*(?:background|color)/);
+    }
   });
 });

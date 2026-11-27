@@ -23,7 +23,7 @@ function PortalLoaded() {
   const searchParams = useSearchParams();
   const tab = parsePortalTab(searchParams.getAll("tab"));
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-4">
+    <div className="page-content flex flex-col gap-4">
       <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.portal.title}</h1>
       <PortalTabs
         tabs={PORTAL_TABS}
@@ -44,7 +44,7 @@ export function PortalPage() {
   return (
     <Suspense
       fallback={
-        <div className="p-4 lg:p-6">
+        <div className="page-content">
           <Card className="h-48 animate-pulse">
             <div aria-busy="true" />
           </Card>

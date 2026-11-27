@@ -774,3 +774,289 @@ in light and dark; check coral buttons, 44 px row actions, a dialog with keyboar
   icons), success green for the "saved" check** (status colour with its text label).
 - Q-S3-5 (non-blocking). Checkbox/radio sizing (20 px box inside a 44 px label row) is per screen; **default: only the
   colour is global in this slice; screens get `min-h-control` label rows in slices 4–6.**
+
+## Slice 4 addendum — Shell, sidebar and page containers
+Status: READY. Written against slices 1–3 as merged (#154, #155, #158), Split proposal item 4 and Ming's approved
+defaults (ticket.md:85, "theo mặc định hết"), especially Q3. No new decisions; open points are non-blocking questions at
+the end, each with a default. Closes the shell part of AC 2 and AC 3, the brief's Sidebar and Page container rows, and
+the shell part of AC 6b (layout at 390 / 800 / 1024 / 1280). One PR of about 300 changed lines (shell ~110, tests ~110,
+31 one-line container swaps, globals ~20, pending 1). **No 4a/4b split**: the container swaps are one class string per
+wrapper, with no logic and no test churn.
+
+### Scope (from this plan and the brief)
+- Split proposal item 4: "`src/ui/AppShellView.tsx` (lines 51–213: `lg:` → `md:` for the nav, `w-sidebar`, icon+label
+  row, header/page padding to `--space-6/8`, `max-w-content`), `src/ui/AppShell.tsx`, `src/ui/RoomSwitcher.tsx`,
+  `src/ui/AppShellView.test.tsx`, `src/ui/RoomSwitcher.test.tsx`; re-check `src/ui/roomlayout/LayoutEditorPage.tsx` and
+  `RoomMap.tsx` widths at 800–1023."
+- Q3 (approved): "216 px sidebar from 800 px replaces the 88 px rail at ≥1024; icon and label in one row; the bottom tab
+  bar stays below 800 px (its `min-h-[68px]` snaps to the control scale); not collapsible. Content gets 128 px narrower
+  at 800–1023 (room map, layout editor, tables re-checked in slice 4)." (At 800–1023 there was no rail before, so the
+  content actually loses the full 216 px there; at ≥1024 it loses 128 px.)
+- brief.md:134 "**Sidebar**: `--size-sidebar` wide, shown from `md` (800px) up." brief.md:135 "**Page container**:
+  max-width `--width-content` (`--width-library` for library or grid-heavy pages), centered, `--space-6` to `--space-8`
+  horizontal padding." brief.md:136 transitions; brief.md:132 badges (Caption, text label).
+- Slice 3 interim note (plan, "Visible differences to log (slice 3)", last bullet): the AppShellView skip link
+  (`AppShellView.tsx:54`) is the slice-4 hand-rolled `bg-primary` control.
+- `src/ui/AppShell.tsx` (Split proposal) has **no class strings** (read: lines 1–59 only wire props); it is not
+  modified. Named here so the reviewer does not expect a diff.
+
+### Rules for every file in this slice
+Same as slice 3 "Rules for every kit file" 1–5 (token utilities only, no legacy aliases, no 700/800 weights, token
+transition `transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out`,
+`enabled:hover:` only on `<button>`, no per-component focus classes). Plus:
+6. No Tailwind palette colours (`red-*`, `amber-*`, …) and no inline `style` in the shell (the brand mark's inline
+   `style` goes).
+7. Behaviour, props, copy, hrefs, `aria-*`, ids, landmark order and the `lg:` RoleBadge wrapper
+   (`AppShellView.test.tsx:169–173`) are unchanged. Only class strings and the new `data-slot="nav-indicator"` element
+   change.
+8. In the 21 page-wrapper files (20 feature files plus `PageSkeleton.tsx`, container table), **only** the wrapper's `p-4 lg:p-6` changes; any other class on that
+   line and every other line stay for slices 5/6.
+
+### Files (slice 4)
+None matches a High path (`.github/risk-tiers.yml` high list: migrations, server auth, config, `next.config.*`,
+`src/proxy.*`, `src/server/identity|http/**`, `scripts/check-layers.mjs`, `.env.example`, Docker/deploy, risk-tiers;
+`src/ui/**`, `src/app/globals.css`, `src/app/dev/**` and `scripts/check-tokens.pending.json` are not listed).
+
+| File | Change | Pending before → after |
+|---|---|---|
+| `src/ui/AppShellView.tsx` | outer, skip link, nav (sidebar/bottom bar), brand mark, nav links, indicator, badge, header, Credits link, org name, dev badge, room-switcher bar, signed-out placeholder per Approach 1; doc comment line 17 → "sidebar (>= 800 px) or bottom bar" | 32 → 0 (remove key) |
+| `src/ui/RoomSwitcher.tsx` | select (line 37) per Approach 2 | not pending (stays 0) |
+| `src/app/globals.css` | add `@utility page-content` and `@utility page-library` after the shadow utilities (after line 224); delete `--accent-shadow` (line 27, its only user is the brand mark) | 65 → 65 (no flagged value added or removed; confirm with `--list`) |
+| `scripts/check-tokens.pending.json` | remove `src/ui/AppShellView.tsx` | total −32 |
+| Page wrappers (21 files, 29 lines, table in Approach 3) | `p-4 lg:p-6` → `page-content` or `page-library` | unchanged counts (the replaced classes were on-scale) |
+| `src/app/dev/shell/KitGallery.tsx` | line 35 `p-4 lg:p-6` → `page-content` | not pending |
+| `src/ui/AppShellView.test.tsx` | dev-badge class asserts (75, 79, 87) + new tests (Tests below) | test |
+| `src/ui/RoomSwitcher.test.tsx` | new select class test | test |
+| `src/ui/page-container.test.ts` | create: wrapper scan (Tests below) | test |
+| `src/lib/color/tokens.test.ts` | add `page-content`/`page-library` rule checks to the `globals.css` describe (line 173) | test |
+| `work/tickets/SIM-071/impl-log.md` | append "Slice 4": files, rename map additions, pending before/after, built-CSS confirmation (Approach 3), width table (Approach 4), visible differences, checks | deliverable |
+
+Not touched: `src/ui/AppShell.tsx` (no classes), `ThemeToggle.tsx`, `Button.tsx`, `Avatar.tsx`, `RoleBadge.tsx` (kit,
+slice 3), `src/lib/nav.ts`, `src/ui/copy/shell.ts` (no copy change), `src/styles/tokens.css` (no new token; `w-sidebar`,
+`max-w-content`, `max-w-library`, `min-h-control` already exist from slice 1, globals.css:168–172),
+`RoomMap.tsx`, `LayoutEditor.tsx`, `EditorCanvas.tsx`, `src/lib/breakpoints.ts` (width check only, Approach 4; no code
+change expected).
+
+### Approach (slice 4)
+1. **AppShellView.tsx** (class strings; JSX structure unchanged except the indicator span and removal of the brand
+   mark's `style`):
+   - Outer (51): `flex flex-col-reverse md:flex-row h-dvh w-full overflow-hidden text-text-primary`.
+   - Skip link (54): `sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[70] focus:inline-flex
+     focus:min-h-control focus:items-center focus:rounded-lg focus:bg-workspace-action focus:px-4 focus:text-label
+     focus:text-on-action` (coral action fill, white text 4.55:1, the global green focus ring sits outside it with its
+     2 px offset; `z-[70]` is not a guard violation and stays).
+   - `<nav>` (62–65): `flex-none flex md:flex-col md:w-sidebar md:gap-2 md:px-3 md:pt-4 md:pb-4 md:overflow-y-auto
+     pb-[env(safe-area-inset-bottom)] bg-surface border-t md:border-t-0 md:border-r border-divider z-10`. Drops
+     `items-center justify-around lg:justify-start`, `lg:w-[88px]`, `lg:py-3.5`, `min-h-[68px] lg:min-h-0`,
+     `lg:pb-3.5`. `overflow-y-auto` keeps all 11 admin entries reachable on short windows.
+   - Brand mark (67–74): wrapper `hidden md:flex px-3 pb-2`; mark `flex size-10 items-center justify-center rounded-lg
+     bg-workspace-primary text-on-action shadow-card` (no `style`; white icon on coral 3.4:1 is a non-text pair already
+     ≥ 3, slice 3 `NON_TEXT_PAIRS`). Icon unchanged.
+   - Link list (75): `flex md:flex-col gap-1 w-full overflow-x-auto md:overflow-visible` (`gap-1.5` → `gap-1`; drops
+     `justify-start`, the default).
+   - Nav link (85–86): `state-layer relative flex flex-col md:flex-row items-center gap-1 md:gap-3 flex-1 md:flex-none
+     min-w-16 md:w-full min-h-16 md:min-h-control px-1 py-2 md:px-3 md:py-0 rounded-lg no-underline text-text-secondary
+     hover:text-text-primary aria-[current=page]:bg-canvas aria-[current=page]:font-semibold
+     aria-[current=page]:text-text-primary` + token transition. Bottom bar (< 800): icon above label, 64 px tall cell
+     (replaces `min-h-11` + `min-h-[68px]` bar); sidebar (≥ 800): icon and label in one 44 px row, full sidebar width.
+   - Active indicator (new, rendered only when `active`, first child of the link): `<span aria-hidden="true"
+     data-slot="nav-indicator" className="absolute rounded-full bg-workspace-primary inset-x-3 top-0 h-1
+     md:inset-x-auto md:left-0 md:inset-y-2 md:h-auto md:w-1" />` (coral bar, non-text, 3.4:1 on surface; top edge in
+     the bottom bar, left edge in the sidebar). Together with the filled icon, 600 weight and canvas background, the
+     selected state does not rely on colour alone.
+   - Icon wrapper (88–95): `relative flex size-8 flex-none items-center justify-center` for every entry (drops the
+     `w-14 h-8 rounded-md3` pill and the active `bg-secondary-container … border-outline-variant`; the indicator
+     replaces it). `Icon` call unchanged.
+   - Count badge (100): `absolute -top-1 -right-2 min-w-5 h-5 px-1 rounded-full border border-surface bg-danger-tint
+     text-danger text-caption leading-4 font-semibold text-center` (must still start with `absolute`: tests at 242, 247,
+     263, 279, 285, 310 match `class="absolute`). Same colours as today through the slice-1 aliases (`danger` on
+     `danger-tint` is an asserted AA pair); 10 → 12 px.
+   - Nav label (106): `text-caption md:text-label whitespace-nowrap` (11 px → 12 px bottom bar, 14 px sidebar; drops
+     `font-semibold tracking-[0.02em]`; active weight comes from the link).
+   - Header (123): `h-16 flex-none flex items-center gap-2 px-4 md:px-6 bg-surface border-b border-divider z-[5]`.
+   - Brand (124): `text-subtitle text-text-primary whitespace-nowrap` (18 px · 600; drops `font-heading
+     text-[18px] font-extrabold tracking-[-0.01em]`).
+   - Version (131): `flex-none whitespace-nowrap text-caption text-text-secondary`.
+   - Credits link (138): `inline-flex min-h-control min-w-control flex-none items-center justify-center
+     whitespace-nowrap text-caption text-text-secondary underline hover:text-text-primary
+     aria-[current=page]:text-text-primary` (44×44 target, AC 3).
+   - Org name (142): `ml-2 min-w-0 max-w-[40vw] truncate text-label text-text-secondary` (`max-w-[40vw]` is not a guard
+     violation and stays).
+   - Dev badge (148–152): `inline-flex flex-none items-center whitespace-nowrap rounded-sm border px-2 text-caption
+     font-semibold uppercase tracking-wide` + dev `border-warning bg-warning-tint text-warning`, prod `border-danger
+     bg-danger-tint text-danger` (Q-S4-2; text label unchanged: "Production data" vs the dev label).
+   - Room-switcher bar (200): `flex-none flex items-center gap-2 px-4 md:px-6 py-2 bg-surface border-b border-divider`.
+   - Signed-out placeholder (213–221): wrapper `page-content`; icon `text-text-secondary`; h1 `text-h2 font-semibold
+     text-text-primary` (same as `PageSkeleton.tsx:17`); p `text-label text-text-secondary`. Card and Button unchanged.
+2. **RoomSwitcher.tsx** select (37): `min-w-0 flex-1 md:max-w-xs min-h-control rounded-lg border border-border-strong
+   bg-surface px-3 text-label text-text-primary cursor-pointer` + token transition (control boundary 3:1, Q6; 40 → 44 px
+   tall, same as the kit's `DialogSelect`). The Go `Button size="sm"` is already 44 px (slice 3). Focus: global ring.
+3. **Page containers.** globals.css, after `@utility shadow-pixel` (line 224):
+   ```css
+   /* Page container (brief): centred, capped width, --space-6 to --space-8 side padding from md. 800/1280 are the
+      md/xl breakpoints (CSS variables cannot be used in media queries). */
+   @utility page-content {
+     width: 100%;
+     max-width: var(--width-content);
+     margin-inline: auto;
+     padding: var(--space-4);
+     @media (width >= 800px) {
+       padding: var(--space-6);
+     }
+     @media (width >= 1280px) {
+       padding-inline: var(--space-8);
+     }
+   }
+   @utility page-library {
+     /* same body with max-width: var(--width-library) */
+   }
+   ```
+   (`page-library` is written out in full, not via `@apply`.) Implementer confirms once in the built CSS that both
+   classes are emitted with the two media blocks; if Tailwind 4.3.x does not accept nested `@media` in `@utility`,
+   use `@variant md { … }` / `@variant xl { … }` inside the utility instead and record it. `max-width` includes the
+   padding (global `box-sizing: border-box`, globals.css:182–184).
+
+   Wrapper swaps (`p-4 lg:p-6` → the class; the rest of the class string unchanged):
+
+   | File:line | Class |
+   |---|---|
+   | `src/ui/AppShellView.tsx:213`, `src/ui/PageSkeleton.tsx:16`, `src/app/dev/shell/KitGallery.tsx:35` | `page-content` |
+   | `src/ui/audit/AuditView.tsx:48, 63` | `page-content` |
+   | `src/ui/checkin/CheckinPage.tsx:288`, `src/ui/checkin/CheckinView.tsx:90` | `page-content` |
+   | `src/ui/credits/CreditsPage.tsx:8` | `page-content` |
+   | `src/ui/dashboard/DashboardView.tsx:84` | `page-content` |
+   | `src/ui/devices/DeviceDetailView.tsx:89`, `src/ui/devices/DevicesView.tsx:46` | `page-content` |
+   | `src/ui/groups/GroupsView.tsx:50, 61` | `page-content` |
+   | `src/ui/members/MembersView.tsx:49` | `page-content` |
+   | `src/ui/portal/PortalPage.tsx:26, 47` | `page-content` |
+   | `src/ui/requests/ApprovalsPage.tsx:145`, `src/ui/requests/ApprovalsView.tsx:56, 68` | `page-content` |
+   | `src/ui/rooms/RoomsView.tsx:34` | `page-content` |
+   | `src/ui/search/SearchPage.tsx:39`, `src/ui/search/SearchView.tsx:144` | `page-content` |
+   | `src/ui/deviceTypes/DeviceTypesView.tsx:29, 40` | `page-library` (sprite library grid, Q-S4-1) |
+   | `src/ui/mapItems/MapItemsView.tsx:42, 53` | `page-library` (library page) |
+   | `src/ui/seats/SeatsPage.tsx:298`, `src/ui/seats/SeatsView.tsx:59` | `page-library` (room detail with the room map) |
+   | `src/ui/roomlayout/LayoutEditorPage.tsx:42` | `page-library` (layout editor) |
+
+   Before editing, the implementer re-runs `rg -n "p-4 lg:p-6" src` (expected: exactly the 31 lines in the
+   table, in 23 files including AppShellView and KitGallery) and `rg -ln "lg:p-|md:p-" src/ui src/app` to catch any page wrapper with a different padding;
+   any extra hit is listed in impl-log and either swapped (same rule) or left with a reason. A file's loading/error
+   wrapper uses the same class as its main view.
+4. **Width check at 800–1023 and 1024 (no code change expected).** Content width = viewport − 216 − 2 × 24:
+   800 → 536 px; 1023 → 759; 1024 → 760; 1280 → 1280 − 216 − 2 × 32 (xl padding) = 1000.
+   - Layout editor: gate stays `MEDIA.lg` (`LayoutEditorPage.tsx:23`), so 800–1023 shows the existing "desktop only"
+     state (unchanged). At 1024 the grid `grid-cols-[minmax(0,1fr)_18rem] gap-4` (`LayoutEditor.tsx:193`) leaves the
+     canvas column 760 − 288 − 16 = 456 px (was 1024 − 88 − 48 − 304 = 584). `EditorCanvas.tsx:242` scrolls
+     (`max-h-[70vh] overflow-auto`), and `EditorToolbar.tsx:26` wraps (`flex-wrap`), so it stays usable. Accepted per
+     Q3; Ming checks (Q-S4-4).
+   - Room map (`RoomMap.tsx:179`): `overflow-auto` region; at 800 the region is 536 px wide and scrolls horizontally.
+   - Other viewport-breakpoint layouts that now get less room (re-check only, no edit in this slice, R4; fixes go to
+     slices 5/6 or follow-ups): `md:` cards/tables in `DeviceTable.tsx:34/83`, `IncomingTransfers.tsx:60,75`,
+     `OverdueBanner.tsx:43`, `PendingExtensions.tsx:60,78`, `PendingReturns.tsx:60,75` (switch to the wide layout at
+     800 with 536 px of content); `lg:` grids in `CheckinView.tsx:71` (`1fr 300px` → 1fr = 444 px at 1024),
+     `DashboardView.tsx:28`, `MySeatView.tsx:83`, `ProfileTabView.tsx:41`, `MyDevicesTiles.tsx:49`; `xl:` grids in
+     `AuditView.tsx:66`, `DashboardView.tsx:29`, `RoomsView.tsx:20`.
+   - Implementer runs `pnpm dev` and records a width table in impl-log (screen × 390 / 800 / 1024 / 1280: fine / scrolls
+     / cramped, with one line on anything cramped). Anything cramped becomes a follow-up, not a fix here.
+5. **Pending file.** After the edits run `node scripts/check-tokens.mjs --list`; confirm `src/ui/AppShellView.tsx` is
+   absent and every other count is unchanged (globals.css stays 65); delete that key; keep keys sorted.
+6. **impl-log.md "Slice 4"**: files; rename map additions (`border-outline-variant` → `border-divider`,
+   `text-on-surface(-variant)` → `text-text-primary/secondary`, `bg-error-container text-on-error-container` →
+   `bg-danger-tint text-danger`, `p-4 lg:p-6` → `page-content`/`page-library`); pending before/after; built-CSS
+   confirmation for the two utilities; width table; visible differences (below); checks output.
+7. Checks: `pnpm format:check`, `pnpm typecheck && pnpm check:layers`, `pnpm test`, `pnpm build`.
+
+Rules: R1 (ui and dev-page files only; no new imports; globals.css is CSS), R3 (none), R4 (only the files above;
+wrapper lines only in the 20 feature files), R5 (tests below). R2/R6/R7 not touched.
+
+### Tests to write / update (slice 4)
+Helpers in `AppShellView.test.tsx`: `classesOf(html, re)` returns the class tokens of the first tag matching `re`;
+`LEGACY` copied from `src/ui/kit.test.tsx` (slice 3) plus `PALETTE = /^(?:[\w-]+:)*(?:bg|text|border)-(?:red|amber|orange|yellow|green|blue|gray|slate|zinc|neutral|stone)-\d{2,3}$/`.
+
+| Test (file › name) | Covers |
+|---|---|
+| `AppShellView.test.tsx` › devToken (update 75, 79, 87): dev badge has `bg-warning-tint text-warning border-warning`, prod `bg-danger-tint text-danger border-danger`; "no devToken" asserts `not.toContain("bg-warning-tint")`; both `rounded-sm text-caption` | Rule 6, badge mapping |
+| AppShellView › sidebar from md: outer `div` has `flex-col-reverse md:flex-row`; `<nav>` has `md:w-sidebar md:flex-col md:border-r border-divider bg-surface md:overflow-y-auto`; no class token inside `<nav>…</nav>` starts with `lg:` | Q3 (216 px from 800, replaces rail) |
+| AppShellView › nav links: every `<a>` in the nav has `min-h-16`, `md:min-h-control`, `md:flex-row`, `md:w-full`, `rounded-lg`; every nav label span has `text-caption md:text-label` | 44 px targets, icon + label row, 12/14 px |
+| AppShellView › active entry: on `/rooms/A1` exactly one `data-slot="nav-indicator"`, inside the `/rooms` link, `aria-hidden="true"`, class has `bg-workspace-primary`; on `/` (user) it sits in the `/` link | selected state explicit, coral non-text |
+| AppShellView › nav badge (extend 240–336 group): badge class has `bg-danger-tint text-danger text-caption`; existing `class="absolute` regexes unchanged and green | badge mapping, 12 px |
+| AppShellView › header controls: Credits link has `min-h-control min-w-control`; brand span has `text-subtitle`; version `text-caption`; header has `md:px-6 border-divider` | AC 3, type scale |
+| AppShellView › skip link: `href="#main"` element has `focus:bg-workspace-action focus:text-on-action focus:min-h-control focus:rounded-lg` and `sr-only` | slice 3 interim item |
+| AppShellView › tokens only: for admin, manager, user (with badges, devToken dev and prod, roomSwitcher) and signed out, no class token matches `LEGACY`, `PALETTE`, `font-bold`, `font-extrabold`, `/^(?:[\w-]+:)*(?:text\|rounded\|shadow\|tracking\|leading)-\[/` or `/\[[^\]\s]*\d(?:px\|rem\|em)[^\]\s]*\]/`; the `<nav>` markup has no `style=` | Rules 1, 6 |
+| AppShellView › signed out: the placeholder wrapper has `page-content`; existing test 133–139 unchanged | page container |
+| AppShellView › existing tests 27–60, 91–131, 141–213 unchanged and green (hrefs, aria-current count, RoleBadge `hidden lg:inline-flex` wrapper, switcher order) | Rule 7 (no behaviour change) |
+| `RoomSwitcher.test.tsx` › select styling: `<select>` has `min-h-control rounded-lg border-border-strong bg-surface text-label text-text-primary md:max-w-xs`; no `h-10`, `rounded-md3`, `lg:` class | Q6, 44 px |
+| `src/ui/page-container.test.ts` (new, node, reads files like `tokens.test.ts:5`) › no file under `src/ui` or `src/app` (non-test `.tsx`) contains `p-4 lg:p-6` | container adopted everywhere |
+| page-container.test › `DeviceTypesView.tsx`, `MapItemsView.tsx`, `SeatsPage.tsx`, `SeatsView.tsx`, `LayoutEditorPage.tsx` contain `page-library` and not `page-content`; the 18 other files in Approach 3 (incl. `AppShellView.tsx`, `PageSkeleton.tsx`, `KitGallery.tsx`) contain `page-content` | Q-S4-1 width split |
+| `src/lib/color/tokens.test.ts` › globals.css (add to describe at 173): `@utility page-content` block has `max-width: var(--width-content)`, `margin-inline: auto`, `var(--space-6)` and `var(--space-8)`; `@utility page-library` has `max-width: var(--width-library)`; no `--accent-shadow` | brief Page container |
+| `scripts/check-tokens.test.ts` (unchanged) › repo ratchet green with `AppShellView.tsx` removed from pending | pending only shrinks |
+
+### Acceptance → verification (slice 4)
+| # | Criterion | How the reviewer verifies it |
+|---|---|---|
+| S4-1 | 216 px sidebar from 800 px replaces the 88 px rail; icon and label in one row; bottom bar below 800; not collapsible (Q3, brief:134) | AppShellView sidebar/nav-links tests; `rg -n "88px\|lg:w-\|lg:flex-col" src/ui/AppShellView.tsx` → no hits; no toggle/collapse state added (`git diff` of AppShellView has no `useState`) |
+| S4-2 | Selected nav entry is explicit (indicator + weight + background + filled icon), not colour only; coral only as non-text | active-entry test; slice 3 `NON_TEXT_PAIRS` still green |
+| S4-3 | Shell targets ≥ 44 px (nav links, Credits, skip link, room select, IconButtons); labels 14 px in sidebar, metadata 12 px; no text below 12 px | nav-links, header-controls, skip-link, RoomSwitcher tests; `rg -n "text-\[" src/ui/AppShellView.tsx src/ui/RoomSwitcher.tsx` → no hits |
+| S4-4 | Shell uses tokens only: no legacy alias, palette colour, arbitrary px/radius/shadow/size, 700/800 weight, inline style in the nav | "tokens only" test; `node scripts/check-tokens.mjs --list` has no `AppShellView.tsx` key |
+| S4-5 | Pages sit in a centred container capped at 1320 px (1600 for library/grid-heavy), 24 px side padding from 800, 32 px from 1280 (brief:135) | page-container tests; tokens.test globals rule; `pnpm build` then `grep -o "\.page-content{[^}]*" .next/static/css/*.css` shows `max-width:var(--width-content)` and the media blocks exist |
+| S4-6 | No behaviour, copy, href or landmark change | existing AppShellView/RoomSwitcher tests unchanged and green; `git diff main -- src/ui/copy src/lib` empty; in the 20 feature files `git diff -U0` shows only `p-4 lg:p-6` → `page-*` changes |
+| S4-7 | Pending shrinks exactly by AppShellView (−32), nothing else changes | `git diff main -- scripts/check-tokens.pending.json` shows one removed key; `node scripts/check-tokens.mjs` exits 0 |
+| S4-8 | Width check at 800–1023/1024/1280 recorded, nothing outside the plan edited for it | impl-log width table; `git diff --stat main` lists only the Files table |
+| S4-9 | Checks green; existing tests changed only for class strings | `pnpm format:check && pnpm typecheck && pnpm check:layers && pnpm test && pnpm build`; reviewer reads test diffs |
+| S4-10 | impl-log "Slice 4" complete (files, rename map, pending, built CSS, width table, visible differences) | read impl-log |
+
+### Visible differences to log (slice 4)
+- Navigation: from 800 px a 216 px white sidebar with icon + label rows (14 px) replaces the 88 px icon-over-label rail,
+  which used to appear only from 1024 px; 800–1023 px windows switch from the bottom bar to the sidebar. Active entry:
+  coral bar on the left edge, light canvas row, 600 label, filled icon (was a grey pill around the icon).
+- Bottom bar (< 800 px): 68 → 64 px cells, labels 11 → 12 px, coral bar on top of the active entry instead of the grey
+  icon pill; still scrolls sideways for admins (11 entries).
+- Brand mark: rounded 12 → 8 px, orange glow shadow → card shadow, same coral fill and icon.
+- Nav count badges: 10 px 800 → 12 px 600, 18 → 20 px circle, same danger tint colours.
+- Header: brand 18 px 800 → 18 px 600; version and Credits 11 → 12 px; Credits now a 44 × 44 target; org name 13 →
+  14 px; side padding 20 → 24 px from 800 (was from 1024); bottom border divider `#E8ECE0`.
+- Dev/prod token badge: solid amber/red Tailwind colours → warning/danger tint with coloured border and text, 10 → 12
+  px, 8 → 4 px corners (label text unchanged).
+- Room switcher select: 40 → 44 px, 12 → 8 px corners, strong control border, 14 px label weight 500 (was 600);
+  capped at 320 px from 800 (was from 1024).
+- Skip link: ink pill → coral action fill, 8 px corners, 44 px tall, 14 px 500.
+- Pages: content capped at 1320 px (Map items, Device types, room detail and layout editor at 1600 px) and centred;
+  padding 24 px from 800 (was 24 from 1024), sides 32 px from 1280. The cap shows on windows wider than 1536 px
+  (1320 + 216; padding is inside the cap) and 1816 px for the library width, and as extra padding at 800–1023.
+- Content area 216 px narrower at 800–1023 and 128 px narrower at ≥ 1024: layout editor canvas column 584 → 456 px at
+  1024; `md:` device cards and tables switch to the wide layout with 536 px of content at 800 (width table in impl-log).
+
+### Ming verification after merge
+- Open the app as Admin at 390, 800, 1023, 1024 and 1280 px (light and dark): bottom bar below 800, sidebar from 800,
+  all 11 entries reachable (scroll the sidebar on a short window), active entry clearly marked, badges readable.
+- Tab from the address bar: the first Tab shows the coral "Skip to main content" link with the green ring; Enter jumps to
+  the page.
+- Room detail with the map and the layout editor at 1024 px: the editor canvas (456 px column) and the map scroll and
+  stay usable; if too cramped, say so (follow-up, Q-S4-4).
+- Devices list and My Portal at 800 px: the wide card/table layout fits 536 px of content.
+- A wide monitor (≥ 1600 px): pages are centred at 1320 px; Map items and room detail use 1600 px.
+- `pnpm dev` with a dev token: the dev badge (amber tint) is still obvious; with a prod token the red-tint "Production
+  data" badge is still obvious (Q-S4-2).
+
+### Assumptions and non-blocking questions (slice 4)
+- Hotspots: the 20 feature page-wrapper files are edited again (more broadly) in slices 5 and 6; slice 4 merges first, so no
+  conflict inside this ticket. `scripts/check-tokens.pending.json` and `src/app/globals.css` as in every slice. SIM-066.1
+  (DONE, pixel character card polish) may touch `src/ui/portal/**`; if it merges first, `PortalPage.tsx` may need a
+  one-line rebase. No other open ticket edits the shell.
+- Size ≈ 300 changed lines; if it exceeds ~450, the implementer moves the 20 feature-file wrapper swaps (and
+  `page-container.test.ts`'s first two cases) to the start of slice 5 and records it; the shell and the two utilities
+  stay in slice 4.
+- Q-S4-1 (non-blocking). Which pages are "library or grid-heavy" (brief:135)? **Default: Map items and Device types
+  (sprite libraries), room detail (`SeatsPage`/`SeatsView`, room map) and the layout editor use `page-library` (1600);
+  every other page `page-content` (1320), including Rooms (a card grid of at most three columns).**
+- Q-S4-2 (non-blocking). The dev/prod token badge used Tailwind amber/red fills; white text on `--color-danger` fails AA
+  in dark (≈ 2.5:1). **Default: tint fills (`warning-tint`/`danger-tint`) with coloured border and text, both asserted AA
+  pairs; the label text distinguishes them.** A stronger solid prod badge would need a new token (slice 7 or Ming).
+- Q-S4-3 (non-blocking). Below 800 px the brief gives no padding; **default: 16 px (`--space-4`) on phones, 24 px from
+  800, 32 px from 1280** (brief's 24–32 applies where the sidebar is shown).
+- Q-S4-4 (non-blocking). The layout editor at 1024–1279 gets a 456 px canvas column. **Default: accept (the canvas
+  scrolls, the editor gate stays at `lg`); a narrower inspector or a gate change is a follow-up if Ming finds it
+  cramped.**
+- Q-S4-5 (non-blocking). The sidebar shows the brand mark only; the "simap" word, version and Credits stay in the header.
+  **Default: keep the header as is (no IA change).**
+- Q-S4-6 (non-blocking). `LEGACY` is duplicated from `kit.test.tsx` into `AppShellView.test.tsx`. **Default: accept the
+  copy; slice 7 (which removes the aliases) replaces both with the token guard.**

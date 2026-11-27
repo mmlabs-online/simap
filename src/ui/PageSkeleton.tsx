@@ -13,7 +13,7 @@ export function PageSkeleton({
   icon: IconName;
 }) {
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-4">
+    <div className="page-content flex flex-col gap-4">
       <h1 className="text-h2 font-semibold text-text-primary">{title}</h1>
       <Card className="flex flex-col items-center gap-3 px-6 py-12 text-center">
         <Icon name={icon} size={36} className="text-text-secondary" />

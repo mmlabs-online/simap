@@ -295,7 +295,7 @@ export function SeatsPage({ roomCode }: { roomCode: string }) {
   return (
     <Suspense
       fallback={
-        <div className="p-4 lg:p-6">
+        <div className="page-library">
           <Card className="h-48 animate-pulse">
             <div aria-busy="true" />
           </Card>

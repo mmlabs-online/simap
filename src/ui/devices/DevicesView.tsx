@@ -43,7 +43,7 @@ export function DevicesView({
   incoming,
 }: DevicesViewProps) {
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-4">
+    <div className="page-content flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <h1
           ref={headingRef}

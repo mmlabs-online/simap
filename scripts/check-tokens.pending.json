@@ -1,6 +1,5 @@
 {
   "src/app/globals.css": 65,
-  "src/ui/AppShellView.tsx": 32,
   "src/ui/audit/AuditView.tsx": 3,
   "src/ui/auth/AuthLayout.tsx": 3,
   "src/ui/auth/DevGate.tsx": 1,

@@ -45,7 +45,7 @@ export function AuditView({
   );
   if (status === "forbidden") {
     return (
-      <div className="p-4 lg:p-6 flex flex-col gap-4">
+      <div className="page-content flex flex-col gap-4">
         {title}
         <Card className="px-6 py-12 text-center">
           <p role="alert" className="text-sm font-medium text-on-surface-variant">
@@ -60,7 +60,7 @@ export function AuditView({
   const set = (patch: Partial<AuditFilterState>) => onFilters({ ...filters, ...patch });
 
   return (
-    <div className="p-4 lg:p-6 flex flex-col gap-4">
+    <div className="page-content flex flex-col gap-4">
       {title}
 
       <Card className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5 items-end">
