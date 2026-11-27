@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | L |
 | Areas | ui, ux, architecture |
