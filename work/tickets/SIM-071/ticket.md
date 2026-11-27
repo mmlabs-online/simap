@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-27 |
-| Claimed by | claude@2026-11-27T12:50:06Z |
-| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 (merged); slice 5c: https://github.com/mmlabs-online/simap/pull/164 (merged) |
+| Claimed by | |
+| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 (merged); slice 5c: https://github.com/mmlabs-online/simap/pull/164 (merged); slice 6a: https://github.com/mmlabs-online/simap/pull/165 |
 
 ## Goal
 Every screen of simap uses one set of design tokens (colours, type, spacing, radius, elevation, layout, motion) from
@@ -133,3 +133,9 @@ workspace coral) via D87.
 - Done: slice 5c (Dashboard, Search, Rooms, seat chrome; 8 pending keys removed, 183 → 142) passed review on attempt 1. PR https://github.com/mmlabs-online/simap/pull/164.
 - In progress / next: after Ming merges #164, run `/run SIM-071` for slice 6 (end-user/pixel surfaces; needs an addendum), then slice 7.
 - Gotchas: Q-S5c-1..5 took their defaults. The seat panel and member picker changes also show in check-in and in the device dialogs. 1 rework left on the ticket.
+
+### 2026-11-27 — claude — IN_PROGRESS (slice 6a PR open)
+- Agent calls: 4 (planner×1 225k slice 6 addendum, implementer×1 86k, reviewer×1 92k, security-ai-generated-code-auditor×1 57k)
+- Done: slice 6 is split into 6a/6b/6c. Slice 6a (auth, check-in, globals `.aw-*`/`.px-*`, world-palette test moved to tokens.test) passed review on attempt 1 (security: no 🔴/🟡). Pending 142 → 93. PR https://github.com/mmlabs-online/simap/pull/165.
+- In progress / next: after Ming merges #165, run `/run SIM-071` for 6b (portal; the outline is in plan.md, it needs the full addendum), then 6c, then slice 7.
+- Gotchas: Q-S6-1..16 took their defaults (see Q-S6-4/5/10 in the PR). Follow-up: possible Turnstile clipping at ≤380 px (from SIM-068). 1 rework left on the ticket.
