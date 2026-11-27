@@ -81,3 +81,24 @@ describe("OverdueBanner", () => {
     expect(render()).not.toContain(devicesCopy.overdueBanner.showAll);
   });
 });
+
+describe("OverdueBanner tokens", () => {
+  it("card switches layout at lg", () => {
+    const html = render();
+    expect(html).toContain("lg:flex-row");
+    expect(html).not.toMatch(/(?<![\w-])md:/);
+  });
+  it("a pending extension chip is a warning pill", () => {
+    const pending = {
+      id: "h1",
+      kind: "extension" as const,
+      to: null,
+      requestedBy: { id: "u", displayName: "Hà" },
+      newExpiresOn: "2026-12-31",
+      createdAt: "2026-11-25T00:00:00Z",
+      canCancel: true,
+    };
+    const html = render({ devices: [dev(1, { pendingHandoff: pending, canReturn: false })] });
+    expect(html).toContain("bg-warning-tint");
+  });
+});

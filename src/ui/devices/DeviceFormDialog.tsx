@@ -17,8 +17,7 @@ import {
 import type { DevicesApi } from "./devices-api";
 
 const copy = devicesCopy.form;
-const CAPTION =
-  "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5";
+const CAPTION = "text-label text-text-primary";
 
 /** Create (`device` null) or edit one device. Closes itself through `onDone` after a saved change. */
 export function DeviceFormDialog({
@@ -189,8 +188,8 @@ export function DeviceFormFields({
       {mode === "edit" && (
         <div className="flex flex-col gap-1">
           <span className={CAPTION}>{copy.fields.owner}</span>
-          <span className="text-sm font-medium text-on-surface">{ownerName}</span>
-          <span className="text-sm text-on-surface-variant">{copy.ownerReadOnly}</span>
+          <span className="text-label font-normal text-text-primary">{ownerName}</span>
+          <span className="text-label font-normal text-text-secondary">{copy.ownerReadOnly}</span>
         </div>
       )}
     </>

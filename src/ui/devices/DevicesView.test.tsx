@@ -336,3 +336,51 @@ describe("DevicesView name link", () => {
     expect(html.split('href="/devices/d1"').length - 1).toBe(2);
   });
 });
+
+describe("DevicesView tokens", () => {
+  it("h1 uses the display style; the table shows from lg and the cards below it", () => {
+    const html = render();
+    expect(html).toMatch(/<h1[^>]*text-display/);
+    expect(html).toContain("hidden lg:block");
+    expect(html).toContain("lg:hidden");
+    expect(html).not.toContain("md:block");
+    expect(html).not.toContain("md:hidden");
+    expect(html).toMatch(/<th[^>]*text-caption[^>]*uppercase/);
+    expect(html).not.toContain("text-[");
+  });
+
+  it("the Overdue and pending states are toned pills", () => {
+    const overdue = render({ devices: [{ ...base, mine: true, overdue: true }] });
+    expect(overdue).toContain("bg-danger-tint");
+    expect(overdue).not.toContain("--error-container");
+    expect(render({ devices: [base] })).not.toContain("bg-danger-tint");
+    const pending = render({
+      devices: [
+        {
+          ...base,
+          pendingHandoff: {
+            id: "h1",
+            kind: "transfer",
+            to: { id: "m1", displayName: "Hương" },
+            requestedBy: { id: "u1", displayName: "Hà" },
+            newExpiresOn: null,
+            createdAt: "2026-11-25T00:00:00Z",
+            canCancel: true,
+          },
+        },
+      ],
+    });
+    expect(pending).toContain("bg-warning-tint");
+  });
+
+  it("row action buttons are 44 px and wrap with gap-2", () => {
+    const html = render({
+      devices: [{ ...base, canEdit: true }],
+      actions: { onEdit: noop },
+    });
+    expect(html).toContain("flex flex-wrap items-center gap-2");
+    for (const b of html.match(/<button[^>]*aria-label="Edit[^>]*>/g) ?? []) {
+      expect(b).toContain("min-h-control");
+    }
+  });
+});

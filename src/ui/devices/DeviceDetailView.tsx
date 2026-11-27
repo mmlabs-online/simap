@@ -3,14 +3,14 @@ import type { DeviceDto } from "@/lib/devices/types";
 import { formatAuditTime } from "../audit/audit-state";
 import { Button } from "../Button";
 import { Card } from "../Card";
-import { Chip } from "../Chip";
+import { Pill } from "../Chip";
 import { apiErrorMessage } from "../copy/api";
 import { devicesCopy } from "../copy/devices";
 import { Mac, OwnerLabel, PlacementLabel } from "./device-labels";
 import { pendingText } from "./devices-state";
 
 const copy = devicesCopy.detail;
-const LABEL = "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant";
+const LABEL = "text-caption font-semibold uppercase tracking-wide text-text-secondary";
 
 export type DeviceDetailViewProps = {
   status: "loading" | "error" | "notFound" | "ready";
@@ -31,7 +31,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div className="flex flex-col gap-1">
       <dt className={LABEL}>{label}</dt>
-      <dd className="text-sm font-medium text-on-surface break-all">{children}</dd>
+      <dd className="break-all text-label text-text-primary">{children}</dd>
     </div>
   );
 }
@@ -41,7 +41,7 @@ const orNone = (v: string | null) => v ?? copy.none;
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <Card className="flex flex-col gap-2 p-4">
-      <h2 className="text-h3 font-extrabold text-on-surface">{title}</h2>
+      <h2 className="text-subtitle text-text-primary">{title}</h2>
       {children}
     </Card>
   );
@@ -53,11 +53,11 @@ function Pending({ device }: { device: DeviceDto }) {
   if (!p || !text) return null;
   return (
     <Section title={copy.sections.pending}>
-      <span className="inline-flex flex-wrap items-center gap-1.5 text-sm text-on-surface">
-        <Chip label={text.chip} />
+      <span className="inline-flex flex-wrap items-center gap-1 text-label font-normal text-text-primary">
+        <Pill dot tone="warning" label={text.chip} />
         {text.to && <span>{text.to}</span>}
       </span>
-      <span className="text-xs text-on-surface-variant">
+      <span className="text-caption text-text-secondary">
         {copy.requestedBy(p.requestedBy.displayName)} · {formatAuditTime(p.createdAt)}
       </span>
     </Section>
@@ -77,28 +77,27 @@ export function DeviceDetailView({
   actions,
 }: DeviceDetailViewProps) {
   const heading = (text: string) => (
-    <h1
-      ref={headingRef}
-      tabIndex={-1}
-      className="text-h2 font-extrabold text-on-surface outline-none"
-    >
+    <h1 ref={headingRef} tabIndex={-1} className="text-display text-text-primary outline-none">
       {text}
     </h1>
   );
   return (
     <div className="page-content flex flex-col gap-4">
-      <Link href="/devices" className="text-sm font-semibold text-primary hover:underline">
+      <Link
+        href="/devices"
+        className="inline-flex min-h-control items-center self-start text-label font-semibold text-text-primary hover:underline"
+      >
         {copy.back}
       </Link>
 
       <div aria-live="polite">
         {notice &&
           (notice.tone === "error" ? (
-            <p role="alert" className="text-sm font-semibold text-error">
+            <p role="alert" className="text-label font-semibold text-danger">
               {notice.text}
             </p>
           ) : (
-            <p role="status" className="text-sm font-semibold text-on-surface">
+            <p role="status" className="text-label font-semibold text-text-primary">
               {notice.text}
             </p>
           ))}
@@ -116,7 +115,7 @@ export function DeviceDetailView({
 
       {status === "error" && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -128,7 +127,7 @@ export function DeviceDetailView({
       {status === "notFound" && (
         <Card className="flex flex-col items-start gap-2 p-4">
           {heading(copy.notFoundTitle)}
-          <p className="text-sm text-on-surface-variant">{copy.notFoundBody}</p>
+          <p className="text-label font-normal text-text-secondary">{copy.notFoundBody}</p>
         </Card>
       )}
 
@@ -149,16 +148,16 @@ export function DeviceDetailView({
             </dl>
           </Section>
           <Section title={copy.sections.where}>
-            <span className="text-sm text-on-surface">
+            <span className="text-label font-normal text-text-primary">
               <PlacementLabel device={device} />
             </span>
           </Section>
           <Section title={copy.sections.holder}>
-            <span className="text-sm text-on-surface">
+            <span className="text-label font-normal text-text-primary">
               <OwnerLabel device={device} clamp="" />
             </span>
             {holderSince && (
-              <span className="text-xs text-on-surface-variant">
+              <span className="text-caption text-text-secondary">
                 {copy.holderSince(formatAuditTime(holderSince))}
               </span>
             )}

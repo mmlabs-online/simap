@@ -36,15 +36,17 @@ export function PendingExtensions({
         id="extensions-heading"
         ref={headingRef}
         tabIndex={-1}
-        className="text-lg font-extrabold text-on-surface outline-none"
+        className="text-subtitle text-text-primary outline-none"
       >
         {copy.heading(items.length)}
       </h2>
-      {items.length > 0 && <p className="text-sm text-on-surface-variant">{copy.hint}</p>}
+      {items.length > 0 && (
+        <p className="text-label font-normal text-text-secondary">{copy.hint}</p>
+      )}
 
       {errorCode !== null && (
         <div className="flex flex-wrap items-center gap-3">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(errorCode)}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -57,25 +59,25 @@ export function PendingExtensions({
         <ul role="list" className="flex flex-col gap-2">
           {items.map((item) => (
             <li key={item.id}>
-              <Card className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+              <Card className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex min-w-0 flex-col gap-1">
-                  <p className="text-sm text-on-surface">
-                    <span className="font-bold">{item.device.name}</span>{" "}
+                  <p className="text-label font-normal text-text-primary">
+                    <span className="font-semibold">{item.device.name}</span>{" "}
                     {devicesCopy.typeLine(item.device.type, item.device.inventoryNumber)}
                   </p>
-                  <p className="text-sm text-on-surface-variant">
+                  <p className="text-label font-normal text-text-secondary">
                     {copy.owner(item.from.displayName)}
                   </p>
-                  <p className="text-sm text-on-surface-variant">
+                  <p className="text-label font-normal text-text-secondary">
                     {copy.change(item.device.expiresOn ?? copy.noExpiry, item.newExpiresOn ?? "")}
                   </p>
                   {item.note !== null && (
-                    <p className="whitespace-pre-line line-clamp-3 text-sm text-on-surface-variant">
+                    <p className="whitespace-pre-line line-clamp-3 text-label font-normal text-text-secondary">
                       {item.note}
                     </p>
                   )}
                 </div>
-                <div className="flex flex-col gap-2 md:flex-row">
+                <div className="flex flex-col gap-2 lg:flex-row">
                   {item.canConfirm && (
                     <Button
                       size="sm"
@@ -114,7 +116,7 @@ export function PendingExtensions({
       )}
 
       {truncated && (
-        <p className="text-sm text-on-surface-variant">{copy.truncated(items.length)}</p>
+        <p className="text-label font-normal text-text-secondary">{copy.truncated(items.length)}</p>
       )}
     </section>
   );

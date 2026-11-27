@@ -242,3 +242,25 @@ describe("refusals in the dialog alert", () => {
     }
   });
 });
+
+describe("PlaceDeviceFields tokens", () => {
+  it("retry is a kit outlined button", () => {
+    const seats = render({
+      seats: { status: "error", seats: [], truncated: false, errorCode: "x" },
+    });
+    expect(seats).toMatch(
+      /<button[^>]*data-variant="outlined"[^>]*min-h-control|<button[^>]*min-h-control[^>]*data-variant="outlined"/,
+    );
+    const rooms = render({ rooms: { status: "error", rooms: [] } });
+    expect(rooms).toContain('data-variant="outlined"');
+  });
+  it("seat and role radio rows are 44 px with a 20 px control", () => {
+    const html = render();
+    const labels = html.match(/<label[^>]*>\s*<input[^>]*type="radio"[^>]*>/g) ?? [];
+    expect(labels.length).toBeGreaterThanOrEqual(2);
+    for (const l of labels) {
+      expect(l).toContain("min-h-control");
+      expect(l).toContain("size-5");
+    }
+  });
+});

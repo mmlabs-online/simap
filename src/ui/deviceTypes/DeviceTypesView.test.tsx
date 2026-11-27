@@ -69,3 +69,15 @@ describe("DeviceTypesView", () => {
     expect(without).toContain(deviceTypesCopy.thumb.none);
   });
 });
+
+describe("DeviceTypesView tokens", () => {
+  it("title, names and row buttons use the kit styles", () => {
+    const html = render({ types: { status: "ready", items: [type], errorCode: null } });
+    expect(html).toMatch(/<h1[^>]*text-display/);
+    expect(html).toMatch(/<span[^>]*font-semibold[^>]*>Máy in/);
+    expect(html).not.toContain("font-bold");
+    const buttons = html.match(/<button[^>]*aria-label="(?:Edit|Delete)[^>]*>/g) ?? [];
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
+    for (const b of buttons) expect(b).toContain("min-h-control");
+  });
+});

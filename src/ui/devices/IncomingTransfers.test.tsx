@@ -107,3 +107,17 @@ describe("IncomingTransfers", () => {
     expect(render()).not.toContain("Showing the first");
   });
 });
+
+describe("IncomingTransfers tokens", () => {
+  it("card switches layout at lg; heading is a focus target; buttons are 44 px", () => {
+    const html = render();
+    expect(html).toContain("lg:flex-row");
+    expect(html).not.toMatch(/(?<![\w-])md:/);
+    expect(html).toMatch(
+      /<h2[^>]*text-subtitle[^>]*tabindex="-1"|<h2[^>]*tabindex="-1"[^>]*text-subtitle/,
+    );
+    const buttons = html.match(/<button[^>]*>/g) ?? [];
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const b of buttons) expect(b).toContain("min-h-control");
+  });
+});

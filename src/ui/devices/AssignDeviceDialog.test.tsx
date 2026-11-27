@@ -65,3 +65,16 @@ describe("AssignDeviceFields edit mode", () => {
     expect(html).toContain("Máy mượn");
   });
 });
+
+describe("AssignDeviceFields tokens", () => {
+  it("checkbox row is 44 px, the note box carries the focus ring class, no legacy caption", () => {
+    const html = render();
+    expect(html).toMatch(/<label[^>]*min-h-control[^>]*>\s*<input[^>]*type="checkbox"/);
+    expect(html).toMatch(
+      /<input[^>]*size-5[^>]*type="checkbox"|<input[^>]*type="checkbox"[^>]*size-5/,
+    );
+    expect(html).toMatch(/<legend[^>]*text-label/);
+    expect(html).toMatch(/field-box[^>]*><textarea[^>]*outline-none/);
+    expect(html).not.toContain("text-[11px]");
+  });
+});

@@ -1,15 +1,15 @@
 "use client";
 
 import { useId } from "react";
+import { Button } from "../Button";
 import { deviceTypesCopy } from "../copy/deviceTypes";
 import { DeviceTypeThumb } from "./DeviceTypeThumb";
 import type { ImageFieldView } from "./device-type-image";
 
 const copy = deviceTypesCopy.form;
-const CAPTION =
-  "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5";
+const CAPTION = "text-label text-text-primary";
 const BTN =
-  "inline-flex items-center rounded-full bg-secondary-container text-on-secondary-container px-3 py-1.5 text-sm font-bold cursor-pointer focus-within:ring-2 focus-within:ring-primary";
+  "field-box inline-flex min-h-control cursor-pointer items-center rounded-lg border border-border bg-surface px-4 text-label text-text-primary transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out";
 
 /** The image section of the form. Props only, so the markup can be tested without effects. */
 export function DeviceTypeImageField({
@@ -54,33 +54,23 @@ export function DeviceTypeImageField({
             />
           </label>
           {view.showRemove && (
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={onRemove}
-              className="text-sm font-bold text-error px-2 py-1.5"
-            >
+            <Button variant="danger" size="sm" disabled={disabled} onClick={onRemove}>
               {copy.remove}
-            </button>
+            </Button>
           )}
           {view.showUndo && (
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={onUndo}
-              className="text-sm font-bold text-primary px-2 py-1.5"
-            >
+            <Button variant="outlined" size="sm" disabled={disabled} onClick={onUndo}>
               {copy.keepCurrent}
-            </button>
+            </Button>
           )}
         </div>
       </div>
-      <p className="text-xs text-on-surface-variant">{copy.hint}</p>
+      <p className="text-caption text-text-secondary">{copy.hint}</p>
       {view.state === "remove" && (
-        <p className="text-xs text-on-surface-variant">{copy.pendingRemove}</p>
+        <p className="text-caption text-text-secondary">{copy.pendingRemove}</p>
       )}
       {error && (
-        <p id={errId} role="alert" className="text-xs font-medium text-error">
+        <p id={errId} role="alert" className="text-caption font-medium text-danger">
           {error}
         </p>
       )}

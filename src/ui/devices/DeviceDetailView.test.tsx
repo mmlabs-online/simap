@@ -152,3 +152,41 @@ describe("DeviceDetailView notice and actions", () => {
     }
   });
 });
+
+describe("DeviceDetailView tokens", () => {
+  it("h1, labels, section headings and the back link use the kit styles", () => {
+    const html = render();
+    expect(html).toMatch(
+      /<h1[^>]*tabindex="-1"[^>]*text-display|<h1[^>]*text-display[^>]*tabindex="-1"/,
+    );
+    expect(html).toMatch(/<dt[^>]*text-caption[^>]*uppercase/);
+    expect(html).toMatch(/<h2[^>]*text-subtitle/);
+    expect(html).toMatch(/<a[^>]*min-h-control[^>]*>/);
+  });
+  it("overdue and pending states are toned pills", () => {
+    const overdue = render({
+      device: {
+        ...base,
+        mine: true,
+        overdue: true,
+        holding: { note: null, expiresOn: "2026-01-01" } as DeviceDto["holding"],
+      },
+    });
+    expect(overdue).toContain("bg-danger-tint");
+    const pending = render({
+      device: {
+        ...base,
+        pendingHandoff: {
+          id: "h1",
+          kind: "transfer",
+          to: { id: "u2", displayName: "Bình" },
+          requestedBy: { id: "u1", displayName: "Hà" },
+          newExpiresOn: null,
+          createdAt: "2026-03-05T17:30:00.000000Z",
+          canCancel: false,
+        },
+      },
+    });
+    expect(pending).toContain("bg-warning-tint");
+  });
+});

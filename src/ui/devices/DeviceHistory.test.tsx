@@ -89,3 +89,13 @@ describe("DeviceHistory", () => {
     expect(render({ status: "loading", items: [] })).toContain('aria-busy="true"');
   });
 });
+
+describe("DeviceHistory tokens", () => {
+  it("uses the kit heading, divider and type styles", () => {
+    const html = render();
+    expect(html).toMatch(/<h2[^>]*text-subtitle/);
+    expect(html).toContain("border-divider");
+    expect(html).not.toContain("font-bold");
+    expect(html).not.toContain("text-xs");
+  });
+});

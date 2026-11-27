@@ -33,3 +33,14 @@ describe("DeviceTypeSpriteField", () => {
     );
   });
 });
+
+describe("DeviceTypeSpriteField tokens", () => {
+  it("option rows are 44 px with a 20 px radio", () => {
+    const rows = render().match(/<label[^>]*>\s*<input[^>]*type="radio"[^>]*>/g) ?? [];
+    expect(rows).toHaveLength(7);
+    for (const r of rows) {
+      expect(r).toContain("min-h-control");
+      expect(r).toContain("size-5");
+    }
+  });
+});

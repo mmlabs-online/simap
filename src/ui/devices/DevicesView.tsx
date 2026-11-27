@@ -45,11 +45,7 @@ export function DevicesView({
   return (
     <div className="page-content flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <h1
-          ref={headingRef}
-          tabIndex={-1}
-          className="text-h2 font-extrabold text-on-surface outline-none"
-        >
+        <h1 ref={headingRef} tabIndex={-1} className="text-display text-text-primary outline-none">
           {shellCopy.pages.devices.title}
         </h1>
         {onNew && (
@@ -62,11 +58,11 @@ export function DevicesView({
       <div aria-live="polite">
         {notice &&
           (notice.tone === "error" ? (
-            <p role="alert" className="text-sm font-semibold text-error">
+            <p role="alert" className="text-label font-semibold text-danger">
               {notice.text}
             </p>
           ) : (
-            <p role="status" className="text-sm font-semibold text-on-surface">
+            <p role="status" className="text-label font-semibold text-text-primary">
               {notice.text}
             </p>
           ))}
@@ -81,7 +77,7 @@ export function DevicesView({
           onChange={onFilter}
           ariaLabel={devicesCopy.filterLabel}
         />
-        <p aria-live="polite" className="text-sm text-on-surface-variant">
+        <p aria-live="polite" className="text-label font-normal text-text-secondary">
           {status === "ready" ? listSummary(devices.length, filter) : null}
         </p>
       </div>
@@ -98,7 +94,7 @@ export function DevicesView({
 
       {status === "error" && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -109,7 +105,7 @@ export function DevicesView({
 
       {status === "ready" && devices.length === 0 && (
         <Card className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-          <p className="text-sm font-medium text-on-surface-variant">{emptyText(filter)}</p>
+          <p className="text-label text-text-secondary">{emptyText(filter)}</p>
           {filter !== "all" && (
             <Button variant="tonal" size="sm" onClick={() => onFilter("all")}>
               {devicesCopy.showAll}
@@ -119,7 +115,7 @@ export function DevicesView({
       )}
 
       {status === "ready" && truncated && (
-        <p className="text-sm text-on-surface-variant">
+        <p className="text-label font-normal text-text-secondary">
           {devicesCopy.truncated(DEVICE_LIMITS.list)}
         </p>
       )}

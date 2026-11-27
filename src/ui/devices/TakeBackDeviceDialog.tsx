@@ -13,7 +13,7 @@ const copy = devicesCopy.takeBack;
 export function TakeBackDeviceBody({ device }: { device: DeviceDto }) {
   const { owner, seat, cancelsTransfer } = takeBackBody(device);
   return (
-    <div className="text-sm font-medium text-on-surface flex flex-col gap-1">
+    <div className="flex flex-col gap-1 text-label text-text-primary">
       <p>
         {copy.withOwner(owner)}, {seat === null ? copy.notPlaced : copy.onSeat(seat)}.
       </p>

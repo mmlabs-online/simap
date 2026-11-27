@@ -18,9 +18,8 @@ import {
 } from "./transfer-device";
 
 const copy = devicesCopy.transfer;
-const CAPTION =
-  "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5";
-const HINT = "text-xs text-on-surface-variant px-0.5";
+const CAPTION = "text-label text-text-primary";
+const HINT = "text-caption text-text-secondary";
 
 type PickerProps = Omit<
   ComponentProps<typeof MemberPickerFields>,
@@ -47,7 +46,9 @@ export function TransferDeviceFields({
     <>
       <div className="flex flex-col gap-1">
         <span className={CAPTION}>{copy.currentOwner}</span>
-        <span className="text-sm font-medium text-on-surface">{device.owner?.displayName}</span>
+        <span className="text-label font-normal text-text-primary">
+          {device.owner?.displayName}
+        </span>
       </div>
       <div aria-describedby={nextId} className="flex flex-col gap-3">
         <MemberPickerFields

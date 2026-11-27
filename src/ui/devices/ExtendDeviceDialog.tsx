@@ -16,9 +16,8 @@ import {
 import { NoteField } from "./NoteField";
 
 const copy = devicesCopy.extend;
-const CAPTION =
-  "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5";
-const HINT = "text-xs text-on-surface-variant px-0.5";
+const CAPTION = "text-label text-text-primary";
+const HINT = "text-caption text-text-secondary";
 
 /** Props only: current expiry, the new date, the note and what happens next. */
 export function ExtendDeviceFields({
@@ -38,7 +37,9 @@ export function ExtendDeviceFields({
     <>
       <div className="flex flex-col gap-1">
         <span className={CAPTION}>{copy.currentExpiry}</span>
-        <span className="text-sm font-medium text-on-surface">{device.holding?.expiresOn}</span>
+        <span className="text-label font-normal text-text-primary">
+          {device.holding?.expiresOn}
+        </span>
       </div>
       <DialogField
         label={copy.newDate}

@@ -216,3 +216,38 @@ None out of plan. Follow-up: none. Not browser-verified (no browser here).
 
 ### Scope self-check
 Only the 5a Files table; no copy, props, `aria-*`, `src/app` or `src/lib` change.
+
+## Slice 5b (attempt 1) — Devices and device types
+
+### Files touched
+- Devices (19, `src/ui/devices/`): `DevicesView`, `DeviceTable` (kit `TABLE_*`, `lg` switch), `device-labels` (`Pill` for Overdue and pending), `DeviceRowActions`, `OverdueBanner`, `IncomingTransfers`, `PendingReturns`, `PendingExtensions` (`md:` to `lg:`), `DeviceDetailView`, `DeviceHistory`, `NoteField` (kit textarea box), `AssignDeviceDialog`, `ExtendDeviceDialog`, `TransferDeviceDialog`, `ReturnDeviceDialog`, `DeviceFormDialog`, `PlaceDeviceDialog` (kit retry `Button`, 44 px radio rows), `DeleteDeviceDialog`, `TakeBackDeviceDialog`.
+- Device types (7, `src/ui/deviceTypes/`): `DeviceTypesView`, `DeviceTypeFormDialog`, `DeviceTypeImageField` (kit buttons, `field-box` file picker), `DeviceTypeSpriteField`, `DeviceTypeThumb`, `DeskSlotDiagram`, `DeleteDeviceTypeDialog`.
+- `scripts/check-tokens.pending.json`: 16 keys removed. Each file is in the 5b Files table; defaults Q-S5b-1..6 applied.
+- Tests: `src/ui/screen-tokens.test.ts` (26 files added to `MIGRATED`, `LEGACY` widened to `container[\w-]*`, kit-Button list gains 2 files, new `lg` and `TABLE_*` tests) and 13 view tests extended with "tokens" describes (no existing assert removed).
+
+### Pending before/after
+`node scripts/check-tokens.mjs --list` diffed against the committed file: only removals, exactly the 16 planned `src/ui/devices*` keys (AssignDeviceDialog 5, DeviceDetailView 4, DeviceFormDialog 4, DeviceHistory 1, DeviceRowActions 1, DeviceTable 2, ExtendDeviceDialog 5, NoteField 7, OverdueBanner 1, PlaceDeviceDialog 1, ReturnDeviceDialog 5, TransferDeviceDialog 5, device-labels 4, DeviceTypeFormDialog 4, DeviceTypeImageField 7, DeviceTypeSpriteField 4 = 60); no other count changed. 244 -> 184 violations. The file was replaced by the `--list` output; `node scripts/check-tokens.mjs` exits 0.
+
+### Visible differences
+- Devices list: at 800-1023 px the stacked device cards replace the table (table from 1024). Incoming transfers, pending returns, pending extensions and the overdue banner stay stacked (buttons under the text) up to 1023 and go side-by-side from 1024 (was 800).
+- Table headers 11 px 800 -> 12 px 600 uppercase, divider under the header row, divider row borders.
+- "Overdue" chip -> red pill with a dot; "Transfer / Return / Extension pending" chip -> amber pill with a dot (list, cards, detail, overdue banner). "You" and Primary/Secondary chips unchanged.
+- Device name and room links stay ink (now a token); detail "Back" link is 44 px tall.
+- Page titles 32 px 800 -> 600; section headings 18 px 800 -> 600 (history and detail `text-h3` was undefined, so those were 16 px 800). Card device names and history kinds 700 -> 600.
+- Small gaps in owner/details cells 2 -> 4 px, chip rows 6 -> 4 px.
+- Dialogs (assign, note/expiry, transfer, give back, extend, device form, device type form): captions and legends uppercase 11 px 800 grey -> 14 px 500 ink; note box 8 px corners, stronger border, ring around the box on focus; "No expiry" checkbox and every radio row 44 px with a 20 px control.
+- Place dialog: "Retry" underlined text -> 44 px outlined button; seat rows 8 px corners.
+- Device types: "Choose/Replace image" pill -> 8 px bordered secondary-style 44 px picker; "Remove" -> red danger button, "Keep current image" -> outlined button; type names 700 -> 600; row actions wrap.
+- DeskSlotDiagram: now `fill-canvas stroke-divider`, chair `fill-divider`, marker ink. The check of what the desk rect looked like before (`fill-surface-container-high` has no theme key, so it likely fell back to the SVG default black fill) was NOT done: no browser is available here. Please check in the browser.
+
+### Checks
+- format:check: pass (exit 0); typecheck: pass; check:layers: `1033 files, no violations`
+- test: `399 passed | 1 skipped (400) files; 3933 passed | 7 skipped (3940)` (first run had 4 failures in my new test regexes, fixed)
+- build: pass
+- Plan step 6 `rg` over `src/ui/devices` and `src/ui/deviceTypes` (non-test): no legacy hits (only `stroke-text-primary` in DeskSlotDiagram, which is the new ink token).
+
+### Out-of-plan files / Follow-ups
+None out of plan. Follow-up: DeskSlotDiagram fill check in a browser; `border-strong` for the diagram if too light (Q-S5b-5). Not browser-verified.
+
+### Scope self-check
+Only the 5b Files tables, tests, pending and this log; no copy, props, ids, `aria-*`, `src/app` or `src/lib` change.

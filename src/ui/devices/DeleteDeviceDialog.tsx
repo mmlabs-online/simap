@@ -12,7 +12,7 @@ const copy = devicesCopy.delete;
 /** Props only: the delete confirmation. */
 export function DeleteDeviceBody({ device }: { device: DeviceDto }) {
   return (
-    <div className="text-sm font-medium text-on-surface flex flex-col gap-1">
+    <div className="flex flex-col gap-1 text-label text-text-primary">
       <p>{copy.confirmBody(device.name, device.inventoryNumber)}</p>
     </div>
   );

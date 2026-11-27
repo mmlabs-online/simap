@@ -1,14 +1,14 @@
 import Link from "next/link";
 import type { DeviceDto } from "@/lib/devices/types";
 import { deviceDetailHref, roomDetailHref } from "@/lib/nav";
-import { Chip } from "../Chip";
+import { Chip, Pill } from "../Chip";
 import { CLIP } from "../clip";
 import { devicesCopy } from "../copy/devices";
 import { detailsText, expiryText, pendingText, placementText } from "./devices-state";
 
 export function DeviceNameLink({ device }: { device: DeviceDto }) {
   return (
-    <Link href={deviceDetailHref(device.id)} className="font-semibold text-primary underline">
+    <Link href={deviceDetailHref(device.id)} className="font-semibold text-text-primary underline">
       {device.name}
     </Link>
   );
@@ -22,12 +22,12 @@ export function PlacementLabel({
   inventoryLabel?: string;
 }) {
   const p = device.placement;
-  if (!p) return <span className="text-on-surface-variant">{inventoryLabel}</span>;
+  if (!p) return <span className="text-text-secondary">{inventoryLabel}</span>;
   const href = roomDetailHref(p.roomCode);
   return (
-    <span className="inline-flex flex-wrap items-center gap-1.5">
+    <span className="inline-flex flex-wrap items-center gap-1">
       {href ? (
-        <Link href={href} className="font-semibold text-primary underline">
+        <Link href={href} className="font-semibold text-text-primary underline">
           {placementText(p)}
         </Link>
       ) : (
@@ -48,27 +48,21 @@ export function OwnerLabel({
   const h = device.holding;
   const pending = pendingText(device);
   return (
-    <span className="flex flex-col gap-0.5">
-      <span className="inline-flex flex-wrap items-center gap-1.5">
+    <span className="flex flex-col gap-1">
+      <span className="inline-flex flex-wrap items-center gap-1">
         <span>{device.owner?.displayName ?? devicesCopy.orgInventory}</span>
         {device.mine && <Chip label={devicesCopy.you} />}
-        {pending && <Chip label={pending.chip} />}
-        {device.overdue && (
-          <Chip
-            label={devicesCopy.overdueChip}
-            color="var(--error-container)"
-            onColor="var(--on-error-container)"
-          />
-        )}
+        {pending && <Pill dot tone="warning" label={pending.chip} />}
+        {device.overdue && <Pill dot tone="danger" label={devicesCopy.overdueChip} />}
       </span>
-      {pending?.to && <span className="text-xs text-on-surface-variant">{pending.to}</span>}
+      {pending?.to && <span className="text-caption text-text-secondary">{pending.to}</span>}
       {h && (
         <>
-          <span className="text-xs text-on-surface-variant">{expiryText(h, device.overdue)}</span>
+          <span className="text-caption text-text-secondary">{expiryText(h, device.overdue)}</span>
           {h.note && (
             <span
               title={h.note}
-              className={`text-xs text-on-surface-variant whitespace-pre-line ${clamp} ${CLIP}`}
+              className={`text-caption text-text-secondary whitespace-pre-line ${clamp} ${CLIP}`}
             >
               {h.note}
             </span>
@@ -83,9 +77,9 @@ export function Details({ device }: { device: DeviceDto }) {
   const { maker, serial } = detailsText(device);
   if (maker === null && serial === null) return <span>{devicesCopy.details.none}</span>;
   return (
-    <span className="flex flex-col gap-0.5">
+    <span className="flex flex-col gap-1">
       {maker && <span className="break-all">{maker}</span>}
-      {serial && <span className="break-all text-xs text-on-surface-variant">{serial}</span>}
+      {serial && <span className="break-all text-caption text-text-secondary">{serial}</span>}
     </span>
   );
 }
