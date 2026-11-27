@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-27 |
-| Claimed by | claude@2026-11-27T07:33:16Z |
-| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged) |
+| Claimed by | — |
+| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 |
 
 ## Goal
 Every screen of simap uses one set of design tokens (colours, type, spacing, radius, elevation, layout, motion) from
@@ -97,3 +97,9 @@ workspace coral) via D87.
 - Done: slice 1 (tokens foundation) implemented, review PASS attempt 1, PR #154.
 - In progress / next: Ming merges #154; then `/run SIM-071` for slice 2 (token guard).
 - Gotchas: border-strong #889282 (plan value failed 3:1); DM Sans has no vietnamese subset.
+
+### 2026-11-27 — claude — IN_PROGRESS (slice 2 PR open)
+- Agent calls: 3 (planner×1 sonnet 45k addendum, implementer×1 42k, reviewer×1 sonnet 39k)
+- Done: slice 2 (token guard, 65 files / 373 violations pending) implemented, review PASS attempt 1, PR #155.
+- In progress / next: Ming merges #155; then `/run SIM-071` for slice 3 (UI kit).
+- Gotchas: slice 7 must read the pending file tolerantly; hex rule widened (accepted).
