@@ -121,7 +121,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | BUG-004 | manage.db deactivate test expects the old audit meta (no cancelledHandoffs) | MERGED | P1 | XS | db | — | none | 0 | 2026-11-26 |
 | BUG-005 | map-items list order differs between Postgres collation and the test's JS sort | MERGED | P1 | XS | db, api | — | none | 0 | 2026-11-26 |
 | BUG-006 | CI `image` job always fails at `compose config` on the self-hosted runner (false positive on /Users/mingming) | MERGED | P1 | XS | security | — | none | 0 | 2026-11-26 |
-| SIM-043 | Let an app-wide simap admin access every org | DONE | P2 | M | security, api, architecture | — | plan-approval | 1 | 2026-11-26 |
+| SIM-043 | Let an app-wide simap admin access every org | MERGED | P2 | M | security, api, architecture | — | plan-approval | 1 | 2026-11-26 |
 | SIM-043.1 | Super-admin org picker badge and 429 Retry-After (D86 client contract) | BACKLOG | P2 | S | ui, api | SIM-043 | none | 0 | 2026-11-27 |
 | SIM-044 | Restrict User device visibility and add a "my devices" API | MERGED | P1 | M | api, architecture, security | — | plan-approval | 1 | 2026-11-26 |
 | SIM-044.1 | Limit device data in seat, member and layout responses for Users | MERGED | P1 | M | api, architecture, security | SIM-044 | plan-approval | 0 | 2026-11-26 |
