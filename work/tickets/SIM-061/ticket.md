@@ -56,7 +56,7 @@ checked in by the provider); decision D77 (walk to the new chair on move).
 ## Handoff
 
 ### 2026-11-27 — claude — BLOCKED
-- Agent calls: 2, ~? tokens (frontend-developer×1 default 47k, planner×1 default).
+- Agent calls: 2, ~156k tokens (frontend-developer×1 default 47k, planner×1 default 109k).
 - Done: consult; plan READY (walk-in/out/move with BFS path from doors, overlay walk canvas, reduced motion, skip; carried SIM-060 fixes; typing idle split to a proposed SIM-061.1).
 - In progress / next: Ming approves the plan (optionally picks the 1a/1b split); then `/run SIM-061`.
 - Gotchas: ~550 product + ~450 test lines; no "photo" in roomlayout/sprites.
