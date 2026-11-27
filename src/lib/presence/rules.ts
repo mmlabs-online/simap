@@ -14,6 +14,22 @@ export function decideCheckIn(i: {
   return i.todayRowExists ? "reopen" : "insert";
 }
 
+export type ProviderCheckInDecision = "skip_active" | "skip_today_row" | "skip_no_seat" | "insert";
+
+/**
+ * PRE-04 / G1: a provider only inserts. An active check-in of any source wins (first source wins, never a refusal),
+ * and a row already written today (checked out) is never reopened, or every pull would undo a check-out.
+ */
+export function decideProviderCheckIn(i: {
+  active: ActiveRef | null;
+  todayRowExists: boolean;
+  lowestSeatId: string | null;
+}): ProviderCheckInDecision {
+  if (i.active) return "skip_active";
+  if (i.todayRowExists) return "skip_today_row";
+  return i.lowestSeatId === null ? "skip_no_seat" : "insert";
+}
+
 export type MoveDecision = "refuse_not_checked_in" | "refuse_not_yours" | "noop" | "move";
 
 /** D77: no active check-in comes first (409), then the target must be the member's own seat in the active room. */

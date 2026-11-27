@@ -3,6 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const getPool = vi.fn<() => unknown>(() => ({}));
 const listRoomPresence = vi.fn();
 vi.mock("@/server/db/pool", () => ({ getPool: () => getPool() }));
+const order: string[] = [];
+const syncProviderCheckIns = vi.fn(async (..._a: unknown[]) => {
+  order.push("sync");
+});
+vi.mock("@/server/presence/provider", () => ({
+  syncProviderCheckIns: (...a: unknown[]) => syncProviderCheckIns(...a),
+}));
 vi.mock("@/server/presence/read", () => ({
   listRoomPresence: (...a: unknown[]) => listRoomPresence(...a),
 }));
@@ -38,6 +45,12 @@ const get = (id: string) =>
 beforeEach(() => {
   getPool.mockImplementation(() => ({}));
   listRoomPresence.mockReset();
+  order.length = 0;
+  syncProviderCheckIns.mockClear();
+  listRoomPresence.mockImplementation(async () => {
+    order.push("read");
+    return { ok: true, value: { roomId: ID, workDate: "2026-11-26", members: [] } };
+  });
   fakeAuth();
 });
 afterEach(() => {
@@ -49,6 +62,15 @@ describe("/api/rooms/[id]/presence", () => {
   it("a non-uuid id is 404 without a service call", async () => {
     expect((await get("nope")).status).toBe(404);
     expect(listRoomPresence).not.toHaveBeenCalled();
+    expect(syncProviderCheckIns).not.toHaveBeenCalled();
+  });
+
+  it("GET syncs the provider with ctx.scope before reading", async () => {
+    expect((await get(ID)).status).toBe(200);
+    expect(order).toEqual(["sync", "read"]);
+    expect(syncProviderCheckIns.mock.calls[0]![1]).toEqual(
+      expect.objectContaining({ orgId: "o1" }),
+    );
   });
 
   it("200 for a simap:user token, scoped by the token org", async () => {

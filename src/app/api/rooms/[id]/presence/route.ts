@@ -2,6 +2,7 @@ import { isCanonicalUuid } from "@/lib/validate/uuid";
 import { getPool } from "@/server/db/pool";
 import { apiError } from "@/server/http/respond";
 import { withAuth } from "@/server/http/with-auth";
+import { syncProviderCheckIns } from "@/server/presence/provider";
 import { listRoomPresence } from "@/server/presence/read";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ export const GET = withAuth<{ id: string }>(
     if (!isCanonicalUuid(id)) return apiError(404, "not_found");
     const pool = getPool();
     if (!pool) return apiError(503, "unavailable");
+    await syncProviderCheckIns(pool, ctx.scope);
     const r = await listRoomPresence(pool, ctx.scope, id);
     if (!r.ok) return apiError(r.status, r.code);
     return Response.json(r.value, { headers: { "Cache-Control": "no-store" } });
