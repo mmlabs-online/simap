@@ -324,6 +324,19 @@ describe("no legacy alias or weight in the kit", () => {
         tabIdOf={(i) => i}
         panelIdOf={(i) => i}
       />,
+      <TabBar
+        key="tbp"
+        variant="pill"
+        tabs={[
+          { id: "a", label: "A", count: 3 },
+          { id: "b", label: "B" },
+        ]}
+        active="a"
+        onSelect={noop}
+        ariaLabel="t"
+        tabIdOf={(i) => i}
+        panelIdOf={(i) => i}
+      />,
       <FormFooterBar
         key="ff"
         status={{ tone: "saved", text: "t", detail: "d" }}

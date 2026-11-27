@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-27 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/162 |
 
 ## Goal
 Slice 2 of SIM-070: the Admin "Map items" list follows Ming's list mockup
@@ -64,3 +64,9 @@ AC 3). Its `plan.md` → `## Split proposal` (slice 2) and `## Assumptions` 9 ho
 - 2026-11-27: split from SIM-070 by its planner (slice 2).
 
 ## Handoff
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 5 (frontend-developer×1 default model 31k; ux-architect×1 default model 49k; planner×1 default model 124k; implementer×1 default model 93k; reviewer×1 default model 69k).
+- Done: consults saved; plan READY (no High path; defaults for consult questions); attempt 1 implemented (`map-items-state` helpers, `MapItemCard`, `MapItemsView` rewrite, `TabBar` pill variant, copy, tests, token pending list); review PASS; Checks green (test:db not needed); PR #162.
+- In progress / next: Ming merges PR #162 (before SIM-071 slices 5–6) and compares with the mockup at 1280/390 px, light/dark.
+- Gotchas: search folds diacritics (DSH-02); selected pill is pixel green (D87); SIM-071 slice 6 should only verify the Map items list. Review nits listed in the PR.

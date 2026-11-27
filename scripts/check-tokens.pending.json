@@ -30,7 +30,6 @@
   "src/ui/mapItems/MapItemEditor.tsx": 11,
   "src/ui/mapItems/MapItemEditorAppearance.tsx": 5,
   "src/ui/mapItems/MapItemEditorDetails.tsx": 8,
-  "src/ui/mapItems/MapItemsView.tsx": 1,
   "src/ui/mapItems/SpriteBrowser.tsx": 4,
   "src/ui/members/MembersView.tsx": 4,
   "src/ui/members/PendingInvitations.tsx": 3,

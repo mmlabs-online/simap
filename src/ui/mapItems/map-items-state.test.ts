@@ -2,12 +2,17 @@ import { describe, expect, it } from "vitest";
 import { apiErrorMessage } from "../copy/api";
 import { mapItemsCopy } from "../copy/mapItems";
 import {
+  activeGroup,
+  artSourceOf,
   canManageMapItems,
   catalogGroups,
+  filterItems,
   isLibraryDefault,
   mapItemErrorMessage,
+  mapItemStats,
   settleMapItem,
 } from "./map-items-state";
+import { isCustomised } from "./map-item-art";
 import { dto } from "./test-items";
 
 describe("canManageMapItems", () => {
@@ -83,5 +88,98 @@ describe("settleMapItem", () => {
       kind: "error",
       message: mapItemsCopy.errors.inUse(3),
     });
+  });
+});
+
+type Dir = "n" | "e" | "s" | "w";
+const withArt = (key: string, dir: Dir, art: { sprite?: string; hasImage?: boolean }) => {
+  const base = dto(key);
+  return {
+    ...base,
+    art: {
+      ...base.art,
+      [dir]: { sprite: art.sprite ?? null, hasImage: art.hasImage ?? false, imageVersion: 1 },
+    },
+  };
+};
+
+const fixture = () => [
+  dto("desk.single"),
+  dto("chair.office"),
+  dto("door", { hidden: true }),
+  withArt("plant.large", "s", { sprite: "plant.large" }),
+  withArt("clock.wall", "e", { hasImage: true }),
+];
+
+describe("mapItemStats", () => {
+  it("empty list is all zeros", () => {
+    expect(mapItemStats([])).toEqual({ total: 0, inPalette: 0, customised: 0 });
+  });
+
+  it("hidden items leave the palette; art in a disallowed direction is not customised", () => {
+    expect(mapItemStats(fixture())).toEqual({ total: 5, inPalette: 4, customised: 1 });
+  });
+});
+
+describe("filterItems", () => {
+  const items = [
+    dto("table.meeting", { group: "Zeta", name: "Bàn họp" }),
+    dto("desk.single", { group: "Alpha" }),
+    dto("door", { group: "Alpha" }),
+  ];
+  const keys = (list: { builtinKey: string }[]) => list.map((i) => i.builtinKey);
+
+  it("no group and a blank query return the catalog order", () => {
+    const flat = catalogGroups(items).flatMap((g) => g.items);
+    expect(filterItems(items, null, "")).toEqual(flat);
+    expect(filterItems(items, null, "   ")).toEqual(flat);
+  });
+
+  it("a group narrows; an unknown group gives nothing", () => {
+    expect(keys(filterItems(items, "Zeta", ""))).toEqual(["table.meeting"]);
+    expect(filterItems(items, "Nope", "")).toEqual([]);
+  });
+
+  it("the query matches name or key, trimmed and case-insensitive", () => {
+    expect(keys(filterItems(items, null, "  DOOR "))).toEqual(["door"]);
+    expect(keys(filterItems(items, null, "desk.sin"))).toEqual(["desk.single"]);
+  });
+
+  it("ignores Vietnamese diacritics in the query and the name", () => {
+    expect(filterItems(items, null, "ban hop")).toHaveLength(1);
+    expect(filterItems(items, null, "Bàn họp".normalize("NFD"))).toHaveLength(1);
+  });
+
+  it("group and query combine", () => {
+    expect(keys(filterItems(items, "Alpha", "door"))).toEqual(["door"]);
+    expect(filterItems(items, "Zeta", "door")).toEqual([]);
+  });
+});
+
+describe("activeGroup", () => {
+  it("keeps a present group, null stays null, a vanished group falls back to All", () => {
+    expect(activeGroup(["A", "B"], "B")).toBe("B");
+    expect(activeGroup(["A", "B"], null)).toBeNull();
+    expect(activeGroup(["A", "B"], "Gone")).toBeNull();
+  });
+});
+
+describe("artSourceOf", () => {
+  it("library by default; sprite alone; image wins over a sprite in another direction", () => {
+    expect(artSourceOf(dto("door"))).toBe("library");
+    expect(artSourceOf(withArt("desk.single", "s", { sprite: "desk.single" }))).toBe("sprite");
+    const mixed = withArt("desk.single", "n", { hasImage: true });
+    mixed.art.s = { sprite: "desk.single", hasImage: false, imageVersion: 1 };
+    expect(artSourceOf(mixed)).toBe("image");
+  });
+
+  it("only allowed directions count", () => {
+    expect(artSourceOf(withArt("plant.large", "n", { hasImage: true }))).toBe("library");
+    expect(artSourceOf(withArt("clock.wall", "e", { sprite: "x" }))).toBe("library");
+    expect(artSourceOf(withArt("clock.wall", "n", { sprite: "x" }))).toBe("sprite");
+  });
+
+  it("agrees with isCustomised for every fixture item", () => {
+    for (const i of fixture()) expect(artSourceOf(i) !== "library").toBe(isCustomised(i));
   });
 });
