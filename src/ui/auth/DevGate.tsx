@@ -56,7 +56,7 @@ function ProdNotice() {
     <div
       role="alert"
       title={devTokenCopy.prodBadge.tooltip}
-      className="fixed inset-x-0 top-0 z-50 border-b border-red-700 bg-red-600 px-3 py-2 text-center text-xs font-extrabold uppercase tracking-[0.06em] text-white"
+      className="fixed inset-x-0 top-0 z-50 border-b border-danger bg-danger-tint px-3 py-2 text-center text-caption font-semibold uppercase tracking-wide text-danger"
     >
       {devTokenCopy.prodBadge.label}: {devTokenCopy.prodBadge.tooltip}
     </div>

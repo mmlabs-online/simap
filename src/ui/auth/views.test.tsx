@@ -168,6 +168,15 @@ const count = (out: string, re: RegExp) => out.match(re)?.length ?? 0;
 const text = (out: string) => out.replace(/<[^>]*>/g, " ");
 
 describe("frame", () => {
+  it("AuthLayout tokens: 400 px frame, Subtitle card title, 65 px Turnstile slot, no raw sizes", () => {
+    const out = html(<AuthLayout title="T">x</AuthLayout>);
+    expect(out).toContain("max-w-100");
+    expect(out).toMatch(/<h1 class="[^"]*text-subtitle/);
+    expect(out).not.toMatch(/<h1 class="[^"]*(font-bold|text-xl)/);
+    const withSlot = plain({ turnstileRequired: true, turnstileSlot: <div id="ts-slot" /> });
+    expect(withSlot).toMatch(/<div class="min-h-16\.25"><div id="ts-slot"/);
+    expect(plain()).not.toMatch(/min-h-\[|text-sm/);
+  });
   it("AuthLayout has header, stage, frame, strip, card and footer", () => {
     const out = html(<AuthLayout title="T">x</AuthLayout>);
     for (const t of ["<header", "<main", "<footer"]) expect(out).toContain(t);

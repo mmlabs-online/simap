@@ -31,7 +31,7 @@ export function PixelHead({ atlas, look }: { atlas: Atlas | null; look: PixelLoo
   return (
     <span
       aria-hidden="true"
-      className="flex size-8 shrink-0 items-start justify-center overflow-hidden rounded-full bg-surface-container-high"
+      className="flex size-8 shrink-0 items-start justify-center overflow-hidden rounded-full bg-tile"
       style={{ width: SIZE, height: SIZE }}
     >
       {atlas ? <canvas ref={ref} style={{ imageRendering: "pixelated" }} /> : null}

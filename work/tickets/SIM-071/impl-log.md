@@ -285,3 +285,40 @@ None out of plan. Follow-ups: browser check of the room table focus ring at 390 
 
 ### Scope self-check
 Only the 5c Files tables, tests, pending and this log; no copy, props, ids, `data-*`, `aria-*`, `src/app` or `src/lib` change.
+
+## Slice 6a (attempt 1)
+Scope: auth screens, check-in, globals.css `.aw-*` / `.px-frame` and removal of `--aw-*`, `.px-card`, `.px-strip`, `.px-title`; `world-palette.test.ts` replaced by a `tokens.test.ts` describe. Defaults taken for Q-S6-1..16.
+
+### Files touched
+- `src/app/globals.css`: per the rule table. `--aw-*` blocks deleted; `.aw-*` re-pointed to `--color-*`, `--text-*`, `--space-*`, `--radius-*`, `--shadow-*`; `.aw-headline` Display with a Hero `@media (width >= 1024px)`; `.aw-serif` keeps Fraunces on pixel-primary; `.aw-card [data-variant="filled"]` pixel-primary + hover + `--shadow-pixel` + disabled; `.aw-room` ring is now an `outline`; `.px-frame` is a 4 px pixel-green border with `--shadow-pixel`; `.px-strip`, `.px-title`, `.px-card` rules deleted. `.px-stage`, `.px-heading`, `.px-scene*` and everything before line 369 untouched. Both marker comments kept.
+- Auth: `AuthLayout` (`max-w-100`, `max-w-204`, `gap-8`, `aw-heading text-subtitle`), `DevGate` (danger tint notice), `account-views`, `views`, `accept-views` (`min-h-16.25`, `text-label font-normal`, secondary hints).
+- Check-in: `CheckinPopup` (frame, title bar `bg-tile`, `border-3 border-pixel-primary`, `size-5 accent-pixel-primary`, `variant="pixel"` and `tonal`, 44 px rows), `CheckinButton` (`variant="pixel"`, no `px-card`), `CheckinView`, `CheckinPage` (standalone links, notice tokens), `WhosHere` (44 px rows, `hover:bg-canvas`, no opacity), `PixelHead` (`bg-tile`).
+- `scripts/check-tokens.pending.json`: 6 keys removed, `globals.css` 65 -> 32.
+- Tests: `world-palette.test.ts` deleted; `src/lib/color/tokens.test.ts` (new text/non-text pairs, `LARGE_TEXT_PAIRS`, "auth world and pixel chrome" describe, 9 checks); `src/ui/screen-tokens.test.ts` (`MIGRATED` +14, kit-Button list +3, "pixel chrome" test); `CheckinPopup`, `CheckinButton`, `CheckinView`, `WhosHere`, `views`, `account-views` tests.
+
+### R-i map applied
+`--aw-bg` cream, `--aw-ink` text-pixel, `--aw-muted` text-secondary, `--aw-line` divider, `--aw-strip` tile, `--aw-accent` pixel-primary, `--aw-on-accent` on-action, `--aw-serif-ink` pixel-primary (large text, asserted >= 3); check-in orange buttons -> kit `pixel`; `border-px-outline` -> `border-pixel-primary`; `bg-px-wall` -> `bg-tile`; sprite head `bg-tile`.
+
+### Pending before/after
+6 keys removed (AuthLayout 3, DevGate 1, account-views 2, views 1, CheckinPopup 7, CheckinView 2 = 16 violations); `globals.css` 65 -> 32 (`node scripts/check-tokens.mjs --list` reports 32). Total 142 -> 93, 22 -> 16 keys.
+
+### Plan step 4: build output
+All compile in 4.3.x, no fallback needed. Built CSS: `min-h-16.25` -> `calc(var(--spacing) * 16.25)`; `border-3` -> `border-width:3px`; `bottom-[calc(--spacing(20)+env(safe-area-inset-bottom))]` -> `calc(calc(var(--spacing) * 20) + env(...))`; `w-[min(--spacing(128),calc(100vw-var(--space-6)))]` -> `min(calc(var(--spacing) * 128), calc(100vw - var(--space-6)))`; `lg:grid-cols-[minmax(0,1fr)_--spacing(75)]` -> `minmax(0,1fr) calc(var(--spacing) * 75)`. The project does not override `--spacing` (Tailwind default 0.25rem), so these are 80 px / 32rem / 300 px / 65 px.
+
+### Visible differences
+As listed in the plan's "Visible differences to log (slice 6a)".
+
+### Checks
+- `pnpm format:check`: pass ("All matched files use the correct format")
+- `pnpm typecheck`: pass
+- `pnpm check:layers`: `1032 files, no violations`
+- `pnpm test`: exit 0, 398 passed | 1 skipped files; 3952 passed | 7 skipped tests
+- `pnpm build`: pass
+- `node scripts/check-tokens.mjs`: `16 files, no violations outside the pending list`
+- Plan step 3 `rg`-style scan of auth/checkin non-test files: only `text-text-primary` matches, `AuthLayout` `rounded-none!` (kept per plan, Card override) and `RoomThumb` (art, untouched).
+
+### Out-of-plan files / Follow-ups
+Out of plan: `src/ui/auth/DevGate.test.tsx` (one assertion `bg-red-600` -> `bg-danger-tint`, required by the planned DevGate notice change). Follow-ups: none new; browser checks as in "Ming verification after merge (slice 6a)".
+
+### Scope self-check
+Only the 6a Files tables, tests, pending and this log, plus the DevGate test assertion above; no copy, props, ids, `data-*`, `aria-*`, `src/lib` (except `tokens.test.ts`) or `src/app/layout.tsx` change.

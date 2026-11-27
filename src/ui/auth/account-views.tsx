@@ -118,7 +118,7 @@ export function SignUpView({
           }}
         />
         <ShowPasswordToggle checked={showPassword} onChange={setShowPassword} />
-        <div className="min-h-[65px]">{turnstileSlot}</div>
+        <div className="min-h-16.25">{turnstileSlot}</div>
         <Button type="submit" size="lg" fullWidth disabled={submitting}>
           {submitting ? copy.submitting : copy.submit}
         </Button>
@@ -171,7 +171,7 @@ export function ForgotPasswordView({
 
   return (
     <AuthLayout title={copy.title}>
-      <p className="text-sm">{copy.body}</p>
+      <p className="text-label font-normal">{copy.body}</p>
       {error && <Notice kind="error">{authErrorMessage(error)}</Notice>}
       <form method="post" noValidate onSubmit={submit} className="flex flex-col gap-3">
         <Field
@@ -187,7 +187,7 @@ export function ForgotPasswordView({
             setErrors({});
           }}
         />
-        <div className="min-h-[65px]">{turnstileSlot}</div>
+        <div className="min-h-16.25">{turnstileSlot}</div>
         <Button type="submit" size="lg" fullWidth disabled={submitting}>
           {submitting ? copy.submitting : copy.submit}
         </Button>
@@ -328,7 +328,7 @@ export function VerifyEmailView({
   const submitting = status === "submitting";
   return (
     <AuthLayout title={copy.title}>
-      <p className="text-sm">{copy.body}</p>
+      <p className="text-label font-normal">{copy.body}</p>
       {error && <Notice kind="error">{authErrorMessage(error)}</Notice>}
       <Button size="lg" fullWidth disabled={submitting} onClick={onVerify}>
         {submitting ? copy.submitting : copy.submit}

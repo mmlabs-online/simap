@@ -209,7 +209,7 @@ function CheckinPageInner() {
           presenceView={presenceView}
           notice={
             mover.errorCode ? (
-              <p role="alert" className="text-sm font-semibold text-error">
+              <p role="alert" className="text-label font-semibold text-danger">
                 {presenceCopy.moveError(mover.errorCode)}
               </p>
             ) : null
@@ -268,7 +268,7 @@ function CheckinPageInner() {
             detailHref && openCode ? (
               <Link
                 href={`${detailHref}?seat=${encodeURIComponent(openCode)}`}
-                className="text-sm font-bold text-primary underline"
+                className="inline-flex min-h-control items-center text-label font-semibold text-text-primary underline"
               >
                 {checkinCopy.openInRoom}
               </Link>

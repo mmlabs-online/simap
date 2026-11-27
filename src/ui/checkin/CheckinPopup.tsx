@@ -64,25 +64,25 @@ export function CheckinPopup(props: CheckinPopupProps) {
         e.preventDefault();
         props.onJustLook();
       }}
-      className="px-frame m-auto w-[min(32rem,calc(100vw-1.5rem))] max-h-[90dvh] overflow-hidden p-0 bg-surface text-on-surface"
+      className="px-frame m-auto w-[min(--spacing(128),calc(100vw-var(--space-6)))] max-h-[90dvh] overflow-hidden p-0 bg-surface text-text-primary"
     >
       <div className="flex max-h-[90dvh] flex-col">
-        <div className="flex-none border-b-4 border-px-outline bg-px-wall px-4 py-3 text-on-surface">
+        <div className="flex-none border-b-4 border-pixel-primary bg-tile px-4 py-3 text-text-pixel">
           <h2
             id={titleId}
             style={WRAP}
-            className="text-sm font-extrabold uppercase tracking-[0.12em]"
+            className="text-label font-semibold uppercase tracking-wide"
           >
             {copy.title}
           </h2>
         </div>
-        <div className="px-card flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 overflow-auto overscroll-contain p-4">
-            <p id={descId} className="text-sm text-on-surface-variant">
+            <p id={descId} className="text-label font-normal text-text-secondary">
               {copy.intro}
             </p>
             <fieldset className="mt-3 min-w-0 border-0 p-0">
-              <legend className="mb-2 text-sm font-bold text-on-surface">
+              <legend className="mb-2 text-label font-semibold text-text-primary">
                 {copy.seatRoomsLegend}
               </legend>
               <ul className="flex flex-col gap-2">
@@ -91,10 +91,10 @@ export function CheckinPopup(props: CheckinPopupProps) {
                   return (
                     <li key={r.roomId}>
                       <label
-                        className={`flex min-h-11 cursor-pointer items-center gap-3 bg-surface p-2 ${
+                        className={`flex min-h-control cursor-pointer items-center gap-3 bg-surface p-2 ${
                           isSelected
-                            ? "border-[3px] border-px-outline"
-                            : "border-[3px] border-transparent"
+                            ? "border-3 border-pixel-primary"
+                            : "border-3 border-transparent"
                         }`}
                       >
                         <input
@@ -103,19 +103,17 @@ export function CheckinPopup(props: CheckinPopupProps) {
                           value={r.code}
                           checked={isSelected}
                           onChange={() => props.onSelect(r.code)}
-                          className="size-4 flex-none accent-primary"
+                          className="size-5 flex-none accent-pixel-primary"
                         />
                         <RoomThumbView thumb={thumbs[r.roomId] ?? null} />
-                        <span className="flex min-w-0 flex-1 flex-col text-sm">
-                          <span style={WRAP} className="font-bold text-on-surface">
+                        <span className="flex min-w-0 flex-1 flex-col text-label font-normal">
+                          <span style={WRAP} className="font-semibold text-text-primary">
                             {checkinCopy.roomHeading(r.code, r.name)}
                             {isSelected && <span className="sr-only"> {copy.selected}</span>}
                           </span>
-                          <span className="text-on-surface-variant">
-                            {copy.yourSeat(r.seatCode)}
-                          </span>
-                          <span className="text-on-surface-variant">{copy.count(r.count)}</span>
-                          <span className="text-on-surface-variant">
+                          <span className="text-text-secondary">{copy.yourSeat(r.seatCode)}</span>
+                          <span className="text-text-secondary">{copy.count(r.count)}</span>
+                          <span className="text-text-secondary">
                             {copy.lastCheckin(
                               r.lastCheckedInAt === null
                                 ? null
@@ -131,23 +129,25 @@ export function CheckinPopup(props: CheckinPopupProps) {
             </fieldset>
             {locked.length > 0 && (
               <section className="mt-4">
-                <h3 className="mb-2 text-sm font-bold text-on-surface">{copy.lockedHeading}</h3>
+                <h3 className="mb-2 text-label font-semibold text-text-primary">
+                  {copy.lockedHeading}
+                </h3>
                 <ul className="flex flex-col gap-2">
                   {locked.map((r) => {
                     const href = roomDetailHref(r.code);
                     return (
-                      <li
-                        key={r.roomId}
-                        className="flex min-h-11 items-center gap-3 p-2 opacity-90"
-                      >
+                      <li key={r.roomId} className="flex min-h-control items-center gap-3 p-2">
                         <RoomThumbView thumb={null} />
-                        <span className="flex min-w-0 flex-1 flex-col text-sm">
-                          <span style={WRAP} className="font-bold text-on-surface">
+                        <span className="flex min-w-0 flex-1 flex-col text-label font-normal">
+                          <span style={WRAP} className="font-semibold text-text-primary">
                             {checkinCopy.roomHeading(r.code, r.name)}
                           </span>
-                          <span className="text-on-surface-variant">{copy.locked}</span>
+                          <span className="text-text-secondary">{copy.locked}</span>
                           {href && (
-                            <Link href={href} className="font-bold text-primary underline">
+                            <Link
+                              href={href}
+                              className="inline-flex min-h-control items-center self-start text-label font-semibold text-text-primary underline"
+                            >
                               {checkinCopy.requestSeat}
                             </Link>
                           )}
@@ -159,27 +159,23 @@ export function CheckinPopup(props: CheckinPopupProps) {
               </section>
             )}
           </div>
-          <div className="flex-none border-t-4 border-px-outline p-4">
+          <div className="flex-none border-t-4 border-pixel-primary p-4">
             {errorCode !== null && (
-              <p role="alert" className="mb-3 text-sm font-semibold text-error">
+              <p role="alert" className="mb-3 text-label font-semibold text-danger">
                 {apiErrorMessage(errorCode)}
               </p>
             )}
             <div className="flex flex-col gap-3 sm:flex-row-reverse sm:justify-start">
               <Button
-                variant="filled"
-                className="min-h-11 w-full sm:w-auto"
+                variant="pixel"
+                className="w-full sm:w-auto"
                 disabled={busy || selected === null}
                 aria-busy={busy}
                 onClick={() => selected && props.onCheckIn(selected.roomId)}
               >
                 {selected ? copy.checkInTo(selected.code) : copy.title}
               </Button>
-              <Button
-                variant="tonal"
-                className="min-h-11 w-full rounded-none border-[3px] border-px-outline shadow-[0_4px_0_0_var(--px-shadow)] sm:w-auto"
-                onClick={props.onJustLook}
-              >
+              <Button variant="tonal" className="w-full sm:w-auto" onClick={props.onJustLook}>
                 {copy.justLook}
               </Button>
             </div>

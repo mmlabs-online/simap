@@ -69,6 +69,20 @@ const MIGRATED = [
   "ui/seats/SeatTagsDialog.tsx",
   "ui/seats/AddSeatsDialog.tsx",
   "ui/seats/CannotSeatDialog.tsx",
+  "ui/auth/AuthLayout.tsx",
+  "ui/auth/DevGate.tsx",
+  "ui/auth/accept-views.tsx",
+  "ui/auth/account-views.tsx",
+  "ui/auth/views.tsx",
+  "ui/auth/fields.tsx",
+  "ui/auth/SignInScene.tsx",
+  "ui/auth/SmallWorld.tsx",
+  "ui/checkin/CheckinButton.tsx",
+  "ui/checkin/CheckinPopup.tsx",
+  "ui/checkin/CheckinView.tsx",
+  "ui/checkin/CheckinPage.tsx",
+  "ui/checkin/WhosHere.tsx",
+  "ui/checkin/PixelHead.tsx",
 ];
 
 const LEGACY =
@@ -107,8 +121,28 @@ describe("migrated management screens", () => {
       "ui/deviceTypes/DeviceTypeImageField.tsx",
       "ui/seats/SeatsView.tsx",
       "ui/seats/MemberPickerDialog.tsx",
+      "ui/checkin/CheckinPopup.tsx",
+      "ui/checkin/CheckinButton.tsx",
+      "ui/checkin/CheckinView.tsx",
     ]) {
       expect(read(f), f).not.toContain("<button");
+    }
+  });
+
+  it("check-in pixel chrome uses tokens and the kit pixel button", () => {
+    for (const f of [
+      "ui/checkin/CheckinPopup.tsx",
+      "ui/checkin/CheckinButton.tsx",
+      "ui/checkin/CheckinView.tsx",
+      "ui/checkin/WhosHere.tsx",
+    ]) {
+      expect(read(f), f).not.toMatch(
+        /px-(card|outline|wall|floor|accent)|--px-|rounded-none|border-\[|opacity-\d/,
+      );
+    }
+    for (const f of ["ui/checkin/CheckinPopup.tsx", "ui/checkin/CheckinButton.tsx"]) {
+      expect(read(f), f).toContain('variant="pixel"');
+      expect(read(f), f).not.toContain('variant="filled"');
     }
   });
 

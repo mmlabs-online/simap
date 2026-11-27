@@ -398,3 +398,56 @@ None (no review trigger matched).
 
 ### Blockers from review agents (slice 5c)
 - None (no review trigger matched).
+
+## Slice 6a (attempt 1)
+Verdict: PASS
+
+Date: 2026-11-27. Scope: slice 6a (auth screens, check-in, globals.css `.aw-*`/`.px-*`), commit 99fbcef on `claude/modest-allen-yru4g8`, against plan.md "Slice 6 addendum" sub-slice 6a (S6a-1..12), R-i, the slice-5 rules R-a..R-h / "Rules for every slice-5 file", and CLAUDE.md. Later commits touch only `work/`.
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format".
+- `pnpm typecheck`: exit 0. `pnpm check:layers`: exit 0, "1032 files, no violations".
+- `pnpm test`: exit 0, "398 passed | 1 skipped (399)" files, "3952 passed | 7 skipped (3959)" tests (matches impl-log).
+- `pnpm build`: exit 0 ("Compiled successfully", 25/25 static pages).
+- `node scripts/check-tokens.mjs`: exit 0, "16 files, no violations outside the pending list". `--list` output is identical to the committed pending JSON (16 keys, `globals.css` 32).
+- Plan step 4 (build output), checked in `.next/static/chunks/*.css`: `min-h-16.25` → `calc(var(--spacing) * 16.25)`; `.border-3` → `border-width:3px`; `bottom-[calc(--spacing(20)+env(safe-area-inset-bottom))]` → `calc(calc(var(--spacing) * 20) + env(...))`; `w-[min(--spacing(128),…)]` → `min(calc(var(--spacing) * 128), calc(100vw - var(--space-6)))`; `lg:grid-cols-[minmax(0,1fr)_--spacing(75)]` → `minmax(0,1fr) calc(var(--spacing) * 75)`; `max-w-100`/`max-w-204`/`gap-8` compile. No fallback needed (matches impl-log).
+- `pnpm test:db`: not affected (no server/DB change).
+
+### Acceptance criteria
+- [x] S6a-1 Token utilities only. Evidence: `screen-tokens.test.ts` green with the 14 files added to `MIGRATED`; the plan's S6a-1 rg over `src/ui/auth` + `src/ui/checkin` (non-test `.tsx`, minus RoomThumb): no hits. Plan step-3 rg over the six check-in files: no hits.
+- [x] S6a-2 No off-scale type. Evidence: `rg "text-(xs|sm|base|lg|xl|2xl)\b"` same paths: no hits. CheckinView h1 `text-display`, h2s `text-subtitle` (CheckinView.tsx:73,78,94); AuthLayout card titles `aw-heading text-subtitle` (AuthLayout.tsx:37,41); `.aw-headline` Display + `@media (width >= 1024px)` Hero (globals.css ~485–498), asserted in tokens.test "headline is Display below 1024 px and Hero from 1024 px".
+- [x] S6a-3 44 px targets. Evidence: `rg "min-h-11" src/ui/checkin`: only a test's absence assert. Popup room labels and locked `<li>` `min-h-control`, Request-a-seat / no-seat / Open-in-room links `inline-flex min-h-control`, Who's here rows `min-h-control`; kit Buttons have `min-h-control` base. Tests: CheckinPopup "390 px classes", CheckinView "tokens" (no-seat `/rooms` link), WhosHere "rows are 44 px".
+- [x] S6a-4 Pixel green on pixel scope. Evidence: CheckinPopup.tsx and CheckinButton.tsx use `variant="pixel"`, no `variant="filled"` (screen-tokens "check-in pixel chrome"); `.aw-card [data-variant="filled"]` → pixel-primary, `--shadow-pixel`, `:enabled:hover` pixel-hover, `:disabled` no shadow (tokens.test (7)); `.px-frame` 4 px pixel-primary border + `--shadow-pixel` (tokens.test (8)); radios `accent-pixel-primary`, selected row `border-3 border-pixel-primary` (CheckinPopup test "pixel chrome"). `views.test.tsx` 309–313 unchanged and green.
+- [x] S6a-5 globals.css. Evidence: tokens.test "auth world and pixel chrome" (9 checks) green; `--aw-*` gone; remaining hex/`rgba(` lines are only the slice-7 compat aliases (74–80, 101–106) and `--px-*` palette (83–95, 109–115); `.aw-serif` keeps `var(--font-serif), Georgia, serif`; both marker comments kept. Diff hunks lie only in 377–441 and 466–779 (old numbering), inside the planned 375–441 / 465–784. Every `.aw-*` font-size/radius/shadow/spacing reads a token; weights 600/500/400 only.
+- [x] S6a-6 AA in both themes. Evidence: `TEXT_PAIRS` + `text-primary/text-secondary` on cream, `text-secondary` on tile; `NON_TEXT_PAIRS` + `pixel-primary` on cream/tile/surface; `LARGE_TEXT_PAIRS` `pixel-primary` on cream ≥ 3, all via the existing `describe.each` light/dark, green. `world-palette.test.ts` deleted in the same commit that adds the replacing describe.
+- [x] S6a-7 No opacity dimming. Evidence: `rg "opacity-" src/ui/checkin` (non-test `.tsx`): no hits; locked `<li>` lost `opacity-90`, Who's here lost `disabled:opacity-70` and keeps the "not on map" text (WhosHere test asserts both).
+- [x] S6a-8 Reduced motion. Evidence: tokens.test "the aw rules read tokens only and have no motion" (slice from `.aw-stage`: no `animation|transition|@keyframes`), green.
+- [x] S6a-9 Pending. Evidence: pending diff removes exactly the 6 planned keys and sets `globals.css` 65 → 32; check-tokens exit 0, `--list` identical (16 keys).
+- [x] S6a-10 No behaviour/copy/prop/id/data/aria change. Evidence: `git diff origin/main...HEAD --stat -- src/ui/copy src/lib src/app/layout.tsx` shows only `src/lib/color/tokens.test.ts`. Popup keeps ids, `aria-labelledby/-describedby`, `onCancel`, `onSelect`, `onCheckIn`, `onJustLook`, sr-only "selected"; CheckinButton keeps `aria-busy`/`disabled`; `data-slot="checkin-button"` unchanged; `aria-hidden` on PixelHead and strip mark unchanged. Test edits are the listed asserts only.
+- [x] S6a-11 Only planned files. Evidence: `git diff --stat origin/main...HEAD` = the 6a Files tables plus `src/ui/auth/DevGate.test.tsx` (out-of-plan, justified in impl-log: one assert `bg-red-600` → `bg-danger-tint`, forced by the planned DevGate notice change; acceptable). No High path touched.
+- [x] S6a-12 Checks green (above); impl-log "Slice 6a (attempt 1)" has files, R-i map, globals rule summary, pending before/after (65 → 32, 142 → 93, 22 → 16 keys), step-4 build-output check, checks (counts match my run), out-of-plan note.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1: no new imports; check:layers clean. R3: none. R4: plan files plus the justified DevGate test assert. R5: tests per the 6a Tests table. R2/R6/R7 not touched. Slice-5 shared rules: no legacy alias, no 700/800 in TSX or `.aw-*`, WhosHere uses the kit `TRANSITION` string verbatim (Button.tsx:8–9) with `enabled:hover:`, no per-component focus classes (global ring), no Tailwind palette colours (DevGate `red-*` removed), spacing on the R-d scale (guard clean). R-i map applied as tabled.
+
+### Blockers from review agents
+None (no review trigger matched).
+
+### Nits (do not block)
+- 💭 impl-log "Visible differences" only points to the plan's list instead of restating it; fine since nothing deviated, but the PR body should carry the list.
+- 💭 CheckinPopup.test "pixel chrome": the `.replace("max-h-[90dvh]", "")` / `w-[min…` stripping is a no-op for the checked substrings (`text-[`, `tracking-[`, `border-[`, `shadow-[`, `opacity-90`); harmless.
+- 💭 `--px-btn`, `--px-btn-ledge`, `--px-btn-text`, `--px-title`, `--px-title-shadow` (globals.css `:root`) now have no consumers after `.px-card`/`.px-title` were deleted; slice 7 can drop them instead of moving them into tokens.css.
+
+### Ming verification after merge
+- As in plan "Ming verification after merge (slice 6a)": `/sign-in` at 390 / 800 / 1024 / 1280 px light and dark (headline size switch at 1024, small world at 1280, pixel-green Sign in with hover and focus ring, italic headline word readable in dark, Q-S6-4); sign-up / forgot password (no jump when Turnstile loads), accept-invitation link, org picker; check-in with seats in two rooms (popup Tab order, check in/out, Who's here hover, 390 px floating button clears the tab bar, dark popup frame); DevGate production-data notice in dark mode.
+- Not browser-verified by implementer or reviewer.
+
+### Follow-ups (out of scope)
+- Slice 7: remove the now-unused `--px-btn*`/`--px-title*` variables (see nit).
+- Q-S6-12: check-in side column from `xl` if Ming prefers.
+
+### Blockers from review agents (slice 6a)
+- None. security-ai-generated-code-auditor (security-review.md, slice 6a): no 🔴, no 🟡. Orchestrator ran `git diff --stat origin/main...HEAD -- src/ui/auth src/lib` for its note 6: only AuthLayout, DevGate(+test), accept-views, account-views(+test), views(+test), world-palette.test.ts (deleted) and src/lib/color/tokens.test.ts changed; tokenStore, runtime, identityClient, AuthGate and TurnstileWidget are untouched.

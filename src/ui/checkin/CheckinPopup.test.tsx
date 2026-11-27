@@ -41,7 +41,7 @@ describe("CheckinPopup", () => {
   it("open=false renders nothing", () => {
     expect(render({ open: false })).toBe("");
   });
-  it("renders a <dialog> with aria-labelledby the title and aria-describedby the intro; px-frame; title bar bg-px-wall text-on-surface; body has no px-title/px-heading class", () => {
+  it("renders a <dialog> with aria-labelledby the title and aria-describedby the intro; px-frame; title bar bg-tile text-text-pixel; body has no px-title/px-heading class", () => {
     const html = render();
     const title = /aria-labelledby="([^"]+)"/.exec(html)?.[1];
     const desc = /aria-describedby="([^"]+)"/.exec(html)?.[1];
@@ -49,7 +49,7 @@ describe("CheckinPopup", () => {
     expect(html).toContain(`<h2 id="${title}"`);
     expect(html).toContain(`<p id="${desc}"`);
     expect(html).toContain("px-frame");
-    expect(html).toMatch(/class="[^"]*bg-px-wall[^"]*text-on-surface[^"]*"><h2/);
+    expect(html).toMatch(/class="[^"]*bg-tile[^"]*text-text-pixel[^"]*"><h2/);
     expect(html).not.toContain("px-title");
     expect(html).not.toContain("px-heading");
   });
@@ -86,9 +86,10 @@ describe("CheckinPopup", () => {
     expect(html).toContain("Locked");
     expect(render({ locked: [] })).not.toContain("No seat in these rooms");
   });
-  it('primary "Check in to <code>" has data-variant=filled inside .px-card; "Just look" present; busy -> primary disabled + aria-busy; error -> role=alert with the API text', () => {
+  it('primary "Check in to <code>" has data-variant=pixel, no px-card; "Just look" present; busy -> primary disabled + aria-busy; error -> role=alert with the API text', () => {
     const html = render();
-    expect(html.indexOf("px-card")).toBeLessThan(html.indexOf('data-variant="filled"'));
+    expect(html).toContain('data-variant="pixel"');
+    expect(html).not.toContain("px-card");
     expect(html).toContain(">Check in to A1<");
     expect(html).toContain(">Just look<");
     const busy = render({ busy: true });
@@ -99,12 +100,24 @@ describe("CheckinPopup", () => {
     expect(err).toContain('role="alert"');
     expect(err).toContain(apiErrorMessage("no_seat_in_room"));
   });
-  it("390 px classes: dialog w-[min(32rem,calc(100vw-1.5rem))] max-h-[90dvh], scrolling list, actions full width", () => {
+  it("390 px classes: dialog w-[min(--spacing(128),calc(100vw-var(--space-6)))] max-h-[90dvh], scrolling list, actions full width", () => {
     const html = render();
-    expect(html).toContain("w-[min(32rem,calc(100vw-1.5rem))]");
+    expect(html).toContain("w-[min(--spacing(128),calc(100vw-var(--space-6)))]");
     expect(html).toContain("max-h-[90dvh]");
     expect(html).toContain("overflow-auto");
     expect(html).toContain("w-full sm:w-auto");
-    expect(html).toContain("min-h-11");
+    expect(html).toContain("min-h-control");
+    expect(html).not.toContain("min-h-11");
+  });
+  it("pixel chrome: selected row border-pixel-primary, others transparent, 20 px radios, tonal Just look, no legacy classes", () => {
+    const html = render();
+    expect(html).toContain("border-3 border-pixel-primary");
+    expect(html).toContain("border-3 border-transparent");
+    expect(html).toContain("size-5");
+    expect(html).toMatch(/<button[^>]*data-variant="tonal"[^>]*>Just look</);
+    expect(html).not.toContain("rounded-none");
+    for (const bad of ["opacity-90", "text-[", "tracking-[", "border-[", "shadow-["]) {
+      expect(html.replace("max-h-[90dvh]", "").replace(/w-\[min[^\s"]*/, "")).not.toContain(bad);
+    }
   });
 });

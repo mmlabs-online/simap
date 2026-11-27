@@ -23,7 +23,7 @@ export function AuthLayout({
 }) {
   const w = authCopy.world;
   const frame = (
-    <div className="aw-frame w-full min-w-0 max-w-[400px] flex-none">
+    <div className="aw-frame w-full min-w-0 max-w-100 flex-none">
       <div className="aw-strip">
         <span className="aw-strip-mark" aria-hidden="true" />
         <p className="aw-strip-title">{w.portalTitle}</p>
@@ -34,11 +34,11 @@ export function AuthLayout({
             <CardAvatar />
             <div className="flex flex-col gap-1">
               <p className="aw-eyebrow">{w.introEyebrow}</p>
-              <h2 className="font-heading aw-heading text-xl font-bold">{w.introHeading}</h2>
+              <h2 className="aw-heading text-subtitle">{w.introHeading}</h2>
             </div>
           </div>
         ) : (
-          <h1 className="font-heading aw-heading text-xl font-bold">{title}</h1>
+          <h1 className="aw-heading text-subtitle">{title}</h1>
         )}
         {children}
       </Card>
@@ -67,7 +67,7 @@ export function AuthLayout({
         {landing ? (
           <SmallWorld>{frame}</SmallWorld>
         ) : (
-          <div className="flex w-full max-w-[816px] flex-col items-center justify-center gap-10 md:flex-row">
+          <div className="flex w-full max-w-204 flex-col items-center justify-center gap-8 md:flex-row">
             {scene && <SignInScene />}
             {frame}
           </div>

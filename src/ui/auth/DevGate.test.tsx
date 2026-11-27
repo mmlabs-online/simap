@@ -75,7 +75,7 @@ describe("DevGate production-data notice", () => {
   it("shows the red notice on a non-ready view when the flag is on", async () => {
     const out = await render(true);
     expect(out).toContain(devTokenCopy.prodBadge.label);
-    expect(out).toContain("bg-red-600");
+    expect(out).toContain("bg-danger-tint");
     expect(out).not.toContain("child-marker");
   });
   it("shows no notice when the flag is off", async () => {

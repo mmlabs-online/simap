@@ -1846,3 +1846,369 @@ R5 (tests below). R2/R6/R7 not touched.
   left margin on that button, checked in the browser (it must not be clipped by the scroll region).
 
 Status: READY
+
+## Slice 6 addendum — End-user and pixel surfaces
+Status: READY. Written against `main` after #164 (slices 1–4 and 5a–5c merged), Split proposal item 6 and Ming's
+approval of the plan and split with all defaults ("duyệt SIM-071, theo mặc định hết"; Q10 answered: DM Sans, Fraunces
+kept for the sign-in headline). Applies the "Slice 5 addendum" rules R-a…R-h and "Rules for every slice-5 file"
+**unchanged**, plus one pixel-chrome rule R-i below. No new decisions; open points are non-blocking Q-S6-n at the end,
+each with a default. Sprites, canvas paint and art colours (`--px-*`, `src/lib/sprites/**`, `paint.ts`,
+`photo-canvas.ts`, `RoomThumb` fills) stay untouched. The globals.css entries that slice 7 owns (compat aliases in
+`:root` and `@theme inline`, `rgba()` helpers, the `--px-*` art palette, `.i`, `.font-heading`, `.text-h2`) stay out of
+scope.
+
+### Size and split
+Measured on `main` after #164 (non-test `.tsx` in the five slice-6 folders): 288 lines carry a legacy alias, raw
+Tailwind size, 700/800 weight or arbitrary value, in 55 files, plus 77 guard violations in 21 pending files and 33 in
+the `.aw-*`/`.px-*` part of `globals.css`. One PR would be about 1300 changed lines. The suggested 6a/6b split
+(portal + check-in + auth + globals; then roomlayout + mapItems) still gives a 6a of about 800, so slice 6 ships as
+**three PRs** (Q-S6-1):
+
+| Sub-slice | Surfaces | Pending keys → 0 | Pending total | Expected size |
+|---|---|---|---|---|
+| **6a** (this addendum, fully specified) | Auth (every `AuthLayout` screen, sign-in scene and small world), check-in (page, popup, floating button, Who's here), globals.css `.aw-*`, `.px-card`/`.px-strip`/`.px-title`/`.px-frame`, `--aw-*` removal, `world-palette.test.ts` → `tokens.test.ts` | 6 keys, 16 violations, plus `globals.css` 65 → 32 | 142 → 93 | ≈ 490 changed lines |
+| 6b (outlined) | Portal (My seat, My devices, My requests, Profile, pixel character picker) | 5 keys, 10 | 93 → 83 | ≈ 350 |
+| 6c (outlined) | Room map and layout-editor chrome (`roomlayout/**`), Map items library and item editor (`mapItems/**`) | 10 keys, 51 | 83 → 32 | ≈ 450 (if over ~600: split into roomlayout and mapItems) |
+
+After 6c the pending list holds only `src/app/globals.css` (32: the `--px-*` art palette 20, compat `rgba()` 10, `.i`
+icon font-family 1, `.px-scene` 1), which is slice 7's.
+
+6a ≈ 490: globals.css ≈ 150, `world-palette.test.ts` deleted (62), `tokens.test.ts` ≈ 60, auth screens ≈ 20, check-in
+screens ≈ 50, screen tests ≈ 65, `screen-tokens.test.ts` ≈ 30, pending 7, impl-log ≈ 45.
+
+### Pending list (R-h): all 21 slice-6 keys, 77 violations
+Counts read from `scripts/check-tokens.pending.json` on `main` (22 keys / 142 = `globals.css` 65 + these 77). Cause
+per key as the guard counts it (`text-[Npx]` twice: `text-arb` + `arbitrary-px`; `shadow-[…Npx…]` twice;
+`tracking-[0.0Nem]`, `[Npx]`/`[Nrem]` sizes and off-scale spacing once each; `rgba(` once as `color-fn`):
+
+| Key | Count | Sub-slice | Cause |
+|---|---|---|---|
+| `src/ui/auth/AuthLayout.tsx` | 3 | 6a | `max-w-[400px]` (26), `max-w-[816px]` (70), `gap-10` (70) |
+| `src/ui/auth/DevGate.tsx` | 1 | 6a | `tracking-[0.06em]` (59) |
+| `src/ui/auth/account-views.tsx` | 2 | 6a | `min-h-[65px]` (121, 190) |
+| `src/ui/auth/views.tsx` | 1 | 6a | `min-h-[65px]` (138) |
+| `src/ui/checkin/CheckinPopup.tsx` | 7 | 6a | `w-[min(32rem,calc(100vw-1.5rem))]` (67), `tracking-[0.12em]` (74), `border-[3px]` (96, 97, 180), `shadow-[0_4px_0_0_var(--px-shadow)]` (180: 2) |
+| `src/ui/checkin/CheckinView.tsx` | 2 | 6a | `bottom-[calc(68px+…)]` (19), `lg:grid-cols-[minmax(0,1fr)_300px]` (71) |
+| `src/ui/portal/MyDevicesTable.tsx` | 3 | 6b | `HEAD` `text-[11px]` (22: 2), `min-w-[960px]` (129) |
+| `src/ui/portal/PixelLookPicker.tsx` | 3 | 6b | `gap-1.5` (48, 50 ×2) |
+| `src/ui/portal/ProfilePhotoSection.tsx` | 2 | 6b | `BTN` `gap-1.5` (7), `py-1.5` (65) |
+| `src/ui/portal/ProfileTabView.tsx` | 1 | 6b | `gap-1.5` (35) |
+| `src/ui/portal/SeatCard.tsx` | 1 | 6b | `gap-1.5` (53) |
+| `src/ui/mapItems/MapItemEditor.tsx` | 11 | 6c | `text-[11px]` + `tracking-[0.05em]` (64: 3), `text-[20px]` (67: 2), `text-[13px]` (104: 2), dialog `w-[calc(100%-1.5rem)]`, `max-w-[580px]`, `shadow-[0_12px_40px_…]` (332: 4) |
+| `src/ui/mapItems/MapItemEditorAppearance.tsx` | 5 | 6c | `py-0.5` (171), `text-[11px]` (190: 2), `text-[13px]` (258: 2) |
+| `src/ui/mapItems/MapItemEditorDetails.tsx` | 8 | 6c | `CAPTION` (15: 4), `text-[13px]` (130: 2, 168: 2) |
+| `src/ui/mapItems/SpriteBrowser.tsx` | 4 | 6c | `text-[11px]` (114: 2, 117: 2) |
+| `src/ui/roomlayout/EditorInspector.tsx` | 6 | 6c | `py-1.5` + `text-[13px]` (130: 3, 152: 3) |
+| `src/ui/roomlayout/EditorViews.tsx` | 2 | 6c | `BTN` `text-[13px]` (15) |
+| `src/ui/roomlayout/LayoutEditor.tsx` | 1 | 6c | `grid-cols-[minmax(0,1fr)_18rem]` (193) |
+| `src/ui/roomlayout/Palette.tsx` | 2 | 6c | `text-[13px]` (55) |
+| `src/ui/roomlayout/RoomMapSection.tsx` | 2 | 6c | `text-[13px]` (84) |
+| `src/ui/roomlayout/SeatOverlay.tsx` | 10 | 6c | `gap-1.5`, `px-2.5` (18: 2), `bg-[rgba(22,27,37,.92)]` (20, 165, 166: 3), `gap-1.5`, `px-2.5` (165: 2, 166: 2), `px-2.5` (204) |
+
+`src/app/globals.css` (65) by cause, from the slice-2 rules: `--px-*` hex 20 (lines 83–95, 109–115), compat `rgba()` 10
+(74–80, 101–106), `.i` font-family 1 (254), `.px-frame` box-shadow 1 (378), `.px-title` font-size 1 (408), `.px-card`
+box-shadows 2 (424, 433), `.px-scene` box-shadow 1 (452), `--aw-*` hex 16 (467–484), `.aw-*` literals 13 (font-size
+493, 528, 550, 560, 573, 677, 693; border-radius 522, 577, 607; box-shadow 580, 650, 697). **6a removes 33** (every
+`--aw-*`/`.aw-*`, `.px-title`, `.px-card`, `.px-frame` entry) → **32**, the slice-7 remainder listed in "Size and split".
+
+### R-i Pixel chrome (new in slice 6; colour only, no new token)
+Pixel-green scope is Q4 (approved): `AuthLayout` screens, check-in, Map items + item editor, the layout palette and the
+pixel character picker. Pixel surfaces keep square edges where they are pixel frames (brief: "Pixel artwork and sprites
+keep square edges"; D52), but every colour comes from tokens:
+
+| Old | New |
+|---|---|
+| `--aw-bg` | `var(--color-cream)` (brief: "Login or marketing screens: `--color-cream`") |
+| `--aw-ink` | `var(--color-text-pixel)` (brief: "login content") |
+| `--aw-muted` | `var(--color-text-secondary)` |
+| `--aw-line` | `var(--color-divider)` |
+| `--aw-strip` | `var(--color-tile)` |
+| `--aw-accent` | `var(--color-pixel-primary)` |
+| `--aw-on-accent` | `var(--color-on-action)` |
+| `--aw-serif-ink` | `var(--color-pixel-primary)` (large text only: Display/Hero ≥ 24 px, AA large 3:1; Q-S6-4) |
+| `.px-card [data-variant="filled"]` (orange `--px-btn` square button) | kit `<Button variant="pixel">` (pixel-primary, white, `rounded-lg`, `shadow-pixel`, hover pixel-hover; Q-S6-2) |
+| `.aw-card [data-variant="filled"]` | re-pointed in CSS to the same values as kit `pixel` (Q-S6-3) |
+| `border-px-outline` on check-in chrome (frame lines, selected row) | `border-pixel-primary` |
+| `bg-px-wall` title bar | `bg-tile text-text-pixel` |
+| `accent-primary` on pixel-scope radios | `accent-pixel-primary` |
+| `bg-surface-container(-high)` behind a sprite / pixel head | `bg-tile` (brief: "Sprite previews: `--color-tile`") |
+| `border-[3px]` | `border-3` (v4 bare-number border width, same 3 px, not flagged) |
+| `rounded-none`, `shadow-[0_4px_0_0_var(--px-shadow)]` overrides on kit buttons | delete (kit variant look) |
+
+CSS in the `.aw-*`/`.px-*` blocks: colours, font sizes, radii and shadows only from `var(--color-*)`, `var(--text-*)`
+(+ `--line-height`), `var(--radius-*)`, `var(--shadow-*)`; padding/gap/margin from `var(--space-*)` with R-d rounding
+(padding half steps up, gap down); weights 700/800 → 600 (Q7). Geometry tied to the 384×224 canvases and 32 px sprites
+(`width`, `height`, `top`/`left`/`right`/`bottom`, `grid-template-columns`, `max-width`) is unchanged. A 0-offset
+`box-shadow` ring becomes `outline` (same pixels, not a shadow).
+
+### Shared values used in 6a (same strings as 5b/5c "Shared values")
+- **Page `<h1>`:** `text-display text-text-primary`. **Section `<h2>`:** `text-subtitle text-text-primary`. **Card title
+  in `AuthLayout`:** `aw-heading text-subtitle` (colour from `.aw-heading`).
+- **Notices:** error `text-label font-semibold text-danger`; status `text-label font-semibold text-text-primary` (or
+  `text-text-secondary` where the old class was `text-on-surface-variant`); hint / empty / body lines `text-label
+  font-normal text-text-secondary` (`text-label font-normal` when the old class had no colour).
+- **Standalone link** (a link that is not inside a sentence): `inline-flex min-h-control items-center text-label
+  font-semibold text-text-primary underline` (5c back-link classes, keeping the existing `underline`).
+- **Radio rows (R-f):** `<label>` `min-h-control cursor-pointer`, input `size-5 flex-none`.
+
+### globals.css (6a) — rule by rule
+Line numbers from `main` after #164. Keep both marker comments (`/* SIM-068 auth world (aw-*) */`,
+`/* SIM-068.1 small world (aw-world) */`): `SmallWorld.test.tsx:121` slices from the second one.
+
+| Lines | Rule | Change |
+|---|---|---|
+| 375–386 | `.px-frame` (only user: CheckinPopup dialog) | → `position: relative; border: 4px solid var(--color-pixel-primary); box-shadow: var(--shadow-pixel);` (Q-S6-9) |
+| 387–413 | `.px-strip`, `.px-strip > span`, `.px-strip > .px-title`, `.px-title` | delete (no element uses them: `rg "px-strip\|px-title" src --glob '!*.css'` hits only tests asserting absence; Q-S6-5) |
+| 419–441 | `.px-card [data-variant="filled"]` and its `:active`, `:disabled`, `:focus-visible` | delete (check-in adopts `variant="pixel"`, Q-S6-2) |
+| 371–374, 414–418, 442–463 | `.px-stage`, `.px-heading`, `.px-scene`, `.px-scene-canvas` | **unchanged** (art frame of the sign-in vignette on the `--px-*` art palette, or unused; slice 7, Q-S6-5) |
+| 466–485 | `:root` / `[data-theme="dark"]` `--aw-*` blocks | delete (16 hex); the tokens already switch with the theme |
+| 486–489 | `.aw-stage` | `background: var(--color-cream); color: var(--color-text-pixel);` |
+| 490–494 | `.aw-header, .aw-footer` | `color: var(--color-text-secondary); font-size: var(--text-label); line-height: var(--text-label--line-height);` (13 → 14 px, Q-S6-15) |
+| 495–501 | `.aw-header` | `gap: var(--space-2); padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-divider);` |
+| 502–509 | `.aw-footer` | `gap: var(--space-1) var(--space-6); padding: var(--space-4) var(--space-5); border-top: 1px solid var(--color-divider);` |
+| 515–525 | `.aw-logo` | `border-radius: var(--radius-lg); background: var(--color-workspace-primary); color: var(--color-on-action);` (same as the shell logo, `AppShellView.tsx:66`; drops the `--accent-orange`/`--on-accent` aliases; Q-S6-16) |
+| 526–530 | `.aw-wordmark` | `font-size: var(--text-subtitle); line-height: var(--text-subtitle--line-height); font-weight: 600; color: var(--color-text-pixel);` |
+| 531–535 | `.aw-divider` | `background: var(--color-divider);` |
+| 540–547 | `.aw-hero` | `gap: var(--space-3);` |
+| 548–555 | `.aw-eyebrow, .aw-strip-title` | `font-size: var(--text-caption); line-height: var(--text-caption--line-height); font-weight: 600;` (letter-spacing, uppercase kept) |
+| 556–558 | `.aw-eyebrow` | `color: var(--color-text-secondary);` |
+| 559–564 | `.aw-headline` | `font-size: var(--text-display); line-height: var(--text-display--line-height); font-weight: 600; text-wrap: balance;` then `@media (width >= 1024px) { .aw-headline { font-size: var(--text-hero); line-height: var(--text-hero--line-height); font-weight: 500; } }` (Q10 approved: Hero from `lg`, Display below) |
+| 565–570 | `.aw-serif` | font-family **unchanged** `var(--font-serif), Georgia, serif` (Fraunces, D85; passes the guard: starts with `var(`), italic, 400; `color: var(--color-pixel-primary);` |
+| 571–574 | `.aw-subline` | `color: var(--color-text-secondary); font-size: var(--text-body); line-height: var(--text-body--line-height);` |
+| 575–581 | `.aw-frame` | `border: 1px solid var(--color-divider); border-radius: var(--radius-xl); background: var(--color-cream); box-shadow: var(--shadow-card);` (brief cards: `--radius-xl`, `--shadow-card`; Q-S6-6, Q-S6-7) |
+| 582–590 | `.aw-strip` | `gap: var(--space-2); padding: var(--space-2) var(--space-4); background: var(--color-tile); color: var(--color-text-pixel); border-bottom: 1px solid var(--color-divider);` |
+| 591–596 | `.aw-strip-mark` | `background: var(--color-pixel-primary);` |
+| 597–603 | `.aw-card`, `.aw-heading` | `background: var(--color-cream); color: var(--color-text-pixel);` / `color: var(--color-text-pixel);` |
+| 604–608 | `.aw-card [data-variant="filled"]` | `background: var(--color-pixel-primary); color: var(--color-on-action); box-shadow: var(--shadow-pixel);` (no `border-radius`: kit `rounded-lg` applies); add `.aw-card [data-variant="filled"]:enabled:hover { background: var(--color-pixel-hover); }` and `.aw-card [data-variant="filled"]:disabled { box-shadow: none; }` (the unlayered override beats the layered kit hover/disabled utilities, so both states are restated here) |
+| 611–622 | `.aw-world`, `.aw-world-center` | unchanged |
+| 628–635 | `.aw-card-avatar` | `background: var(--color-tile); border: 1px solid var(--color-divider);` |
+| 645–651 | `.aw-room` | `background: linear-gradient(to bottom, var(--color-divider) 0 64px, var(--color-tile) 64px); outline: 1px solid var(--color-divider);` (was `box-shadow: 0 0 0 1px …`) |
+| 652–662 | `.aw-room::after` (+ dark opacity) | `background: var(--color-cream);` (dark `opacity: 0.35` rule unchanged) |
+| 671–686 | `.aw-room-label` | `padding: var(--space-1) var(--space-2); font-size: var(--text-caption); line-height: var(--text-caption--line-height); font-weight: 600; color: var(--color-text-pixel); background: var(--color-tile); border: 1px solid var(--color-divider);` |
+| 687–698 | `.aw-note` | `padding: var(--space-2) var(--space-3); font-size: var(--text-label); line-height: var(--text-label--line-height); font-weight: 400; color: var(--color-text-pixel); background: var(--color-tile); border: 1px solid var(--color-divider); box-shadow: var(--shadow-pixel);` (Q-S6-6) |
+| 712–723, 767–780 | `.aw-world-gap::before`, `.aw-world-path` | `var(--aw-bg)` → `var(--color-cream)`, `var(--aw-line)` → `var(--color-divider)` (geometry unchanged) |
+| 738–747 | `.aw-world` (≥ 1280) | `column-gap: var(--space-6);` |
+
+Not touched in globals.css: lines 1–369 (compat aliases, `@theme inline`, base, utilities, focus, reduced motion:
+slices 3–5 and 7), `.i` (254), the `.aw-*` display/position rules not listed above.
+
+### Files (slice 6a)
+None matches a High path (`.github/risk-tiers.yml`: `src/ui/**`, `src/app/globals.css`, `src/lib/**` tests and
+`scripts/check-tokens.pending.json` are not listed). "→" = replace the whole class string unless "add"/"drop"/"keep"
+says otherwise; the implementer re-reads each file first.
+
+**Auth**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/app/globals.css` | per "globals.css (6a) — rule by rule" | 65 → 32 |
+| `src/ui/auth/AuthLayout.tsx` | frame (26) `max-w-[400px]` → `max-w-100`; card titles h2 (37) and h1 (41) `font-heading aw-heading text-xl font-bold` → `aw-heading text-subtitle`; row (70) `max-w-[816px]` → `max-w-204`, `gap-10` → `gap-8` (R-d). Everything else unchanged (`aw-*` class names, `Card` overrides, structure) | 3 → 0 (remove) |
+| `src/ui/auth/DevGate.tsx` | `ProdNotice` (59) → `fixed inset-x-0 top-0 z-50 border-b border-danger bg-danger-tint px-3 py-2 text-center text-caption font-semibold uppercase tracking-wide text-danger` (same tones as the shell prod badge, `AppShellView.tsx:146–148`; Q-S6-10) | 1 → 0 (remove) |
+| `src/ui/auth/account-views.tsx` | Turnstile slots (121, 190) `min-h-[65px]` → `min-h-16.25` (65 px exact, Q-S6-8); body lines (174, 331) `text-sm` → `text-label font-normal` | 2 → 0 (remove) |
+| `src/ui/auth/views.tsx` | other-account line (107) `text-center text-label font-normal text-text-secondary`; Turnstile slot (138) `min-h-16.25`; body (181) `text-label font-normal`; no-org how-to (253) `text-label font-normal text-text-secondary` | 1 → 0 (remove) |
+| `src/ui/auth/accept-views.tsx` | sign-in hint (63) `text-label font-normal`; new-account hint (70) `text-label font-normal text-text-secondary` | not pending |
+
+**Check-in**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/checkin/CheckinPopup.tsx` | dialog (67) `px-frame m-auto w-[min(--spacing(128),calc(100vw-var(--space-6)))] max-h-[90dvh] overflow-hidden p-0 bg-surface text-text-primary` (same 32rem / 100vw − 1.5rem; `--spacing()` as R-c); title bar (70) `flex-none border-b-4 border-pixel-primary bg-tile px-4 py-3 text-text-pixel`; title h2 (74) `text-label font-semibold uppercase tracking-wide`; body wrapper (79) drop `px-card` → `flex min-h-0 flex-1 flex-col`; intro (81) `text-label font-normal text-text-secondary`; legend (85) `mb-2 text-label font-semibold text-text-primary`; room label (94–98) `flex min-h-control cursor-pointer items-center gap-3 bg-surface p-2` + `border-3 border-pixel-primary` (selected) / `border-3 border-transparent`; radio (106) `size-5 flex-none accent-pixel-primary`; text column (109, 144) `flex min-w-0 flex-1 flex-col text-label font-normal`; room names (110, 145) `font-semibold text-text-primary`; meta lines (114, 117, 118, 148) `text-text-secondary`; locked h3 (134) `mb-2 text-label font-semibold text-text-primary`; locked `<li>` (141) drop `opacity-90`, `min-h-11` → `min-h-control`; Request-a-seat link (150) standalone link + `self-start`; footer (162) `flex-none border-t-4 border-pixel-primary p-4`; error (164) `mb-3 text-label font-semibold text-danger`; primary Button (169–177) `variant="pixel"`, `className="w-full sm:w-auto"`; Just look (178–184) `variant="tonal"`, `className="w-full sm:w-auto"` (drop `min-h-11 rounded-none border-[3px] border-px-outline shadow-[…]`). Props, handlers, ids, `aria-*`, `onCancel`, focus return unchanged | 7 → 0 (remove) |
+| `src/ui/checkin/CheckinButton.tsx` | wrapper (23) drop `px-card` → `pointer-events-auto flex flex-col items-end gap-2`; error (25) `text-label font-semibold text-danger`; Button (29) `variant="pixel"` | not pending |
+| `src/ui/checkin/CheckinView.tsx` | slot (19) `bottom-[calc(68px+env(safe-area-inset-bottom)+1rem)]` → `bottom-[calc(--spacing(20)+env(safe-area-inset-bottom))]` (tab bar is 64 + 1 px since slice 4, +16 px gap; Q-S6-13); error (50) `text-label font-semibold text-danger`; no-seat title (61) `text-body font-semibold text-text-primary`; link (62) standalone link; room h2 (70) and Who's-here h2 (75) `text-subtitle text-text-primary`; grid (71) `grid gap-4 lg:grid-cols-[minmax(0,1fr)_--spacing(75)]` (300 px unchanged, R-c; Q-S6-12); placeholder (79) `mt-2 text-label font-normal text-text-secondary`; h1 (91) `text-display text-text-primary` | 2 → 0 (remove) |
+| `src/ui/checkin/CheckinPage.tsx` | move error (212) `text-label font-semibold text-danger`; Open-in-room link (271) standalone link | not pending |
+| `src/ui/checkin/WhosHere.tsx` | loading (25) `mt-2 text-label font-normal text-text-secondary`; error (33) `text-label font-semibold text-danger`; stale (45) `text-label font-semibold text-text-secondary`; empty (50) `text-label font-normal text-text-secondary`; row button (62) → `flex min-h-control w-full items-center gap-3 rounded-lg px-2 text-left enabled:cursor-pointer enabled:hover:bg-canvas disabled:cursor-not-allowed` + the `TRANSITION` string of `src/ui/Button.tsx:8–9` (drops `focus-visible:ring-*`: the global ring applies; drops `disabled:opacity-70`: R-e, the row keeps its "not on map" text; Q-S6-11); name (66) `truncate text-label font-semibold text-text-primary`; meta (67) `text-caption text-text-secondary` | not pending |
+| `src/ui/checkin/PixelHead.tsx` | head background (34) `bg-surface-container-high` → `bg-tile` (R-i) | not pending |
+
+**Pending, tests, log**
+
+| File | Change |
+|---|---|
+| `scripts/check-tokens.pending.json` | delete the 6 6a keys; `src/app/globals.css` 65 → 32; nothing else changes (142 → 93, 22 → 16 keys) |
+| `src/ui/auth/world-palette.test.ts` | **delete** (its `--aw-*` tokens no longer exist; its checks move to `tokens.test.ts`, below) |
+| `src/lib/color/tokens.test.ts` | extend (Tests) |
+| `src/ui/screen-tokens.test.ts` | extend (Tests) |
+| `src/ui/checkin/CheckinPopup.test.tsx`, `CheckinButton.test.tsx`, `CheckinView.test.tsx`, `WhosHere.test.tsx`, `src/ui/auth/views.test.tsx`, `account-views.test.tsx` | update/extend (Tests) |
+| `work/tickets/SIM-071/impl-log.md` | append "Slice 6a": files, R-i map, globals rule list, pending before/after (65 → 32, 142 → 93), visible differences, checks |
+
+Not touched (read; no class strings, only `aw-*`/`px-scene` class names whose CSS changes, or out of 6a):
+`SignInScene.tsx`, `SmallWorld.tsx` (class names unchanged; `SmallWorld.test.tsx` and `org-views.test.tsx` stay green
+unchanged because they assert class names and the `display` rules, not colours), `fields.tsx` (slice 3), every auth
+page wrapper (`SignInRoute`, `SignUpPage`, `ForgotPasswordPage`, `ResetPasswordPage`, `VerifyEmailPage`,
+`AcceptInvitationPage`, `AuthGate`, `TurnstileWidget`, `api-fetch-context`), `checkin/RoomThumb.tsx` (pixel mini-map: art
+fills and frame on `--px-*`; Q-S6-14), `checkin/HomePage.tsx`, `src/ui/org/**` (render inside `AuthLayout`, change
+through CSS only), `src/ui/Button.tsx` (the `pixel` variant exists since slice 3), `src/styles/tokens.css` (no new
+token), `src/app/layout.tsx` (Fraunces already loaded as `--font-serif`), `src/ui/copy/**`, `src/lib/**` except the
+test, `scripts/check-tokens.mjs`, every 6b/6c file.
+
+### Approach (slice 6a)
+1. globals.css per the rule table (delete `--aw-*`, re-point `.aw-*`, delete `.px-card`/`.px-strip`/`.px-title`,
+   re-point `.px-frame`). After it, `rg -n -- "--aw-|#[0-9a-fA-F]{3,8}\b|rgba?\(" src/app/globals.css` lists only the
+   slice-7 lines (`--px-*`, compat `rgba()`), and `node scripts/check-tokens.mjs --list` reports `globals.css: 32`.
+2. Auth screens (AuthLayout, DevGate, account-views, views, accept-views).
+3. Check-in (CheckinPopup, CheckinButton, CheckinView, CheckinPage, WhosHere, PixelHead). After each screen file:
+   `rg -n "on-surface|outline-variant|text-error|text-primary\b|text-\[|tracking-\[|border-\[|shadow-\[|text-(xs|sm|base|lg|xl|2xl)\b|font-(bold|extrabold|heading)|min-h-11|opacity-|focus(-within|-visible)?:|px-(card|outline|wall)|surface-(high|container)|accent-primary|rounded-none" <file>`
+   → no hits (`text-primary\b` also matches inside `text-text-primary`; read those hits, only the bare class is wrong).
+4. Confirm `pnpm build` output: `bottom-[calc(--spacing(20)+…)]`, `w-[min(--spacing(128),…)]`,
+   `lg:grid-cols-[minmax(0,1fr)_--spacing(75)]`, `min-h-16.25` and `border-3` compile to 80 px / 32rem / 300 px / 65 px /
+   3 px (grep the built CSS once, note in impl-log). Fallbacks if 4.3.x rejects one: `bottom-20` +
+   `pb-[env(safe-area-inset-bottom)]` on the slot; `w-full max-w-128`; `min-h-16`; `border-2`; record which.
+5. Delete `world-palette.test.ts`; extend `tokens.test.ts`, `screen-tokens.test.ts` and the screen tests.
+6. Pending: `node scripts/check-tokens.mjs --list`; the 6 files report 0, `globals.css` 32, every other count
+   unchanged; delete the 6 keys, set `globals.css` to 32 (sorted order kept); `node scripts/check-tokens.mjs` exits 0.
+7. impl-log "Slice 6a", checks: `pnpm format:check`, `pnpm typecheck && pnpm check:layers`, `pnpm test`, `pnpm build`.
+
+Rules: R1 (no new imports; `Button` is already imported where used), R3 none, R4 (Files tables only), R5 (tests
+below). R2/R6/R7 not touched.
+
+### Tests to write / update (slice 6a)
+| Test (file › name) | Covers |
+|---|---|
+| `tokens.test.ts` › `TEXT_PAIRS` gains `text-primary`/`text-secondary` on `cream` and `text-secondary` on `tile` (sign-in text, eyebrow, header/footer, notes); `NON_TEXT_PAIRS` gains `pixel-primary` on `cream`, `tile` and `surface` (frame lines, strip mark, check-in frame and selected row; ≥ 3) — both themes via the existing `describe.each` | AC 6 on the new tokens (light ≈ 5.8 / 5.6 / 6.5; dark ≈ 3.8 / 3.2 / 3.4) |
+| tokens.test › new `LARGE_TEXT_PAIRS` `[["pixel-primary", "cream"]]` asserted ≥ 3 with the comment "serif part of the sign-in headline, Display/Hero ≥ 24 px (WCAG large text)" | replaces world-palette `--aw-serif-ink` 4.5 check (Q-S6-4) |
+| tokens.test › describe "auth world and pixel chrome (replaces world-palette.test.ts)": (1) `globalsCss` contains no `--aw-`; (2) `aw` = `globalsCss.slice(globalsCss.indexOf(".aw-stage"))`: no hex, no `rgb(`/`rgba(`, no `animation`/`transition`/`@keyframes`, and every `var(--x)` in it matches `/^--(color\|text\|space\|radius\|shadow)-\|^--font-serif$/`; (3) `.aw-stage {` occurs once and `.aw-world {` comes after it; (4) `.aw-stage` and `.aw-card` rules set `background: var(--color-cream)`, `.aw-strip` `var(--color-tile)`; (5) `.aw-headline` rule has `var(--text-display)` and a `@media (width >= 1024px)` block with `var(--text-hero)`; (6) `.aw-serif` has `font-family: var(--font-serif)` and `color: var(--color-pixel-primary)`; (7) `.aw-card [data-variant="filled"]` has `var(--color-pixel-primary)` and `box-shadow: var(--shadow-pixel)`, its `:enabled:hover` rule `var(--color-pixel-hover)`, its `:disabled` rule `box-shadow: none`; (8) `.px-frame` has `var(--color-pixel-primary)` and `box-shadow: var(--shadow-pixel)`; (9) no `.px-card`, `.px-strip`, `.px-title` selector | AA source of truth moves to tokens; D85 Fraunces; Q10; reduced motion (AC 4) |
+| `screen-tokens.test.ts` › `MIGRATED` gains 14 files: `ui/auth/{AuthLayout,DevGate,accept-views,account-views,views,fields,SignInScene,SmallWorld}.tsx`, `ui/checkin/{CheckinButton,CheckinPopup,CheckinView,CheckinPage,WhosHere,PixelHead}.tsx`; the existing legacy / raw-type / low-target / palette / `opacity-60` / focus and "not pending" tests then cover them | R-a…R-c, R-h |
+| screen-tokens › "kit Button only" list gains `ui/checkin/{CheckinPopup,CheckinButton,CheckinView}.tsx` | R-f |
+| screen-tokens › new "pixel chrome": the four check-in screen files (`CheckinPopup`, `CheckinButton`, `CheckinView`, `WhosHere`) match none of `/px-(card\|outline\|wall\|floor\|accent)\|--px-\|rounded-none\|border-\[\|opacity-\d/`; `CheckinPopup.tsx` and `CheckinButton.tsx` contain `variant="pixel"` and no `variant="filled"` | R-i, Q4, R-e |
+| `CheckinPopup.test.tsx` › 44–55: title bar regex → `/class="[^"]*bg-tile[^"]*text-text-pixel[^"]*"><h2/` (test name updated to match), `px-frame` kept; 89–91: `'data-variant="pixel"'` present and no `px-card` (name updated); 102–108: width string → `w-[min(--spacing(128),calc(100vw-var(--space-6)))]`, `min-h-11` → `min-h-control`; new: selected label has `border-pixel-primary`, the other `border-transparent`, radios `size-5`, Just look `data-variant="tonal"` without `rounded-none`/`shadow-[`, markup has no `opacity-90`, `text-[`, `tracking-[`, `border-[` | R-i, R-f, R-e |
+| `CheckinButton.test.tsx` › 12–20: `data-variant="pixel"`, no `px-card` (name updated); retry error has `text-danger` and `text-label` | Q4 |
+| `CheckinView.test.tsx` › 23: `lg:grid-cols-[minmax(0,1fr)_--spacing(75)]`; new "tokens": h1 `text-display`, room `<h2` `text-subtitle`, no-seat link (`<a [^>]*href="/rooms"`) contains `min-h-control`, slot tag contains `bottom-[calc(--spacing(20)+env(safe-area-inset-bottom))]`; no `text-[`, `font-extrabold` | R-b, R-f, Q-S6-13 |
+| `WhosHere.test.tsx` › extend 33–50: each row `<button` has `min-h-control` and no `focus-visible:`; the disabled row has no `opacity-` and still shows the not-on-map hint (existing 45–50); name span `font-semibold` | R-f, R-e |
+| `views.test.tsx` › new in "frame": `AuthLayout` frame has `max-w-100`, card `<h1` has `text-subtitle` and no `font-bold`/`text-xl`; Turnstile slot (`turnstileRequired`, existing variant at 243) is `min-h-16.25`; no `min-h-[` or `text-sm` in the plain sign-in markup. Existing 170–313 unchanged and green | R-b, R-c, Q-S6-8 |
+| `account-views.test.tsx` › sign-up / forgot with a Turnstile slot: slot `<div` has `min-h-16.25` | Q-S6-8 |
+| `scripts/check-tokens.test.ts` (unchanged) › repo ratchet green with 6 keys removed and `globals.css` 32 | pending only shrinks |
+
+### Acceptance → verification (slice 6a)
+| # | Criterion | How the reviewer verifies it |
+|---|---|---|
+| S6a-1 | Auth and check-in screens use token utilities only (R-a/R-b/R-c/R-i) | `screen-tokens.test.ts` green with the 14 files; `rg -n "on-surface\|outline-variant\|text-error\|text-\[\|tracking-\[\|border-\[\|shadow-\[\|font-(bold\|extrabold\|heading)\|min-h-\[\|max-w-\[\|px-(card\|outline\|wall)\|surface-(high\|container)\|red-[0-9]" src/ui/auth src/ui/checkin -g '*.tsx' -g '!*.test.tsx' -g '!RoomThumb.tsx'` → no hits |
+| S6a-2 | No off-scale type: h1 Display, section titles Subtitle, labels 14, metadata 12; sign-in headline Display below 1024 and Hero from 1024 (Q8, Q10, Q16) | `rg -n "text-(xs\|sm\|base\|lg\|xl\|2xl)\b" <same paths>` → no hits; tokens.test `.aw-headline`; CheckinView/views token tests |
+| S6a-3 | Targets ≥ 44 px: popup room rows and locked rows, Request-a-seat / Open-in-room / no-seat links, Who's here rows, all buttons (AC 3) | CheckinPopup, CheckinView, WhosHere tests; `rg -n "min-h-11" src/ui/checkin` → no hits |
+| S6a-4 | Pixel green on pixel scope (Q4): check-in primary actions are kit `pixel`; every `AuthLayout` filled button is pixel-primary with pixel-hover and `--shadow-pixel` via `.aw-card`; check-in radios and frame pixel green | screen-tokens "pixel chrome"; tokens.test (7), (8); CheckinButton/CheckinPopup tests; `views.test.tsx:309–313` unchanged and green |
+| S6a-5 | globals.css: no `--aw-*`; `.aw-*` read only tokens with on-scale spacing; `.px-card`/`.px-strip`/`.px-title` gone; `.px-frame` re-pointed; Fraunces kept on `.aw-serif`; slice-7 entries untouched | tokens.test "auth world and pixel chrome"; `git diff main -- src/app/globals.css` touches only lines 375–441 and 465–784 |
+| S6a-6 | AA in both themes on the new pairs; `world-palette.test.ts` replaced, not just deleted (AC 6) | tokens.test pairs (light and dark); `git diff --stat main` shows `world-palette.test.ts` deleted in the same PR that adds the tokens.test describe |
+| S6a-7 | Every state has text; no opacity dimming of text rows (R-e): locked rooms, disabled Who's here rows | CheckinPopup and WhosHere tests; `rg -n "opacity-" src/ui/checkin -g '*.tsx' -g '!*.test.tsx'` → no hits |
+| S6a-8 | Reduced motion: the auth world CSS has no animation or transition (AC 4) | tokens.test (2) |
+| S6a-9 | Pending shrinks by exactly the 6 keys and `globals.css` 65 → 32 (142 → 93, 22 → 16 keys) | `git diff main -- scripts/check-tokens.pending.json`; `node scripts/check-tokens.mjs` exits 0; screen-tokens pending test |
+| S6a-10 | No behaviour, copy, prop, id, `data-*` or `aria-*` change (`data-slot="checkin-button"`, `aria-busy`, `aria-labelledby/-describedby`, dialog `onCancel`, focus return, `aria-hidden` decorations) | existing tests unchanged except the listed asserts; `git diff main -- src/ui/copy src/lib src/app/layout.tsx` empty except `src/lib/color/tokens.test.ts` |
+| S6a-11 | Only planned files | `git diff --stat main` ⊆ Files tables |
+| S6a-12 | Checks green; impl-log "Slice 6a" complete (R-i map, globals list, pending, visible differences, build-output check of step 4) | `pnpm format:check && pnpm typecheck && pnpm check:layers && pnpm test && pnpm build`; read impl-log |
+
+### Visible differences to log (slice 6a)
+- Every sign-in style screen (sign-in landing and plain, sign-up, forgot/reset password, verify email, accept
+  invitation, org picker, first-visit profile, dev-token screens): background `#F3EFE4` → cream `#F5F3E9`; text
+  `#26291F` → `#354235`; muted text `#585C4E` → `#475569` (14 px, was 13 in header/footer); strip `#E6ECDD` → tile
+  `#F0F2E9`; lines `#D9D3C3` → divider `#E8ECE0` (lighter). Dark keeps the cream `#15170F` background; text and lines
+  follow the dark tokens.
+- Sign-in buttons: green `#3D5A35`, 6 px corners, no hover change → pixel green `#4D6540`, 8 px, 4 px dark-green ledge,
+  hover `#3E5532`. Dark: light green `#A7C99B` with dark text → `#5E7A4E` with white text.
+- Headline: fluid 30–48 px · 800 → 32 px · 600 below 1024 px, 46 px · 500 from 1024 px; the italic Fraunces part
+  `#4F6B45` → `#4D6540` (dark `#B7D3AA` → `#5E7A4E`, darker).
+- Wordmark 800 → 600; card title 20 px · 700 → 18 px · 600; eyebrow, strip title and room labels 700 → 600; card
+  frame corners 10 → 12 px, the 8 px line-colour ledge → the soft card shadow; scene–card gap 40 → 32 px; header and
+  footer 2 px taller (padding 14 → 16 px); room labels 2 px taller; world notes get a 4 px dark-green ledge (was 3 px
+  line colour).
+- Dev "Production data" notice: solid red with white text → red tint, red text and border (as the shell badge).
+- Check-in popup: stepped grey-blue frame with a drop shadow → 4 px pixel-green border with the pixel ledge; title bar
+  wall grey → tile with dark-green text, 14 px · 600 (was 14 · 800); selected room outline grey-blue → green; radios
+  16 → 20 px and green; "Check in to …" orange square uppercase → pixel-green kit button (8 px, no uppercase transform;
+  copy unchanged); "Just look" square with ledge → kit secondary button; locked rooms no longer at 90 % opacity;
+  "Request a seat" link 44 px tall.
+- Floating Check in / Check out button: orange square uppercase → pixel-green kit button; its error 12 → 14 px; on
+  phones it sits 4 px lower (80 px above the bottom instead of 84; the tab bar is 65 px since slice 4).
+- Check-in page: title 20 px · 800 → 32 px · 600; room and Who's here headings 16 px · 700 → 18 px · 600; no-seat
+  title 600; Request-a-seat and Open-in-room links 44 px. Who's here rows: hover background canvas, 8 px corners,
+  names 700 → 600, rows not on the map no longer faded (the "not on map" text stays); head background tile.
+
+### Ming verification after merge (slice 6a)
+- `/sign-in` at 390 / 800 / 1024 / 1280 px, light and dark: headline size switches at 1024, the small world appears at
+  1280, the Sign in button is pixel green with a visible hover and a green focus ring; the italic headline word is
+  readable in dark mode (Q-S6-4). Also sign-up and forgot password (no jump when the Turnstile box loads), an accept
+  invitation link, the org picker.
+- Check-in as a user with seats in two rooms: open the popup, Tab through the room radios and buttons, check in, check
+  out, hover a Who's here row; at 390 px the floating button clears the tab bar; dark mode popup frame.
+
+### Slice 6b outline — Portal (addendum before it starts)
+- Files: `src/ui/portal/{PortalPage,PortalTabs,MySeatTab,MySeatView,SeatCard,MyRequestsPanel,MyRequestRow,MyDevicesTab,
+  MyDevicesView,MyDevicesTiles,MyDevicesTable,ProfileTab,ProfileTabView,PersonalInfoCard,MembershipCard,
+  ProfilePhotoSection,ProfilePhoto,PixelLookPicker,LookStage,LookPreview}.tsx` (only those with class strings), their
+  tests, `MIGRATED`, pending (5 keys, 10 → 0; 93 → 83), impl-log. Rules R-a…R-i unchanged. `photo-canvas.ts`
+  (allowlisted canvas colours) untouched.
+- Known items: `PortalPage` h1 `text-h2 font-extrabold` → `text-display`; `MyDevicesTable` adopts `TABLE_*` (R-g, as
+  planned in 5a) and `min-w-[960px]` → `min-w-240` (test at `MyDevicesTable.test.tsx:86`), filter select → 44 px
+  `rounded-lg border-border-strong`, search `h-10!` override dropped; `MyDevicesTiles` value `text-title`;
+  `MembershipCard` badge `bg-primary-container` → `bg-workspace-action text-on-action`; `SeatCard` icon tile
+  `bg-accent-orange-soft text-accent-orange` → `bg-canvas text-workspace-primary`, `min-h-11` dropped;
+  `MyRequestRow` icon tones → tint tokens (status Pill already per slice 3); `PersonalInfoCard` labels as the auth
+  `Field` (`text-label text-text-primary`); `ProfilePhotoSection` file-input label keeps `<label>` (a file input cannot
+  be a kit Button) with kit outlined classes, 44 px, ring via `.field-box`; Remove → kit `Button variant="text"`.
+- Pixel green (Q4) only in `PixelLookPicker`: selected option `border-pixel-primary` + check icon
+  `text-pixel-primary`, swatch/option targets 44 px; `LookStage`/`LookPreview`/`PixelLookPicker` sprite backgrounds
+  `bg-tile`. Everything else in the portal is coral/ink (workspace).
+- Expected ≈ 350 changed lines.
+
+### Slice 6c outline — Room map, layout editor chrome and Map items (addendum before it starts)
+- Files: `src/ui/roomlayout/{RoomMap,RoomMapSection,SeatOverlay,ZoomControl,GestureOverlay,LayoutEditor,
+  LayoutEditorPage,EditorToolbar,EditorInspector,EditorViews,EditorWarnings,EditorCanvas,ShortcutList,Palette}.tsx`
+  (chrome classes only; `paint.ts`, `WalkLayer.tsx` canvas and `src/lib/sprites/**` untouched) and
+  `src/ui/mapItems/{MapItemsPage,MapItemsView,MapItemCard,MapItemEditor,MapItemEditorAppearance,MapItemEditorDetails,
+  SpriteBrowser,FramePreview}.tsx`, their tests, `MIGRATED`, pending (10 keys, 51 → 0; 83 → 32), impl-log.
+- Known items: chip-like toggles (`EditorViews` `BTN`, `RoomMapSection:84`) → kit `Button variant="outlined"
+  size="sm"`; option lists (`EditorInspector:130,152`, `Palette:55`) → 44 px rows, `text-label`, pressed state
+  `aria-pressed:bg-tile aria-pressed:font-semibold` (Palette pixel green indicator, Inspector ink); `LayoutEditor:193`
+  `18rem` → `--spacing(72)`; `ZoomControl` 44 px; `SeatOverlay` tooltips `bg-[rgba(22,27,37,.92)] text-white` →
+  `bg-text-primary text-surface` (AA pair already tested), `px-2.5`/`gap-1.5` snapped; the on-map count button
+  (`SeatOverlay:204`, `min-h-6`) needs a decision on target size vs map density (6c addendum, Q); room backdrops use
+  `--color-room-floor`/`--color-room-green` where chrome paints them in CSS (canvas paint stays as is).
+- Map items (Q4 pixel green): library and editor primary actions `variant="pixel"`; `MapItemEditor:332` dialog → kit
+  dialog (`rounded-2xl shadow-dialog bg-surface max-w-145`); `MapItemEditorDetails` `CAPTION` → the 5b form caption;
+  sprite previews (`SpriteBrowser`, `FramePreview`, `MapItemCard`) `bg-tile`; library page already `page-library`
+  (slice 4).
+- Expected ≈ 450 changed lines; if over ~600, roomlayout and mapItems become 6c and 6d.
+
+### Assumptions and non-blocking questions (slice 6)
+- Hotspots: no other ticket is IN_PROGRESS/REVIEW/DONE (`work/backlog.md`: only SIM-071). `scripts/check-tokens.pending.json`,
+  `screen-tokens.test.ts` and `tokens.test.ts` change again in 6b/6c/7; sub-slices merge in order. SIM-070 (Map items)
+  is merged, so the 6c files are re-read on the then-current `main`.
+- Approved defaults used: Q1, Q2, Q4 (pixel scope), Q5 (dark palette, incl. cream `#15170F`, tile `#23271C`,
+  pixel-primary `#5E7A4E`), Q7, Q8, Q10 (Hero from `lg`, Display below), Q15, Q16.
+- Q-S6-1 (non-blocking). **Default: three PRs 6a/6b/6c** (auth + check-in + globals; portal; roomlayout + mapItems).
+  Alternative: the suggested 6a (with portal, ≈ 800 lines) and 6b.
+- Q-S6-2 (non-blocking). Check-in buttons: **default: callers use kit `variant="pixel"` and the `.px-card` CSS
+  override (orange, square, uppercase) is deleted** (the variant was added in slice 3 for this; two call sites).
+  Alternative: keep `variant="filled"` and re-point the `.px-card` override.
+- Q-S6-3 (non-blocking). Sign-in buttons: **default: re-point the `.aw-card [data-variant="filled"]` override** (one CSS
+  rule covers about 12 filled buttons on every `AuthLayout` screen, including `org/ProfileView`; `views.test.tsx:309`
+  stays). Alternative: `variant="pixel"` at every call site.
+- Q-S6-4 (non-blocking). The italic headline word: pixel-primary on cream is 5.8:1 light but 3.8:1 dark, which passes
+  only as large text (it is Display 32 / Hero 46 px). **Default: `--color-pixel-primary`, asserted ≥ 3 as large text.**
+  Alternative: `--color-text-pixel` (≥ 4.5 in both themes, but the word is no longer green).
+- Q-S6-5 (non-blocking). `.px-strip` and `.px-title` have no users (`rg` outside CSS: only absence asserts in tests).
+  **Default: delete them** instead of re-pointing. `.px-stage`, `.px-heading` (also unused) and `.px-scene` (art frame of
+  the sign-in vignette on the `--px-*` art palette; 1 violation) stay for slice 7, which moves `--px-*` into tokens.css.
+- Q-S6-6 (non-blocking). **Default: `.aw-frame` uses `--shadow-card` (brief cards); the world notes use `--shadow-pixel`;
+  the `.aw-room` 1 px ring becomes an `outline`.** Alternative: `--shadow-pixel` on the frame too (a 4 px dark-green
+  ledge under the whole card).
+- Q-S6-7 (non-blocking). `.aw-frame` 10 px corners: **default `--radius-xl` 12 px** (brief cards) rather than R-c's
+  nearest step (`lg`, 8 px).
+- Q-S6-8 (non-blocking). Turnstile slots: **default `min-h-16.25` (65 px, the widget height, no layout shift)**.
+  Alternative: `min-h-16` (64 px, 1 px shift when the widget loads).
+- Q-S6-9 (non-blocking). **Default: the check-in popup keeps a square pixel frame (4 px pixel-green border +
+  `--shadow-pixel`) and 3 px selected-row outline**, not the kit dialog's 16 px corners and dialog shadow (D52 pixel
+  style on end-user surfaces). Alternative: kit dialog look.
+- Q-S6-10 (non-blocking). Dev "Production data" notice: white on dark-theme danger `#F08A84` is ≈ 2.4:1. **Default:
+  danger tint, danger text and border** (as the shell badge). Alternative: solid `bg-danger text-on-action` (fails AA
+  in dark).
+- Q-S6-11 (non-blocking). Who's here rows stay a hand-built `<button>` (avatar + two text lines; the kit Button is one
+  line, `whitespace-nowrap`). **Default: token classes, 44 px, global focus ring, no opacity on disabled rows.**
+- Q-S6-12 (non-blocking). Check-in side column (slice-4 follow-up, "if Ming confirms", not confirmed): **default keep
+  the two-column layout from `lg` (1024) with the 300 px column**. Alternative: from `xl` (1280).
+- Q-S6-13 (non-blocking). Floating check-in button offset: the old 68 px matched the pre-slice-4 tab bar. **Default:
+  80 px + safe area (65 px bar + 15 px gap).**
+- Q-S6-14 (non-blocking). `RoomThumb` (64×40 pixel mini-map in the popup) is art: fills and its 2 px frame use the
+  `--px-*` palette. **Default: untouched; slice 7 moves `--px-*` into tokens.css.**
+- Q-S6-15 (non-blocking). Sign-in header tagline and footer lines 13 px: **default 14 px (`--text-label`, like the 13 px
+  hints in 5c)**. Alternative: 12 px caption.
+- Q-S6-16 (non-blocking). **Default: the sign-in logo tile stays coral (`--color-workspace-primary`, the shell logo)**,
+  not pixel green.
+
+Status: READY
