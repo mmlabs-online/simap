@@ -53,3 +53,36 @@ None. The orchestrator fills this from security-review.md.
 
 ### Blockers from review agents
 - None: security-review.md Attempt 1 has no 🔴 (one 🟡: auditRoute keeps UUIDs that start with a–f; listed for Ming in the PR).
+
+## Attempt 2 — 2026-11-27 (rework: security-review.md 🟡 1, auditRoute UUIDs)
+Verdict: PASS
+
+### Checks (run by reviewer, HEAD 202d81f, fix in 7bb4200)
+- `pnpm format:check` — exit 0, "All matched files use the correct format." (1053 files)
+- `pnpm typecheck && pnpm check:layers` — exit 0, "check-layers: 998 files, no violations" (matches impl-log)
+- `pnpm test` — exit 0, "Test Files 380 passed | 1 skipped (381)", "Tests 3710 passed | 7 skipped (3717)"
+- `pnpm build` — exit 0
+- `pnpm test:db` — not run (no local Postgres); the rework touches no SQL or DB code. CI-only.
+
+### Rework item
+- [x] Security 🟡 1: a UUID that starts with a–f is no longer kept. Evidence: `src/lib/audit/route.ts:11` checks `isCanonicalUuid` first, and `KEEP` is now `^[a-z][a-z-]{0,40}$` (`:4`), so any segment with a digit becomes `:id`. Test `src/lib/audit/route.test.ts` › "maps uuids starting with a letter or a digit to :id and keeps word segments" covers `a1b2c3d4-…`, `f0000000-…`, `0f000000-…`, `deadbeef1234` → `:id`, and `/api/seat-requests/approve` kept. Every canonical UUID has a digit in its version nibble, so even without the UUID check the new `KEEP` already maps it to `:id`.
+- [x] Requested extra check: no real API segment contains a digit. Every directory name under `src/app/api` (route groups and `[param]` dirs excluded; there are no route groups) matches the new `KEEP` (`^[a-z][a-z-]{0,40}$`). The command listed the unique segments that fail the rule, and the list was empty. Existing audit `route` values for real routes therefore do not change shape.
+
+### Scope
+The rework changes only `src/lib/audit/route.ts`, `src/lib/audit/route.test.ts` and ticket work files (`git diff --name-only c4c2113 HEAD`). Both product files are in the plan's files table. Ming asked for the fix in the ticket Notes (2026-11-27). There are no out-of-plan files. Neither file is a High path.
+
+### Rules (CLAUDE.md)
+No violations. R1: `src/lib/audit/route.ts` (lib) imports only `@/lib/validate/uuid` (lib), and check:layers is clean. R5: the new rule has tests.
+
+### Issues
+None.
+
+### Nits (do not block)
+- `src/lib/audit/route.ts:11`: the `isCanonicalUuid` check is redundant with the no-digit `KEEP`. It is harmless and documents the intent, so keep it or drop it.
+- A future route segment with a digit (e.g. `v2`) would be stored as `:id`. impl-log notes this already, and no such route exists today.
+
+### Blockers from review agents
+None. security-review.md has no 🔴, and its only 🟡 (finding 1) is fixed in this attempt.
+
+### Blockers from review agents
+- None: security-review.md Attempt 2 has no 🔴 and no 🟡 (finding 1 fixed).

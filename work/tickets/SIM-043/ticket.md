@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | security, api, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | M-83, M-84 |
 | Attempts | 1 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-27T03:34:54Z |
+| Claimed by | — |
 | PR | https://github.com/mmlabs-online/simap/pull/149 |
 
 ## Goal
@@ -92,3 +92,9 @@ supersedes these points (M-83) and Identity can mint such tokens (M-84). Raised 
 - Done: slice 1 implemented; review PASS attempt 1; security no 🔴 (one 🟡: auditRoute keeps a–f-leading UUIDs); PR #149 (High tier, Ming merges).
 - In progress / next: Ming decides on the 🟡 (fix now or follow-up) and merges #149; release after M-90 + M-93.
 - Gotchas: Ming items renumbered M-91/M-92 → M-92/M-93 (main used M-91 for SIM-061).
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 3 (implementer×1 21k, reviewer×1, security-ai-generated-code-auditor×1 27k; default models)
+- Done: REWORK attempt 2 per Ming: auditRoute maps every UUID to `:id`, word rule has no digits; review PASS; security no 🔴/🟡. PR #149 updated.
+- In progress / next: Ming merges #149 (High); release after M-90 + M-93.
+- Gotchas: a future route segment containing a digit (e.g. `v2`) is recorded as `:id`.
