@@ -160,4 +160,24 @@ describe("SeatsView", () => {
     const html = render({ resolution: { kind: "missing" }, map: <p>MAP</p> });
     expect(html).not.toContain("MAP");
   });
+  it("tokens: scale, 44 px targets, shared table classes, unclipped focus region", () => {
+    const html = render();
+    expect(html).toMatch(/<h1[^>]*text-display/);
+    const back = html.match(/<a[^>]*href="\/rooms"[^>]*>/)?.[0];
+    expect(back).toBeDefined();
+    expect(back).toContain("min-h-control");
+    expect(html).toMatch(/<th[^>]*text-caption[^>]*uppercase/);
+    expect(html).toContain("min-w-136");
+    const codes = html.match(/<button[^>]*data-seat-code[^>]*>/g) ?? [];
+    expect(codes).toHaveLength(seats.length);
+    for (const b of codes) {
+      expect(b).toContain("min-h-control");
+      expect(b).toContain('data-variant="text"');
+    }
+    const region = html.match(/<div[^>]*role="region"[^>]*>/)?.[0] ?? "";
+    expect(region).toContain("rounded-xl");
+    expect(region).not.toContain("focus-visible:");
+    expect(region).not.toContain("outline-none");
+    for (const bad of ["text-[", "max-w-[", "font-["]) expect(html).not.toContain(bad);
+  });
 });

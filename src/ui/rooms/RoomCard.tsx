@@ -13,26 +13,24 @@ export function RoomCard({ room, actions }: { room: RoomDto; actions?: ReactNode
     <Card as="article" className="flex flex-col gap-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-[18px] font-extrabold text-on-surface">
+          <h2 className="text-subtitle text-text-primary">
             {href ? (
-              <Link href={href} className="hover:text-primary">
+              <Link href={href} className="hover:underline">
                 {room.code}
               </Link>
             ) : (
               room.code
             )}
           </h2>
-          <p className="text-sm font-medium text-on-surface truncate">{room.name}</p>
-          {room.floor && (
-            <p className="text-[13px] font-medium text-on-surface-variant">{room.floor}</p>
-          )}
-          <p className="text-[13px] font-medium text-on-surface-variant mt-1">
+          <p className="truncate text-label text-text-primary">{room.name}</p>
+          {room.floor && <p className="text-label text-text-secondary">{room.floor}</p>}
+          <p className="mt-1 text-label text-text-secondary">
             {roomsCopy.seatsSummary(room.occupiedCount, room.seatCount)}
           </p>
         </div>
         <OccupancyRing occupied={room.occupiedCount} total={room.seatCount} />
       </div>
-      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </Card>
   );
 }

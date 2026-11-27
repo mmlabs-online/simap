@@ -4,7 +4,7 @@ import { TABLE_CELL, TABLE_HEAD, TABLE_REFS, TABLE_ROW } from "./table";
 
 const read = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
-/** Management screens already on the kit tokens (5b and 5c append theirs; slice 7 replaces this test). */
+/** Management screens already on the kit tokens (slice 7 replaces this test). */
 const MIGRATED = [
   "ui/table.ts",
   "ui/members/MembersView.tsx",
@@ -51,6 +51,24 @@ const MIGRATED = [
   "ui/deviceTypes/DeviceTypeThumb.tsx",
   "ui/deviceTypes/DeskSlotDiagram.tsx",
   "ui/deviceTypes/DeleteDeviceTypeDialog.tsx",
+  "ui/dashboard/DashboardView.tsx",
+  "ui/dashboard/ExportCard.tsx",
+  "ui/dashboard/StatTile.tsx",
+  "ui/rooms/RoomCard.tsx",
+  "ui/rooms/OccupancyRing.tsx",
+  "ui/rooms/RoomsView.tsx",
+  "ui/rooms/DeleteRoomDialog.tsx",
+  "ui/rooms/RoomFormDialog.tsx",
+  "ui/search/SearchView.tsx",
+  "ui/search/SearchPage.tsx",
+  "ui/seats/SeatsView.tsx",
+  "ui/seats/SeatDetailPanel.tsx",
+  "ui/seats/MemberPickerDialog.tsx",
+  "ui/seats/SeatActions.tsx",
+  "ui/seats/ConfirmSeatDialog.tsx",
+  "ui/seats/SeatTagsDialog.tsx",
+  "ui/seats/AddSeatsDialog.tsx",
+  "ui/seats/CannotSeatDialog.tsx",
 ];
 
 const LEGACY =
@@ -87,6 +105,8 @@ describe("migrated management screens", () => {
       "ui/invitations/InviteDialog.tsx",
       "ui/devices/PlaceDeviceDialog.tsx",
       "ui/deviceTypes/DeviceTypeImageField.tsx",
+      "ui/seats/SeatsView.tsx",
+      "ui/seats/MemberPickerDialog.tsx",
     ]) {
       expect(read(f), f).not.toContain("<button");
     }
@@ -106,11 +126,13 @@ describe("migrated management screens", () => {
     }
   });
 
-  it("DeviceTable uses the shared table classes", () => {
-    const text = read("ui/devices/DeviceTable.tsx");
-    expect(text).toContain("TABLE_HEAD");
-    expect(text).toContain("TABLE_CELL");
-    expect(text).not.toMatch(/const (CELL|HEAD)\b/);
+  it("DeviceTable and SeatsView use the shared table classes", () => {
+    for (const f of ["ui/devices/DeviceTable.tsx", "ui/seats/SeatsView.tsx"]) {
+      const text = read(f);
+      expect(text, f).toContain("TABLE_HEAD");
+      expect(text, f).toContain("TABLE_CELL");
+      expect(text, f).not.toMatch(/const (CELL|HEAD|TH|TD)\b/);
+    }
   });
 
   it("table.ts exposes the shared table classes", () => {

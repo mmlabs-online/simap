@@ -178,6 +178,9 @@ describe("SeatActions request button", () => {
     const err = render("user", seat(false), "Nope");
     expect(err).toMatch(/<p role="alert"[^>]*>Nope</);
     expect(err).not.toContain('role="status"');
+    expect(err).toMatch(/<p role="alert"[^>]*text-danger/);
+    expect(info).toMatch(/<p role="status"[^>]*text-text-primary/);
+    expect(err).not.toContain("text-error");
   });
   it("busy disables Request this seat", () => {
     expect(render("user", seat(false), null, null, true)).toMatch(

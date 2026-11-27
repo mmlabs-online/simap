@@ -39,12 +39,12 @@ export function SeatActions({
   return (
     <>
       {notice && (
-        <p role="alert" className="text-sm font-semibold text-error">
+        <p role="alert" className="text-label font-semibold text-danger">
           {notice}
         </p>
       )}
       {info && (
-        <p role="status" className="text-sm font-semibold text-on-surface">
+        <p role="status" className="text-label font-semibold text-text-primary">
           {info}
         </p>
       )}

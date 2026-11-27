@@ -97,7 +97,7 @@ export function PlaceDeviceFields({
           role="alert"
           className="flex flex-wrap items-center gap-2 text-label font-semibold text-danger"
         >
-          {copy.roomsError}{" "}
+          {copy.roomsError}
           <Button variant="outlined" size="sm" onClick={onRetryRooms}>
             {devicesCopy.retry}
           </Button>
@@ -156,7 +156,7 @@ export function PlaceDeviceFields({
               role="alert"
               className="flex flex-wrap items-center gap-2 text-label font-semibold text-danger"
             >
-              {copy.seatsError}{" "}
+              {copy.seatsError}
               <Button variant="outlined" size="sm" onClick={onRetrySeats}>
                 {devicesCopy.retry}
               </Button>

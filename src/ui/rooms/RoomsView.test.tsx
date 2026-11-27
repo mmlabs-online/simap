@@ -85,4 +85,17 @@ describe("RoomsView", () => {
       expect(shown).toContain(roomsCopy.deleteLabel(r.code));
     }
   });
+  it("tokens: display h1, subtitle card titles, ring on the divider and ink, 44 px actions", () => {
+    const html = render({ canManage: true });
+    expect(html).toMatch(/<h1[^>]*text-display/);
+    expect(html.match(/<h2[^>]*text-subtitle/g)).toHaveLength(rooms.length);
+    expect(html).toContain("stroke-divider");
+    expect(html).toContain("stroke-text-primary");
+    expect(html).toMatch(/<span[^>]*text-caption/);
+    expect(html).not.toContain("text-[");
+    expect(html).toContain("flex flex-wrap items-center gap-2");
+    const buttons = html.match(/<button[^>]*aria-label="(?:Edit|Delete)[^>]*>/g) ?? [];
+    expect(buttons.length).toBeGreaterThan(0);
+    for (const b of buttons) expect(b).toContain("min-h-control");
+  });
 });

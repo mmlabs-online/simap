@@ -134,4 +134,25 @@ describe("DashboardView", () => {
       copy.holders.hint,
     );
   });
+  it("tokens: display h1, subtitle h2s, danger warning row, no legacy classes", () => {
+    const holders = {
+      total: 1,
+      items: [
+        {
+          member: { id: "m1", displayName: "An" },
+          seatCount: 1,
+          seats: [{ id: "s1", code: "C302-01", roomId: "1", roomCode: "C302" }],
+        },
+      ],
+    };
+    const html = render({ canExport: true, data: { ...base, deactivatedHolders: holders } });
+    expect(html).toMatch(/<h1[^>]*text-display/);
+    expect(html).toMatch(/<h2[^>]*text-subtitle[^>]*>/);
+    expect(html).toMatch(/<div[^>]*text-danger[^>]*><span[^>]*>[^]*?<h2[^>]*>/);
+    expect(html).toMatch(/<p[^>]*text-label[^>]*>[^<]*/);
+    expect(html).toContain(copy.export.heading);
+    expect(html).not.toContain("text-[");
+    expect(html).not.toContain("font-extrabold");
+    expect(html).not.toContain("text-on-surface");
+  });
 });

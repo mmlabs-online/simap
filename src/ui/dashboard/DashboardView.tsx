@@ -31,20 +31,27 @@ const GRID = "grid gap-4 sm:grid-cols-2 xl:grid-cols-3";
 function HoldersWarning({ holders }: { holders: NonNullable<DashboardDto["deactivatedHolders"]> }) {
   return (
     <Card className="flex flex-col gap-3 p-4">
-      <div className="flex items-center gap-2 text-error">
+      <div className="flex items-center gap-2 text-danger">
         <Icon name="block" />
-        <h2 className="text-sm font-extrabold">{copy.holders.title(holders.total)}</h2>
+        <h2 className="text-label font-semibold">{copy.holders.title(holders.total)}</h2>
       </div>
-      <p className="text-[13px] font-medium text-on-surface-variant">{copy.holders.hint}</p>
+      <p className="text-label text-text-secondary">{copy.holders.hint}</p>
       <ul className="flex flex-col gap-2">
         {holders.items.map((h) => (
-          <li key={h.member.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-            <span className="font-semibold text-on-surface">{h.member.displayName}</span>
-            <span className="text-on-surface-variant">{copy.holders.seatCount(h.seatCount)}</span>
+          <li
+            key={h.member.id}
+            className="flex flex-wrap items-center gap-x-2 gap-y-1 text-label font-normal"
+          >
+            <span className="font-semibold text-text-primary">{h.member.displayName}</span>
+            <span className="text-text-secondary">{copy.holders.seatCount(h.seatCount)}</span>
             {h.seats.map((s) => {
               const href = roomDetailHref(s.roomCode);
               return href ? (
-                <Link key={s.id} href={href} className="font-medium text-primary hover:underline">
+                <Link
+                  key={s.id}
+                  href={href}
+                  className="font-medium text-text-primary hover:underline"
+                >
                   {s.code}
                 </Link>
               ) : (
@@ -52,7 +59,7 @@ function HoldersWarning({ holders }: { holders: NonNullable<DashboardDto["deacti
               );
             })}
             {h.seatCount > h.seats.length && (
-              <span className="text-on-surface-variant">
+              <span className="text-text-secondary">
                 {copy.holders.moreSeats(h.seatCount - h.seats.length)}
               </span>
             )}
@@ -60,7 +67,7 @@ function HoldersWarning({ holders }: { holders: NonNullable<DashboardDto["deacti
         ))}
       </ul>
       {holders.total > holders.items.length && (
-        <p className="text-[13px] font-medium text-on-surface-variant">
+        <p className="text-label text-text-secondary">
           {copy.holders.moreMembers(holders.total - holders.items.length)}
         </p>
       )}
@@ -82,7 +89,7 @@ export function DashboardView({
 }: DashboardViewProps) {
   return (
     <div className="page-content flex flex-col gap-4">
-      <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.dashboard.title}</h1>
+      <h1 className="text-display text-text-primary">{shellCopy.pages.dashboard.title}</h1>
 
       {status === "loading" && (
         <div aria-busy="true" className={TILES}>
@@ -96,7 +103,7 @@ export function DashboardView({
 
       {status === "error" && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -132,10 +139,10 @@ export function DashboardView({
             <HoldersWarning holders={data.deactivatedHolders} />
           )}
 
-          <h2 className="text-lg font-extrabold text-on-surface">{copy.roomsHeading}</h2>
+          <h2 className="text-subtitle text-text-primary">{copy.roomsHeading}</h2>
           {data.rooms.length === 0 ? (
             <Card className="px-6 py-12 text-center">
-              <p className="text-sm font-medium text-on-surface-variant">{copy.noRooms}</p>
+              <p className="text-label text-text-secondary">{copy.noRooms}</p>
             </Card>
           ) : (
             <div className={GRID}>
@@ -145,7 +152,7 @@ export function DashboardView({
             </div>
           )}
           {data.roomsTruncated && (
-            <p className="text-[13px] font-medium text-on-surface-variant">
+            <p className="text-label text-text-secondary">
               {copy.roomsTruncated(data.rooms.length, data.totals.rooms)}
             </p>
           )}

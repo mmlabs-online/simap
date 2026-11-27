@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { SeatDto } from "@/lib/seats/types";
 import { seatsCopy } from "../copy/seats";
+import { Button } from "../Button";
 import { DialogField, EntityFormDialog } from "../EntityFormDialog";
 import {
   blocksSearchEnter,
@@ -67,10 +68,11 @@ export function MemberPickerFields({
           return (
             <label
               key={m.id}
-              className="flex items-center gap-3 rounded-md3 px-2 py-1.5 text-sm font-medium text-on-surface"
+              className="flex min-h-control cursor-pointer items-center gap-3 rounded-lg px-2 py-2 text-label text-text-primary"
             >
               <input
                 type="radio"
+                className="size-5 flex-none"
                 name="member"
                 value={m.id}
                 checked={state.selectedId === m.id}
@@ -80,41 +82,45 @@ export function MemberPickerFields({
               <span className={`min-w-0 ${CLIP}`}>
                 {m.displayName}
                 {m.employeeCode !== null && (
-                  <span className="text-on-surface-variant"> {m.employeeCode}</span>
+                  <span className="text-text-secondary"> {m.employeeCode}</span>
                 )}
-                {here && <span className="text-on-surface-variant"> ({occupantLabel})</span>}
+                {here && <span className="text-text-secondary"> ({occupantLabel})</span>}
               </span>
             </label>
           );
         })}
         {state.status === "loading" && (
-          <p className="text-sm text-on-surface-variant">{copy.pickerLoading}</p>
+          <p className="text-label font-normal text-text-secondary">{copy.pickerLoading}</p>
         )}
         {state.status === "ready" && state.items.length === 0 && (
-          <p className="text-sm text-on-surface-variant">{copy.pickerEmpty}</p>
+          <p className="text-label font-normal text-text-secondary">{copy.pickerEmpty}</p>
         )}
         {state.status === "error" && (
-          <div role="alert" className="text-sm font-semibold text-error">
-            {copy.pickerError}{" "}
-            <button type="button" className="underline cursor-pointer" onClick={onRetry}>
+          <div
+            role="alert"
+            className="flex flex-wrap items-center gap-2 text-label font-semibold text-danger"
+          >
+            {copy.pickerError}
+            <Button variant="outlined" size="sm" onClick={onRetry}>
               {seatsCopy.retry}
-            </button>
+            </Button>
           </div>
         )}
         {state.moreFailed && (
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {copy.pickerMoreFailed}
           </p>
         )}
         {(canMore || state.moreId !== null) && (
-          <button
-            type="button"
+          <Button
+            variant="text"
+            size="sm"
+            className="self-start"
             disabled={!canMore}
             onClick={onMore}
-            className="self-start text-sm font-bold text-primary cursor-pointer disabled:opacity-40"
           >
             {copy.pickerLoadMore}
-          </button>
+          </Button>
         )}
       </div>
     </>

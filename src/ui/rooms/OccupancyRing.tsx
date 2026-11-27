@@ -15,14 +15,7 @@ export function OccupancyRing({ occupied, total }: { occupied: number; total: nu
         role="img"
         aria-label={roomsCopy.occupancyLabel(occupied, total)}
       >
-        <circle
-          cx="24"
-          cy="24"
-          r={RADIUS}
-          fill="none"
-          strokeWidth="5"
-          className="stroke-outline-variant"
-        />
+        <circle cx="24" cy="24" r={RADIUS} fill="none" strokeWidth="5" className="stroke-divider" />
         <circle
           cx="24"
           cy="24"
@@ -30,14 +23,14 @@ export function OccupancyRing({ occupied, total }: { occupied: number; total: nu
           fill="none"
           strokeWidth="5"
           strokeLinecap="round"
-          className="stroke-primary"
+          className="stroke-text-primary"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
         />
       </svg>
       <span
         aria-hidden="true"
-        className="absolute inset-0 flex items-center justify-center text-[11px] font-extrabold text-on-surface"
+        className="absolute inset-0 flex items-center justify-center text-caption font-semibold text-text-primary"
       >
         {roomsCopy.percent(percent)}
       </span>

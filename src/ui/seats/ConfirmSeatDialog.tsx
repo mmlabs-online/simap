@@ -31,7 +31,7 @@ export function ConfirmSeatDialog({
         onConfirm();
       }}
     >
-      <p className={`max-h-32 text-sm font-medium text-on-surface ${CLIP}`}>{body}</p>
+      <p className={`max-h-32 text-label text-text-primary ${CLIP}`}>{body}</p>
     </EntityFormDialog>
   );
 }

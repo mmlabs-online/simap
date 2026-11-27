@@ -154,4 +154,15 @@ describe("SeatDetailPanel occupant photo (SIM-046.2)", () => {
     expect(vacant).not.toContain("blob:photo-1");
     expect(vacant).toContain(seatsCopy.noOccupant);
   });
+  it("tokens: field labels, dialog surface and title use the kit scale", () => {
+    const html = render({ kind: "ready", seat });
+    expect(html).toMatch(/<dt[^>]*text-caption[^>]*uppercase/);
+    const dialog = html.match(/<dialog[^>]*>/)?.[0] ?? "";
+    for (const c of ["bg-surface", "shadow-dialog", "sm:max-w-110"]) expect(dialog).toContain(c);
+    expect(dialog).not.toContain("shadow-[");
+    expect(html).toMatch(/<h2[^>]*text-subtitle/);
+    const link = html.match(/<a[^>]*href="\/devices\/d1"[^>]*>/)?.[0] ?? "";
+    expect(link).toContain("font-semibold");
+    expect(link).not.toContain("font-bold");
+  });
 });

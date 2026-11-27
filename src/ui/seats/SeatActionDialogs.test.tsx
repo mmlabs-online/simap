@@ -47,6 +47,8 @@ describe("seat dialogs", () => {
       />,
     );
     expect(html).toMatch(/max-h-32[^"]*overflow-hidden/);
+    expect(html).toContain("text-label");
+    expect(html).not.toContain("text-sm");
   });
   it("count field is text with numeric input mode and no browser validation", () => {
     const html = renderToStaticMarkup(

@@ -33,7 +33,7 @@ export function RoomsView({
   return (
     <div className="page-content flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.rooms.title}</h1>
+        <h1 className="text-display text-text-primary">{shellCopy.pages.rooms.title}</h1>
         {canManage && (
           <Button icon="add" onClick={onNew}>
             {roomsCopy.newRoom}
@@ -53,7 +53,7 @@ export function RoomsView({
 
       {status === "error" && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -64,9 +64,7 @@ export function RoomsView({
 
       {status === "ready" && rooms.length === 0 && (
         <Card className="px-6 py-12 text-center">
-          <p className="text-sm font-medium text-on-surface-variant">
-            {shellCopy.pages.rooms.empty}
-          </p>
+          <p className="text-label text-text-secondary">{shellCopy.pages.rooms.empty}</p>
         </Card>
       )}
 
