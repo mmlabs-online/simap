@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P1 |
 | Size | S |
 | Areas | ui |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-27 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-27T03:34:53Z |
 | PR | — |
 
 ## Goal
@@ -44,6 +44,7 @@ split out of SIM-061 by its approved plan.
 ## Notes / answers from Ming
 - 2026-11-27: created from the approved SIM-061 plan (typing idle split).
 - Waiting for Ming: plan approval (P1, gate `plan-approval`; M-93).
+- 2026-11-27: Plan approved (Ming: "duyệt plan SIM-061.1"; M-93).
 
 ## Handoff
 
