@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | IN_PROGRESS |
+| State | PLANNING |
 | Priority | P2 |
 | Size | L |
 | Areas | ui, ux, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | — |
 | Attempts | 1 |
 | Created | 2026-11-27 |
-| Claimed by | |
+| Claimed by | claude@2026-11-27T10:36:23Z |
 | PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 |
 
 ## Goal
