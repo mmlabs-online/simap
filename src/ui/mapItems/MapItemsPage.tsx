@@ -1,25 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { MapItemDto } from "@/lib/map-items/types";
 import { useApiFetch } from "../auth/api-fetch-context";
 import { useList } from "../groups/useList";
 import { useAtlas } from "../roomlayout/useAtlas";
 import { useSession } from "../session";
-import { MapItemArtDialog } from "./MapItemArtDialog";
-import { MapItemFormDialog } from "./MapItemFormDialog";
+import { MapItemEditor } from "./MapItemEditor";
 import { MapItemsView } from "./MapItemsView";
-import { ResetMapItemDialog } from "./ResetMapItemDialog";
 import { createMapItemsApi } from "./map-items-api";
 import { findArtItem, thumbDir } from "./map-item-art";
 import { canManageMapItems } from "./map-items-state";
 import { useMapItemImages } from "./useMapItemImages";
 
-type Dialog =
-  | { kind: "none" }
-  | { kind: "edit"; item: MapItemDto }
-  | { kind: "reset"; item: MapItemDto }
-  | { kind: "art"; key: string };
+type Dialog = { kind: "none" } | { kind: "editor"; key: string };
 
 const NO_LIST = { status: "ready", items: [], errorCode: null } as const;
 const noop = () => {};
@@ -28,9 +21,7 @@ const noop = () => {};
 export function MapItemsPage() {
   const session = useSession();
   if (!canManageMapItems(session?.tier)) {
-    return (
-      <MapItemsView access="forbidden" items={NO_LIST} onEdit={noop} onArt={noop} onRetry={noop} />
-    );
+    return <MapItemsView access="forbidden" items={NO_LIST} onEdit={noop} onRetry={noop} />;
   }
   return <MapItemsLoaded />;
 }
@@ -44,24 +35,23 @@ function MapItemsLoaded() {
   const [dialog, setDialog] = useState<Dialog>({ kind: "none" });
 
   const close = () => setDialog({ kind: "none" });
-  const done = () => {
+  const gone = () => {
     close();
     void items.reload();
   };
 
-  const artItem = dialog.kind === "art" ? findArtItem(items.items, dialog.key) : undefined;
+  const editing = dialog.kind === "editor" ? findArtItem(items.items, dialog.key) : undefined;
 
   useEffect(() => {
-    if (dialog.kind === "art" && !artItem) setDialog({ kind: "none" });
-  }, [dialog, artItem]);
+    if (dialog.kind === "editor" && !editing) setDialog({ kind: "none" });
+  }, [dialog, editing]);
 
   return (
     <>
       <MapItemsView
         access="ok"
         items={items}
-        onEdit={(item) => setDialog({ kind: "edit", item })}
-        onArt={(item) => setDialog({ kind: "art", key: item.builtinKey })}
+        onEdit={(item) => setDialog({ kind: "editor", key: item.builtinKey })}
         thumbUrl={(item) => {
           const dir = thumbDir(item);
           return dir ? imageUrl(item, dir) : null;
@@ -69,30 +59,19 @@ function MapItemsLoaded() {
         atlas={atlas}
         onRetry={() => void items.reload()}
       />
-      {dialog.kind === "edit" && (
-        <MapItemFormDialog
-          item={dialog.item}
+      {dialog.kind === "editor" && editing && (
+        <MapItemEditor
+          key={dialog.key}
+          item={editing}
           groups={[...new Set(items.items.map((i) => i.group))]}
-          api={api}
-          onClose={close}
-          onDone={done}
-          onReset={() => setDialog({ kind: "reset", item: dialog.item })}
-        />
-      )}
-      {dialog.kind === "art" && artItem && (
-        <MapItemArtDialog
-          item={artItem}
           api={api}
           imageUrl={imageUrl}
           atlas={atlas}
           atlasFailed={failed}
           onReload={items.reload}
           onClose={close}
-          onGone={done}
+          onGone={gone}
         />
-      )}
-      {dialog.kind === "reset" && (
-        <ResetMapItemDialog item={dialog.item} api={api} onClose={close} onDone={done} />
       )}
     </>
   );

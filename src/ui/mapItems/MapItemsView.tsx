@@ -15,7 +15,6 @@ export type MapItemsViewProps = {
   access: "ok" | "forbidden";
   items: ListState<MapItemDto>;
   onEdit: (item: MapItemDto) => void;
-  onArt: (item: MapItemDto) => void;
   /** The blob URL of the row thumbnail (a custom image), or null. */
   thumbUrl?: (item: MapItemDto) => string | null;
   /** The sprite atlas, for the thumbnail of items that only have a package sprite. */
@@ -31,7 +30,6 @@ export function MapItemsView({
   access,
   items,
   onEdit,
-  onArt,
   thumbUrl,
   atlas,
   onRetry,
@@ -125,15 +123,6 @@ export function MapItemsView({
                       )}
                     </div>
                     <div className="flex shrink-0 gap-2">
-                      <Button
-                        variant="tonal"
-                        size="sm"
-                        icon="palette"
-                        aria-label={mapItemsCopy.artLabel(item.name)}
-                        onClick={() => onArt(item)}
-                      >
-                        {mapItemsCopy.art.button}
-                      </Button>
                       <Button
                         variant="tonal"
                         size="sm"

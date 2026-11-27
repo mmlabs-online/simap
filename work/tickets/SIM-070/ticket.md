@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BACKLOG |
+| State | DONE |
 | Priority | P2 |
 | Size | M |
 | Areas | ui, ux |
@@ -12,7 +12,7 @@
 | Attempts | 0 |
 | Created | 2026-11-27 |
 | Claimed by | — |
-| PR | — |
+| PR | https://github.com/mmlabs-online/simap/pull/152 |
 
 ## Goal
 The Admin "Map items" page follows Ming's mockups (in this folder: `mockup-map-items-list.webp`,
@@ -97,3 +97,9 @@ features, rules and API.
   tin và hình ảnh chung 1 popup").
 
 ## Handoff
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 5, tokens ~486k total (frontend-developer×1 default 63k, ux-architect×1 default 77k, planner×1 default 114k, implementer×1 default 146k, reviewer×1 default 88k)
+- Done: slice 1 (Item editor replacing the edit/art/reset dialogs, staged save, sprite browser search/All types); review PASS attempt 1; PR https://github.com/mmlabs-online/simap/pull/152. Ran on `ticket/SIM-070` (the session branch could not be reset).
+- In progress / next: Ming reviews and merges PR #152; slice 2 is SIM-070.1 (header, stats, group tabs, search, card grid; plan.md → Split proposal).
+- Gotchas: SIM-071 (app-wide restyle) touches the same UI files later; plan assumptions marked (Ming) need confirming.

@@ -84,11 +84,15 @@ export function thumbDir(item: MapItemDto): Direction | null {
 
 const DIR_ROTATION = { s: 0, e: 90, n: 180, w: 270 } as const;
 
+/** The library frame an item draws for a direction. */
+export const libraryFrameKey = (item: Pick<MapItemDto, "builtinKey">, dir: Direction) =>
+  resolveFrameKey(item.builtinKey, DIR_ROTATION[dir]);
+
 /** The atlas frame a direction panel previews: the chosen sprite, else the library frame; null when a custom image wins. */
 export function panelFrameKey(item: MapItemDto, dir: Direction): string | null {
   const { sprite, hasImage } = item.art[dir];
   if (hasImage) return null;
-  return sprite ?? resolveFrameKey(item.builtinKey, DIR_ROTATION[dir]);
+  return sprite ?? libraryFrameKey(item, dir);
 }
 
 /** The chosen package sprite the row thumbnail shows: `s` first, then n, e, w; null when none is chosen. */
@@ -102,4 +106,29 @@ export function thumbSprite(item: MapItemDto): string | null {
 /** The item an open art dialog shows, or undefined once it has left the list. */
 export function findArtItem(items: MapItemDto[], key: string): MapItemDto | undefined {
   return items.find((i) => i.builtinKey === key);
+}
+
+/**
+ * The sprites the browser lists: the registry group of the item's own library frame by default (title = that group),
+ * every fitting group with `allTypes` or when the own group has nothing that fits (title null). `query` narrows by key.
+ */
+export function browserChoices(
+  item: MapItemDto,
+  dir: Direction,
+  bundled: ReadonlySet<string> | null | undefined,
+  opts: { allTypes: boolean; query: string },
+): { title: string | null; groups: { group: string; keys: string[] }[]; count: number } {
+  const all = spriteChoices(item, dir, bundled);
+  const own = REGISTRY[resolveFrameKey(item.builtinKey, 0) ?? ""]?.group;
+  const ownOnly = !opts.allTypes && own !== undefined && all.some((g) => g.group === own);
+  const q = opts.query.trim().toLowerCase();
+  const groups = all
+    .filter((g) => !ownOnly || g.group === own)
+    .map((g) => ({ group: g.group, keys: g.keys.filter((k) => k.toLowerCase().includes(q)) }))
+    .filter((g) => g.keys.length > 0);
+  return {
+    title: ownOnly ? own! : null,
+    groups,
+    count: groups.reduce((n, g) => n + g.keys.length, 0),
+  };
 }

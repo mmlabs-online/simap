@@ -1,5 +1,4 @@
 import type { Direction } from "@/lib/sprites/types";
-import type { MapItemKind } from "@/lib/map-items/types";
 
 /** English strings of the Map items page (D36). API error messages come from `apiErrorMessage`. */
 export const mapItemsCopy = {
@@ -12,14 +11,12 @@ export const mapItemsCopy = {
     customised: "Customised",
   },
   edit: "Edit",
-  artLabel: (name: string) => `Edit art of map item ${name}`,
   editLabel: (name: string) => `Edit map item ${name}`,
   form: {
-    title: "Edit map item",
     key: "Library key",
     name: "Name",
     group: "Group",
-    shown: "Show in the Add items palette",
+    shown: "Show in item palette",
     hideHint: "Hiding only removes it from the Add items palette; placed copies stay on the map.",
     chairNote:
       "The chair only sets the art of the chair drawn at each seat. It is never in the palette.",
@@ -28,12 +25,6 @@ export const mapItemsCopy = {
     height: "Height",
     inUseHint: "A size change is refused while the item is placed in any room.",
     rotationHint: "Size at rotation 0; east and west swap width and height.",
-    fixedReason: {
-      seat: "Fixed by the seat footprint and device slots",
-      floor: "Floor tiles are always 1 × 1",
-      chair: "The chair size is fixed",
-      fixture: "This size is fixed",
-    } satisfies Record<MapItemKind, string>,
     resizeWarning: (images: number, sprites: number) => {
       const parts = [
         images > 0 ? `${images} custom ${images === 1 ? "image" : "images"} will be deleted` : "",
@@ -45,7 +36,8 @@ export const mapItemsCopy = {
     },
     confirmResize: "I understand, change the size",
     confirmFirst: "Confirm the size change first.",
-    reset: "Reset to library defaults…",
+    fixedFootprint: "This item uses a fixed footprint.",
+    keyNote: "Library key stays unchanged.",
   },
   fieldErrors: {
     name: "Enter a name of 1 to 60 characters.",
@@ -61,13 +53,48 @@ export const mapItemsCopy = {
         ? "This item is placed in 1 room. Remove it from that room before changing its size."
         : `This item is placed in ${rooms} rooms. Remove it from every room before changing its size.`,
   },
+  editor: {
+    eyebrow: "Item editor",
+    title: (name: string) => `Edit ${name}`,
+    close: "Close item editor",
+    tabsLabel: "Item editor sections",
+    tabs: { appearance: "Appearance", details: "Details" },
+    directional: "Directional artwork",
+    neverRotated: "Never auto-rotated",
+    dirsLabel: "Direction",
+    previewCaption: (dir: string) => `${dir.toUpperCase()} · 2× PREVIEW`,
+    removedOnSave: "Removed when you save the new size",
+    sourceLabel: "Art source",
+    sourceLibrary: "Sprite library",
+    sourceUpload: "Upload image",
+    choosePng: "Choose PNG file",
+    onlyUpdates: (dir: string) => `Only updates the ${dir.toLowerCase()} view.`,
+    restore: "Restore default",
+    allTypes: "All types",
+    search: "Find a sprite…",
+    searchLabel: "Search sprites",
+    noMatch: "No sprite matches.",
+    droppedByResize: (dir: string) =>
+      `The staged ${dir.toLowerCase()} art does not fit the new size and was dropped.`,
+    status: {
+      clean: "No unsaved changes",
+      dirty: "Unsaved changes",
+      saving: "Saving…",
+      saved: "Saved.",
+    },
+    cancel: "Cancel",
+    save: "Save changes",
+    discard: { title: "Discard changes?", keep: "Keep editing", discard: "Discard" },
+    changed: "changed",
+    reset: {
+      button: "Reset item to library defaults",
+      lost: "Unsaved changes will be lost.",
+      keep: "Keep editing",
+    },
+  },
   art: {
-    button: "Art",
-    title: (name: string) => `Art for ${name}`,
-    hint: "Each direction needs its own art; images are never rotated.",
-    close: "Close",
     single: "Art",
-    sameForAll: "Same for every rotation",
+    sameForAll: "Same image in every direction",
     dirs: { n: "North", e: "East", s: "South", w: "West" } as Record<Direction, string>,
     source: {
       image: "Custom image",
@@ -82,13 +109,7 @@ export const mapItemsCopy = {
     scale1: "1×",
     scale2: "2×",
     previewNA: "Preview not available",
-    choose: "Choose package sprite",
     upload: "Upload image",
-    useLibrary: "Use library sprite",
-    useLibraryHint: "The custom image still shows until you remove it.",
-    remove: "Remove custom image",
-    saved: (dir: string) => `Saved for ${dir}`,
-    removed: (dir: string) => `Removed for ${dir}`,
     thumbAlt: (name: string) => `Custom art of ${name}`,
     atlasFailed: "Sprite previews could not be loaded. The sprite names are still listed.",
     frameAlt: (key: string, scale?: string) => (scale ? `${key} at ${scale}` : key),
@@ -96,12 +117,9 @@ export const mapItemsCopy = {
       label: (dir: string) => `Package sprites for ${dir}`,
       count: (n: number) => `${n} ${n === 1 ? "sprite fits" : "sprites fit"}`,
       empty: "No package sprite fits this size.",
-      staged: (key: string) => `Selected: ${key}`,
       tiles: (fw: number, fh: number, iw: number, ih: number, dir: string) =>
         `Frame ${fw} × ${fh} tiles, item ${iw} × ${ih} tiles for ${dir}`,
       smaller: "Smaller frames draw at the bottom-left.",
-      use: "Use this sprite",
-      cancel: "Cancel",
     },
     errors: {
       image_too_large: "The image is larger than 64 KB.",
@@ -117,7 +135,6 @@ export const mapItemsCopy = {
     },
   },
   reset: {
-    title: "Reset to library defaults",
     confirm: "Reset item",
     intro: (name: string) => `Reset ${name} to its library defaults? This sets:`,
     name: (v: string) => `Name: ${v}`,

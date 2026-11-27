@@ -13,7 +13,7 @@ const ready = (items: ReturnType<typeof dto>[]) =>
   ({ status: "ready", items, errorCode: null }) as const;
 const render = (p: Partial<MapItemsViewProps> = {}) =>
   renderToStaticMarkup(
-    <MapItemsView access="ok" items={ready([])} onEdit={noop} onArt={noop} onRetry={noop} {...p} />,
+    <MapItemsView access="ok" items={ready([])} onEdit={noop} onRetry={noop} {...p} />,
   );
 
 describe("MapItemsView", () => {
@@ -55,15 +55,10 @@ describe("MapItemsView", () => {
     expect(html).not.toMatch(/New|Move up|Move down/);
   });
 
-  it("each row has an Art button labelled with the item name", () => {
+  it('each row has one Edit button (aria-label "Edit map item <name>") and no Art button', () => {
     const html = render({ items: ready([dto("desk.single"), dto("door")]) });
-    expect(html).toContain(
-      `aria-label="${mapItemsCopy.artLabel("Bàn đơn")}"`.replace(
-        "Bàn đơn",
-        dto("desk.single").name,
-      ),
-    );
-    expect(html.match(new RegExp(`aria-label="Edit art of map item`, "g"))).toHaveLength(2);
+    expect(html.match(/aria-label="Edit map item /g)).toHaveLength(2);
+    expect(html).not.toMatch(/Edit art|>Art</);
   });
 
   it("Customised badge only when isCustomised; thumbnail img only when thumbUrl returns a URL", () => {

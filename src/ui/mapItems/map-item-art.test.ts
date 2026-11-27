@@ -8,6 +8,7 @@ import {
   artDirs,
   artImageEntries,
   artPanelView,
+  browserChoices,
   expectedImageSize,
   findArtItem,
   isCustomised,
@@ -243,5 +244,36 @@ describe("thumbSprite", () => {
     expect(thumbSprite(d)).toBeNull();
     const p = dto("plant.large");
     expect(thumbSprite({ ...p, art: { ...p.art, n: art("x", false) } })).toBeNull();
+  });
+});
+
+describe("browserChoices", () => {
+  const desk = dto("desk.single");
+  const all = spriteChoices(desk, "n");
+  const flat = (r: { groups: { keys: string[] }[] }) => r.groups.flatMap((g) => g.keys);
+
+  it("default shows the group of the item's library frame, titled; allTypes shows every fitting group, no title", () => {
+    const own = browserChoices(desk, "n", null, { allTypes: false, query: "" });
+    expect(own.title).toBe(REGISTRY[panelFrameKey(desk, "n")!]!.group);
+    expect(own.groups.map((g) => g.group)).toEqual([own.title]);
+    const every = browserChoices(desk, "n", null, { allTypes: true, query: "" });
+    expect(every.title).toBeNull();
+    expect(every.groups).toEqual(all);
+    expect(every.count).toBe(flat({ groups: all }).length);
+  });
+
+  it("query filters keys case-insensitively and trimmed", () => {
+    const r = browserChoices(desk, "n", null, { allTypes: true, query: "  DESK.single  " });
+    expect(flat(r).length).toBeGreaterThan(0);
+    expect(flat(r).every((k) => k.includes("desk.single"))).toBe(true);
+    expect(browserChoices(desk, "n", null, { allTypes: true, query: "zzz" }).count).toBe(0);
+  });
+
+  it("no fitting key in the own group falls back to all groups", () => {
+    const own = REGISTRY[panelFrameKey(desk, "n")!]!.group;
+    const bundled = new Set(flat({ groups: all.filter((g) => g.group !== own) }));
+    const r = browserChoices(desk, "n", bundled, { allTypes: false, query: "" });
+    expect(r.title).toBeNull();
+    expect(r.count).toBe(bundled.size);
   });
 });
