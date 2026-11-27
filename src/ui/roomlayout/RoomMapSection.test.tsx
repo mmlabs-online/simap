@@ -28,6 +28,15 @@ const render = (state: MapLoadState) =>
 const ready = (v: MapView): MapLoadState => ({ status: "ready", view: v, errorCode: null });
 
 describe("RoomMapSection", () => {
+  it("fill: the card fills its parent from lg; without it the card keeps its own height", () => {
+    const state: MapLoadState = { status: "loading", view: null, errorCode: null };
+    const filled = renderToStaticMarkup(
+      <RoomMapSection state={state} onRetry={() => {}} onSelect={() => {}} fill />,
+    );
+    expect(filled).toContain("lg:h-full lg:min-h-0");
+    expect(render(state)).not.toContain("lg:h-full");
+  });
+
   it("loading state", () => {
     const html = render({ status: "loading", view: null, errorCode: null });
     expect(html).toContain(roomlayoutCopy.heading);

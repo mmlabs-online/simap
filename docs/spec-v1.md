@@ -665,8 +665,9 @@ requests, device actions, display name). Clean UI kit (D52); copy in `src/ui/cop
 ### SHL — Shell
 
 **SHL-01 App shell with role-aware nav**
-- [ ] Nav rail on desktop and bottom bar on mobile, org name and switcher (AUT-06), room switcher, avatar and role
-  badge, "refresh permissions", sign-out.
+- [ ] Nav rail on desktop and bottom bar on mobile, org name and switcher (AUT-06), avatar and role badge, "refresh
+  permissions", sign-out. The room switcher lives only on the check-in room view (PRE-01), not in the shell (Ming,
+  2026-11-27).
 - [ ] Pages: Dashboard, Rooms, Room detail, Room editor (Admin), Members (Users: OQ-58), Devices (Manager+, D69),
   Approvals (Manager+), My Portal (every tier, D70). There is no "My requests" entry for any tier; own requests live
   in My Portal → My seat (D74). The home page stays the Dashboard unless OQ-54 changes it. The My Portal badge
@@ -702,7 +703,8 @@ notifications.
   same behaviour.
 - [ ] The view is a pixel end-user surface (D52): the room map (LAY-06 overlays, zoom, pan, seat detail on click),
   a "Who's here" list beside the map (below it at 390 px), a room switcher, and a floating "Check in" or "Check out"
-  button.
+  button. On desktop the view uses the full content width and fits the viewport: the map frame takes the remaining
+  height and scrolls inside, the page itself does not scroll (Ming, 2026-11-27).
 - [ ] The room shown first: the room of today's active check-in; else the room of the member's most recent check-in
   where they still have a seat; else their first assigned room by room code; a member with no seat sees the empty
   state of PRE-02.

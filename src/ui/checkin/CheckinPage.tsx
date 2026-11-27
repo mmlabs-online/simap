@@ -207,6 +207,7 @@ function CheckinPageInner() {
           onSelect={openSeat}
           catalogImages={catalogImages}
           presenceView={presenceView}
+          fill
           notice={
             mover.errorCode ? (
               <p role="alert" className="text-label font-semibold text-danger">

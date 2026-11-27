@@ -1,18 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { goTarget, keepGoodRooms, roomCodeFromPath, visibleSelection } from "@/lib/room-switcher";
 import type { RoomDto } from "@/lib/rooms/types";
-import { useApiFetch } from "./auth/api-fetch-context";
 import { Button } from "./Button";
 import { shellCopy } from "./copy/shell";
-import { createRoomsApi } from "./rooms/rooms-api";
-import { useRooms } from "./rooms/useRooms";
 
 const SELECT_ID = "room-switcher-select";
 
-/** Presentational: label, native select and Go. Changing the select never navigates. */
+/** Presentational: label, native select and Go. Changing the select never navigates. Used on check-in only. */
 export function RoomSwitcherView({
   rooms,
   selected,
@@ -48,40 +42,4 @@ export function RoomSwitcherView({
       </Button>
     </>
   );
-}
-
-/** Loads the org's rooms, refetches on path change and keeps the last good list. */
-export function RoomSwitcher({ pathname }: { pathname: string }) {
-  const apiFetch = useApiFetch();
-  const api = useMemo(() => createRoomsApi(apiFetch), [apiFetch]);
-  const { status, rooms, reload } = useRooms(api);
-  const router = useRouter();
-  const [good, setGood] = useState<RoomDto[]>([]);
-  const lastPath = useRef(pathname);
-  const current = roomCodeFromPath(pathname);
-  const [selected, setSelected] = useState(current ?? "");
-
-  useEffect(() => {
-    if (lastPath.current !== pathname) {
-      lastPath.current = pathname;
-      void reload();
-    }
-  }, [pathname, reload]);
-
-  useEffect(() => {
-    setGood((prev) => keepGoodRooms(prev, status, rooms));
-  }, [status, rooms]);
-
-  useEffect(() => {
-    setSelected(current ?? "");
-  }, [current]);
-
-  const shown = visibleSelection(good, selected);
-
-  const onGo = () => {
-    const href = goTarget(shown, current);
-    if (href) router.push(href);
-  };
-
-  return <RoomSwitcherView rooms={good} selected={shown} onSelect={setSelected} onGo={onGo} />;
 }

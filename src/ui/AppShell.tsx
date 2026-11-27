@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { isCheckinView } from "@/lib/nav";
 import { shellCopy } from "./copy/shell";
 import { AppShellView } from "./AppShellView";
 import { badgeTotal } from "./devices/incoming-transfer";
@@ -10,7 +9,6 @@ import { portalBadgeTotal } from "./portal/portal-state";
 import { OwnPhotoProvider, useOwnPhoto } from "./portal/useOwnPhoto";
 import { HandoffBadgeProvider, useHandoffBadge } from "./devices/useHandoffBadge";
 import { RequestBadgeProvider, useRequestBadge } from "./requests/useRequestBadge";
-import { RoomSwitcher } from "./RoomSwitcher";
 import { useSession, useShellActions } from "./session";
 
 function ShellWithBadge({ children }: { children: ReactNode }) {
@@ -34,11 +32,6 @@ function ShellWithBadge({ children }: { children: ReactNode }) {
         portal: shellCopy.badge.portalBreakdown(handoffs, count),
       }}
       photoUrl={photo?.url ?? null}
-      roomSwitcher={
-        session && !isCheckinView(pathname, session.tier) ? (
-          <RoomSwitcher pathname={pathname} />
-        ) : undefined
-      }
     >
       {children}
     </AppShellView>

@@ -22,7 +22,6 @@ export function AppShellView({
   session,
   pathname,
   actions,
-  roomSwitcher,
   badges,
   badgeLabels,
   version = APP_VERSION,
@@ -32,7 +31,6 @@ export function AppShellView({
   session: Session | null;
   pathname: string;
   actions: ShellActions;
-  roomSwitcher?: ReactNode;
   /** A count per nav entry (0 or missing: no badge). Only entries the tier can see render. */
   badges?: Partial<Record<NavId, number>>;
   /** Screen-reader text per nav entry; it replaces the default text for the entry's count. */
@@ -193,12 +191,6 @@ export function AppShellView({
             </>
           )}
         </header>
-
-        {session && roomSwitcher && (
-          <div className="flex-none flex items-center gap-2 px-4 md:px-6 py-2 bg-surface border-b border-divider">
-            {roomSwitcher}
-          </div>
-        )}
 
         <main
           id="main"

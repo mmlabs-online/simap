@@ -24,6 +24,8 @@ type Props = {
   presenceView?: PresenceMapProps;
   /** Shown under the map, e.g. a move error. */
   notice?: ReactNode;
+  /** From `lg`: the card fills its parent's height and the map scrolls inside (check-in). */
+  fill?: boolean;
 };
 
 /** The map card of the room page. A layout failure never hides the seat table. */
@@ -35,6 +37,7 @@ export function RoomMapSection({
   catalogImages,
   presenceView,
   notice,
+  fill = false,
 }: Props) {
   const [zoom, setZoom] = useState<Zoom>(2);
   const { view } = state;
@@ -67,12 +70,13 @@ export function RoomMapSection({
         onSelect={onSelect}
         catalogImages={catalogImages}
         presenceView={presenceView}
+        fill={fill}
       />
     );
   }
 
   return (
-    <Card as="section" className="flex flex-col gap-3 p-4">
+    <Card as="section" className={`flex flex-col gap-3 p-4${fill ? " lg:h-full lg:min-h-0" : ""}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-extrabold text-on-surface">{roomlayoutCopy.heading}</h2>

@@ -23,6 +23,13 @@ describe("CheckinView", () => {
     expect(html).toContain("lg:grid-cols-[minmax(0,1fr)_--spacing(75)]");
     expect(html.indexOf("map-marker")).toBeLessThan(html.indexOf("<section"));
   });
+  it("fits the viewport from lg: full-height page, the map row takes the rest", () => {
+    const html = render(room);
+    expect(html).toMatch(/class="page-content max-w-none! [^"]*lg:h-full/);
+    expect(html).toMatch(
+      /class="grid [^"]*lg:min-h-0 lg:flex-1[^"]*lg:grid-rows-\[minmax\(0,1fr\)\]/,
+    );
+  });
   it("tokens: Display h1, Subtitle h2, 44 px no-seat link, floating slot clears the tab bar", () => {
     const html = render(room);
     expect(html).toMatch(/<h1 class="[^"]*text-display/);

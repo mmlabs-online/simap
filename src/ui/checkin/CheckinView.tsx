@@ -71,9 +71,10 @@ export function CheckinView({
     body = (
       <>
         <h2 className="text-subtitle text-text-primary">{state.roomHeading}</h2>
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_--spacing(75)]">
-          <div className="min-w-0">{state.map}</div>
-          <section aria-labelledby={headingId}>
+        {/* From lg the page fits the viewport: this row takes the rest and the map scrolls inside. */}
+        <div className="grid gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_--spacing(75)] lg:grid-rows-[minmax(0,1fr)]">
+          <div className="min-w-0 lg:min-h-0">{state.map}</div>
+          <section aria-labelledby={headingId} className="lg:min-h-0 lg:overflow-auto">
             <Card className="p-4">
               <h2 id={headingId} className="text-subtitle text-text-primary">
                 {checkinCopy.whosHereTitle}
@@ -90,7 +91,7 @@ export function CheckinView({
     );
   }
   return (
-    <div className="page-content max-w-none! flex flex-col gap-4">
+    <div className="page-content max-w-none! flex flex-col gap-4 lg:h-full">
       <h1 className="text-display text-text-primary">{checkinCopy.title}</h1>
       <div className="flex items-center gap-2">{switcher}</div>
       {body}

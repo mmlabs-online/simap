@@ -73,6 +73,8 @@ type Props = {
   items?: readonly LayoutItem[];
   /** The check-in presence view; without it the map is as on the room page. */
   presenceView?: PresenceMapProps;
+  /** From `lg`: grow to the parent's height (a flex column) and scroll inside, instead of the 70vh cap. */
+  fill?: boolean;
 };
 
 /** Canvas art plus an HTML seat overlay. Loads `/sprites/office.png|json`; a bad atlas shows an error view. */
@@ -86,6 +88,7 @@ export function RoomMap({
   catalogImages,
   items,
   presenceView,
+  fill = false,
 }: Props) {
   const { atlas, failed, setFailed } = useAtlas();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -165,7 +168,7 @@ export function RoomMap({
   const width = list.bounds.w * effective;
   const height = list.bounds.h * effective;
   return (
-    <div className="space-y-2">
+    <div className={fill ? "flex flex-col gap-2 lg:min-h-0 lg:flex-1" : "space-y-2"}>
       {onZoom && <ZoomControl zoom={effective} onZoom={onZoom} allowed={allowed} />}
       {allowed.length < ZOOM_LEVELS.length && (
         <p role="status" className="text-sm text-on-surface-variant">
@@ -176,7 +179,7 @@ export function RoomMap({
         role="region"
         tabIndex={0}
         aria-label={roomlayoutCopy.regionLabel}
-        className="max-h-[70vh] overflow-auto overscroll-contain rounded-md border border-outline-variant outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className={`${fill ? "max-h-[70vh] lg:max-h-none lg:min-h-0 lg:flex-1" : "max-h-[70vh]"} overflow-auto overscroll-contain rounded-md border border-outline-variant outline-none focus-visible:ring-2 focus-visible:ring-primary`}
       >
         <div ref={stageRef} className="relative" style={{ width, height }}>
           <canvas

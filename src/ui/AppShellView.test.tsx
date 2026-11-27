@@ -175,26 +175,11 @@ describe("AppShellView", () => {
     expect(html).not.toMatch(/class="inline-flex[^"]*hidden/);
   });
 
-  it("roomSwitcher: absent by default, between header and main with a prop, absent when signed out", () => {
-    const shell = (tier: Tier | null, withSwitcher: boolean) =>
-      renderToStaticMarkup(
-        <AppShellView
-          session={tier ? { tier, email: "a@example.invalid" } : null}
-          pathname="/"
-          actions={{}}
-          roomSwitcher={withSwitcher ? <p>switcher-marker</p> : undefined}
-        >
-          <p>x</p>
-        </AppShellView>,
-      );
-    const none = shell("user", false);
-    expect(none).not.toContain("switcher-marker");
-    expect(none).not.toContain('data-slot="room-switcher"');
-    const withIt = shell("user", true);
-    const at = withIt.indexOf("switcher-marker");
-    expect(at).toBeGreaterThan(withIt.indexOf("</header>"));
-    expect(at).toBeLessThan(withIt.indexOf("<main"));
-    expect(shell(null, true)).not.toContain("switcher-marker");
+  it("has no room switcher bar: the switcher lives on the check-in page only", () => {
+    const html = render("admin");
+    expect(html).not.toContain(shellCopy.roomSwitcher.placeholder);
+    expect(html.indexOf("<main")).toBeGreaterThan(html.indexOf("</header>"));
+    expect(html.slice(html.indexOf("</header>"), html.indexOf("<main"))).not.toContain("<select");
   });
 
   it("manager has /checkin with label Check in; user's first link is / labelled Check in and has /dashboard", () => {
@@ -455,7 +440,6 @@ describe("AppShellView slice 4: sidebar, controls, tokens", () => {
           }
           pathname="/rooms/A1"
           actions={{ switchOrg: () => {} }}
-          roomSwitcher={<span>rs</span>}
           badges={{ approvals: 2 }}
         >
           <p>x</p>
