@@ -157,6 +157,12 @@ export const roomlayoutCopy = {
       deleteSeatNote:
         "Deleting a desk deletes its seat when you save. A seat with an occupant or devices is kept.",
     },
+    warnings: {
+      heading: "Layout warnings (you can still save)",
+      noDoor: "This room has seats but no usable door. Walkers fade in at the chair.",
+      unreachable: (codes: readonly (string | null)[]) =>
+        `No path from a door to: ${codes.map((c) => c ?? "a new desk").join(", ")}.`,
+    },
     shortcuts: {
       summary: "Keyboard shortcuts",
       rows: {

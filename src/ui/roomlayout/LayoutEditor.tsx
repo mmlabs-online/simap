@@ -12,6 +12,7 @@ import { catalogPalette } from "@/lib/layout-editor/palette";
 import { runSave } from "@/lib/layout-editor/save-run";
 import { isTextField, keyAction } from "@/lib/layout-editor/shortcuts";
 import { draftToRoomLayout } from "@/lib/layout-editor/draft";
+import { draftWarnings } from "@/lib/layout-editor/reachability";
 import { roomDetailHref } from "@/lib/nav";
 import { placedArtEntries, type ItemArtEntry } from "@/lib/sprites/item-art";
 import type { Zoom } from "@/lib/sprites/layout";
@@ -23,6 +24,7 @@ import type { CatalogImages } from "./catalog-images";
 import { EditorCanvas } from "./EditorCanvas";
 import { EditorInspector } from "./EditorInspector";
 import { EditorToolbar } from "./EditorToolbar";
+import { EditorWarnings } from "./EditorWarnings";
 import { EditorStatusLine, LeaveDialog, SaveErrorBanner } from "./EditorViews";
 import { Palette, PlacePanel } from "./Palette";
 import { ShortcutList } from "./ShortcutList";
@@ -84,6 +86,7 @@ export function LayoutEditor({
   const saving = state.save.status === "saving";
   const guard = useLeaveGuard(flags.dirty);
   const draft = state.history.present;
+  const warnings = useMemo(() => draftWarnings(draft, state.footprints), [draft, state.footprints]);
   const { tool } = state;
   const frozen = state.readOnly || saving;
   const resizeRefused = state.notice?.kind === "refused" && state.notice.code === "resize_cut";
@@ -186,6 +189,7 @@ export function LayoutEditor({
         />
       )}
       <EditorStatusLine notice={state.notice} />
+      <EditorWarnings noDoor={warnings.noDoor} unreachable={warnings.unreachable} />
       <div className="grid grid-cols-[minmax(0,1fr)_18rem] items-start gap-4">
         <EditorCanvas
           draft={draft}
