@@ -1,82 +1,83 @@
 @import "tailwindcss";
+@import "../styles/tokens.css";
 
 /* ============================================================
-   Token layer ported from seatMGT (light SaaS look, orange accent).
-   Token names are preserved so every component reads one central source.
-   Canvas #F6F6F5, surface cards, solid pill CTAs, orange punctuates.
-   The dark block below is new design work (seatMGT has no real dark theme).
+   Legacy token layer (SIM-071 slice 1): the old names now point at the Simap tokens in
+   src/styles/tokens.css so components keep working; slice 7 removes this compat layer.
    Theme is set by <html data-theme="light|dark"> (see src/lib/theme.ts).
    ============================================================ */
 
 :root {
   color-scheme: light;
 
-  /* ---- accent + status (orange punctuates; status pairs with a label) ---- */
-  --accent-orange: #fb5729;
-  --accent-orange-soft: #fff1ec;
-  --on-accent: #ffffff;
-  --status-online: #16a34a;
-  --status-warn: #4fb0e5;
-  --status-alert: #dc2626;
+  /* ---- accent + status (status pairs with a label) ---- */
+  --accent-orange: var(--color-workspace-primary);
+  --accent-orange-soft: color-mix(
+    in srgb,
+    var(--color-workspace-primary) 10%,
+    var(--color-surface)
+  );
+  --on-accent: var(--color-on-action);
+  --status-online: var(--color-success);
+  --status-warn: var(--color-warning);
+  --status-alert: var(--color-danger);
 
-  /* focus / accent rings (derived from the orange accent) */
-  --focus-ring: color-mix(in srgb, var(--accent-orange) 22%, transparent);
+  /* accent ring helpers still used by fields and the shell logo */
   --field-focus: color-mix(in srgb, var(--accent-orange) 15%, transparent);
   --accent-shadow: color-mix(in srgb, var(--accent-orange) 30%, transparent);
 
-  /* ---- primary = solid pill (buttons, selected ring) ---- */
-  --primary: #1c1c1c;
-  --on-primary: #ffffff;
-  --primary-container: #fb5729;
-  --on-primary-container: #ffffff;
+  /* ---- primary = ink (near-black buttons until the kit rework, slice 3) ---- */
+  --primary: var(--color-text-primary);
+  --on-primary: var(--color-surface);
+  --primary-container: var(--color-workspace-action);
+  --on-primary-container: var(--color-on-action);
 
-  /* ---- secondary = neutral (tonal chips/buttons) ---- */
-  --secondary: #6b6b6b;
-  --secondary-container: #f0f0ef;
-  --on-secondary-container: #1c1c1c;
+  --secondary: var(--color-text-secondary);
+  --secondary-container: color-mix(in srgb, var(--color-text-primary) 5%, var(--color-surface));
+  --on-secondary-container: var(--color-text-primary);
 
-  /* ---- tertiary = soft blue accent ---- */
-  --tertiary: #4fb0e5;
-  --tertiary-container: #e7f3fa;
-  --on-tertiary-container: #0e5e82;
+  --tertiary: var(--color-info);
+  --tertiary-container: var(--color-info-tint);
+  --on-tertiary-container: var(--color-info);
 
-  /* ---- error = red ---- */
-  --error: #dc2626;
-  --error-container: #fdecec;
-  --on-error-container: #7f1d1d;
+  --error: var(--color-danger);
+  --error-container: var(--color-danger-tint);
+  --on-error-container: var(--color-danger);
 
-  /* ---- success = green, warning = amber (status chips) ---- */
-  --success-container: #e7f5ec;
-  --on-success-container: #166534;
-  --warning-container: #fdf4dc;
-  --on-warning-container: #854d0e;
+  --success-container: var(--color-success-tint);
+  --on-success-container: var(--color-success);
+  --warning-container: var(--color-warning-tint);
+  --on-warning-container: var(--color-warning);
 
   /* ---- base + surfaces ---- */
-  --background: #f6f6f5;
-  --on-background: #1c1c1c;
-  --surface: #ffffff;
-  --on-surface: #1c1c1c;
-  --on-surface-variant: #6b6b6b;
-  --surface-container-lowest: #ffffff;
-  --surface-container-low: #ffffff;
-  --surface-container: #f6f6f5;
-  --surface-container-high: #f0f0ef;
-  --surface-container-highest: #ececec;
+  --background: var(--color-canvas);
+  --on-background: var(--color-text-primary);
+  --surface: var(--color-surface);
+  --on-surface: var(--color-text-primary);
+  --on-surface-variant: var(--color-text-secondary);
+  --surface-container-lowest: var(--color-surface);
+  --surface-container-low: var(--color-surface);
+  --surface-container: var(--color-canvas);
+  --surface-container-high: color-mix(in srgb, var(--color-text-primary) 5%, var(--color-surface));
+  --surface-container-highest: color-mix(
+    in srgb,
+    var(--color-text-primary) 8%,
+    var(--color-surface)
+  );
 
-  /* ---- hairline borders ---- */
-  --outline: #dadada;
-  --outline-variant: #ececec;
+  --outline: var(--color-border);
+  --outline-variant: var(--color-divider);
 
-  --inverse-surface: #1c1c1c;
-  --inverse-on-surface: #ffffff;
-  --inverse-primary: #fb5729;
+  --inverse-surface: var(--color-text-primary);
+  --inverse-on-surface: var(--color-surface);
+  --inverse-primary: var(--color-workspace-primary);
 
   --scrim: rgba(28, 28, 28, 0.32);
   --shadow: rgba(0, 0, 0, 0.06);
   --shadow-strong: rgba(0, 0, 0, 0.16);
 
   --grid-line: rgba(0, 0, 0, 0.045);
-  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  --card-shadow: var(--shadow-card);
   --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.1);
 
   /* pixel accents (D52, docs/art/style-guide.md section 3) */
@@ -93,62 +94,16 @@
   --px-btn: #c2410c;
   --px-btn-ledge: #7c2d12;
   --px-btn-text: #ffffff;
-
-  /* type scale */
-  --text-hero: 80px;
-  --text-h2: 30px;
-  --text-body: 16px;
-  --text-small: 14px;
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-
-  --accent-orange-soft: #3a1d14;
-
-  --primary: #ececec;
-  --on-primary: #161616;
-
-  --secondary: #a3a3a3;
-  --secondary-container: #232323;
-  --on-secondary-container: #ececec;
-
-  --tertiary: #4fb0e5;
-  --tertiary-container: #10324a;
-  --on-tertiary-container: #a8d8f2;
-
-  --error: #f87171;
-  --error-container: #3b1414;
-  --on-error-container: #fecaca;
-
-  --success-container: #12301d;
-  --on-success-container: #a7e3b9;
-  --warning-container: #3a2c0c;
-  --on-warning-container: #f5d58a;
-
-  --background: #0f0f0f;
-  --on-background: #ececec;
-  --surface: #161616;
-  --on-surface: #ececec;
-  --on-surface-variant: #a3a3a3;
-  --surface-container-lowest: #121212;
-  --surface-container-low: #161616;
-  --surface-container: #1b1b1b;
-  --surface-container-high: #232323;
-  --surface-container-highest: #2c2c2c;
-
-  --outline: #3a3a3a;
-  --outline-variant: #2a2a2a;
-
-  --inverse-surface: #ececec;
-  --inverse-on-surface: #1c1c1c;
 
   --scrim: rgba(0, 0, 0, 0.6);
   --shadow: rgba(0, 0, 0, 0.5);
   --shadow-strong: rgba(0, 0, 0, 0.6);
 
   --grid-line: rgba(255, 255, 255, 0.06);
-  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
   --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.6);
 
   /* wall top: keeps the pixel frame at 3:1 or more on the dark surface */
@@ -185,7 +140,6 @@
   --color-on-warning-container: var(--on-warning-container);
   --color-background: var(--background);
   --color-on-background: var(--on-background);
-  --color-surface: var(--surface);
   --color-on-surface: var(--on-surface);
   --color-on-surface-variant: var(--on-surface-variant);
   --color-surface-lowest: var(--surface-container-lowest);
@@ -208,10 +162,14 @@
   --color-px-floor: var(--px-floor);
   --color-px-wall: var(--px-wall);
 
-  /* type: Manrope covers Latin and Vietnamese (loaded in layout.tsx). */
-  --font-sans: var(--font-manrope), -apple-system, system-ui, sans-serif;
-  --font-heading: var(--font-manrope), system-ui, sans-serif;
-  --font-mono: var(--font-manrope), ui-sans-serif, sans-serif;
+  /* type: DM Sans (loaded in layout.tsx); --font-sans and --font-mono come from tokens.css. */
+  --font-heading: var(--font-family-sans);
+
+  /* sizes for later slices: max-w-content, max-w-library, min-h-control, w-sidebar */
+  --container-content: var(--width-content);
+  --container-library: var(--width-library);
+  --spacing-control: var(--size-control-min);
+  --spacing-sidebar: var(--size-sidebar);
 
   --radius-md3-sm: 10px;
   --radius-md3: 12px;
@@ -234,29 +192,35 @@ body {
 body {
   background-color: var(--background);
   color: var(--on-surface);
-  font-family: var(--font-manrope), -apple-system, system-ui, sans-serif;
+  font-family: var(--font-family-sans);
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.3s var(--ease-md3);
+  transition: background-color var(--duration-ui) ease-out;
 }
 
 h1,
 h2,
 h3 {
-  font-family: var(--font-manrope), system-ui, sans-serif;
+  font-family: var(--font-family-sans);
   letter-spacing: -0.01em;
 }
 .font-heading {
-  font-family: var(--font-manrope), system-ui, sans-serif;
+  font-family: var(--font-family-sans);
 }
 
-.text-hero {
-  font-size: var(--text-hero);
-  line-height: 1;
-  letter-spacing: -0.03em;
-}
 .text-h2 {
-  font-size: var(--text-h2);
-  line-height: 1.15;
+  font-size: var(--text-display);
+  line-height: var(--text-display--line-height);
+}
+
+/* Shadows live in :root (tokens.css) so the dark block can override them. */
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
+}
+@utility shadow-dialog {
+  box-shadow: var(--shadow-dialog);
+}
+@utility shadow-pixel {
+  box-shadow: var(--shadow-pixel);
 }
 
 /* Material Symbols icon face (loaded via <link> in layout head). */
@@ -336,7 +300,7 @@ h3 {
 /* Native <dialog> scrim (EntityFormDialog). */
 dialog::backdrop {
   background: var(--scrim);
-  animation: fadein 0.18s ease;
+  animation: fadein var(--duration-ui) ease;
 }
 
 /* ---- state layer + focus ring (shared by every primitive) ---- */
@@ -351,7 +315,7 @@ dialog::backdrop {
   border-radius: inherit;
   background: currentColor;
   opacity: 0;
-  transition: opacity 0.14s var(--ease-md3);
+  transition: opacity var(--duration-ui) ease-out;
   pointer-events: none;
   z-index: 0;
 }
@@ -366,11 +330,9 @@ dialog::backdrop {
   z-index: 1;
 }
 
-/* --primary inverts in dark, so the ring stays visible in both themes. */
 :where(button, a, [tabindex], input, select, summary):focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 /* Honor reduced motion. */
@@ -378,9 +340,9 @@ dialog::backdrop {
   *,
   *::before,
   *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -453,7 +415,7 @@ dialog::backdrop {
   box-shadow: none;
 }
 .px-card [data-variant="filled"]:focus-visible {
-  outline: 3px solid var(--primary);
+  outline: 3px solid var(--color-focus);
   outline-offset: 3px;
 }
 .px-scene {

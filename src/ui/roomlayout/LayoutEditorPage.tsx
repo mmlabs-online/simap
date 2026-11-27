@@ -18,8 +18,9 @@ import { editorGate } from "./editor-page";
 import { EditorGateView } from "./EditorViews";
 import { LayoutEditor } from "./LayoutEditor";
 import { useCatalogImages } from "./useCatalogImages";
+import { MEDIA } from "@/lib/breakpoints";
 
-const DESKTOP = "(min-width: 1024px)";
+const DESKTOP = MEDIA.lg;
 
 function subscribe(onChange: () => void) {
   const mq = window.matchMedia(DESKTOP);

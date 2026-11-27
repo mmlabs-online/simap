@@ -1,0 +1,150 @@
+/* ============================================================
+   Simap design tokens (SIM-071, D87). Every token is defined here once.
+   Light values are the brief's; dark values (data-theme="dark") are derived and
+   checked for WCAG AA by src/lib/color/tokens.test.ts.
+   Keep this file free of nested rules and media queries: the test parses it.
+   ============================================================ */
+
+/* Tailwind utilities (bg-canvas, text-text-primary, rounded-lg, text-title, md:...). `static` emits every
+   variable even when no utility uses it yet; plain (not inline) so utilities read var(--color-x) and the dark
+   block below can override them. */
+@theme static {
+  /* Brand */
+  --color-workspace-primary: #ed5b35; /* non-text use only: white on it is 3.4:1 */
+  --color-workspace-hover: #d94b26;
+  --color-workspace-action: #d3441f; /* filled buttons and any white text (white 4.55:1) */
+  --color-workspace-action-hover: #b93b19;
+  --color-pixel-primary: #4d6540;
+  --color-pixel-hover: #3e5532;
+  --color-on-action: #ffffff;
+  /* Surfaces */
+  --color-canvas: #f8f9fb;
+  --color-surface: #ffffff;
+  --color-cream: #f5f3e9;
+  --color-tile: #f0f2e9;
+  /* Content */
+  --color-text-primary: #272931;
+  --color-text-secondary: #475569;
+  --color-text-pixel: #354235;
+  /* Borders */
+  --color-border: #e1e4de;
+  --color-border-strong: #889282; /* control boundaries, 3:1 (WCAG 1.4.11) */
+  --color-divider: #e8ece0;
+  --color-focus: #7a915c;
+  /* Feedback */
+  --color-success: #326646;
+  --color-warning: #855c15;
+  --color-danger: #b44c46;
+  --color-info: #45648f;
+  --color-success-tint: color-mix(in srgb, var(--color-success) 8%, var(--color-surface));
+  --color-warning-tint: color-mix(in srgb, var(--color-warning) 8%, var(--color-surface));
+  --color-danger-tint: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
+  --color-info-tint: color-mix(in srgb, var(--color-info) 8%, var(--color-surface));
+  /* Room map */
+  --color-room-floor: #e2c8a7;
+  --color-room-green: #e9eddf;
+
+  /* Shape (equal to Tailwind v4 defaults except 2xl/full) */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+
+  /* Layout: CSS variables cannot be used in media queries, so these are the Tailwind breakpoints */
+  --breakpoint-md: 800px; /* sidebar appears */
+  --breakpoint-lg: 1024px; /* desktop composition */
+  --breakpoint-xl: 1280px; /* wide layouts */
+
+  /* Type scale: size / line-height / weight */
+  --text-caption: 12px;
+  --text-caption--line-height: 20px;
+  --text-caption--font-weight: 400;
+  --text-label: 14px;
+  --text-label--line-height: 20px;
+  --text-label--font-weight: 500;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-body--font-weight: 400;
+  --text-subtitle: 18px;
+  --text-subtitle--line-height: 28px;
+  --text-subtitle--font-weight: 600;
+  --text-title: 24px;
+  --text-title--line-height: 32px;
+  --text-title--font-weight: 600;
+  --text-display: 32px;
+  --text-display--line-height: 40px;
+  --text-display--font-weight: 600;
+  --text-hero: 46px;
+  --text-hero--line-height: 52px;
+  --text-hero--font-weight: 500;
+
+  --font-sans: var(--font-family-sans);
+  --font-mono: var(--font-family-mono);
+}
+
+/* Tokens with no Tailwind namespace. Shadows stay here (not in @theme): Tailwind inlines theme shadows, so a
+   dark override would not reach the utility; globals.css exposes them as @utility shadow-*. */
+:root {
+  /* next/font hashes the family name, so the brief's "DM Sans" literal resolves through its variable */
+  --font-family-sans: var(--font-dm-sans), sans-serif;
+  --font-family-mono: ui-monospace, monospace; /* coordinates, keys, code */
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  --size-control-min: 44px;
+  --size-sidebar: 216px;
+  --width-content: 1320px; /* standard page max */
+  --width-library: 1600px; /* library page max */
+
+  --duration-ui: 150ms; /* default transitions */
+  --duration-step: 280ms; /* pixel character step: steps(2) */
+  --duration-arrival: 3800ms; /* entrance-to-desk walk: linear */
+
+  --shadow-card: 0 4px 20px #53613e08;
+  --shadow-dialog: 0 24px 100px #16221340;
+  --shadow-pixel: 0 4px 0 #35492c; /* game-like primary button */
+}
+
+[data-theme="dark"] {
+  --color-workspace-primary: #ed5b35;
+  --color-workspace-hover: #d94b26;
+  --color-workspace-action: #d3441f;
+  --color-workspace-action-hover: #b93b19;
+  --color-pixel-primary: #5e7a4e;
+  --color-pixel-hover: #4d6540;
+  --color-on-action: #ffffff;
+  --color-canvas: #14161c;
+  --color-surface: #1c1f27;
+  --color-cream: #15170f;
+  --color-tile: #23271c;
+  --color-text-primary: #eceef2;
+  --color-text-secondary: #a9b2c0;
+  --color-text-pixel: #dde5d8;
+  --color-border: #3a3f4a;
+  --color-border-strong: #6b7383;
+  --color-divider: #2a2e37;
+  --color-focus: #a8c48a;
+  --color-success: #7fd39b;
+  --color-warning: #e5b456;
+  --color-danger: #f08a84;
+  --color-info: #8db0e3;
+  --color-success-tint: color-mix(in srgb, var(--color-success) 8%, var(--color-surface));
+  --color-warning-tint: color-mix(in srgb, var(--color-warning) 8%, var(--color-surface));
+  --color-danger-tint: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
+  --color-info-tint: color-mix(in srgb, var(--color-info) 8%, var(--color-surface));
+  --color-room-floor: #3a3226;
+  --color-room-green: #2a3222;
+
+  --shadow-card: 0 4px 20px #00000066;
+  --shadow-dialog: 0 24px 100px #000000a0;
+  --shadow-pixel: 0 4px 0 #0f1a0c;
+}
