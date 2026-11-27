@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| State | BLOCKED |
+| State | IN_PROGRESS |
 | Priority | P2 |
 | Size | M |
 | Areas | security, api, architecture |
@@ -11,7 +11,7 @@
 | Needs Ming | M-83, M-84 |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | — |
+| Claimed by | claude@2026-11-27T02:23:21Z |
 | PR | — |
 
 ## Goal
@@ -75,7 +75,7 @@ supersedes these points (M-83) and Identity can mint such tokens (M-84). Raised 
 
 - 2026-11-27: M-84 answered by org-admin-api (ADR-0030) and marked done by Ming. Contract in D86: role key `simap:super-admin`, check `org_access == "super_admin"`, `org_roles: []`, picker items have `access`, handle 429 on `/auth/token`. Release waits for M-90 (org-admin-api deploy + setup).
 
-Waiting for Ming: plan approval (High tier)
+- Plan approved (2026-11-27): Ming "duyệt SIM-043, tách slice 2" — plan slice 1 with defaults Q1–Q15; slice 2 split into SIM-043.1.
 
 ## Handoff
 
