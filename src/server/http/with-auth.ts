@@ -1,6 +1,8 @@
 import "server-only";
-import { atLeast, tierFromOrgRoles, type Tier } from "@/lib/auth/tier";
-import { loadIdentityConfig } from "@/server/identity/config";
+import { accessFromToken, atLeast, type Tier } from "@/lib/auth/tier";
+import { auditRoute } from "@/lib/audit/route";
+import { writeAccessAudit, type AccessAudit } from "@/server/audit/access";
+import { loadIdentityConfig, loadSuperAdminRole } from "@/server/identity/config";
 import { dbMemberGate } from "@/server/members/gate";
 import { createIdentityVerifier, type IdentityVerifier } from "@/server/identity/verify";
 import type { OrgScope } from "./org-scope";
@@ -11,6 +13,7 @@ export type AuthContext = Readonly<{
   email: string | null;
   org: string; // verified `org` claim, for display / responses only
   tier: Tier;
+  access: "member" | "super_admin"; // how the tier was granted (D86)
   scope: OrgScope; // the only way to reach org data; built once by withAuth from the verified token
 }>;
 
@@ -27,6 +30,10 @@ export type AuthDeps = {
   verifier: IdentityVerifier;
   memberGate: MemberGate;
   log: Log;
+  /** D86 app-scope role key; absent or null = super-admin grant off. */
+  superAdminRole?: string | null;
+  /** Writes the `access.super_admin` row for super-admin writes; missing = writes fail closed (503). */
+  accessAudit?: AccessAudit;
   /** Dev only (SIM-028): replaces the client Authorization header. Unset in production. */
   authorization?: (req: Request) => Promise<string | null>;
 };
@@ -64,11 +71,23 @@ export function createWithAuth(deps: () => AuthDeps, configLog: Log = logEntry) 
           }
           return apiError(401, "unauthenticated");
         }
-        const { sub, email, org, orgRoles } = v.identity;
+        const { sub, email, org, orgRoles, appRoles, orgAccess, lifetimeS } = v.identity;
         if (org === null) return apiError(403, "org_required");
-        const tier = tierFromOrgRoles(orgRoles ?? []);
-        if (!tier || !atLeast(tier, opts.tier)) return apiError(403, "forbidden");
-        const ctx: AuthContext = Object.freeze({ sub, email, org, tier, scope: scopeFor(org) });
+        const granted = accessFromToken(
+          { orgRoles: orgRoles ?? [], appRoles, orgAccess, lifetimeS },
+          d.superAdminRole ?? null,
+        );
+        if (!granted || !atLeast(granted.tier, opts.tier)) return apiError(403, "forbidden");
+        const { tier } = granted;
+        const access = granted.via;
+        const ctx: AuthContext = Object.freeze({
+          sub,
+          email,
+          org,
+          tier,
+          access,
+          scope: scopeFor(org),
+        });
         try {
           if ((await d.memberGate(ctx.scope, sub)) === "deactivated") {
             return apiError(403, "member_deactivated");
@@ -76,6 +95,18 @@ export function createWithAuth(deps: () => AuthDeps, configLog: Log = logEntry) 
         } catch {
           d.log({ event: "member_gate_failed" });
           return apiError(503, "unavailable");
+        }
+        if (access === "super_admin" && !["GET", "HEAD", "OPTIONS"].includes(req.method)) {
+          try {
+            if (!d.accessAudit) throw new Error("access_audit_missing");
+            await d.accessAudit(ctx.scope, sub, {
+              method: req.method,
+              route: auditRoute(new URL(req.url).pathname),
+            });
+          } catch {
+            d.log({ event: "access_audit_failed" });
+            return apiError(503, "unavailable");
+          }
         }
         try {
           return await handler(req, ctx, route);
@@ -101,6 +132,7 @@ declare global {
 /** Lazy: reads env on the first request, never at import (so `next build` needs no env or network). */
 function getAuthDeps(): AuthDeps {
   const { issuer, jwksUrl } = loadIdentityConfig(process.env);
+  const superAdminRole = loadSuperAdminRole(process.env);
   if (globalThis.__simapAuth?.issuer !== issuer) {
     globalThis.__simapAuth = {
       issuer,
@@ -108,6 +140,8 @@ function getAuthDeps(): AuthDeps {
         verifier: createIdentityVerifier({ issuer, jwksUrl, log: logEntry }),
         memberGate: dbMemberGate,
         log: logEntry,
+        superAdminRole,
+        accessAudit: writeAccessAudit,
         ...(process.env.NODE_ENV === "development" &&
           process.env.NEXT_PUBLIC_SIMAP_DEV_TOKEN === "1" && {
             authorization: async (req: Request) =>

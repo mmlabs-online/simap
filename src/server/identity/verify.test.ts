@@ -106,6 +106,9 @@ describe("verifier", () => {
         email: "someone@example.com",
         org: ORG,
         orgRoles: ["simap:manager"],
+        appRoles: [],
+        orgAccess: null,
+        lifetimeS: 600,
       },
     });
   });
@@ -272,14 +275,52 @@ describe("verifier", () => {
     expect(r.ok && r.identity.orgRoles).toEqual([]);
   });
 
-  it("roles claim is never read (token with roles only, no org -> org null)", async () => {
+  it("org present: roles and org_access are returned normalized (appRoles, orgAccess, lifetimeS = exp - iat)", async () => {
     const { signed, check } = await setup();
-    const claims = { ...goodClaims(), roles: ["simap:admin"] };
+    const r = await check(
+      await signed({
+        ...goodClaims(),
+        org_roles: [],
+        roles: ["simap:super-admin"],
+        org_access: "super_admin",
+      }),
+    );
+    expect(r.ok && r.identity).toMatchObject({
+      org: ORG,
+      orgRoles: [],
+      appRoles: ["simap:super-admin"],
+      orgAccess: "super_admin",
+      lifetimeS: 600,
+    });
+  });
+
+  it("roles not an array, or with a non-string item -> token ok, appRoles []; org_access number/object -> orgAccess null", async () => {
+    const { signed, check } = await setup();
+    for (const roles of ["simap:super-admin", { a: 1 }, ["simap:super-admin", 1]]) {
+      const r = await check(await signed({ ...goodClaims(), roles }));
+      expect(r.ok && r.identity.appRoles).toEqual([]);
+    }
+    for (const org_access of [1, { a: 1 }]) {
+      const r = await check(await signed({ ...goodClaims(), org_access }));
+      expect(r.ok && r.identity.orgAccess).toBeNull();
+    }
+  });
+
+  it("roles and org_access without org -> org null, no appRoles/orgAccess (unchanged no-org branch)", async () => {
+    const { signed, check } = await setup();
+    const claims = { ...goodClaims(), roles: ["simap:super-admin"], org_access: "super_admin" };
     const r = await check(await signed(claims, {}, ["org", "org_roles"]));
     expect(r).toEqual({
       ok: true,
       identity: { sub: SUB, email: "someone@example.com", org: null, orgRoles: null },
     });
+  });
+
+  it("org with org_roles [] and super-admin claims verifies; org without org_roles still org_roles_missing", async () => {
+    const { signed, check } = await setup();
+    const claims = { ...goodClaims(), org_roles: [], roles: ["simap:super-admin"] };
+    expect((await check(await signed(claims))).ok).toBe(true);
+    expect(await check(await signed(claims, {}, ["org_roles"]))).toEqual(fail("org_roles_missing"));
   });
 
   it("Authorization shapes: null, '', 'Basic x', 'Bearer', two tokens, lowercase bearer ok", async () => {

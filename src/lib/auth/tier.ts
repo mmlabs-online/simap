@@ -22,3 +22,36 @@ export function tierFromOrgRoles(roles: readonly string[]): Tier | null {
   }
   return best;
 }
+
+/** Longest token lifetime (exp - iat, seconds) accepted on the super-admin path (D86). */
+export const SUPER_ADMIN_MAX_TTL_S = 3600;
+
+export type AccessInput = {
+  orgRoles: readonly string[];
+  appRoles?: readonly string[];
+  orgAccess?: string | null;
+  lifetimeS?: number;
+};
+
+/**
+ * Tier and how it was granted (D75/D86). `org_access === "super_admin"` takes the super-admin path only: admin
+ * when the configured key is in `roles` (exact match), `org_roles` is empty and the token lives <= 3600 s;
+ * otherwise null (never falls back to the member path). Any other `org_access` uses `org_roles` and ignores `roles`.
+ */
+export function accessFromToken(
+  input: AccessInput,
+  superAdminKey: string | null,
+): { tier: Tier; via: "member" | "super_admin" } | null {
+  if (input.orgAccess === "super_admin") {
+    const ok =
+      superAdminKey !== null &&
+      superAdminKey !== "" &&
+      (input.appRoles ?? []).includes(superAdminKey) &&
+      input.orgRoles.length === 0 &&
+      typeof input.lifetimeS === "number" &&
+      input.lifetimeS <= SUPER_ADMIN_MAX_TTL_S;
+    return ok ? { tier: "admin", via: "super_admin" } : null;
+  }
+  const tier = tierFromOrgRoles(input.orgRoles);
+  return tier ? { tier, via: "member" } : null;
+}

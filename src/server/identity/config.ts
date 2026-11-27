@@ -34,3 +34,16 @@ export function loadIdentityConfig(env: Record<string, string | undefined>): {
   }
   return { issuer: raw, jwksUrl: `${raw}/.well-known/jwks.json` };
 }
+
+const SUPER_ADMIN_ROLE_RE = /^simap:[a-z][a-z0-9-]{0,62}$/;
+const MEMBERSHIP_ROLES = new Set(["simap:admin", "simap:manager", "simap:user", "simap:member"]);
+
+/** SIMAP_SUPER_ADMIN_ROLE (D86): the app-scope role key; unset or empty = feature off. Messages never carry the value. */
+export function loadSuperAdminRole(env: Record<string, string | undefined>): string | null {
+  const raw = env.SIMAP_SUPER_ADMIN_ROLE;
+  if (raw === undefined || raw === "") return null;
+  if (!SUPER_ADMIN_ROLE_RE.test(raw) || MEMBERSHIP_ROLES.has(raw)) {
+    throw new IdentityConfigError("SIMAP_SUPER_ADMIN_ROLE is invalid");
+  }
+  return raw;
+}
