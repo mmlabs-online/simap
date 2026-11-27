@@ -6,6 +6,13 @@ const checkOut = vi.fn();
 const moveSeat = vi.fn();
 const getMyPresence = vi.fn();
 vi.mock("@/server/db/pool", () => ({ getPool: () => getPool() }));
+const order: string[] = [];
+const syncProviderCheckIns = vi.fn(async (..._a: unknown[]) => {
+  order.push("sync");
+});
+vi.mock("@/server/presence/provider", () => ({
+  syncProviderCheckIns: (...a: unknown[]) => syncProviderCheckIns(...a),
+}));
 vi.mock("@/server/presence/presence", () => ({
   checkIn: (...a: unknown[]) => checkIn(...a),
   checkOut: (...a: unknown[]) => checkOut(...a),
@@ -64,6 +71,12 @@ const send = (
 beforeEach(() => {
   getPool.mockImplementation(() => ({}));
   for (const f of [checkIn, checkOut, moveSeat, getMyPresence]) f.mockReset();
+  order.length = 0;
+  syncProviderCheckIns.mockClear();
+  getMyPresence.mockImplementation(async () => {
+    order.push("read");
+    return {};
+  });
   fakeAuth();
 });
 afterEach(() => {
@@ -138,6 +151,21 @@ describe("/api/me/presence", () => {
     const g = await send(GET, "GET");
     expect(g.status).toBe(200);
     expect(await g.json()).toEqual(body);
+  });
+
+  it("GET syncs the provider with ctx.scope before reading; PUT/PATCH/DELETE do not sync", async () => {
+    expect((await send(GET, "GET")).status).toBe(200);
+    expect(order).toEqual(["sync", "read"]);
+    expect(syncProviderCheckIns.mock.calls[0]![1]).toEqual(
+      expect.objectContaining({ orgId: "o1" }),
+    );
+    checkIn.mockResolvedValue({ ok: true, value: DTO });
+    moveSeat.mockResolvedValue({ ok: true, value: DTO });
+    checkOut.mockResolvedValue({ ok: true, value: null });
+    await send(PUT, "PUT", { roomId: ID });
+    await send(PATCH, "PATCH", { seatId: ID });
+    await send(DELETE, "DELETE");
+    expect(syncProviderCheckIns).toHaveBeenCalledTimes(1);
   });
 
   it("503 without a pool", async () => {

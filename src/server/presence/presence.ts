@@ -1,7 +1,13 @@
 import "server-only";
-import { decideCheckIn, decideMove, type ActiveRef } from "@/lib/presence/rules";
+import {
+  decideCheckIn,
+  decideMove,
+  decideProviderCheckIn,
+  type ActiveRef,
+} from "@/lib/presence/rules";
 import type { MyPresenceDto, MyPresenceResponse } from "@/lib/presence/types";
 import { workDateUtc7 } from "@/lib/presence/work-date";
+import type { ProviderCheckInInput } from "@/lib/validate/provider-checkin";
 import { writeAudit } from "@/server/audit/write";
 import { withTx, type TxClient, type TxPool } from "@/server/db/tx";
 import { orgQuery, type OrgScope } from "@/server/http/org-scope";
@@ -102,6 +108,63 @@ async function loadActive(
   return rows[0];
 }
 
+/** The member's lowest seat (by seq) in a room, locked `for share` (D77). */
+async function lowestSeat(c: Query, scope: OrgScope, roomId: string, memberId: string) {
+  const { rows } = await orgQuery<{ id: string; code: string }>(
+    c,
+    scope,
+    `select id, code from seats where org_id = $1 and room_id = $2 and occupant_id = $3
+     order by seq limit 1 for share`,
+    [roomId, memberId],
+  );
+  return rows[0];
+}
+
+async function todayRow(c: Query, scope: OrgScope, memberId: string, today: string) {
+  const { rows } = await orgQuery<{ id: string }>(
+    c,
+    scope,
+    "select id from presence where org_id = $1 and member_id = $2 and work_date = $3::date",
+    [memberId, today],
+  );
+  return rows[0];
+}
+
+/** Inserts today's row, or reopens `reopenId` (D81); returns the presence id. `source` is a bound parameter. */
+async function writeCheckIn(
+  c: Query,
+  scope: OrgScope,
+  i: {
+    reopenId: string | null;
+    memberId: string;
+    seatId: string;
+    today: string;
+    at: Date;
+    source: "self" | "provider";
+  },
+): Promise<string> {
+  if (i.reopenId !== null) {
+    await orgQuery(
+      c,
+      scope,
+      `update presence set seat_id = $3, source = $5, checked_in_at = $4::timestamptz,
+         checked_out_at = null, checked_out_by = null, updated_at = now()
+       where org_id = $1 and id = $2`,
+      [i.reopenId, i.seatId, i.at.toISOString(), i.source],
+    );
+    return i.reopenId;
+  }
+  const { rows } = await orgQuery<{ id: string }>(
+    c,
+    scope,
+    `insert into presence (org_id, member_id, seat_id, work_date, checked_in_at, source)
+     select o.org_id, $2::uuid, $3::uuid, $4::date, $5::timestamptz, $6::text
+     from (select $1::uuid as org_id) o where o.org_id = $1::uuid returning id`,
+    [i.memberId, i.seatId, i.today, i.at.toISOString(), i.source],
+  );
+  return rows[0]!.id;
+}
+
 /** PRE-03: check in to a room by the member's lowest seat there (D77); same room again is a no-op; reopen on D81. */
 export function checkIn(
   db: Db,
@@ -121,61 +184,117 @@ export function checkIn(
       [roomId],
     );
     if (!room[0]) throw new Abort(refusal(404, "not_found"));
-    const { rows: seat } = await orgQuery<{ id: string; code: string }>(
-      c,
-      scope,
-      `select id, code from seats where org_id = $1 and room_id = $2 and occupant_id = $3
-       order by seq limit 1 for share`,
-      [roomId, memberId],
-    );
-    const { rows: today_ } = await orgQuery<{ id: string }>(
-      c,
-      scope,
-      "select id from presence where org_id = $1 and member_id = $2 and work_date = $3::date",
-      [memberId, today],
-    );
+    const seat = await lowestSeat(c, scope, roomId, memberId);
+    const today_ = await todayRow(c, scope, memberId, today);
     const decision = decideCheckIn({
       active: ref(active),
       roomId,
-      todayRowExists: today_.length > 0,
-      lowestSeatId: seat[0]?.id ?? null,
+      todayRowExists: today_ !== undefined,
+      lowestSeatId: seat?.id ?? null,
     });
     if (decision === "same") return toDto(active!);
     if (decision === "refuse_other_room") {
       throw new Abort(refusal(409, "already_checked_in", active!.room_code));
     }
     if (decision === "refuse_no_seat") throw new Abort(refusal(422, "no_seat_in_room"));
-    let id: string;
-    if (decision === "reopen") {
-      id = today_[0]!.id;
-      await orgQuery(
-        c,
-        scope,
-        `update presence set seat_id = $3, source = 'self', checked_in_at = $4::timestamptz,
-           checked_out_at = null, checked_out_by = null, updated_at = now()
-         where org_id = $1 and id = $2`,
-        [id, seat[0]!.id, now.toISOString()],
-      );
-    } else {
-      const { rows } = await orgQuery<{ id: string }>(
-        c,
-        scope,
-        `insert into presence (org_id, member_id, seat_id, work_date, checked_in_at, source)
-         select o.org_id, $2::uuid, $3::uuid, $4::date, $5::timestamptz, 'self'
-         from (select $1::uuid as org_id) o where o.org_id = $1::uuid returning id`,
-        [memberId, seat[0]!.id, today, now.toISOString()],
-      );
-      id = rows[0]!.id;
-    }
+    const id = await writeCheckIn(c, scope, {
+      reopenId: decision === "reopen" ? today_!.id : null,
+      memberId,
+      seatId: seat!.id,
+      today,
+      at: now,
+      source: "self",
+    });
     await writeAudit(c, scope, {
       actorSub: sub,
       action: "presence.check_in",
       entity: "presence",
       entityId: id,
-      meta: { room: room[0].code, seat: seat[0]!.code, reopened: decision === "reopen" },
+      meta: { room: room[0].code, seat: seat!.code, reopened: decision === "reopen" },
     });
     return toDto((await loadActive(c, scope, memberId, today))!);
   });
+}
+
+export type ProviderOutcome =
+  | "applied"
+  | "skip_active"
+  | "skip_today_row"
+  | "skip_no_seat"
+  | "unknown_member"
+  | "ambiguous_member"
+  | "inactive_member"
+  | "unknown_room";
+
+/**
+ * PRE-04 / G1: records one provider check-in (source `provider`) for a member of the caller's org. It only inserts:
+ * an active check-in of any source, or a row already written today, leaves everything unchanged. Skips write nothing.
+ * The audit actor is the member's own sub (G4); no email or name goes into the audit.
+ */
+export async function applyProviderCheckIn(
+  db: Db,
+  scope: OrgScope,
+  item: ProviderCheckInInput,
+  at: Date,
+  now: Date,
+  provider: string,
+): Promise<ProviderOutcome> {
+  const today = workDateUtc7(now);
+  const r = await inTx(db, async (c): Promise<ProviderOutcome> => {
+    const { rows: found } = await orgQuery<{ id: string }>(
+      c,
+      scope,
+      item.member.kind === "sub"
+        ? "select id from members where org_id = $1 and sub = $2 limit 2"
+        : "select id from members where org_id = $1 and lower(email) = lower($2) limit 2",
+      [item.member.value],
+    );
+    if (found.length === 0) return "unknown_member";
+    if (found.length > 1) return "ambiguous_member";
+    const { rows: locked } = await orgQuery<{ id: string; sub: string; status: string }>(
+      c,
+      scope,
+      "select id, sub, status from members where org_id = $1 and id = $2 for no key update",
+      [found[0]!.id],
+    );
+    if (!locked[0]) return "unknown_member";
+    if (locked[0].status !== "active") return "inactive_member";
+    const memberId = locked[0].id;
+    const { rows: room } = await orgQuery<{ id: string; code: string }>(
+      c,
+      scope,
+      "select id, code from rooms where org_id = $1 and code = $2 for share",
+      [item.roomCode],
+    );
+    if (!room[0]) return "unknown_room";
+    const active = await loadActive(c, scope, memberId, today);
+    const seat = await lowestSeat(c, scope, room[0].id, memberId);
+    const today_ = await todayRow(c, scope, memberId, today);
+    const decision = decideProviderCheckIn({
+      active: ref(active),
+      todayRowExists: today_ !== undefined,
+      lowestSeatId: seat?.id ?? null,
+    });
+    if (decision !== "insert") return decision;
+    const id = await writeCheckIn(c, scope, {
+      reopenId: null,
+      memberId,
+      seatId: seat!.id,
+      today,
+      at,
+      source: "provider",
+    });
+    await writeAudit(c, scope, {
+      actorSub: locked[0].sub,
+      action: "presence.check_in",
+      entity: "presence",
+      entityId: id,
+      meta: { room: room[0].code, seat: seat!.code, reopened: false, source: "provider", provider },
+    });
+    return "applied";
+  });
+  if (!r.ok) throw new Error("applyProviderCheckIn: unexpected refusal");
+  return r.value;
 }
 
 /** Check out; with nothing open today nothing changes and the answer is still 200. */

@@ -4,6 +4,7 @@ import { getPool } from "@/server/db/pool";
 import { apiError } from "@/server/http/respond";
 import { withAuth } from "@/server/http/with-auth";
 import { checkIn, checkOut, getMyPresence, moveSeat } from "@/server/presence/presence";
+import { syncProviderCheckIns } from "@/server/presence/provider";
 import { readJson } from "@/server/request/read-json";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,7 @@ export const GET = withAuth(
   async (_req, ctx) => {
     const pool = getPool();
     if (!pool) return apiError(503, "unavailable");
+    await syncProviderCheckIns(pool, ctx.scope);
     const value = await getMyPresence(pool, ctx.scope, ctx.sub);
     return Response.json(value, { headers: NO_STORE });
   },

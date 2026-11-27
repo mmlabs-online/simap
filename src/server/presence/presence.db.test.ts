@@ -6,7 +6,7 @@ import { addMember, addRoom, addSeat, assertTestDb, newOrg, testPool } from "@/t
 import { deactivateMember } from "@/server/members/manage";
 import { deleteRoom } from "@/server/rooms/rooms";
 import { deleteSeat, releaseSeat, setOccupant } from "@/server/seats/seats";
-import { checkIn, checkOut, getMyPresence, moveSeat } from "./presence";
+import { applyProviderCheckIn, checkIn, checkOut, getMyPresence, moveSeat } from "./presence";
 import { listRoomPresence } from "./read";
 
 let pool: pg.Pool;
@@ -330,5 +330,125 @@ describe("presence (db): D82 the check-in ends when the seat is lost", () => {
     const r = await deleteSeat(pool, w.scope, randomUUID(), w.s99);
     expect(r.ok).toBe(true);
     expect(await presenceRows(w.x)).toHaveLength(0);
+  });
+});
+
+describe("presence (db): provider check-in", () => {
+  const emailOf = async (memberId: string) =>
+    (await one("select email from members where id = $1", [memberId])).email as string;
+  const apply = (
+    w: { scope: Parameters<typeof checkIn>[1] },
+    member: { kind: "email" | "sub"; value: string },
+    roomCode: string,
+    at: Date = NOW,
+  ) => applyProviderCheckIn(pool, w.scope, { member, roomCode }, at, NOW, "mock");
+
+  it("provider: inserts source provider on the lowest seat, today's work date, audit with meta.source provider, actor = member sub", async () => {
+    const w = await world();
+    const at = new Date(NOW.getTime() - 600_000);
+    expect(await apply(w, { kind: "email", value: await emailOf(w.x) }, "R1", at)).toBe("applied");
+    const [p] = await presenceRows(w.x);
+    expect(p.source).toBe("provider");
+    expect(p.seat_id).toBe(w.s99);
+    expect(p.checked_in_at.toISOString()).toBe(at.toISOString());
+    expect(String(p.work_date).slice(0, 10)).toBe(workDateUtc7(NOW));
+    const a = await one(
+      "select actor_sub, meta from audit_log where org_id = $1 and action = 'presence.check_in'",
+      [w.orgId],
+    );
+    expect(a.actor_sub).toBe(w.xSub);
+    expect(a.meta).toMatchObject({
+      source: "provider",
+      provider: "mock",
+      room: "R1",
+      seat: "R1-99",
+    });
+    expect(JSON.stringify(a.meta)).not.toContain("@");
+  });
+
+  it("provider: active self check-in is left unchanged (same room and other room); no audit", async () => {
+    const w = await world();
+    await checkIn(pool, w.scope, w.xSub, w.r1, NOW);
+    expect(await apply(w, { kind: "sub", value: w.xSub }, "R1")).toBe("skip_active");
+    expect(await apply(w, { kind: "sub", value: w.xSub }, "R2")).toBe("skip_active");
+    const rowsNow = await presenceRows(w.x);
+    expect(rowsNow).toHaveLength(1);
+    expect(rowsNow[0].source).toBe("self");
+    expect(await auditCount(w.orgId, "presence.check_in")).toBe(1);
+  });
+
+  it("provider: applying twice writes one row and one audit", async () => {
+    const w = await world();
+    expect(await apply(w, { kind: "sub", value: w.xSub }, "R1")).toBe("applied");
+    expect(await apply(w, { kind: "sub", value: w.xSub }, "R1")).toBe("skip_active");
+    expect(await presenceRows(w.x)).toHaveLength(1);
+    expect(await auditCount(w.orgId, "presence.check_in")).toBe(1);
+  });
+
+  it("provider: does not reopen a row checked out today", async () => {
+    const w = await world();
+    await checkIn(pool, w.scope, w.xSub, w.r1, NOW);
+    await checkOut(pool, w.scope, w.xSub, new Date(NOW.getTime() + 1000));
+    expect(await apply(w, { kind: "sub", value: w.xSub }, "R1")).toBe("skip_today_row");
+    const [p] = await presenceRows(w.x);
+    expect(p.checked_out_at).not.toBeNull();
+    expect(await auditCount(w.orgId, "presence.check_in")).toBe(1);
+  });
+
+  it("provider: a self check-in after a provider check-in to the same room returns the provider row (200, no write); another room -> 409", async () => {
+    const w = await world();
+    await apply(w, { kind: "sub", value: w.xSub }, "R1");
+    const same = await checkIn(pool, w.scope, w.xSub, w.r1, new Date(NOW.getTime() + 1000));
+    expect(same).toMatchObject({ ok: true, value: { roomCode: "R1", source: "provider" } });
+    expect(await auditCount(w.orgId, "presence.check_in")).toBe(1);
+    expect(await checkIn(pool, w.scope, w.xSub, w.r2, NOW)).toMatchObject({
+      ok: false,
+      status: 409,
+      code: "already_checked_in",
+      room: "R1",
+    });
+  });
+
+  it("provider: unknown member, ambiguous email, deactivated member, unknown room code, no seat in room -> skipped, no row", async () => {
+    const w = await world();
+    expect(await apply(w, { kind: "email", value: "nobody@simap.example" }, "R1")).toBe(
+      "unknown_member",
+    );
+    expect(await apply(w, { kind: "sub", value: randomUUID() }, "R1")).toBe("unknown_member");
+    const dupEmail = await emailOf(w.y);
+    await pool.query(
+      "insert into members (org_id, sub, email, display_name) values ($1, $2, $3, 'Dup')",
+      [w.orgId, randomUUID(), dupEmail.toUpperCase()],
+    );
+    expect(await apply(w, { kind: "email", value: dupEmail }, "R1")).toBe("ambiguous_member");
+    await pool.query("update members set status = 'deactivated' where id = $1", [w.x]);
+    expect(await apply(w, { kind: "sub", value: w.xSub }, "R1")).toBe("inactive_member");
+    expect(await apply(w, { kind: "sub", value: w.ySub }, "NOPE")).toBe("unknown_room");
+    expect(await apply(w, { kind: "sub", value: w.ySub }, "R2")).toBe("skip_no_seat");
+    for (const id of [w.x, w.y, w.z]) expect(await presenceRows(id)).toHaveLength(0);
+    expect(await auditCount(w.orgId, "presence.check_in")).toBe(0);
+  });
+
+  it("provider: a member of another org with the same email is not matched", async () => {
+    const w = await world();
+    const b = newOrg();
+    const bm = await addMember(pool, b.orgId);
+    const bEmail = await emailOf(bm);
+    expect(await apply(w, { kind: "email", value: bEmail }, "R1")).toBe("unknown_member");
+    expect(await apply(w, { kind: "sub", value: await subOf(bm) }, "R1")).toBe("unknown_member");
+    expect(await presenceRows(bm)).toHaveLength(0);
+  });
+
+  it("provider: room presence lists the member with source provider", async () => {
+    const w = await world();
+    await apply(w, { kind: "sub", value: w.xSub }, "R1");
+    const r = await listRoomPresence(pool, w.scope, w.r1, NOW);
+    expect(r).toMatchObject({
+      ok: true,
+      value: { members: [{ memberId: w.x, source: "provider" }] },
+    });
+    expect((await getMyPresence(pool, w.scope, w.xSub, NOW)).presence).toMatchObject({
+      source: "provider",
+    });
   });
 });

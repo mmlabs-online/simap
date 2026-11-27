@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { decideCheckIn, decideCheckOut, decideMove, isActive } from "./rules";
+import {
+  decideCheckIn,
+  decideCheckOut,
+  decideMove,
+  decideProviderCheckIn,
+  isActive,
+} from "./rules";
 
 const A = { roomId: "r1", seatId: "s1" };
 
@@ -66,5 +72,26 @@ describe("isActive", () => {
     expect(isActive({ ...ok, checkedOut: true })).toBe(false);
     expect(isActive({ ...ok, seatOccupantId: "m2" })).toBe(false);
     expect(isActive({ ...ok, seatOccupantId: null })).toBe(false);
+  });
+});
+
+describe("decideProviderCheckIn", () => {
+  const base = { active: null, todayRowExists: false, lowestSeatId: "s1" as string | null };
+  it("active in the same room -> skip_active", () => {
+    expect(decideProviderCheckIn({ ...base, active: A })).toBe("skip_active");
+  });
+  it("active in another room -> skip_active (never a refusal)", () => {
+    expect(decideProviderCheckIn({ ...base, active: { roomId: "r2", seatId: "s9" } })).toBe(
+      "skip_active",
+    );
+  });
+  it("no active, row for today (checked out) -> skip_today_row", () => {
+    expect(decideProviderCheckIn({ ...base, todayRowExists: true })).toBe("skip_today_row");
+  });
+  it("no row today, no seat in the room -> skip_no_seat", () => {
+    expect(decideProviderCheckIn({ ...base, lowestSeatId: null })).toBe("skip_no_seat");
+  });
+  it("no row today, seat -> insert", () => {
+    expect(decideProviderCheckIn(base)).toBe("insert");
   });
 });
