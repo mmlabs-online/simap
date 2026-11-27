@@ -36,6 +36,11 @@ export function OrgPickerView({
               onClick={() => onPick(o.id)}
             >
               {busyId === o.id ? orgCopy.picker.entering : o.name}
+              {busyId !== o.id && o.access === "super_admin" && (
+                <span className="ml-2 text-xs text-on-surface-variant">
+                  {orgCopy.badge.supportAccess}
+                </span>
+              )}
             </Button>
           </li>
         ))}

@@ -357,8 +357,8 @@ describe("orgs and token with an org", () => {
     { id: ORG2, name: "Beta" },
   ];
   const expected = [
-    { id: ORG, name: "Alpha" },
-    { id: ORG2, name: "Beta" },
+    { id: ORG, name: "Alpha", access: "member" },
+    { id: ORG2, name: "Beta", access: "member" },
   ];
 
   it("orgs: GET {BASE}/auth/orgs?account_id=, credentials include, X-MM-App, no Authorization, no body, no-store, 5 s signal", async () => {
@@ -396,11 +396,53 @@ describe("orgs and token with an org", () => {
       { id: "nope", name: "Bad id" },
     ];
     expect(await setup(() => json({ items: body })).client.orgs(ID)).toEqual([
-      { id: ORG, name: "Tổ chức" },
-      { id: ORG2, name: "Beta" },
-      { id: "44444444-4444-4444-8444-444444444444", name: "Nested" },
-      { id: "55555555-5555-4555-8555-555555555555", name: "slug-only" },
+      { id: ORG, name: "Tổ chức", access: "member" },
+      { id: ORG2, name: "Beta", access: "member" },
+      { id: "44444444-4444-4444-8444-444444444444", name: "Nested", access: "member" },
+      { id: "55555555-5555-4555-8555-555555555555", name: "slug-only", access: "member" },
     ]);
+  });
+
+  it("orgs: access is read from the item or the nested org; missing means member", async () => {
+    const O3 = "44444444-4444-4444-8444-444444444444";
+    const O4 = "55555555-5555-4555-8555-555555555555";
+    const body = [
+      { id: ORG, name: "Flat", access: "super_admin" },
+      { org: { id: ORG2, name: "Nested", access: "super_admin" } },
+      { organization: { id: O3, name: "Org" }, access: "super_admin" },
+      { id: O4, name: "Explicit", access: "member" },
+    ];
+    const got = await setup(() => json(body)).client.orgs(ID);
+    expect(got.map((o) => o.access)).toEqual([
+      "super_admin",
+      "super_admin",
+      "super_admin",
+      "member",
+    ]);
+  });
+
+  it("orgs: unknown access values are dropped; other orgs in the list still parse", async () => {
+    const bad = ["owner", "", null, 5, "SUPER_ADMIN", " super_admin"];
+    const body = [
+      ...bad.map((access, i) => ({
+        id: `6666666${i}-6666-4666-8666-666666666666`,
+        name: `Bad${i}`,
+        access,
+      })),
+      { id: ORG, name: "Good" },
+    ];
+    expect(await setup(() => json(body)).client.orgs(ID)).toEqual([
+      { id: ORG, name: "Good", access: "member" },
+    ]);
+  });
+
+  it("orgs: only unknown-access orgs returns [] without rejecting; only malformed orgs still rejects unknown", async () => {
+    expect(
+      await setup(() => json([{ id: ORG, name: "A", access: "owner" }])).client.orgs(ID),
+    ).toEqual([]);
+    expect(
+      await reject(setup(() => json([{ id: "bad", name: "A", access: "owner" }])).client.orgs(ID)),
+    ).toEqual({ code: "unknown" });
   });
 
   it("orgs: an unreadable body rejects unknown, never an empty list", async () => {

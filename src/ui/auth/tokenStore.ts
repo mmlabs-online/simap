@@ -228,7 +228,15 @@ export function createTokenStore({
       () => {},
       (err: unknown) => {
         notify(err);
-        if (started && id && token !== null && now() + RETRY_MS < expiresAt) armAt(RETRY_MS);
+        const wait =
+          isAuthError(err) &&
+          err.code === "rate_limited" &&
+          Number.isFinite(err.retryAfterSeconds) &&
+          err.retryAfterSeconds! > 0
+            ? err.retryAfterSeconds! * 1000
+            : 0;
+        const delay = Math.max(RETRY_MS, wait);
+        if (started && id && token !== null && now() + delay < expiresAt) armAt(delay);
       },
     );
   };

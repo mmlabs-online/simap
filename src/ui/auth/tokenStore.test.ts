@@ -709,3 +709,62 @@ describe("org", () => {
     }
   });
 });
+
+describe("background renewal retry delay (D86)", () => {
+  const noopChannel = () => ({ post: () => {}, subscribe: () => () => {}, close: () => {} });
+
+  /** Signs a 3600 s token in, fires the renewal timer at validUntil with a failing /token, returns what re-armed. */
+  async function failRenewal(err: unknown) {
+    const scheduled: { fn: () => void; ms: number }[] = [];
+    let time = 1_000_000;
+    const client = {
+      token: vi
+        .fn()
+        .mockResolvedValueOnce({ accessToken: "tok1", expiresIn: 3600 })
+        .mockRejectedValue(err),
+    };
+    const store = createTokenStore({
+      client: client as unknown as IdentityClient,
+      storage: { read: () => ID, write: () => {}, clear: () => {} },
+      orgStorage: { read: () => null, write: () => {}, clear: () => {} },
+      now: () => time,
+      timers: {
+        setTimeout: (fn, ms) => scheduled.push({ fn, ms }),
+        clearTimeout: () => {},
+      },
+      lock: createRefreshLock({ locks: undefined }),
+      channel: noopChannel,
+      doc: undefined,
+    });
+    store.start();
+    await store.getToken();
+    const first = scheduled.length;
+    time += 3540_000; // validUntil
+    scheduled[scheduled.length - 1]!.fn();
+    await new Promise((r) => setTimeout(r, 0));
+    const rearmed = scheduled.slice(first).map((s) => s.ms);
+    return { store, client, rearmed, tick: () => (time += 1) };
+  }
+
+  it("rate_limited re-arms at max(RETRY_MS, Retry-After), token kept", async () => {
+    const r = await failRenewal({ code: "rate_limited", retryAfterSeconds: 30 });
+    expect(r.rearmed).toEqual([30_000]);
+    expect(r.client.token).toHaveBeenCalledTimes(2);
+  });
+
+  it("rate_limited with Retry-After below RETRY_MS or missing re-arms at RETRY_MS", async () => {
+    expect((await failRenewal({ code: "rate_limited", retryAfterSeconds: 5 })).rearmed).toEqual([
+      15_000,
+    ]);
+    expect((await failRenewal({ code: "rate_limited" })).rearmed).toEqual([15_000]);
+  });
+
+  it("Retry-After beyond the token's expiry does not re-arm; the token is still returned while valid", async () => {
+    const r = await failRenewal({ code: "rate_limited", retryAfterSeconds: 120 });
+    expect(r.rearmed).toEqual([]);
+  });
+
+  it("a network error re-arms at RETRY_MS (unchanged)", async () => {
+    expect((await failRenewal({ code: "network" })).rearmed).toEqual([15_000]);
+  });
+});

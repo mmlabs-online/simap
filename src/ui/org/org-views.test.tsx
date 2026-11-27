@@ -69,3 +69,24 @@ describe("OrgSwitcherDialog", () => {
     expect(out).not.toContain('type="radio"');
   });
 });
+
+describe("Support access badge (D86)", () => {
+  const S = { ...A, access: "super_admin" as const };
+  const M = { ...B, access: "member" as const };
+
+  it("OrgPickerView: super_admin org shows the badge once, member and access-less orgs do not; names intact", () => {
+    const out = html(<OrgPickerView orgs={[S, M]} onPick={noop} onSignOut={noop} />);
+    expect(out.split(orgCopy.badge.supportAccess)).toHaveLength(2);
+    expect(out).toContain("Tổ chức Á");
+    expect(out).toContain("Beta &lt;b&gt;");
+    const plain = html(<OrgPickerView orgs={[A, B]} onPick={noop} onSignOut={noop} />);
+    expect(plain).not.toContain(orgCopy.badge.supportAccess);
+  });
+
+  it("OrgSwitcherDialog: badge for super_admin only, Current marker still shown", () => {
+    const base = { open: true, currentId: S.id, onSwitch: noop, onRetry: noop, onClose: noop };
+    const out = html(<OrgSwitcherDialog {...base} state={{ status: "ready", orgs: [S, M] }} />);
+    expect(out.split(orgCopy.badge.supportAccess)).toHaveLength(2);
+    expect(out).toContain(orgCopy.switcher.current);
+  });
+});

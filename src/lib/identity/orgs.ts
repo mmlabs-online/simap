@@ -37,7 +37,7 @@ export function decideOrg({
     const id = o.id.toLowerCase();
     if (seen.has(id) || gone.has(id)) continue;
     seen.add(id);
-    list.push({ id, name: o.name });
+    list.push({ id, name: o.name, ...(o.access && { access: o.access }) });
   }
   if (gone.size > 0) {
     return list.length === 0
