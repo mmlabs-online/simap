@@ -78,3 +78,37 @@ None.
 
 ### Blockers from review agents
 - 🔴 security-review.md Attempt 1, finding 1: `src/server/presence/provider/config.ts:24` refuses mock only when `NODE_ENV === "production"`. `pnpm dev:prod` runs with `NODE_ENV=development` and `SIMAP_DB_TARGET=production`, so `SIMAP_PRESENCE_PROVIDER=mock` in `.env.local` would insert fake provider check-ins and audit rows into production. Fix: also refuse when `env.SIMAP_DB_TARGET === "production"`, and add a `config.test.ts` case. This turns the PASS above into REWORK.
+
+## Attempt 2 — 2026-11-27
+Verdict: PASS
+
+Scope of this attempt: rework commit 60fb3917 (attempt 1 REWORK from security-review.md Attempt 1, finding 1). Attempt 1's evidence for the other acceptance criteria still applies. The rework touches only `config.ts` (one condition plus its doc comment), `config.test.ts` (one new case) and `impl-log.md`.
+
+### Checks (run by reviewer)
+- `pnpm format:check` — exit 0, "All matched files use the correct format." (1069 files)
+- `pnpm typecheck` — exit 0
+- `pnpm check:layers` — exit 0, "check-layers: 1014 files, no violations"
+- `pnpm test` — exit 0, "Test Files 388 passed | 1 skipped (389), Tests 3771 passed | 9 skipped (3780)"
+- `pnpm build` — exit 0
+- `pnpm test:db` (local compose Postgres) — exit 0, "Test Files 23 passed (23), Tests 373 passed (373)"
+- All numbers match impl-log.md Attempt 2.
+
+### Acceptance criteria
+- [x] Attempt 1 blocker (mock provider must not run against production data under `pnpm dev:prod`) — evidence: `src/server/presence/provider/config.ts:24` now refuses when `NODE_ENV === "production" || SIMAP_DB_TARGET === "production"`, with the same fixed message (no value echoed, R3). `scripts/dev-prod.mjs:104` sets `SIMAP_DB_TARGET: "production"` on the child env (asserted by `scripts/dev-prod.test.ts:638`), and `provider/index.ts:20` reads `process.env`, so the guard sees it. A refused config fails closed: `index.ts:18-25` logs `presence_provider_config_invalid` and returns off.
+- [x] Regression test — `config.test.ts:40-53` (mock + `NODE_ENV=development` + `SIMAP_DB_TARGET=production` throws `ProviderConfigError` with "not allowed in production"). Against the attempt 1 code the call would not throw, `message` would stay `""`, and the `toContain` assertion would fail. `config.test.ts:34-38` still covers plain `NODE_ENV=production`.
+- [x] Other criteria — unchanged since attempt 1; the full suite and test:db are green.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. The changes stay in `src/server/**` and are covered by the existing `server-only` import (R1). The error message carries no value (R3). Only the planned files changed (R4). The new logic has a test (R5).
+
+### Blockers from review agents
+None. security-review.md Attempt 2 (in the working tree, uncommitted) gives PASS and marks finding 1 fixed.
+
+### Nits (do not block)
+- 💭 The check matches `"production"` exactly (also security-review Attempt 2, 💭 2). This is enough for the only launcher today.
+
+### Follow-ups (out of scope)
+- None new. Attempt 1 follow-ups still stand.

@@ -75,3 +75,34 @@ Read-only review of `ticket/SIM-063` against `origin/main`. The auditor read eve
 1. dev:prod preflight: refuse `SIMAP_PRESENCE_PROVIDER*` lines and drop them in `childEnv`.
 2. Preconditions for the real-provider ticket: an org binding (finding 2), a deadline or item cap on the apply loop (finding 3), and a capped response body and `at` length (finding 4).
 3. Optional: decide whether a super-admin GET should skip the pull or log access (finding 5, G6).
+
+## Attempt 2
+
+**Verdict:** PASS from security. Finding 1 from attempt 1 is fixed, and the rework adds no new issue.
+
+The auditor read `config.ts`, `config.test.ts`, `provider/index.ts`, `scripts/dev.mjs`, `scripts/dev-prod.mjs` and the spawn call in `scripts/dev-process.mjs`. It opened no `.env*` file and ran no `git diff` or checks.
+
+### Findings
+
+**🟢 1 (was 🔴). The mock provider is now refused under `pnpm dev:prod`.**
+- `config.ts:24` refuses when `NODE_ENV === "production" || SIMAP_DB_TARGET === "production"`. The message is fixed and carries no values.
+- `SIMAP_DB_TARGET` does reach the dev server:
+  - `dev-prod.mjs:104` sets `SIMAP_DB_TARGET: "production"`.
+  - `dev.mjs:52-58` strips only `NEXT_PUBLIC_SIMAP_DEV_PROD` and `NODE_ENV`.
+  - `dev-prod.mjs:327-330` and `dev-process.mjs:264-266` pass the resulting env to `spawn`.
+  - `dev-prod.test.ts:638` already asserts this.
+- `.env.local` cannot override the value, because it is already set before Next starts. Mixed-case Windows variants are covered too: Node resolves the all-uppercase key first.
+- If the config is refused, the provider fails closed (`index.ts:18-25`). It logs one fixed line, the provider is off, and the request does not fail.
+- `config.test.ts:40-53` covers the new case, and `:34-38` still covers plain `NODE_ENV=production`.
+
+**💭 2.** The check matches `"production"` exactly. That is enough for the only launcher that points at production. Any future launcher that does the same must set the same value.
+
+**💭 3.** The comment at `config.ts:16-17` is long. `pnpm format:check` should confirm the formatting.
+
+### Follow-ups (carried over from attempt 1)
+1. The dev:prod preflight should refuse `SIMAP_PRESENCE_PROVIDER*` lines, and `childEnv` should drop them.
+2. Preconditions for the real-provider ticket:
+   - an org binding;
+   - a deadline or item cap on the apply loop;
+   - caps on the `at` field and the body length.
+3. Optional: a super-admin GET either skips the pull or writes an access-audit row (G6).
