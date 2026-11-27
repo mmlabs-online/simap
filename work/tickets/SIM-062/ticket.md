@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 0 |
 | Created | 2026-11-26 |
-| Claimed by | claude@2026-11-27T03:52:18Z |
-| PR | — |
+| Claimed by | — |
+| PR | https://github.com/mmlabs-online/simap/pull/151 |
 
 ## Goal
 Characters walk with proper frames for each direction, for every pixel-character layer, instead of the phase 1
@@ -47,3 +47,9 @@ frames.
 ## Notes / answers from Ming
 
 ## Handoff
+
+### 2026-11-27 — claude — DONE
+- Agent calls: 5, ~237k tokens total (frontend-developer×1 default 43k; planner×1 default 83k; implementer×2 default 52k + 20k (merge of main); reviewer×1 default 40k).
+- Done: consult, plan (READY, Gate none, D45 = placeholders now, Ming's art later), attempt 1 implemented, review PASS, merged main after SIM-061.1 (one-line `WalkLayer.tsx` conflict, checks re-run green), PR #151, Ming item M-94 (real walk art, not blocking).
+- In progress / next: Ming reviews and merges PR #151; visual check of walking in each direction.
+- Gotchas: branch merges main instead of rebasing (no force push). Step rate is hard-coded at 2 per tile, separately from `WALK_STEPS`.
