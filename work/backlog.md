@@ -122,7 +122,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | BUG-005 | map-items list order differs between Postgres collation and the test's JS sort | MERGED | P1 | XS | db, api | — | none | 0 | 2026-11-26 |
 | BUG-006 | CI `image` job always fails at `compose config` on the self-hosted runner (false positive on /Users/mingming) | MERGED | P1 | XS | security | — | none | 0 | 2026-11-26 |
 | SIM-043 | Let an app-wide simap admin access every org | MERGED | P2 | M | security, api, architecture | — | plan-approval | 1 | 2026-11-26 |
-| SIM-043.1 | Super-admin org picker badge and 429 Retry-After (D86 client contract) | DONE | P2 | S | ui, api | SIM-043 | none | 0 | 2026-11-27 |
+| SIM-043.1 | Super-admin org picker badge and 429 Retry-After (D86 client contract) | MERGED | P2 | S | ui, api | SIM-043 | none | 0 | 2026-11-27 |
 | SIM-044 | Restrict User device visibility and add a "my devices" API | MERGED | P1 | M | api, architecture, security | — | plan-approval | 1 | 2026-11-26 |
 | SIM-044.1 | Limit device data in seat, member and layout responses for Users | MERGED | P1 | M | api, architecture, security | SIM-044 | plan-approval | 0 | 2026-11-26 |
 | SIM-045 | My Portal part 1: My seat, My devices, display name | MERGED | P2 | M | ui, ux | SIM-044 | none | 1 | 2026-11-26 |
@@ -147,7 +147,7 @@ This board is changed only on `main`; each ticket's `ticket.md` is the source of
 | SIM-061 | Simple walk-in and walk-out | MERGED | P1 | M | ui | SIM-060 | plan-approval | 1 | 2026-11-26 |
 | SIM-061.1 | Typing idle animation for present characters | MERGED | P1 | S | ui | SIM-061 | plan-approval | 0 | 2026-11-27 |
 | SIM-062 | Multi-direction walking avatar frames | MERGED | P2 | M | ui | SIM-061 | none | 0 | 2026-11-26 |
-| SIM-063 | Third-party check-in provider: REST pull adapter and mock | BACKLOG | P2 | M | architecture, api, security | SIM-058 | plan-approval | 0 | 2026-11-26 |
+| SIM-063 | Third-party check-in provider: REST pull adapter and mock | PLANNING | P2 | M | architecture, api, security | SIM-058 | plan-approval | 0 | 2026-11-26 |
 | SIM-064 | Layout editor warning for unreachable chairs | BACKLOG | P2 | S | ui, ux | SIM-061 | none | 0 | 2026-11-26 |
 | SIM-065 | Choose GitHub-hosted or macbook runner for simap workflows | MERGED | P2 | S | architecture, security | — | plan-approval | 1 | 2026-11-26 |
 | SIM-066 | Redesign My Portal → Profile layout and the portal tab bar | MERGED | P2 | M | ui, ux | — | none | 0 | 2026-11-26 |
