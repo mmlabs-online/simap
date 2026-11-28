@@ -27,4 +27,11 @@ describe("MyDevicesTiles", () => {
     expect(html).toContain(`aria-label="${portalCopy.devices.tilesLabel}"`);
     expect(html).toContain("grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3");
   });
+  it("tokens: Title values, coral total tile, no legacy classes", () => {
+    const html = renderToStaticMarkup(<MyDevicesTiles devices={devices} hasMore={false} />);
+    expect(html).toContain("text-title");
+    expect(html).toContain("bg-workspace-action");
+    expect(html).not.toContain("font-extrabold");
+    expect(html).not.toContain("-container");
+  });
 });

@@ -16,10 +16,10 @@ import { pickerOptions, type PixelLookKey } from "./pixel-look-state";
 const copy = portalCopy.profile.character;
 
 const swatchClass =
-  "relative inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-md has-[:checked]:ring-2 has-[:checked]:ring-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary has-[:disabled]:cursor-default has-[:disabled]:opacity-60";
+  "relative inline-flex min-h-control min-w-control cursor-pointer items-center justify-center rounded-md has-[:checked]:ring-2 has-[:checked]:ring-pixel-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus has-[:disabled]:cursor-not-allowed";
 
 const cardClass =
-  "flex relative min-h-11 min-w-11 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-outline-variant p-2 has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary has-[:disabled]:cursor-default has-[:disabled]:opacity-60";
+  "relative flex min-h-control min-w-control cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-divider bg-surface p-2 has-[:checked]:border-pixel-primary has-[:checked]:ring-2 has-[:checked]:ring-pixel-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus has-[:disabled]:cursor-not-allowed";
 
 export type PixelLookPickerProps = {
   draft: PixelLook;
@@ -45,9 +45,9 @@ export function PixelLookPicker(p: PixelLookPickerProps) {
     legend: string,
     items: { value: number; hex?: string; text?: string }[],
   ) => (
-    <fieldset className="flex flex-col gap-1.5">
-      <legend className="text-xs font-semibold text-on-surface-variant">{legend}</legend>
-      <div className={key === "style" ? "grid grid-cols-3 gap-1.5" : "flex flex-wrap gap-1.5"}>
+    <fieldset className="flex flex-col gap-1">
+      <legend className="text-label text-text-primary">{legend}</legend>
+      <div className={key === "style" ? "grid grid-cols-3 gap-1" : "flex flex-wrap gap-1"}>
         {items.map((item, i) => {
           const checked = p.draft[key] === item.value;
           return (
@@ -74,26 +74,26 @@ export function PixelLookPicker(p: PixelLookPickerProps) {
                       decorative
                     />
                   )}
-                  <span className="text-sm text-on-surface">{item.text}</span>
+                  <span className="text-label font-normal text-text-primary">{item.text}</span>
                   {checked && (
                     <Icon
                       name="check"
                       size={16}
-                      className="pointer-events-none absolute right-1 top-1 text-primary"
+                      className="pointer-events-none absolute right-1 top-1 text-pixel-primary"
                     />
                   )}
                 </>
               ) : (
                 <>
                   <span
-                    className="block h-8 w-8 rounded border border-outline-variant"
+                    className="block size-8 rounded border border-divider"
                     style={{ background: item.hex }}
                   />
                   {checked && (
                     <Icon
                       name="check"
                       size={18}
-                      className="pointer-events-none absolute text-on-primary drop-shadow"
+                      className="pointer-events-none absolute text-on-action drop-shadow"
                     />
                   )}
                 </>
@@ -110,11 +110,11 @@ export function PixelLookPicker(p: PixelLookPickerProps) {
       headingId="pixel-look-heading"
       title={copy.heading}
       subtitle={copy.subtitle}
-      titleAdornment={<Icon name="auto_awesome" size={18} className="text-primary" />}
+      titleAdornment={<Icon name="auto_awesome" size={18} className="text-pixel-primary" />}
       aside={<Pill tone="success" decorative label={copy.livePreview} />}
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-xs text-on-surface-variant">{copy.tagline}</p>
+          <p className="text-caption text-text-secondary">{copy.tagline}</p>
           <Button
             type="button"
             variant="tonal"
@@ -136,9 +136,9 @@ export function PixelLookPicker(p: PixelLookPickerProps) {
           view={view}
           onViewChange={setView}
         />
-        {p.isDerived && <p className="text-xs text-on-surface-variant">{copy.automatic}</p>}
+        {p.isDerived && <p className="text-caption text-text-secondary">{copy.automatic}</p>}
         {p.status === "failed" && (
-          <p className="text-xs text-on-surface-variant">{copy.loadFailed}</p>
+          <p className="text-caption text-text-secondary">{copy.loadFailed}</p>
         )}
         <div className="flex flex-col gap-3" aria-busy={p.status === "loading" ? true : undefined}>
           {group(

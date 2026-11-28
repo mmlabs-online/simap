@@ -39,7 +39,7 @@ describe("MySeatView", () => {
     expect(html).toContain('href="/rooms/R1?seat=A1"');
     expect(html).toContain(portalCopy.seat.viewOnMap);
     expect(html).toContain(`>${portalCopy.seat.release}<`);
-    expect(html).toContain("min-h-11");
+    expect(html).toContain("min-h-control");
   });
   it("h2 My seat is sr-only; assigned header h3 shows the count pill; one SeatCard per seat; list is grid-cols-1 lg:grid-cols-2", () => {
     const html = render({ seats: [seat(), seat({ id: "s2", code: "A2" })] });
@@ -72,5 +72,9 @@ describe("MySeatView", () => {
   });
   it("loading is aria-busy", () => {
     expect(render({ status: "loading", seats: [] })).toContain('aria-busy="true"');
+  });
+  it("empty state link is a 44 px target", () => {
+    const html = render({ seats: [], empty: true });
+    expect(html.match(/<a [^>]*href="\/rooms"[^>]*>/)![0]).toContain("min-h-control");
   });
 });

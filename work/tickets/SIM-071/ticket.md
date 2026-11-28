@@ -12,7 +12,7 @@
 | Attempts | 1 |
 | Created | 2026-11-27 |
 | Claimed by | |
-| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 (merged); slice 5c: https://github.com/mmlabs-online/simap/pull/164 (merged); slice 6a: https://github.com/mmlabs-online/simap/pull/165 |
+| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 (merged); slice 5c: https://github.com/mmlabs-online/simap/pull/164 (merged); slice 6a: https://github.com/mmlabs-online/simap/pull/165 (merged); slice 6b: https://github.com/mmlabs-online/simap/pull/166 |
 
 ## Goal
 Every screen of simap uses one set of design tokens (colours, type, spacing, radius, elevation, layout, motion) from
@@ -139,3 +139,9 @@ workspace coral) via D87.
 - Done: slice 6 is split into 6a/6b/6c. Slice 6a (auth, check-in, globals `.aw-*`/`.px-*`, world-palette test moved to tokens.test) passed review on attempt 1 (security: no 🔴/🟡). Pending 142 → 93. PR https://github.com/mmlabs-online/simap/pull/165.
 - In progress / next: after Ming merges #165, run `/run SIM-071` for 6b (portal; the outline is in plan.md, it needs the full addendum), then 6c, then slice 7.
 - Gotchas: Q-S6-1..16 took their defaults (see Q-S6-4/5/10 in the PR). Follow-up: possible Turnstile clipping at ≤380 px (from SIM-068). 1 rework left on the ticket.
+
+### 2026-11-27 — claude — IN_PROGRESS (slice 6b PR open)
+- Agent calls: 3 (planner×1 144k slice 6b addendum, implementer×1 77k, reviewer×1 78k)
+- Done: slice 6b (portal, 16 screen files, pending 93 → 83) passed review on attempt 1. PR https://github.com/mmlabs-online/simap/pull/166.
+- In progress / next: after Ming merges #166, run `/run SIM-071` for 6c (roomlayout chrome + mapItems; the outline is in plan.md and needs a full addendum), then slice 7.
+- Gotchas: Q-S6b-1..7 took their defaults. 1 rework left on the ticket.

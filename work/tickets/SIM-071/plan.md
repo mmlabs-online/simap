@@ -2212,3 +2212,261 @@ below). R2/R6/R7 not touched.
   not pixel green.
 
 Status: READY
+
+## Slice 6b addendum — Portal
+Status: READY. Written against `main` after #165 (slices 1–5c and 6a merged), the "Slice 6b outline — Portal" above and
+Ming's approval of the plan and split with all defaults. Applies R-a…R-h ("Slice 5 addendum"), "Rules for every
+slice-5 file" and R-i ("Slice 6 addendum") **unchanged**; the shared values are the 5b/5c/6a strings. No new decisions;
+open points are non-blocking Q-S6b-n at the end, each with a default. Pixel green (Q4) only in the character picker
+(`PixelLookPicker`, `LookStage`, `LookPreview`); everything else in the portal is workspace (coral/ink). Not touched:
+`photo-canvas.ts` (allowlisted canvas colours), every `*.ts` in `src/ui/portal/`, `useOwnPhoto.tsx`, kit components
+(`TabBar`, `SectionCard`, `PageHeader`, `FilledInput`, `FormFooterBar`, `Avatar`, `RoleBadge`, `Chip`, `Button`),
+`src/ui/devices/**` (`DeviceNameLink`, `DeviceRowActions` etc. are 5b), `src/app/**`, `src/app/globals.css`,
+`src/styles/tokens.css`, `src/ui/copy/**`, `scripts/check-tokens.mjs`, every 6c file.
+
+### Size
+16 screen files ≈ 190 changed lines (≈ 93 legacy lines, table below), `screen-tokens.test.ts` ≈ 35, 6 portal test
+files ≈ 70, the 6a `CheckinPopup.test.tsx` nit 3, pending 5, impl-log ≈ 40: **≈ 345 changed lines** (outline ≈ 350).
+
+### Pending list (R-h): 5 keys, 10 violations → 0 (93 → 83, 16 → 11 keys)
+Counts read from `scripts/check-tokens.pending.json` on `main` after #165 (16 keys / 93).
+
+| Key | Count | Cause (all removed by the Files table) |
+|---|---|---|
+| `src/ui/portal/MyDevicesTable.tsx` | 3 | `HEAD` `text-[11px]` (22: `text-arb` + `arbitrary-px`), `min-w-[960px]` (129) |
+| `src/ui/portal/PixelLookPicker.tsx` | 3 | `gap-1.5` (48; 50 ×2) |
+| `src/ui/portal/ProfilePhotoSection.tsx` | 2 | `BTN` `gap-1.5` (7), Remove `py-1.5` (65) |
+| `src/ui/portal/ProfileTabView.tsx` | 1 | `gap-1.5` (35) |
+| `src/ui/portal/SeatCard.tsx` | 1 | `gap-1.5` (53) |
+
+All 5 keys are deleted; every other key keeps its count (`globals.css` 32, the 10 slice-6c keys 51).
+
+### Legacy lines outside the guard (non-test `.tsx` in `src/ui/portal/`), before → after
+"Legacy" = a line with an R-a alias, R-b raw size / 700–800 weight, R-c arbitrary value, a `LOW_TARGET` class, an
+`opacity-60` or a hard-coded focus colour. Measured with `rg` on `main` after #165; every count goes to 0.
+
+| File | Before | Lines |
+|---|---|---|
+| `PixelLookPicker.tsx` | 13 | 19, 22, 48, 49, 50, 77, 82, 89, 96, 113, 117, 139, 141 |
+| `MyDevicesTable.tsx` | 12 | 21, 22, 89, 98, 110, 116, 129, 132, 147, 150, 176, 179 (+ the 9 `CELL` references renamed) |
+| `SeatCard.tsx` | 11 | 26, 30, 31, 38, 40, 41, 44, 45, 49, 53, 65 |
+| `MyRequestRow.tsx` | 9 | 11–14, 40, 41, 47, 53, 68 |
+| `PersonalInfoCard.tsx` | 7 | 10, 41, 60, 64, 68, 73, 88 |
+| `MyDevicesTiles.tsx` | 6 | 9, 10, 27, 31, 32, 53 |
+| `MySeatView.tsx` | 6 | 45, 49, 63, 92, 99, 100 |
+| `ProfilePhotoSection.tsx` | 6 | 7, 61–68 (hand-built `<button>`), 71, 74, 76, 81 |
+| `LookStage.tsx` | 5 | 35, 40 (`var(--color-outline-variant)` in `style`), 45, 56, 70 |
+| `MembershipCard.tsx` | 5 | 16, 22, 23, 26, 33 |
+| `MyRequestsPanel.tsx` | 5 | 78, 83, 93, 104, 118 |
+| `MyDevicesView.tsx` | 4 | 59, 63, 84, 95 |
+| `LookPreview.tsx` | 1 | 43 |
+| `PortalPage.tsx` | 1 | 27 |
+| `ProfileTab.tsx` | 1 | 69 |
+| `ProfileTabView.tsx` | 1 | 35 |
+| **Total** | **93** | → **0** |
+
+Clean today, no edit, added to `MIGRATED` only: `PortalTabs.tsx` (kit `TabBar`), `MySeatTab.tsx`, `MyDevicesTab.tsx`
+(141 is layout only), `ProfilePhoto.tsx`.
+
+### Rename map used in 6b (R-a…R-i; only the rows that occur in the portal)
+| Old | New | Rule |
+|---|---|---|
+| `text-on-surface`, `text-primary` (ink) | `text-text-primary` | R-a |
+| `text-on-surface-variant` | `text-text-secondary` | R-a |
+| `text-error` | `text-danger` | R-a |
+| `bg-success-container text-on-success-container` · `bg-warning-container text-on-warning-container` · `bg-error-container text-on-error-container` | `bg-success-tint text-success` · `bg-warning-tint text-warning` · `bg-danger-tint text-danger` | R-a |
+| `bg-surface-high text-on-surface-variant` (neutral icon) | `bg-canvas text-text-secondary` | R-a |
+| `bg-secondary-container text-on-secondary-container` | `bg-canvas text-text-primary` | R-a |
+| `bg-tertiary-container text-on-tertiary-container` | `bg-info-tint text-info` | R-a |
+| `bg-primary-container text-on-primary-container` (static badge/tile; same colours today, `globals.css:31–32`) | `bg-workspace-action text-on-action` | R-a, outline |
+| `bg-accent-orange-soft text-accent-orange` (icon tile) | `bg-canvas text-workspace-primary` (non-text, pair tested at `tokens.test.ts:150`) | R-a |
+| `bg-surface-container`, `bg-surface-high` (non-sprite) | `bg-canvas` | R-a |
+| `bg-surface-container` behind a sprite (LookStage) | `bg-tile` | R-i |
+| `border-outline-variant`, `divide-outline-variant`, `var(--color-outline-variant)` | `border-divider`, `divide-divider`, `var(--color-divider)` (same value today, `globals.css:68`) | R-a |
+| `border-outline-variant` on a `<select>` | `border-border-strong` | R-a, Q6 |
+| `ring-primary`, `text-primary` on picker selection / adornment | `ring-pixel-primary`, `border-pixel-primary`, `text-pixel-primary` | R-i, Q4 |
+| `has-[:focus-visible]:outline-primary` | `has-[:focus-visible]:outline-focus` (Q-S6b-3) | Rules (focus colour token) |
+| `has-[:disabled]:opacity-60` | `has-[:disabled]:cursor-not-allowed` (drop `cursor-default` and the opacity; Q-S6b-4) | R-e |
+| `text-h2 font-extrabold` (page h1) | `text-display` | R-b |
+| `text-base font-extrabold` (card title h4) | `text-body font-semibold` | R-b |
+| `text-2xl font-extrabold` (metric) | `text-title` | R-b |
+| `text-sm` / `text-sm font-medium` / `text-sm font-semibold\|bold\|extrabold` | `text-label font-normal` / `text-label` / `text-label font-semibold` | R-b |
+| `text-xs` (+ weight) | `text-caption` (+ `font-semibold` / `font-medium`) | R-b |
+| `text-[11px] font-extrabold uppercase` table head | `TABLE_HEAD` | R-b, R-g |
+| `font-bold` inside text | `font-semibold` | R-b |
+| `min-w-[960px]` | `min-w-240` | R-c |
+| `rounded-md3` (12 px, `globals.css:174`) | `rounded-xl` on tiles, `rounded-lg` on the select | R-c |
+| `h-11 w-11` / `size-11` on a decorative tile | `size-10` (Q-S6b-1) | R-c, LOW_TARGET |
+| `min-h-11` / `min-w-11` on a target; `className="min-h-11"` on a kit Button | `min-h-control` / `min-w-control`; delete | R-f |
+| `gap-1.5` | `gap-1` | R-d |
+| `py-1.5` (Remove) | gone (kit Button) | R-d, R-f |
+| hand-built `<button>` | kit `Button` | R-f |
+| `CELL`/`HEAD` constants | `TABLE_CELL`/`TABLE_HEAD`/`TABLE_ROW` from `../table` | R-g |
+
+### Shared values used in 6b (same strings as 5b/5c/6a)
+- **Page `<h1>`:** `text-display text-text-primary`.
+- **Notices:** error `text-label font-semibold text-danger`; status `text-label font-semibold text-text-primary`; empty
+  lines `text-label text-text-secondary` (old `font-medium`) or `text-label font-normal text-text-secondary` (no weight).
+- **Small hint / meta (12 px):** `text-caption text-text-secondary`; small error `text-caption text-danger` (+
+  `font-medium` where it had it).
+- **Form caption** (labels, legends): `text-label text-text-primary` (5b `CAPTION`, kit `FIELD_CAPTION`).
+- **Standalone link:** `inline-flex min-h-control items-center … text-label font-semibold text-text-primary
+  hover:underline` (5b back link; the portal links had `hover:underline`, kept).
+- **File picker label** (5b `DeviceTypeImageField` `BTN`, + `gap-2` for the icon): `field-box inline-flex min-h-control
+  cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-4 text-label text-text-primary
+  transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out`.
+
+### Files (slice 6b)
+None matches a High path (`.github/risk-tiers.yml`: `src/ui/**`, tests and `scripts/check-tokens.pending.json` are not
+listed). Line numbers from `main` after #165; the implementer re-reads each file first. "→" = replace the whole class
+string unless "add"/"drop"/"keep" says otherwise. Props, handlers, ids, `aria-*`, `role`, `data-*`, copy unchanged.
+
+**My seat**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/portal/PortalPage.tsx` | h1 (27) `text-display text-text-primary` | not pending |
+| `src/ui/portal/MySeatView.tsx` | error notices (45, 63), status notice (49); no-seat line (92) `text-label font-normal text-text-secondary`; empty (99) `text-label text-text-secondary`; empty link (100) `inline-flex min-h-control items-center text-label font-semibold text-text-primary hover:underline` | not pending |
+| `src/ui/portal/SeatCard.tsx` | icon tile (26) `flex size-10 shrink-0 items-center justify-center rounded-xl bg-canvas text-workspace-primary`; code h4 (30) `text-body font-semibold text-text-primary`; room line (31) `flex items-center gap-1 text-label font-normal text-text-secondary`; tags `dl` (38) `mt-4 grid grid-cols-2 gap-4 rounded-xl bg-canvas p-4 text-label font-normal`; `dt` (40, 44) `text-text-secondary`; `dd` (41, 45) `font-semibold text-text-primary`; footer (49) `border-outline-variant` → `border-divider`; View-on-map link (53) `inline-flex min-h-control items-center gap-1 text-label font-semibold text-text-primary hover:underline`; Release (65) drop `className="min-h-11"` | 1 → 0 (remove) |
+| `src/ui/portal/MyRequestsPanel.tsx` | skeleton (78) `h-32 animate-pulse rounded-xl bg-canvas`; error (83); empty lines (93, 118) `py-6 text-center text-label text-text-secondary`; list (104) `divide-y divide-divider` | not pending |
+| `src/ui/portal/MyRequestRow.tsx` | `ICON_TONES` (11–14) → `success: "bg-success-tint text-success"`, `warning: "bg-warning-tint text-warning"`, `danger: "bg-danger-tint text-danger"`, `neutral: "bg-canvas text-text-secondary"` (the status `Pill` next to it keeps the text label, R-e; `size-9` icon unchanged, not a target); seat line (40) `text-label font-normal text-text-primary`; `strong` (41) `font-semibold`; time lines (47, 53) `text-caption text-text-secondary`; Cancel (68) `className="self-start"` | not pending |
+
+**My devices**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/portal/MyDevicesView.tsx` | error notices (59, 84), status notice (63); empty (95) `text-label text-text-secondary` | not pending |
+| `src/ui/portal/MyDevicesTiles.tsx` | `TONES` (9–10) → `"bg-canvas text-text-primary"`, `"bg-info-tint text-info"`; icon tile (27) `flex size-10 shrink-0 items-center justify-center rounded-xl ${tone}`; value (31) `text-title text-text-primary`; label (32) `truncate text-label font-normal text-text-secondary`; total tone (53) `bg-workspace-action text-on-action` | not pending |
+| `src/ui/portal/MyDevicesTable.tsx` | delete `CELL`/`HEAD` (21–22), import `TABLE_CELL, TABLE_HEAD, TABLE_ROW` from `../table` (R-g); search (89) `className="w-full sm:w-56"` (drop `h-10!`: kit 44 px); select (98) `min-h-control min-w-0 rounded-lg border border-border-strong bg-surface px-3 text-label font-semibold text-text-primary` (focus: global `select:focus-visible` ring); footer (110) `flex flex-wrap items-center justify-between gap-3 text-caption text-text-secondary`; load-more error (116) `font-semibold text-danger`; table (129) `w-full min-w-240 border-collapse`; head `<tr>` (132) `border-b border-divider` (Q-S6b-6); `<th>` (134, 139) `TABLE_HEAD`; body `<tr>` (147, 176) `TABLE_ROW`; name cell (148) `TABLE_CELL` (drop `font-semibold`: `DeviceNameLink` has it, as 5b `DeviceTable`); type icon (150) `text-text-secondary`; other cells (154–169) `TABLE_CELL` / `` `${TABLE_CELL} font-mono` ``; empty cell (177) `` `${TABLE_CELL} text-center` ``; no-matches (179) `text-text-secondary` | 3 → 0 (remove) |
+
+**Profile and character**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/portal/ProfileTab.tsx` | error (69) `text-label font-semibold text-danger` | not pending |
+| `src/ui/portal/ProfileTabView.tsx` | visibility aside (35) `inline-flex items-center gap-1 text-caption text-text-secondary` | 1 → 0 (remove) |
+| `src/ui/portal/PersonalInfoCard.tsx` | `LABEL` (10) `flex items-center gap-1 text-label text-text-primary` (form caption, outline); required mark (41) `text-text-primary`; name error (60) `text-caption text-danger`; hints and counter (64, 68, 88) `text-caption text-text-secondary` (keep `flex-none` on 68); `hr` (73) `border-divider` | not pending |
+| `src/ui/portal/MembershipCard.tsx` | badge (16) `flex size-10 flex-none items-center justify-center rounded-xl bg-workspace-action text-on-action text-label font-semibold` (white on workspace-action, AA pair tested); org name (22) `truncate text-label font-semibold text-text-primary`; your-org (23) `text-caption text-text-secondary`; fallback (26) `text-label font-semibold text-text-primary`; managed (33) `text-caption text-text-secondary` | not pending |
+| `src/ui/portal/ProfilePhotoSection.tsx` | import `Button` from `../Button`; `BTN` (6–7) → the shared file-picker string (focus ring via `.field-box:focus-within`, `globals.css:344`; replaces `focus-within:ring-*`, `rounded-full`, `font-bold`); Remove (61–68) → `<Button variant="text" size="sm" disabled={busy !== null} onClick={onRemove}>…same label…</Button>` (Q-S6b-2); hint and load-failed (71, 74) `text-caption text-text-secondary`; error (76) `text-caption font-medium text-danger`; notice (81) `text-caption font-medium text-text-primary` | 2 → 0 (remove) |
+| `src/ui/portal/PixelLookPicker.tsx` | `swatchClass` (18–19) → `"relative inline-flex min-h-control min-w-control cursor-pointer items-center justify-center rounded-md has-[:checked]:ring-2 has-[:checked]:ring-pixel-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus has-[:disabled]:cursor-not-allowed"`; `cardClass` (21–22) → `"relative flex min-h-control min-w-control cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-divider bg-surface p-2 has-[:checked]:border-pixel-primary has-[:checked]:ring-2 has-[:checked]:ring-pixel-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus has-[:disabled]:cursor-not-allowed"`; fieldset (48) `flex flex-col gap-1`; legend (49) `text-label text-text-primary`; options (50) `grid grid-cols-3 gap-1` / `flex flex-wrap gap-1`; style name (77) `text-label font-normal text-text-primary`; card check (82) `… text-pixel-primary`; swatch chip (89) `block size-8 rounded border border-divider` (inline `background: item.hex` unchanged, user-chosen art colour); swatch check (96) `pointer-events-none absolute text-on-action drop-shadow` (Q-S6b-7); adornment (113) `text-pixel-primary`; tagline, automatic, load-failed (117, 139, 141) `text-caption text-text-secondary` | 3 → 0 (remove) |
+| `src/ui/portal/LookStage.tsx` | stage (35) `overflow-hidden rounded-lg border border-divider bg-tile` (R-i sprite preview); dot grid (40) `var(--color-outline-variant)` → `var(--color-divider)` (same value); stage label (45) `text-caption font-semibold uppercase tracking-wide text-text-secondary`; unavailable (56) `text-caption text-text-secondary`; maps caption (70) `border-t border-divider px-3 py-2 text-center text-caption text-text-secondary` | not pending |
+| `src/ui/portal/LookPreview.tsx` | loading placeholder (43) `inline-block rounded bg-divider` (skeleton fill, R-a; Q-S6b-5) | not pending |
+
+**Pending, tests, log**
+
+| File | Change |
+|---|---|
+| `scripts/check-tokens.pending.json` | delete the 5 portal keys (93 → 83, 16 → 11 keys); nothing else changes |
+| `src/ui/screen-tokens.test.ts` | extend (Tests) |
+| `src/ui/portal/SeatCard.test.tsx`, `MySeatView.test.tsx`, `MyDevicesTable.test.tsx`, `PixelLookPicker.test.tsx`, `ProfilePhotoSection.test.tsx`, `MyRequestRow.test.tsx`, `MyDevicesTiles.test.tsx`, `LookStage.test.tsx` | update/extend (Tests) |
+| `src/ui/checkin/CheckinPopup.test.tsx` | 6a review nit (Tests, last row); no behaviour change |
+| `work/tickets/SIM-071/impl-log.md` | append "Slice 6b": files, legacy-line and pending before/after (93 → 0 lines; 10 → 0, 93 → 83), visible differences, checks |
+
+### Approach (slice 6b)
+1. My seat: `PortalPage`, `MySeatView`, `SeatCard`, `MyRequestsPanel`, `MyRequestRow`.
+2. My devices: `MyDevicesView`, `MyDevicesTiles`, `MyDevicesTable` (`TABLE_*`, select, `min-w-240`).
+3. Profile: `ProfileTab`, `ProfileTabView`, `PersonalInfoCard`, `MembershipCard`, `ProfilePhotoSection` (kit Button,
+   file-picker string).
+4. Character: `PixelLookPicker`, `LookStage`, `LookPreview`.
+5. After each file: `rg -n "on-surface|outline-variant|text-error|text-primary\b|ring-primary|outline-primary|text-\[|tracking-\[|text-(xs|sm|base|lg|xl|2xl)\b|text-h[23]|font-(bold|extrabold|heading)|rounded-md3|surface-(high|container)|-container\b|accent-orange|min-h-11|min-w-11|size-11|h-11|h-10!|opacity-|focus(-within|-visible)?:|<button|gap-1\.5|py-1\.5" <file>`
+   → no hits (`text-primary\b` also matches inside `text-text-primary`; read those hits, only the bare class is wrong).
+6. Pending: `node scripts/check-tokens.mjs --list`; the 5 files report 0, every other count unchanged; delete the 5
+   keys (sorted order kept); `node scripts/check-tokens.mjs` exits 0.
+7. Tests (below), impl-log "Slice 6b", checks: `pnpm format:check`, `pnpm typecheck && pnpm check:layers`, `pnpm test`,
+   `pnpm build`.
+
+Rules: R1 (ui → ui only; new imports `../table` in `MyDevicesTable`, `../Button` in `ProfilePhotoSection`), R3 none, R4
+(Files tables only), R5 (tests below). R2/R6/R7 not touched.
+
+### Tests to write / update (slice 6b)
+| Test (file › name) | Covers |
+|---|---|
+| `screen-tokens.test.ts` › `MIGRATED` gains 20 files: `ui/portal/{PortalPage,PortalTabs,MySeatTab,MySeatView,SeatCard,MyRequestsPanel,MyRequestRow,MyDevicesTab,MyDevicesView,MyDevicesTiles,MyDevicesTable,ProfileTab,ProfileTabView,PersonalInfoCard,MembershipCard,ProfilePhotoSection,ProfilePhoto,PixelLookPicker,LookStage,LookPreview}.tsx`; the existing legacy / raw-type / low-target / palette / `opacity-60` / focus and "not pending" tests then cover them | R-a…R-c, R-h |
+| screen-tokens › "kit Button only" list gains `ui/portal/ProfilePhotoSection.tsx` | R-f |
+| screen-tokens › "shared table classes" list gains `ui/portal/MyDevicesTable.tsx` (contains `TABLE_HEAD`, `TABLE_CELL`; no `const CELL\|HEAD`) | R-g |
+| screen-tokens › new "portal character picker uses pixel tokens": `PixelLookPicker`, `LookStage`, `LookPreview` match none of `/--px-\|outline-variant\|opacity-\d\|(?<![\w-])(?:ring\|outline\|text\|border)-primary(?![\w-])/`; `PixelLookPicker.tsx` contains `ring-pixel-primary`, `border-pixel-primary`, `text-pixel-primary` and `outline-focus`; `LookStage.tsx` contains `bg-tile`. Plus: no file in the 20 contains `outline-variant` (closes the `var(--color-outline-variant)` gap `LEGACY` does not see) | R-i, Q4, R-e |
+| `SeatCard.test.tsx` › 48–55: name "Release is an outlined button with the kit 44 px height", `min-h-11` → `min-h-control` and `not.toContain("min-h-11")`; new: View-on-map `<a` has `min-h-control`; `<h4` has `text-body` and `font-semibold`; markup has no `font-extrabold`, `accent-orange`, `gap-1.5` | R-f, R-b |
+| `MySeatView.test.tsx` › 42 `min-h-11` → `min-h-control`; new: empty state (`seats: []`, no requests) link `<a [^>]*href="/rooms"` contains `min-h-control` | R-f, AC 3 |
+| `MyDevicesTable.test.tsx` › 86 `min-w-[960px]` → `min-w-240`; new "tokens": `<th` has `text-caption` and `uppercase`; `<select` has `min-h-control` and `border-border-strong`; search markup has no `h-10!`; no `text-[` in the markup | R-c, R-g, R-f |
+| `PixelLookPicker.test.tsx` › 104–110: name "… carry the kit 44 px classes", `min-h-11`/`min-w-11` → `min-h-control`/`min-w-control`; new: every `<label` has `has-[:focus-visible]:outline-focus` and no `opacity-`; style-card labels have `has-[:checked]:border-pixel-primary`; the card check icon (style fieldset, `>check</span>`) has `text-pixel-primary` | R-f, R-i, R-e |
+| `ProfilePhotoSection.test.tsx` › new: file `<label` has `field-box` and `min-h-control`, no `focus-within:`; with `url` the Remove `<button` has `data-variant="text"` and `min-h-control`; error `<p role="alert"` has `text-danger`. Existing 23–70 unchanged and green (no `<button` without a photo; `<button[^>]*disabled` when busy) | R-f, R-a |
+| `MyRequestRow.test.tsx` › new: pending row icon `<span` has `bg-warning-tint text-warning`, cancelled `bg-canvas`; Cancel `<button` has `min-h-control` and no `min-h-11`; markup has no `-container`. Existing 35, 52, 61 unchanged | R-a, R-e, R-f |
+| `MyDevicesTiles.test.tsx` › new: values have `text-title`; total tile has `bg-workspace-action`; no `font-extrabold`, `-container`. 28 unchanged | R-b, R-a |
+| `LookStage.test.tsx` › new: stage wrapper has `bg-tile` and `border-divider`; markup has no `surface-container`, `outline-variant` | R-i |
+| `CheckinPopup.test.tsx` › "pixel chrome" (119–121): drop the no-op `.replace("max-h-[90dvh]", "").replace(/w-\[min[^\s"]*/, "")` → `expect(html).not.toContain(bad)` (neither stripped class contains a forbidden string; 6a review nit) | test hygiene |
+| `scripts/check-tokens.test.ts` (unchanged) › repo ratchet green with 5 keys removed | pending only shrinks |
+
+Existing asserts that keep passing unchanged: `PortalTabs.test.tsx:42–43` (kit `TabBar`, untouched),
+`MySeatView.test.tsx:46, 53`, `MyDevicesTiles.test.tsx:28`, `MyDevicesTable.test.tsx:70, 82, 87`, the
+`PixelLookPicker` count tests (labels, radios, checks), `ProfileTabView.test.tsx`, `MyRequestsPanel.test.tsx`.
+
+### Acceptance → verification (slice 6b)
+| # | Criterion | How the reviewer verifies it |
+|---|---|---|
+| S6b-1 | Portal screens use token utilities only (R-a/R-c/R-i); legacy lines 93 → 0 | `screen-tokens.test.ts` green with the 20 files; `rg -n "on-surface\|outline-variant\|text-error\|-container\b\|accent-orange\|surface-high\|rounded-md3\|text-\[\|tracking-\[\|min-w-\[\|h-10!\|(?<![\w-])(ring\|outline)-primary(?![\w-])" --pcre2 src/ui/portal -g '*.tsx' -g '!*.test.tsx'` → no hits |
+| S6b-2 | No off-scale type: h1 Display, card titles Body 600, labels 14, metadata 12, metric values Title; no 700/800 (Q7, Q8, Q16) | `rg -n "text-(xs\|sm\|base\|lg\|xl\|2xl)\b\|text-h[23]\|font-(bold\|extrabold\|heading)" <same paths>` → no hits; SeatCard, MyDevicesTiles, MyDevicesTable tests |
+| S6b-3 | Targets ≥ 44 px: Release, Cancel, View on map, empty-state link, type select, search, photo picker and Remove, every picker option (AC 3) | SeatCard, MySeatView, MyDevicesTable, ProfilePhotoSection, MyRequestRow, PixelLookPicker tests; `rg -n "min-h-11\|min-w-11\|size-11\|h-11\|<button\|py-1\.5" <same paths>` → no hits |
+| S6b-4 | Pixel green only in the character picker (Q4): selected option ring/border and card check `pixel-primary`, adornment pixel green, stage `bg-tile`; the rest of the portal is workspace (coral/ink) | screen-tokens "portal character picker"; PixelLookPicker, LookStage tests; `rg -n "pixel-" src/ui/portal -g '!*.test.tsx'` hits only `PixelLookPicker.tsx`/`LookStage.tsx` (plus names such as `pixel-look-*` in ids/imports) |
+| S6b-5 | Status icons in My requests use tint tokens next to the unchanged status `Pill` text (R-e); no opacity dimming in the picker | MyRequestRow test; `rg -n "opacity-" src/ui/portal -g '*.tsx' -g '!*.test.tsx'` → no hits |
+| S6b-6 | Focus visible without hard-coded colours: picker options ring `outline-focus` (same as the global rule), photo picker via `.field-box:focus-within`, select via the global rule | PixelLookPicker and ProfilePhotoSection tests; `rg -n "focus(-within\|-visible)?:" <same paths>` → no hits; manual Tab (Ming) |
+| S6b-7 | My devices table uses `TABLE_*` (R-g) at `min-w-240` (960 px unchanged) | screen-tokens shared-table test; MyDevicesTable test |
+| S6b-8 | Pending shrinks by exactly the 5 portal keys (93 → 83, 16 → 11 keys) | `git diff main -- scripts/check-tokens.pending.json` shows 5 removed lines only; `node scripts/check-tokens.mjs` exits 0; screen-tokens pending test |
+| S6b-9 | No behaviour, copy, prop, id, `role`, `data-*` or `aria-*` change (`aria-describedby` on the name field, `aria-busy` skeletons, radio `name`/`aria-label`, `photo-canvas.ts`) | existing tests unchanged except the listed asserts; `git diff main -- src/ui/copy src/lib src/app src/ui/portal/*.ts` empty |
+| S6b-10 | Only planned files | `git diff --stat main` ⊆ Files tables |
+| S6b-11 | Checks green; impl-log "Slice 6b" complete (legacy and pending before/after, visible differences) | `pnpm format:check && pnpm typecheck && pnpm check:layers && pnpm test && pnpm build`; read impl-log |
+
+### Visible differences to log (slice 6b)
+- My Portal title 32 px · 800 → 32 px · 600 (`.text-h2` already maps to Display, `globals.css:209–212`).
+- Seat cards: chair tile orange-tinted 44 px → 40 px canvas tile with a coral chair; seat code 16 px · 800 → 16 px · 600;
+  room line 14 px; "View on map" link 44 px tall (was text height), ink, 4 px icon gaps (were 6).
+- My requests: status icon circles use the tint tokens (lighter fills, same hue family); seat name 700 → 600; loading
+  block canvas.
+- My devices: type tiles 44 → 40 px icons, values 24 px · 800 → 24 px · 600 (Title); the "total" tile keeps the coral fill;
+  the second-type tile turns blue-tint (was tertiary). Table: header 11 px · 800 → 12 px · 600 with `tracking-wide`; a
+  divider under the header instead of a grey header fill; rows tighter (cell padding 16 → 8 px vertical, 16 → 12 px
+  horizontal), like the Devices table; search box and type filter 40 → 44 px, filter corners 12 → 8 px with a stronger
+  border.
+- Profile: field captions 12 px · 600 grey → 14 px · 500 ink; org badge 44 → 40 px, 800 → 600; "Upload/Replace photo"
+  pill (full radius, 700) → 8 px secondary-style button, 44 px; "Remove photo" red bold text → ink kit text button
+  (44 px; Q-S6b-2); visibility note gap 6 → 4 px.
+- Character picker: selected swatch/style ring and the style check icon ink → pixel green; option grid gaps 6 → 4 px;
+  layer legends 12 px · 600 grey → 14 px · 500 ink; options are no longer faded while the look is saving (cursor only;
+  Q-S6b-4); the stage background grey canvas → tile; in dark mode the check mark on swatches is white (was dark).
+
+### Ming verification after merge (slice 6b)
+- `/portal` at 390 / 1024 / 1280 px, light and dark: My seat (a seat card, View on map, Release; the empty state link
+  without seats), My requests with pending / approved / rejected / cancelled rows.
+- My devices: tiles, search and type filter (same height side by side), the table scrolls sideways at 390 and fits at
+  1280; Load more if available.
+- Profile: Tab through the name field, the photo picker (green ring on "Upload photo") and Remove, then the character
+  picker: arrow keys move within a layer and the focused option shows the green ring; pick a skin/hair/style and save;
+  in dark mode the selected ring and check marks are visible on every swatch.
+
+### Assumptions and non-blocking questions (slice 6b)
+- Hotspots: no other ticket is IN_PROGRESS/REVIEW/DONE (`work/backlog.md`). `screen-tokens.test.ts` and
+  `scripts/check-tokens.pending.json` change again in 6c and 7; 6b merges first. `CheckinPopup.test.tsx` is a 6a file;
+  the nit only removes dead code in one assert.
+- `outline-focus` resolves to `--color-focus` (`tokens.css:33`, 135), the colour of the global ring
+  (`globals.css:339–342`); `min-w-control` exists (`--spacing-control`, `globals.css:170`; used at `AppShellView.tsx:136`).
+- Approved defaults used: Q1, Q2, Q4 (pixel scope), Q5, Q6, Q7, Q8, Q15, Q16; Q-S5b-3 (links inside table cells stay
+  text links), Q-S5b-4 (`.field-box` file picker).
+- Q-S6b-1 (non-blocking). Decorative 44 px icon tiles (`SeatCard`, `MembershipCard`, `MyDevicesTiles`) trip
+  `LOW_TARGET` (`size-11`/`h-11`). **Default: `size-10` (40 px, the shell logo tile, `AppShellView.tsx:66`).**
+  Alternative: `size-control` (44 px, no visible change, but a control token on a non-control).
+- Q-S6b-2 (non-blocking). Remove photo: **default kit `variant="text"` (outline; ink)**. Alternative: `variant="danger"`
+  like "Remove image" in device types (5b).
+- Q-S6b-3 (non-blocking). The picker radios are `sr-only`, so the global `:focus-visible` ring cannot show on them.
+  **Default: restate the same ring on the label (`has-[:focus-visible]:outline-2 outline-offset-2 outline-focus`,
+  keyboard focus only).** Alternative: `.field-box` on the label (ring also on mouse clicks).
+- Q-S6b-4 (non-blocking). Disabled picker options (only while loading/saving): **default no opacity (R-e; the
+  footer shows "Saving…"), `cursor-not-allowed` only.** Alternative: `has-[:disabled]:opacity-50` like the kit Button.
+- Q-S6b-5 (non-blocking). The outline lists `LookPreview` under "sprite backgrounds `bg-tile`", but its only class is
+  the loading placeholder, which sits on the tile stage and would vanish. **Default: `bg-divider` (skeleton fill,
+  R-a); the stage itself is `bg-tile`.**
+- Q-S6b-6 (non-blocking). My devices table: **default the `DeviceTable` pattern (divider under the header, no header
+  fill, `TABLE_CELL` padding)** so both device tables match. Alternative: keep `bg-canvas` on the header row.
+- Q-S6b-7 (non-blocking). Swatch check mark: **default `text-on-action` (white) with the existing `drop-shadow`** in
+  both themes (was `text-on-primary` = surface, dark in dark mode). Alternative: `text-surface` (keeps today's
+  behaviour).
+
+Status: READY

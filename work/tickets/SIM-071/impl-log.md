@@ -322,3 +322,31 @@ Out of plan: `src/ui/auth/DevGate.test.tsx` (one assertion `bg-red-600` -> `bg-d
 
 ### Scope self-check
 Only the 6a Files tables, tests, pending and this log, plus the DevGate test assertion above; no copy, props, ids, `data-*`, `aria-*`, `src/lib` (except `tokens.test.ts`) or `src/app/layout.tsx` change.
+
+## Slice 6b (attempt 1)
+Portal on the Simap tokens, per "Slice 6b addendum — Portal"; defaults taken for Q-S6b-1..7.
+
+### Files touched (all in the plan's Files tables)
+- `src/ui/portal/`: `PortalPage`, `MySeatView`, `SeatCard`, `MyRequestsPanel`, `MyRequestRow`, `MyDevicesView`, `MyDevicesTiles`, `MyDevicesTable` (`TABLE_*` from `../table`, `min-w-240`, `min-h-control` select), `ProfileTab`, `ProfileTabView`, `PersonalInfoCard`, `MembershipCard`, `ProfilePhotoSection` (kit `Button` for Remove, `field-box` file picker), `PixelLookPicker` (`pixel-primary`, `outline-focus`, no opacity), `LookStage` (`bg-tile`), `LookPreview` (`bg-divider`). Class strings only; no prop, handler, id, `aria-*`, copy change.
+- `scripts/check-tokens.pending.json`: the 5 portal keys removed.
+- Tests: `src/ui/screen-tokens.test.ts` (`MIGRATED` +20, kit-Button list +1, shared-table list +1, new "portal character picker uses pixel tokens"); `SeatCard`, `MySeatView`, `MyDevicesTable`, `PixelLookPicker`, `ProfilePhotoSection`, `MyRequestRow`, `MyDevicesTiles`, `LookStage` tests; `src/ui/checkin/CheckinPopup.test.tsx` (6a nit: dead `.replace` calls dropped).
+
+### Pending before/after
+5 keys removed (MyDevicesTable 3, PixelLookPicker 3, ProfilePhotoSection 2, ProfileTabView 1, SeatCard 1 = 10 violations). Total 93 -> 83, 16 -> 11 keys (`check-tokens: 11 files, no violations`). Legacy lines in non-test portal `.tsx`: 93 -> 0 (plan `rg` scan: no hits).
+
+### Visible differences
+As listed in the plan's "Visible differences to log (slice 6b)".
+
+### Checks
+- `pnpm format:check`: pass ("All matched files use the correct format")
+- `pnpm typecheck`: pass
+- `pnpm check:layers`: `1032 files, no violations`
+- `pnpm test`: exit 0, 398 passed | 1 skipped files; 3961 passed | 7 skipped tests
+- `pnpm build`: pass (exit 0)
+- `node scripts/check-tokens.mjs`: `11 files, no violations outside the pending list`
+
+### Out-of-plan files / Follow-ups
+None.
+
+### Scope self-check
+Only the 6b Files tables, tests, pending and this log; `src/ui/copy`, `src/lib`, `src/app`, `src/ui/portal/*.ts` untouched.

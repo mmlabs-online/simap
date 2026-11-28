@@ -83,7 +83,7 @@ describe("MyDevicesTable table", () => {
     expect(html.match(/<th scope="col"/g)).toHaveLength(8);
     for (const c of Object.values(devicesCopy.columns)) expect(html).toContain(`>${c}</th>`);
     expect(html).toContain("overflow-x-auto");
-    expect(html).toContain("min-w-[960px]");
+    expect(html).toContain("min-w-240");
     expect(html).not.toContain("md:hidden");
   });
   it("placement variants", () => {
@@ -193,5 +193,16 @@ describe("MyDevicesTable filter and footer", () => {
       /<button[^>]*disabled=""[^>]*>Load more<\/button>/,
     );
     expect(render()).not.toContain(copy.loadMore);
+  });
+  it("tokens: header, select and search sizes, no arbitrary text", () => {
+    const html = render();
+    const th = html.match(/<th [^>]*>/)![0];
+    expect(th).toContain("text-caption");
+    expect(th).toContain("uppercase");
+    const select = html.match(/<select [^>]*>/)![0];
+    expect(select).toContain("min-h-control");
+    expect(select).toContain("border-border-strong");
+    expect(html).not.toContain("h-10!");
+    expect(html).not.toContain("text-[");
   });
 });

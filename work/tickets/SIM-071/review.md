@@ -451,3 +451,53 @@ None (no review trigger matched).
 
 ### Blockers from review agents (slice 6a)
 - None. security-ai-generated-code-auditor (security-review.md, slice 6a): no 🔴, no 🟡. Orchestrator ran `git diff --stat origin/main...HEAD -- src/ui/auth src/lib` for its note 6: only AuthLayout, DevGate(+test), accept-views, account-views(+test), views(+test), world-palette.test.ts (deleted) and src/lib/color/tokens.test.ts changed; tokenStore, runtime, identityClient, AuthGate and TurnstileWidget are untouched.
+
+## Slice 6b (attempt 1)
+Verdict: PASS
+
+Date: 2026-11-27. Scope: slice 6b (Portal), commit d424f15 on `claude/modest-allen-yru4g8`, against plan.md "Slice 6b addendum — Portal" (S6b-1..11), the slice-5 rules R-a..R-h / "Rules for every slice-5 file", R-i, and CLAUDE.md. Later commits touch only `work/`.
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0.
+- `pnpm typecheck`: exit 0. `pnpm check:layers`: exit 0, "1032 files, no violations".
+- `pnpm test`: exit 0, "398 passed | 1 skipped (399)" files, "3961 passed | 7 skipped (3968)" tests (matches impl-log).
+- `pnpm build`: exit 0 ("Compiled successfully", 25/25 static pages).
+- `node scripts/check-tokens.mjs`: exit 0, "11 files, no violations outside the pending list". `--list` output is identical to the committed pending JSON (11 keys, 83 violations).
+- `pnpm test:db`: not affected (no server/DB change).
+
+### Acceptance criteria
+- [x] S6b-1 Token utilities only. Evidence: `screen-tokens.test.ts` green with the 20 portal files added to `MIGRATED`; the plan's S6b-1 rg (`--pcre2`, `src/ui/portal` non-test `.tsx`): no hits. Extra scan for bare `text-primary` (`(?<![\w-])text-primary\b`): no hits.
+- [x] S6b-2 No off-scale type. Evidence: S6b-2 rg: no hits. PortalPage h1 `text-display`, SeatCard h4 `text-body font-semibold`, MyDevicesTiles values `text-title`; SeatCard, MyDevicesTiles, MyDevicesTable "tokens" tests green.
+- [x] S6b-3 44 px targets. Evidence: S6b-3 rg (`min-h-11|min-w-11|size-11|h-11|<button|py-1\.5`): no hits. Release/Cancel/Remove are kit Buttons (kit base `min-h-control`; tests assert it on Release, Cancel, Remove); View on map and empty-state links `inline-flex min-h-control`; select `min-h-control`; search drops `h-10!` (kit 44 px); photo label `min-h-control`; picker labels `min-h-control min-w-control` (PixelLookPicker test). Remove keeps `type="button"` via the kit default (Button.tsx:43).
+- [x] S6b-4 Pixel green only in the picker. Evidence: `rg "pixel-" src/ui/portal -g '!*.test.tsx'` hits only `PixelLookPicker.tsx` classes (19, 22, 82, 113) plus `pixel-look-*` names/imports; LookStage `bg-tile`; screen-tokens "portal character picker uses pixel tokens" and LookStage/PixelLookPicker tests green.
+- [x] S6b-5 Status icons use tints next to the unchanged `Pill` (MyRequestRow.tsx:10–15, Pill at 29 unchanged); MyRequestRow "tokens" test asserts warning/cancelled tones. `rg "opacity-"` over portal non-test `.tsx`: no hits.
+- [x] S6b-6 Focus without hard-coded colours. Evidence: `rg "focus(-within|-visible)?:"` over the same paths: no hits; picker uses `has-[:focus-visible]:outline-focus` (Q-S6b-3 default), photo label `field-box` (globals.css:344 `.field-box:focus-within` ring in `--color-focus`), select falls to the global rule. Tests: PixelLookPicker "labels show the focus ring…", ProfilePhotoSection "tokens". Manual Tab check is Ming's.
+- [x] S6b-7 MyDevicesTable imports `TABLE_CELL/HEAD/ROW` from `../table`, local `CELL`/`HEAD` deleted, `min-w-240`; screen-tokens shared-table test and MyDevicesTable "table"/"tokens" tests green.
+- [x] S6b-8 Pending diff removes exactly the 5 portal keys (5 removed lines, nothing else); 93 → 83, 16 → 11 keys; guard exit 0.
+- [x] S6b-9 No behaviour/copy/prop/id/role/data/aria change. Evidence: `git diff --stat origin/main...HEAD -- src/ui/copy src/lib src/app 'src/ui/portal/*.ts' src/styles scripts/check-tokens.mjs` is empty; read every screen hunk: class strings only, plus the planned Remove `<button>` → kit `Button` (same `disabled`, `onClick`, label; type default `button`). Existing asserts changed only where the plan lists them (`min-h-11` → `min-h-control`, `min-w-[960px]` → `min-w-240`, test rename).
+- [x] S6b-10 Only planned files. Evidence: `git diff --stat origin/main...HEAD` = the 16 screen files, pending JSON, `screen-tokens.test.ts`, the 8 listed portal tests, `CheckinPopup.test.tsx` (6a nit) and `work/` files. No High path touched.
+- [x] S6b-11 Checks green (above); impl-log "Slice 6b (attempt 1)" has files, legacy (93 → 0) and pending before/after (10 → 0, 93 → 83, 16 → 11 keys), visible differences (by reference to the plan list), checks matching my run.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found. R1: new imports `../table` (MyDevicesTable) and `../Button` (ProfilePhotoSection) are ui → ui; check:layers clean. R3: none. R4: plan files only. R5: tests per the 6b Tests table. R2/R6/R7 not touched. Slice-5 shared rules: no legacy alias, no 700/800, the file-picker label uses the kit transition string, no Tailwind palette colours, spacing on the R-d scale (`gap-1.5` → `gap-1`), R-a/R-b/R-c/R-g/R-i map applied as tabled (including Q-S6b-1..7 defaults).
+
+### Blockers from review agents
+None (no review trigger matched).
+
+### Nits (do not block)
+- 💭 impl-log "Visible differences" again only points to the plan's list; the PR body should carry the list.
+- 💭 PersonalInfoCard.tsx:68 class order `text-caption text-text-secondary flex-none` (pre-existing order, not sorted; oxfmt does not sort classes).
+- 💭 LookStage dot grid now draws `--color-divider` dots on `bg-tile`; worth a glance in dark mode during Ming's check that the dots are still visible.
+
+### Ming verification after merge
+- As in plan "Ming verification after merge (slice 6b)": `/portal` at 390 / 1024 / 1280 px light and dark (seat cards, View on map, Release, empty-state link; My requests pending/approved/rejected/cancelled); My devices tiles, search + type filter same height, table scroll at 390 / fit at 1280, Load more; Profile Tab order through name, photo picker (focus ring) and Remove, character picker arrow keys with the focus ring, pick and save; dark-mode selected ring and check marks on every swatch.
+- Not browser-verified by implementer or reviewer.
+
+### Follow-ups (out of scope)
+- None new.
+
+### Blockers from review agents (slice 6b)
+- None (no review trigger matched).

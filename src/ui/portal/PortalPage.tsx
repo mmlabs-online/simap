@@ -24,7 +24,7 @@ function PortalLoaded() {
   const tab = parsePortalTab(searchParams.getAll("tab"));
   return (
     <div className="page-content flex flex-col gap-4">
-      <h1 className="text-h2 font-extrabold text-on-surface">{shellCopy.pages.portal.title}</h1>
+      <h1 className="text-display text-text-primary">{shellCopy.pages.portal.title}</h1>
       <PortalTabs
         tabs={PORTAL_TABS}
         active={tab}

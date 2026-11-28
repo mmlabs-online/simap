@@ -77,4 +77,11 @@ describe("LookStage", () => {
     expect(html).not.toContain("<canvas");
     expect(html).toContain('aria-busy="true"');
   });
+  it("tokens: stage on the sprite tile with a divider border, no legacy classes", () => {
+    const html = render();
+    expect(html).toMatch(/<div class="[^"]*bg-tile[^"]*"/);
+    expect(html).toContain("border-divider");
+    expect(html).not.toContain("surface-container");
+    expect(html).not.toContain("outline-variant");
+  });
 });

@@ -45,12 +45,23 @@ describe("SeatCard", () => {
     ).toBe(portalCopy.seat.viewOnMap);
     expect(render(seat({ roomCode: ".." }))).not.toContain(portalCopy.seat.viewOnMap);
   });
-  it("Release is an outlined button with min-h-11; disabled when busy", () => {
+  it("Release is an outlined button with the kit 44 px height; disabled when busy", () => {
     const html = render();
     const btn = html.match(/<button[^>]*>Release seat<\/button>/)![0];
     expect(btn).toContain('data-variant="outlined"');
-    expect(btn).toContain("min-h-11");
+    expect(btn).toContain("min-h-control");
+    expect(btn).not.toContain("min-h-11");
     expect(btn).not.toContain('disabled=""');
     expect(render(seat(), true)).toMatch(/<button[^>]*\sdisabled=""[^>]*>Release seat</);
+  });
+  it("token classes: map link target, card title, no legacy classes", () => {
+    const html = render();
+    expect(html.match(/<a[^>]*href="\/rooms\/R1\?seat=A1"[^>]*>/)![0]).toContain("min-h-control");
+    const h4 = html.match(/<h4[^>]*>/)![0];
+    expect(h4).toContain("text-body");
+    expect(h4).toContain("font-semibold");
+    for (const bad of ["font-extrabold", "accent-orange", "gap-1.5"]) {
+      expect(html).not.toContain(bad);
+    }
   });
 });

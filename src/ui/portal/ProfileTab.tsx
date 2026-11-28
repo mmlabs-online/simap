@@ -66,7 +66,7 @@ export function ProfileTab() {
   if (load.status === "error") {
     return (
       <Card className="flex flex-col items-start gap-3 p-4">
-        <p role="alert" className="text-sm font-semibold text-error">
+        <p role="alert" className="text-label font-semibold text-danger">
           {portalCopy.profile.loadFailed}
         </p>
         <Button variant="tonal" size="sm" onClick={() => void read()}>

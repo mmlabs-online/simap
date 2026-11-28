@@ -56,11 +56,11 @@ export function MyDevicesView({
       <div aria-live="polite">
         {notice &&
           (notice.tone === "error" ? (
-            <p role="alert" className="text-sm font-semibold text-error">
+            <p role="alert" className="text-label font-semibold text-danger">
               {notice.text}
             </p>
           ) : (
-            <p role="status" className="text-sm font-semibold text-on-surface">
+            <p role="status" className="text-label font-semibold text-text-primary">
               {notice.text}
             </p>
           ))}
@@ -81,7 +81,7 @@ export function MyDevicesView({
 
       {status === "error" && devices.length === 0 && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -92,7 +92,7 @@ export function MyDevicesView({
 
       {status === "ready" && devices.length === 0 && (
         <Card className="px-6 py-12 text-center">
-          <p className="text-sm font-medium text-on-surface-variant">{portalCopy.devices.empty}</p>
+          <p className="text-label text-text-secondary">{portalCopy.devices.empty}</p>
         </Card>
       )}
 

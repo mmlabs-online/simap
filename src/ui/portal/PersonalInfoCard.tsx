@@ -7,7 +7,7 @@ import { SectionCard } from "../SectionCard";
 import { nameLength } from "./profile-draft";
 
 const copy = portalCopy.profile;
-const LABEL = "flex items-center gap-1 text-xs font-semibold text-on-surface-variant";
+const LABEL = "flex items-center gap-1 text-label text-text-primary";
 
 /** Card 1: the photo slot, the display name with a counter, and the read-only email. Pure view. */
 export function PersonalInfoCard({
@@ -38,7 +38,7 @@ export function PersonalInfoCard({
         <div className="flex flex-col gap-1">
           <label htmlFor="portal-name" className={LABEL}>
             {copy.nameLabel}
-            <span aria-hidden="true" className="text-primary">
+            <span aria-hidden="true" className="text-text-primary">
               *
             </span>
           </label>
@@ -57,20 +57,20 @@ export function PersonalInfoCard({
           />
           <div className="flex items-start justify-between gap-3">
             {nameError ? (
-              <small id="portal-name-error" role="alert" className="text-xs text-error">
+              <small id="portal-name-error" role="alert" className="text-caption text-danger">
                 {copy.errors[nameError]}
               </small>
             ) : (
-              <small id="portal-name-hint" className="text-xs text-on-surface-variant">
+              <small id="portal-name-hint" className="text-caption text-text-secondary">
                 {copy.nameHint}
               </small>
             )}
-            <small id="portal-name-count" className="text-xs text-on-surface-variant flex-none">
+            <small id="portal-name-count" className="text-caption text-text-secondary flex-none">
               {copy.counter(nameLength(name), DISPLAY_NAME_MAX)}
             </small>
           </div>
         </div>
-        <hr className="border-outline-variant" />
+        <hr className="border-divider" />
         <div className="flex flex-col gap-1">
           <label htmlFor="portal-email" className={LABEL}>
             {copy.emailLabel}
@@ -85,7 +85,7 @@ export function PersonalInfoCard({
             value={email}
             aria-describedby="portal-email-hint"
           />
-          <small id="portal-email-hint" className="text-xs text-on-surface-variant">
+          <small id="portal-email-hint" className="text-caption text-text-secondary">
             {copy.emailManaged}
           </small>
         </div>

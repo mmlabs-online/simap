@@ -75,12 +75,12 @@ export function MyRequestsPanelView({
       }
     >
       {state === "loading" && (
-        <div aria-busy="true" className="h-32 animate-pulse rounded-xl bg-surface-high" />
+        <div aria-busy="true" className="h-32 animate-pulse rounded-xl bg-canvas" />
       )}
 
       {state === "error" && (
         <div className="flex flex-col items-start gap-3">
-          <p role="alert" className="text-sm font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -90,19 +90,14 @@ export function MyRequestsPanelView({
       )}
 
       {state === "ready" && items.length === 0 && (
-        <p className="py-6 text-center text-sm font-medium text-on-surface-variant">
-          {requestsCopy.mine.empty}
-        </p>
+        <p className="py-6 text-center text-label text-text-secondary">{requestsCopy.mine.empty}</p>
       )}
 
       {state === "ready" && items.length > 0 && (
         <>
           {shown.length > 0 ? (
             <div className="-m-4 sm:-m-5">
-              <ul
-                aria-label={requestsCopy.mine.listLabel}
-                className="divide-y divide-outline-variant"
-              >
+              <ul aria-label={requestsCopy.mine.listLabel} className="divide-y divide-divider">
                 {shown.map((it) => (
                   <MyRequestRow
                     key={it.id}
@@ -115,7 +110,7 @@ export function MyRequestsPanelView({
               </ul>
             </div>
           ) : (
-            <p className="py-6 text-center text-sm font-medium text-on-surface-variant">
+            <p className="py-6 text-center text-label text-text-secondary">
               {filter === "all" ? requestsCopy.mine.empty : requestsCopy.emptyFor[filter]}
             </p>
           )}

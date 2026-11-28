@@ -32,17 +32,16 @@ export function LookStage({ atlas, atlasFailed, look, view, onViewChange }: Look
     />
   );
   return (
-    <div className="overflow-hidden rounded-lg border border-outline-variant bg-surface-container">
+    <div className="overflow-hidden rounded-lg border border-divider bg-tile">
       <div
         className="relative flex flex-col gap-3 p-3"
         style={{
-          backgroundImage:
-            "radial-gradient(circle, var(--color-outline-variant) 1px, transparent 1px)",
+          backgroundImage: "radial-gradient(circle, var(--color-divider) 1px, transparent 1px)",
           backgroundSize: "12px 12px",
         }}
       >
         <div className="flex items-start justify-between gap-3">
-          <span className="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">
+          <span className="text-caption font-semibold uppercase tracking-wide text-text-secondary">
             {copy.stageLabel}
           </span>
           <FilterChips
@@ -53,7 +52,7 @@ export function LookStage({ atlas, atlasFailed, look, view, onViewChange }: Look
           />
         </div>
         {atlasFailed ? (
-          <p className="text-xs text-on-surface-variant">{copy.previewUnavailable}</p>
+          <p className="text-caption text-text-secondary">{copy.previewUnavailable}</p>
         ) : (
           <div
             className="flex items-end justify-between gap-3"
@@ -67,7 +66,7 @@ export function LookStage({ atlas, atlasFailed, look, view, onViewChange }: Look
           </div>
         )}
       </div>
-      <p className="border-t border-outline-variant px-3 py-2 text-center text-xs text-on-surface-variant">
+      <p className="border-t border-divider px-3 py-2 text-center text-caption text-text-secondary">
         {copy.mapsCaption}
       </p>
     </div>

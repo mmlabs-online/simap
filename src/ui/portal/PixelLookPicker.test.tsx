@@ -101,12 +101,12 @@ describe("PixelLookPicker", () => {
     expect(count(skin, />check<\/span>/g)).toBe(1);
   });
 
-  it("swatch and card labels carry min 44 px classes", () => {
+  it("swatch and card labels carry the kit 44 px classes", () => {
     const html = render();
     const labels = html.match(/<label[^>]*>/g)!;
     expect(labels).toHaveLength(RADIOS);
-    for (const l of labels) expect(l).toContain("min-h-11");
-    for (const l of labels) expect(l).toContain("min-w-11");
+    for (const l of labels) expect(l).toContain("min-h-control");
+    for (const l of labels) expect(l).toContain("min-w-control");
   });
 
   it("atlas missing: no canvas; atlasFailed shows previewUnavailable; the radios are still there", () => {
@@ -147,5 +147,18 @@ describe("PixelLookPicker", () => {
     const html = render({ status: "loading", locked: true });
     expect(html).toContain('aria-busy="true"');
     expect(count(html, /<input[^>]*disabled=""/g)).toBe(RADIOS);
+  });
+  it("labels show the focus ring without fading; style cards and the card check use pixel green", () => {
+    const html = render();
+    const labels = html.match(/<label[^>]*>/g)!;
+    for (const l of labels) {
+      expect(l).toContain("has-[:focus-visible]:outline-focus");
+      expect(l).not.toContain("opacity-");
+    }
+    const cards = labels.filter((l) => l.includes("flex-col"));
+    expect(cards.length).toBeGreaterThan(0);
+    for (const l of cards) expect(l).toContain("has-[:checked]:border-pixel-primary");
+    const style = html.match(/<fieldset(?:(?!<\/fieldset>).)*pixel-look-style.*?<\/fieldset>/s)![0];
+    expect(style.match(/<span[^>]*>check<\/span>/)![0]).toContain("text-pixel-primary");
   });
 });
