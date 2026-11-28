@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| State | REVIEW |
+| State | REWORK |
 | Priority | P2 |
 | Size | L |
 | Areas | ui, ux, architecture |
 | Gate | plan-approval |
 | Depends on | — |
 | Needs Ming | — |
-| Attempts | 1 |
+| Attempts | 2 |
 | Created | 2026-11-27 |
 | Claimed by | claude@2026-11-28T02:31:35Z |
 | PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 (merged); slice 5c: https://github.com/mmlabs-online/simap/pull/164 (merged); slice 6a: https://github.com/mmlabs-online/simap/pull/165 (merged); slice 6b: https://github.com/mmlabs-online/simap/pull/166 (merged) |

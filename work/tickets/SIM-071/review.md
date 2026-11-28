@@ -501,3 +501,62 @@ None (no review trigger matched).
 
 ### Blockers from review agents (slice 6b)
 - None (no review trigger matched).
+
+## Slice 6c (attempt 1)
+Verdict: REWORK
+
+Date: 2026-11-28. Scope: slice 6c (roomlayout chrome and map items), commit 2fbb828 on `claude/modest-allen-yru4g8`, against plan.md "Slice 6c addendum" (S6c-1..12), the slice-5 rules R-a..R-h / "Rules for every slice-5 file", R-i, and CLAUDE.md. Later commits touch only `work/`.
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0.
+- `pnpm typecheck`: exit 0. `pnpm check:layers`: exit 0.
+- `pnpm test`: exit 0, "398 passed | 1 skipped (399)" files, "3967 passed | 7 skipped (3974)" tests (matches impl-log).
+- `pnpm build`: exit 0.
+- `node scripts/check-tokens.mjs`: exit 0, "1 files, no violations outside the pending list".
+- Build-output check (Approach 5), grep of `.next/static` CSS: `calc(var(--spacing) * 145)`, `minmax(0,1fr) calc(var(--spacing) * 72)`, `aria-checked\:border-pixel-primary`, `before\:h-control`, `bg-text-primary\/20`, `outline-focus`, `has-\[\:focus-visible\]` all present. Matches impl-log; no fallback needed.
+- `pnpm test:db`: not affected (no server/DB change).
+
+### Acceptance criteria
+- [x] S6c-1 Token utilities only; legacy 131 → 0. Evidence: plan S6c-1 `rg --pcre2` over roomlayout/mapItems non-test `.tsx`: no hits; `screen-tokens.test.ts` green with the 23 files in `MIGRATED`.
+- [x] S6c-2 No off-scale type. Evidence: S6c-2 rg: no hits. LayoutEditorPage h1 `text-display`; MapItemEditor h2 `text-subtitle` (MapItemEditor "tokens" test); panel h2 `text-body font-semibold` (LayoutEditorViews gate test).
+- [x] S6c-3 44 px targets. Evidence: S6c-3 rg (`min-h-11|size-11|py-1\.5|py-1 text-left`): no hits. Links/rows/inputs/search/checkbox rows/tiles `min-h-control`; Radios and footer buttons kit `Button`; close is `IconButton` (test asserts `size-control`); summary `py-3`; Move-here `before:h-control` hit area (SeatOverlay test).
+- [x] S6c-4 Pixel green only where planned. Evidence: `rg "pixel-"` hits only MapItemEditorAppearance.tsx:18,80, SpriteBrowser.tsx:95, Palette.tsx:55, SeatOverlay.tsx:204; `variant="pixel"` in MapItemEditor.tsx:172 (Save) and MapItemEditorDetails.tsx:171 (reset confirm). Previews `bg-tile` (Appearance 164, SpriteBrowser 95). New screen-tokens "map, editor and map items chrome" test green.
+- [ ] S6c-5 Focus without per-component colours — the screens meet it (rg hits only the planned `group-focus-visible:flex` at SeatOverlay.tsx:165–166; `outline-focus` only in SpriteBrowser.tsx:95), but the guard change that makes the test pass widens the exemption beyond that one class. See Issue 1.
+- [x] S6c-6 Opacity. Evidence: `rg "opacity-"` hits only MapItemCard.tsx:53 (`opacity-50`) and SeatOverlay.tsx:204 (`disabled:opacity-50`); MapItemCard, SeatOverlay, LayoutEditorViews tests.
+- [x] S6c-7 AA pairs. Evidence: tokens.test.ts:131–132 adds `["text-primary","tile"]`, `["text-primary","warning-tint"]`; suite green (both themes via the existing `describe.each`).
+- [x] S6c-8 Kit dialog. Evidence: MapItemEditor.tsx:329 `m-auto w-[calc(100%-var(--space-6))] max-w-145 overflow-hidden rounded-2xl bg-surface p-0 text-text-primary shadow-dialog`, animation `popin var(--duration-ui) ease-out`.
+- [x] S6c-9 Pending: the diff of `scripts/check-tokens.pending.json` removes exactly the 10 keys (83 → 32, 11 → 1 key); guard exit 0.
+- [x] S6c-10 No behaviour/copy/prop/aria change. Evidence: `git diff --stat origin/main...HEAD -- src/ui/copy src/lib src/app 'src/ui/roomlayout/*.ts' 'src/ui/mapItems/*.ts' public src/styles scripts/check-tokens.mjs` = only `src/lib/color/tokens.test.ts` (+2). Read every hunk: class strings, plus the planned Radios → kit `Button` (role, aria-checked, roving tabIndex, onKeyDown, disabled pass through `...rest`; type defaults to `button`) and close → `IconButton` (same `onClick`, label = `copy.close`). `fill` classes of 8b27bfa kept byte for byte (RoomMap.tsx:182, RoomMapSection.tsx:79). Sprites, `paint.ts`, `src/lib/**` (except the planned tokens.test.ts), `--px-*` art colours: untouched (no `--px-` line in the diff outside the new guard regex).
+- [x] S6c-11 Only planned files. Evidence: `git diff --stat origin/main...HEAD` = the 20 screen files, PersonalInfoCard nit, pending JSON, screen-tokens/tokens tests, the 9 listed screen tests and `work/`. No High path.
+- [x] S6c-12 Checks green (above); impl-log "Slice 6c (attempt 1)" has files, legacy 131 → 0, pending 51 → 0 / 83 → 32, the build-output check, the deviation, and checks matching my run. Visible differences by reference to the plan list (as 6b).
+
+### Issues
+#### Issue 1 — 🔴 blocker — focus guard weakened beyond the one needed exemption (R5, plan Tests table)
+- **Where**: src/ui/screen-tokens.test.ts:138 (`const OTHER = /opacity-60|(?<![\w-])focus-visible:|focus-within:/;`).
+- **Expected**: the deviation exempts only the kept, colour-free `group-focus-visible:flex` (SeatOverlay.tsx:165–166) and every other per-component focus class in the 120 `MIGRATED` files still fails, as before.
+- **Actual**: the lookbehind `(?<![\w-])` exempts every `<word>-focus-visible:` variant. Checked in node: old regex flags `group-focus-visible:ring-teal-500`, `peer-focus-visible:ring-primary` and `in-focus-visible:ring`; the new one flags none of them. `peer-focus` is still banned, but only for the 23 `MAP_CHROME` files (line 254). The ~97 other migrated files lost that protection, so a `peer-focus-visible:ring-*` span like the one this slice removed from SpriteBrowser would now pass there. It is also inconsistent: `group-focus-within:` is still flagged.
+- **Fix instruction**: replace line 138 with
+  `const OTHER = /opacity-60|(?<!group-)focus-visible:|group-focus-visible:(?!flex(?![\w-]))|focus-within:/;`
+  I checked this in node: it passes `group-focus-visible:flex` and `has-[:focus-visible]:outline-focus`; it flags `focus-visible:ring-2`, `md:focus-visible:…`, `peer-focus-visible:…`, `in-focus-visible:…`, `group-focus-visible:ring-…` and `group-focus-visible:flex-col`; it finds 0 hits across all 120 `MIGRATED` files. Update the impl-log deviation note to match. No other change.
+
+### Rules (CLAUDE.md)
+No violations in the screen code. R1: only new cross-file import is `IconButton` from `../Button` (ui → ui); check:layers clean. R3 none. R4 plan files only. R5: see Issue 1 (guard test). R2/R6/R7 not touched. Slice-5 shared rules: R-a/R-b/R-c/R-d/R-e/R-f/R-i applied as tabled, including Q-S6c-1..17 defaults.
+
+### Blockers from review agents
+None (no review trigger matched).
+
+### Nits (do not block)
+- 💭 Removing `className="min-h-11"` left an empty line inside five JSX attribute lists: MapItemEditor.tsx:158, MapItemEditorAppearance.tsx:231 and 266, MapItemEditorDetails.tsx:177 and 190. oxfmt keeps them; delete them while fixing Issue 1.
+- 💭 Palette.tsx:55 appends `border-l-4 border-transparent aria-pressed:border-pixel-primary` after the transition string. That works, but the order differs from the other list rows. Cosmetic.
+- 💭 The kit Button adds `whitespace-nowrap` to the Appearance Radios options (the old hand-built ones wrapped). Worth a look at 390 px during Ming's check for long source labels.
+- 💭 impl-log "Visible differences" again only points to the plan's list; the PR body should carry the list.
+
+### Ming verification after merge
+- As in plan "Ming verification after merge (slice 6c)": room page at 390 / 1024 / 1280 px light and dark (map card, Edit layout, zoom, hover/Tab across seats with the global focus outline on map art); check-in present/away tags in both themes and a "Move here" tap on a phone; layout editor at 1280 px (palette green bar, place, select, drag ghost, resize, shortcuts, no-door warning, save); Map items editor (arrow keys on direction/source, keyboard sprite pick with the green outline, upload, resize warning, reset, discard; dialog fit at 390 px).
+- Not browser-verified by implementer or reviewer.
+
+### Follow-ups (out of scope)
+- The plan's S6c-5 rg (`focus(-within|-visible)?:`) should exclude `group-focus-visible:flex` in any later addendum that reuses it (impl-log already notes this).
+
+### Blockers from review agents (slice 6c)
+- None (no review trigger matched).
