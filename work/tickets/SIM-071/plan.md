@@ -2470,3 +2470,358 @@ Existing asserts that keep passing unchanged: `PortalTabs.test.tsx:42–43` (kit
   behaviour).
 
 Status: READY
+
+## Slice 6c addendum — Roomlayout chrome and map items
+Status: READY. Written against `main` after #166 (slices 1–5c, 6a and 6b merged) plus the solo commits 33f6700 and
+8b27bfa (room switcher on check-in only; `fill` on `RoomMapSection`/`RoomMap`, `work/solo-log.md:11–12`). Every line
+number below was read on that `main`. Expands "Slice 6c outline" above; Ming approved the plan and split with all
+defaults. Applies R-a…R-h ("Slice 5 addendum"), "Rules for every slice-5 file" and R-i ("Slice 6 addendum")
+**unchanged**; the shared values are the 5b/5c/6a/6b strings. No new decisions; open points are non-blocking Q-S6c-n at
+the end, each with a default. Pixel green (Q4) only in the layout palette, the Map items editor and its sprite browser;
+the room map, the rest of the layout editor and the Map items library stay workspace (ink/coral).
+
+Not touched: `paint.ts`, `WalkLayer.tsx` canvas paint (no class to change; added to `MIGRATED` only), every `*.ts` in
+`src/ui/roomlayout/` and `src/ui/mapItems/`, `src/lib/**` (incl. `STATUS_DOT` in `src/lib/sprites/overlay.ts`, the inline
+hover-tag dot colour, and `TAG_H`/`TAG_PAD` in `src/lib/sprites/tag-layout.ts`), `src/lib/sprites/**`, sprites and art
+colours (`--px-*`), `src/app/**`, `src/app/globals.css`, `src/styles/tokens.css`, `src/ui/copy/**`, kit components
+(`Button`, `IconButton`, `Card`, `TabBar`, `FilledInput`, `EntityFormDialog`, `Chip`), `src/ui/RoomSwitcher.tsx` and the
+check-in files of the solo commits, `scripts/check-tokens.mjs`.
+
+### Size and split
+23 screen files ≈ 300 changed lines (131 legacy lines, table below, ≈ 2 lines each, plus the Radios → kit Button and
+close → `IconButton` swaps and oxfmt reflow), `screen-tokens.test.ts` ≈ 50, `tokens.test.ts` 2, 10 screen test files
+≈ 75, pending 10, the `PersonalInfoCard` nit 2, impl-log ≈ 50: **≈ 490 changed lines**. Under the ~600 threshold, so
+**6c ships as one PR and there is no 6d** (Q-S6c-1). If the implementer's diff passes 600, stop after the mapItems
+files are done, record it in impl-log, and the orchestrator decides (roomlayout then becomes 6d with this addendum's
+roomlayout rows unchanged).
+
+### Pending list (R-h): 10 keys, 51 violations → 0 (83 → 32, 11 → 1 key)
+Read from `scripts/check-tokens.pending.json` on `main` (11 keys / 83). Every cause is removed by the Files tables.
+
+| Key | Count | Cause (line on current `main`) |
+|---|---|---|
+| `src/ui/mapItems/MapItemEditor.tsx` | 11 | `text-[11px]` + `tracking-[0.05em]` (64: 3), `text-[20px]` (67: 2), `text-[13px]` (104: 2), dialog `w-[calc(100%-1.5rem)]`, `max-w-[580px]`, `shadow-[0_12px_40px_…]` (332: 4) |
+| `src/ui/mapItems/MapItemEditorAppearance.tsx` | 5 | `py-0.5` (171), `text-[11px]` (190: 2), `text-[13px]` (258: 2) |
+| `src/ui/mapItems/MapItemEditorDetails.tsx` | 8 | `CAPTION` `text-[11px]`, `tracking-[0.05em]`, `px-0.5` (15: 4), `text-[13px]` (130: 2, 168: 2) |
+| `src/ui/mapItems/SpriteBrowser.tsx` | 4 | `text-[11px]` (114: 2, 117: 2) |
+| `src/ui/roomlayout/EditorInspector.tsx` | 6 | `py-1.5` + `text-[13px]` (130: 3, 152: 3) |
+| `src/ui/roomlayout/EditorViews.tsx` | 2 | `LINK` `text-[13px]` (15) |
+| `src/ui/roomlayout/LayoutEditor.tsx` | 1 | `grid-cols-[minmax(0,1fr)_18rem]` (193) |
+| `src/ui/roomlayout/Palette.tsx` | 2 | `text-[13px]` (55) |
+| `src/ui/roomlayout/RoomMapSection.tsx` | 2 | `text-[13px]` (88; was 84 before the solo commit) |
+| `src/ui/roomlayout/SeatOverlay.tsx` | 10 | `TAG_BASE` `gap-1.5`, `px-2.5` (18: 2), `bg-[rgba(22,27,37,.92)]` (20, 165, 166: 3), `gap-1.5`, `px-2.5` (165: 2, 166: 2), `px-2.5` (204) |
+
+All 10 keys are deleted; `src/app/globals.css` stays at 32 (slice 7's). After 6c the file holds that one key.
+
+### Legacy lines outside the guard (non-test `.tsx` in `src/ui/roomlayout/` and `src/ui/mapItems/`), before → after
+"Legacy" = the 6b definition (R-a alias incl. `var(--outline-variant)`, R-b raw size / 700–800 weight, R-c arbitrary
+value, a `LOW_TARGET` class, `opacity-60`, a per-component or hard-coded focus colour) plus Tailwind palette colours
+(`amber-*`, `emerald-*`, `teal-*`, `white`). Every count goes to 0.
+
+| File | Before | Lines |
+|---|---|---|
+| `roomlayout/EditorViews.tsx` | 15 | 13, 15, 29, 37, 38, 42, 43, 46, 50, 54, 90, 92, 93, 96, 155 |
+| `roomlayout/EditorInspector.tsx` | 12 | 61, 63, 64, 91, 121, 130, 141, 143, 145, 152, 217, 222 |
+| `roomlayout/SeatOverlay.tsx` | 9 | 18, 20, 21, 23, 39, 158, 165, 166, 204 |
+| `roomlayout/Palette.tsx` | 9 | 13, 28, 29, 33, 43, 46, 55, 92, 117 |
+| `roomlayout/RoomMapSection.tsx` | 7 | 47, 60, 82, 83, 88, 98, 103 |
+| `roomlayout/RoomMap.tsx` | 4 | 30, 42, 174, 182 |
+| `roomlayout/EditorCanvas.tsx` | 4 | 232, 242, 266, 282 |
+| `roomlayout/ShortcutList.tsx` | 4 | 10, 19, 27, 36 |
+| `roomlayout/GestureOverlay.tsx` | 3 | 28, 36, 43 |
+| `roomlayout/EditorToolbar.tsx` | 2 | 41, 54 |
+| `roomlayout/ZoomControl.tsx` | 1 | 19 |
+| `roomlayout/LayoutEditor.tsx` | 1 | 193 |
+| `roomlayout/LayoutEditorPage.tsx` | 1 | 43 |
+| `roomlayout/EditorWarnings.tsx` | 1 | 15 |
+| `mapItems/MapItemEditorAppearance.tsx` | 21 | 18, 21, 80, 82, 83, 125, 137, 144, 149, 152, 168, 171, 181, 185, 190, 196, 228, 235, 258, 265, 270 |
+| `mapItems/MapItemEditor.tsx` | 13 | 64, 67, 70, 76, 104, 150, 151, 157, 161, 166, 172, 175, 332 |
+| `mapItems/MapItemEditorDetails.tsx` | 13 | 15, 16, 29, 41, 119, 130, 133, 152, 166, 168, 170, 176, 189 |
+| `mapItems/SpriteBrowser.tsx` | 9 | 60, 62, 72, 76, 85, 94, 105, 114, 117 |
+| `mapItems/MapItemCard.tsx` | 1 | 53 (`opacity-60`) |
+| `mapItems/MapItemsView.tsx` | 1 | 188 (`text-error`) |
+| **Total** | **131** | → **0** (roomlayout 73, mapItems 58) |
+
+Clean today, no edit, added to `MIGRATED` only: `roomlayout/WalkLayer.tsx`, `mapItems/MapItemsPage.tsx`,
+`mapItems/FramePreview.tsx`.
+
+### Rename map used in 6c (R-a…R-i; only the rows that occur here)
+| Old | New | Rule |
+|---|---|---|
+| `text-on-surface`, `text-primary` (ink) | `text-text-primary` | R-a |
+| `text-on-surface-variant` | `text-text-secondary` | R-a |
+| `text-error` · `border-error`, `border-error/40` · `bg-error/20` | `text-danger` · `border-danger`, `border-danger/40` · `bg-danger/20` | R-a |
+| `border-outline-variant`, `var(--outline-variant)` (inline `style`) | `border-divider`, `var(--color-divider)` (same value, `globals.css:68`) | R-a |
+| `border-outline` on an input/select | `border-border-strong` | R-a, Q6 |
+| `hover:border-outline` on a link | `hover:border-border-strong` | R-a |
+| `bg-surface-high` (row hover, badge) · `bg-surface-container` (kbd) | `bg-tile` on pixel/map surfaces and list rows (below) · `bg-canvas` (kbd, source badge) | R-a, R-i |
+| `bg-surface-container-high` (map name tags) | `bg-tile` | R-i |
+| `bg-[rgba(22,27,37,.92)] text-white` (map hover/name tags) | `bg-text-primary text-surface` (RoleBadge pattern; pair tested as `text-primary` on `surface`; Q-S6c-5) | R-c, R-a |
+| `bg-primary text-on-primary` (Move-here tag) | `bg-pixel-primary text-on-action` (check-in only, Q4; pair tested) | R-i |
+| `border-primary`, `bg-primary/20`, `bg-primary/10`, `outline-on-surface` (editor ghosts, selection) | `border-text-primary`, `bg-text-primary/20`, `bg-text-primary/10`, `outline-text-primary` (ink, as today; Q-S6c-13) | R-a |
+| `aria-pressed:border-primary aria-pressed:text-primary aria-pressed:font-extrabold` (ZoomControl) | `aria-pressed:border-text-primary aria-pressed:font-semibold` (kit 44 px Button unchanged) | R-a, R-b |
+| `aria-pressed:font-extrabold aria-pressed:text-primary` (Palette, Inspector rows) | `aria-pressed:bg-tile aria-pressed:font-semibold`; Palette adds the pixel-green bar `border-l-4 border-transparent aria-pressed:border-pixel-primary` | R-a, R-i, Q4 |
+| `bg-primary` changed dot · `border-primary bg-primary-container` selected option · `has-[:checked]:border-primary has-[:checked]:bg-primary-container` | `bg-pixel-primary` · `aria-checked:border-pixel-primary aria-checked:bg-tile aria-checked:font-semibold` · `has-[:checked]:border-pixel-primary has-[:checked]:ring-2 has-[:checked]:ring-pixel-primary` | R-i, Q4 |
+| `bg-surface` / `bg-surface-high` behind a sprite (editor preview, browser tiles) | `bg-tile` (brief: "Sprite previews: `--color-tile`") | R-i |
+| `bg-emerald-400` (present dot) | `bg-current` (filled shape; Q-S6c-4) | Rules (no palette) |
+| `border-amber-300 bg-amber-50` (editor warnings) | `border-warning/40 bg-warning-tint` | R-a (palette row) |
+| `hover:outline-white` (seat buttons) | `hover:outline-surface` | Rules (token colour) |
+| `focus-visible:outline-white focus-visible:ring-2 focus-visible:ring-teal-500` · `outline-none focus-visible:ring-2 focus-visible:ring-primary` · `focus-visible:ring-2 focus-visible:ring-white` · `peer-focus-visible:ring-*` span | delete: the global `:focus-visible` ring (`globals.css:339–342`, `--color-focus`) applies to buttons, `[tabindex]` regions and inputs; the sprite tiles restate it on the label as `has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus` (Q-S6b-3 pattern; Q-S6c-3) | Rules (no per-component focus) |
+| `text-base font-extrabold` (section/panel `<h2>`) | `text-body font-semibold` (6b card-title row) | R-b |
+| `text-h2 font-extrabold` (page `<h1>`) | `text-display` | R-b |
+| `text-[20px] font-extrabold` (dialog title) | `text-subtitle` (kit dialog title, `EntityFormDialog.tsx:77`) | R-b |
+| `text-sm` / `text-sm font-medium` / `text-sm font-semibold\|bold\|extrabold` / `text-[13px]` (+ weight) | `text-label font-normal` / `text-label` / `text-label font-semibold` / `text-label` (weight per the same rows) | R-b |
+| `text-xs` (+ weight), `text-[11px]` | `text-caption` (+ `font-semibold` / `font-medium`) | R-b |
+| `text-[11px] font-extrabold tracking-[0.05em] uppercase`, `text-xs font-extrabold uppercase` | `text-caption font-semibold uppercase tracking-wide` | R-b |
+| `font-bold`, `font-extrabold` elsewhere | `font-semibold` | R-b |
+| `grid-cols-[minmax(0,1fr)_18rem]` | `grid-cols-[minmax(0,1fr)_--spacing(72)]` (288 px unchanged) | R-c |
+| `w-[calc(100%-1.5rem)] max-w-[580px]` · `shadow-[0_12px_40px_var(--shadow)]` · `rounded-md3-xl` | `w-[calc(100%-var(--space-6))] max-w-145` (same widths) · `shadow-dialog` · `rounded-2xl` | R-c |
+| `rounded-md3` | `rounded-lg` on controls (search), `rounded-xl` on boxes/tiles | R-c |
+| `rounded-full` on a link or option button | `rounded-lg` (Q2) | R-c |
+| `shadow` (Tailwind default, Move-here tag) | `shadow-card` | R-c |
+| `size-11 rounded-full` hand-built close button | kit `IconButton` (Q-S6c-14) | R-f |
+| `min-h-11` on a label/input · `className="min-h-11"` on a kit Button | `min-h-control` · delete | R-f |
+| `gap-1.5` · `px-2.5` · `py-0.5` · `py-1.5` · `px-0.5` | `gap-1` · `px-3` · `py-1` · `min-h-control` row (the vertical padding goes) · delete | R-d, R-f |
+| `disabled:opacity-50` / `disabled:opacity-40` on text rows and options · `disabled:opacity-60` (Move here) · `opacity-60` (hidden item art) | delete, `disabled:cursor-not-allowed` only (Q-S6b-4) · `disabled:opacity-50` (kit `DISABLED` strength) · `opacity-50` (decorative art, Q-S6c-6) | R-e |
+| hand-built option `<button>` (Appearance `Radios`) | kit `Button variant="outlined" size="sm"` | R-f |
+
+**Room backdrops (`--color-room-floor` / `--color-room-green`):** `rg -n "room-floor|room-green|px-floor|px-wall" src/ui/roomlayout src/ui/mapItems`
+→ no hits. No chrome class or CSS paints a room backdrop here; the backdrop is canvas paint (`paint.ts`, untouched).
+**So 6c changes nothing for this item** (Q-S6c-9). **Library page:** `MapItemsView.tsx:165` and `LayoutEditorPage.tsx:42`
+already use `page-library` (`max-width: var(--width-library)`, `globals.css:239–250`, asserted at
+`tokens.test.ts:216` and `MapItemsView.test.tsx:79`); no change.
+
+### Shared values used in 6c (same strings as 5b/5c/6a/6b)
+- **Page `<h1>`:** `text-display text-text-primary`. **Panel/section `<h2>`:** `text-body font-semibold
+  text-text-primary`. **Group `<h3>` inside a panel:** `font-semibold` (inherits `text-label`).
+- **Notices:** error `text-label font-semibold text-danger`; status `text-label font-semibold text-text-secondary` (old
+  `text-on-surface-variant`) or `text-text-primary`; hint / body lines `text-label font-normal text-text-secondary`;
+  small hint / meta `text-caption text-text-secondary` (+ `font-medium` / `font-semibold` where it had it); small error
+  `text-caption font-semibold text-danger`.
+- **Form caption** (legends): `text-label text-text-primary` (kit `FIELD_CAPTION`).
+- **Checkbox rows (R-f):** `<label>` (or the row span inside it) `flex min-h-control cursor-pointer items-center gap-2
+  text-label text-text-primary`; input `className="size-5 flex-none"`.
+- **Small number input** (`Palette.tsx` `inputClass`, reused by `EditorInspector`): `w-16 min-h-control rounded-lg
+  border border-border-strong bg-surface px-2 text-label font-normal text-text-primary` (Q6; global focus ring).
+- **Secondary link button** (a `<Link>` that looks like the kit secondary button; a kit Button cannot be a link;
+  Q-S6c-7): `state-layer inline-flex min-h-control shrink-0 items-center justify-center rounded-lg border border-border
+  bg-surface px-4 text-label text-text-primary hover:border-border-strong
+  transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out`.
+- **List option row** (hand-built `<button>` with `aria-pressed`, Q-S6c-8): `flex min-h-control w-full cursor-pointer
+  items-center rounded-lg px-3 text-left text-label font-normal text-text-primary enabled:hover:bg-tile
+  disabled:cursor-not-allowed aria-pressed:bg-tile aria-pressed:font-semibold` + the `TRANSITION` string of
+  `src/ui/Button.tsx:8–9`. Palette rows: `px-2` and add `border-l-4 border-transparent aria-pressed:border-pixel-primary`.
+- **Map frame** (RoomMap and EditorCanvas scroll region): keep every layout class (`max-h-[70vh]`, the `fill` classes
+  of 8b27bfa, `overflow-auto overscroll-contain`), `rounded-md border border-divider`; drop `outline-none
+  focus-visible:ring-2 focus-visible:ring-primary`.
+
+### Files (slice 6c)
+None matches a High path (`.github/risk-tiers.yml`: `src/ui/**`, tests and `scripts/check-tokens.pending.json` are not
+listed). "→" = replace the whole class string unless "add"/"drop"/"keep" says otherwise; the implementer re-reads each
+file first. Props, handlers, ids, `aria-*`, `role`, `data-*`, inline `style` geometry and copy unchanged unless stated.
+
+**Room map (room page and check-in)**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/roomlayout/RoomMap.tsx` | `STATUS` (30) `rounded-md border border-divider p-4 text-label font-normal text-text-primary`; error (42) `border-danger/40`; zoom-limited (174) `text-label font-normal text-text-secondary`; region (182) map-frame string (both `fill` branches kept as is) | not pending |
+| `src/ui/roomlayout/RoomMapSection.tsx` | error (47) notice error; empty (60) `text-label text-text-secondary`; h2 (82) panel h2; pan hint (83) `text-label text-text-secondary`; Edit layout `<Link>` (88) secondary link button; truncated / unplaced (98, 103) `text-label font-semibold text-text-secondary`. `fill` classes (79) unchanged | 2 → 0 (remove) |
+| `src/ui/roomlayout/ZoomControl.tsx` | (19) `className="aria-pressed:border-text-primary aria-pressed:font-semibold"` | not pending |
+| `src/ui/roomlayout/SeatOverlay.tsx` | `TAG_BASE` (17–18) `pointer-events-none absolute items-center gap-1 rounded-full px-3 py-1 text-caption font-semibold whitespace-nowrap` (Q-S6c-12); `TAG_LOOK` (20–21) `present: "bg-text-primary text-surface"`, `away: "bg-tile text-text-secondary"`; `TAG_NEUTRAL` (23) `"bg-tile text-text-primary"`; present dot (39) `size-2 shrink-0 rounded-full bg-current` (Q-S6c-4); seat button (158) `group absolute cursor-pointer rounded-sm hover:outline-2 hover:outline-surface` (Q-S6c-3); hover tags (165, 166) the same strings with `gap-1.5` → `gap-1`, `bg-[rgba(22,27,37,.92)]` → `bg-text-primary`, `px-2.5` → `px-3`, `text-xs` → `text-caption`, `text-white` → `text-surface` (keep `hidden`, `group-hover:flex`, `group-focus-visible:flex`, `max-w-40`, `SIDE`/`ALIGN`); Move-here button (204) `absolute z-30 min-h-6 cursor-pointer rounded-full bg-pixel-primary px-3 text-caption font-semibold whitespace-nowrap text-on-action shadow-card before:absolute before:inset-x-0 before:top-1/2 before:h-control before:-translate-y-1/2 disabled:cursor-wait disabled:opacity-50` (44 px tall hit area, visible tag unchanged; Q-S6c-2). Hover-tag dot inline `STATUS_DOT` (171–172) unchanged | 10 → 0 (remove) |
+
+**Layout editor (`/rooms/<code>/edit`, desktop only)**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/roomlayout/LayoutEditorPage.tsx` | h1 (43) `text-display text-text-primary` | not pending |
+| `src/ui/roomlayout/LayoutEditor.tsx` | grid (193) `grid grid-cols-[minmax(0,1fr)_--spacing(72)] items-start gap-4` | 1 → 0 (remove) |
+| `src/ui/roomlayout/EditorToolbar.tsx` | unsaved (41) `text-label font-semibold text-text-primary`; save reason (54) `text-label font-normal text-text-secondary`. Save stays kit `filled` (the editor is workspace; Q4 lists only its palette) | not pending |
+| `src/ui/roomlayout/EditorViews.tsx` | `BOX` (13) `flex max-w-xl flex-col items-start gap-3 rounded-md border border-divider p-4`; `LINK` (14–15) secondary link button; checking/loading (29) `text-label font-normal text-text-secondary`; h2 (37, 42) panel h2; bodies (38, 43) `text-label font-normal text-text-secondary`; read-only (46) `text-label font-normal text-text-primary`; missing / error (50, 54) notice error; banner (90) `flex flex-col items-start gap-2 rounded-md border border-danger/40 p-3 text-label font-normal`; banner title (92) `font-semibold text-danger`; detail / conflict note (93, 96) `text-text-secondary`; status line (155) `min-h-5 text-label font-normal text-text-secondary` | 2 → 0 (remove) |
+| `src/ui/roomlayout/EditorWarnings.tsx` | box (15) `rounded-md border border-warning/40 bg-warning-tint p-2 text-label font-normal text-text-primary` (pair added to tokens.test); heading (16) `font-medium` unchanged | not pending |
+| `src/ui/roomlayout/EditorCanvas.tsx` | zoom-limited (232) as RoomMap 174; region (242) map-frame string; place ghost (266) `${preview.ok ? "border-text-primary bg-text-primary/20" : "border-dashed border-danger bg-danger/20"}`; selection outline (282) `pointer-events-none absolute border-2 border-text-primary outline-2 -outline-offset-4 outline-dashed outline-text-primary` | not pending |
+| `src/ui/roomlayout/GestureOverlay.tsx` | drag ghost (28) same ternary as EditorCanvas 266; marquee (36) `… border border-dashed border-text-primary bg-text-primary/10`; marquee item (43) `… border border-text-primary` | not pending |
+| `src/ui/roomlayout/Palette.tsx` | `inputClass` (12–13) small number input; section (28) `flex flex-col gap-2 text-label font-normal text-text-primary`; h2 (29) `text-body font-semibold`; error (33) `text-danger`; list box (43) `border-divider`; group h3 (46) `font-semibold`; entry button (55) list option row with `px-2` and the pixel-green bar (drops `disabled:opacity-50`, `hover:bg-surface-high`, `py-1`); place form (92) `flex flex-col gap-2 text-label font-normal text-text-primary`; bad tile (117) `text-danger` | 2 → 0 (remove) |
+| `src/ui/roomlayout/EditorInspector.tsx` | aside (61) `flex flex-col gap-4 text-label font-normal text-text-primary`; h2 (63) `text-body font-semibold`; none / delete note / empty (64, 91, 143) `text-text-secondary`; h3 (121, 141) `font-semibold`; tray rows (130) and item rows (152) list option row (no pixel bar: ink, outline); item list box (145) `border-divider`; size errors (217, 222) `text-danger` | 6 → 0 (remove) |
+| `src/ui/roomlayout/ShortcutList.tsx` | kbd (10) `rounded border border-divider bg-canvas px-1 font-mono text-caption`; details (19) `text-label font-normal text-text-primary`; summary (20) `cursor-pointer py-3 font-semibold` (20 + 24 = 44 px target; keeps the native marker; Q-S6c-16); dd (27, 36) `text-text-secondary` | not pending |
+
+**Map items (Q4 pixel green in the editor)**
+
+| File | Change | Pending |
+|---|---|---|
+| `src/ui/mapItems/MapItemsView.tsx` | error (188) `text-label font-semibold text-danger`. The library has no primary action (Retry is `tonal`), so no `variant="pixel"` here | not pending |
+| `src/ui/mapItems/MapItemCard.tsx` | hidden art (53) `opacity-60` → `opacity-50` (aria-hidden art next to the "Hidden" pill; Q-S6c-6). Edit pencil `<button>` (59–68: 44 px hit area, 32 px circle) unchanged | not pending |
+| `src/ui/mapItems/MapItemEditor.tsx` | import `IconButton` from `../Button` (drop the `Icon` import if unused); eyebrow (64) `text-caption font-semibold uppercase tracking-wide text-text-secondary`; h2 (67) `text-subtitle text-text-primary`; key (70) `font-mono text-caption text-text-secondary`; close (72–79) → `<IconButton icon="close" label={copy.close} onClick={p.onRequestClose} className="shrink-0" />` (Q-S6c-14); error (104) `mb-3 text-label font-semibold text-danger`; footer (150) `border-divider`; status (151) `text-caption font-semibold text-text-secondary`; discard title (157) `text-label font-semibold text-text-primary`; drop `className="min-h-11"` (161, 166, 172, 175); Save (175) `variant="pixel"`; dialog (332) `m-auto w-[calc(100%-var(--space-6))] max-w-145 overflow-hidden rounded-2xl bg-surface p-0 text-text-primary shadow-dialog` and `style={{ animation: "popin var(--duration-ui) ease-out" }}` (kit dialog, `EntityFormDialog.tsx:72–73`; Q-S6c-11) | 11 → 0 (remove) |
+| `src/ui/mapItems/MapItemEditorAppearance.tsx` | `CHANGED_DOT` (18) `… bg-pixel-primary …`; `GRID` (21) both `var(--outline-variant)` → `var(--color-divider)` (as `MapItemCard.tsx:13`); `Radios` option (64–94) → `<Button variant="outlined" size="sm" role="radio" aria-checked={on} tabIndex={on ? 0 : -1} disabled={disabled} onClick=… onKeyDown=… className="flex-1 aria-checked:border-pixel-primary aria-checked:bg-tile aria-checked:font-semibold">` (same children; `role` before `aria-checked` keeps the test regex at `MapItemEditorAppearance.test.tsx:50`), import `Button` already present; preview-NA lines (125, 137), size and only-updates hints (228, 265) `text-caption font-medium text-text-secondary`; atlas failed (144) and the sub-caption (152) `text-caption font-semibold text-text-secondary`; h3 (149) `text-label font-semibold text-text-primary`; preview box (168) `relative flex min-h-48 flex-col items-center justify-center gap-3 rounded-xl border border-divider bg-tile p-4` (R-i); source badge (171) `absolute top-2 left-2 rounded-full bg-canvas px-2 py-1 text-caption font-semibold text-text-primary`; figcaptions (181, 185) `text-caption text-text-secondary`; preview caption (190) `font-mono text-caption tracking-wide text-text-secondary`; removed-on-save (196) small error; drop `className="min-h-11"` (235, 270); dir note (258) notice error | 5 → 0 (remove) |
+| `src/ui/mapItems/MapItemEditorDetails.tsx` | `CAPTION` (14–15) `text-label text-text-primary`; `HINT` (16) `text-caption font-medium text-text-secondary`; reset body (29) `flex flex-col gap-2 text-label text-text-primary`; in-use note (41) `text-text-secondary`; size value (119) `text-label font-semibold text-text-primary`; warnings (130, 168) notice error; confirm-resize label (133) and shown row (152) checkbox-row string, inputs (134, 153) `className="size-5 flex-none"`; reset box (166) `flex flex-col gap-3 rounded-xl border border-divider p-3`; reset confirm (170) `variant="pixel"` (Q-S6c-10); drop `className="min-h-11"` (170, 176, 189) | 8 → 0 (remove) |
+| `src/ui/mapItems/SpriteBrowser.tsx` | search (60) `min-h-control min-w-0 flex-1 rounded-lg border border-border-strong bg-surface px-3 text-label text-text-primary`; all-types label (62) checkbox-row string, input (63) `className="size-5 flex-none"`; count (72) `text-caption font-medium text-text-secondary`; smaller (76) `text-caption text-text-secondary`; group h4 (85) `text-caption font-semibold uppercase tracking-wide text-text-secondary`; tile label (94) `relative flex min-h-control cursor-pointer flex-col items-center gap-1 rounded-xl border border-divider bg-tile p-2 has-[:checked]:border-pixel-primary has-[:checked]:ring-2 has-[:checked]:ring-pixel-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus`; radio (103) `className="sr-only"` (drop `peer`); delete the focus span (105); key (114) `break-all text-center font-mono text-caption text-text-pixel`; size (117) `text-caption text-text-secondary` | 4 → 0 (remove) |
+
+**Pending, tests, log, nit**
+
+| File | Change |
+|---|---|
+| `scripts/check-tokens.pending.json` | delete the 10 keys (83 → 32, 11 → 1 key); `src/app/globals.css` 32 unchanged |
+| `src/ui/screen-tokens.test.ts` | extend (Tests) |
+| `src/lib/color/tokens.test.ts` | `TEXT_PAIRS` gains `["text-primary", "tile"]` (name tags, pressed rows, Radios) and `["text-primary", "warning-tint"]` (editor warnings) |
+| `src/ui/roomlayout/RoomMap.test.tsx`, `SeatOverlay.test.tsx`, `LayoutEditorViews.test.tsx`, `EditorWarnings.test.tsx`; `src/ui/mapItems/MapItemCard.test.tsx`, `MapItemEditor.test.tsx`, `MapItemEditorAppearance.test.tsx`, `MapItemEditorDetails.test.tsx`, `SpriteBrowser.test.tsx` | update/extend (Tests) |
+| `src/ui/portal/PersonalInfoCard.tsx` | 6b review nit: (68) `flex-none text-caption text-text-secondary` (sorted order; no visible change) |
+| `work/tickets/SIM-071/impl-log.md` | append "Slice 6c": files, legacy-line and pending before/after (131 → 0; 51 → 0, 83 → 32), the build-output check, visible differences, checks |
+
+### Approach (slice 6c)
+1. Room map: `RoomMap`, `RoomMapSection`, `ZoomControl`, `SeatOverlay`.
+2. Layout editor: `LayoutEditorPage`, `LayoutEditor`, `EditorToolbar`, `EditorViews`, `EditorWarnings`, `EditorCanvas`,
+   `GestureOverlay`, `Palette`, `EditorInspector`, `ShortcutList`.
+3. Map items: `MapItemsView`, `MapItemCard`, `MapItemEditor`, `MapItemEditorAppearance`, `MapItemEditorDetails`,
+   `SpriteBrowser`.
+4. After each file: `rg -n --pcre2 "on-surface|outline-variant|text-error|border-error|bg-error|(?<![\w-])(text|bg|border|ring|outline)-primary(?![\w-])|-container\b|surface-(high|container)|rounded-md3|rounded-full|text-\[|tracking-\[|shadow-\[|bg-\[|text-(xs|sm|base|lg|xl|2xl)\b|text-h[23]|font-(bold|extrabold|heading)|min-h-11|size-11|opacity-(40|60)|focus(-within|-visible)?:|outline-none|(amber|emerald|teal)-\d|-white\b|gap-1\.5|px-2\.5|py-(0|1)\.5|px-0\.5" <file>`
+   → no hits, except `rounded-full` on the map tags and the Move-here pill (`SeatOverlay`), the changed dot
+   (`MapItemEditorAppearance:18`), the source badge (171) and the `MapItemCard` pencil, which stay round (pills/dots,
+   not buttons with a fill; read each hit).
+5. `pnpm build`, then grep the built CSS once for `max-w-145`, `grid-template-columns:minmax(0,1fr) calc(var(--spacing)*72)`
+   (or the compiled equivalent), `w-[calc(100%-var(--space-6))]`, `bg-text-primary/20`, `before:h-control` and
+   `aria-checked:border-pixel-primary`; note the result in impl-log. Fallbacks if 4.3.x rejects one: `max-w-145` →
+   `max-w-xl` (576 px, log it); `--spacing(72)` → `grid-cols-[minmax(0,1fr)_calc(var(--spacing)*72)]`;
+   `bg-text-primary/20` → `bg-[color-mix(in_srgb,var(--color-text-primary)_20%,transparent)]`; record which.
+6. Pending: `node scripts/check-tokens.mjs --list`; the 10 files report 0, `globals.css` 32; delete the 10 keys
+   (sorted order kept); `node scripts/check-tokens.mjs` exits 0.
+7. Tests (below), the `PersonalInfoCard` nit, impl-log "Slice 6c", checks: `pnpm format:check`,
+   `pnpm typecheck && pnpm check:layers`, `pnpm test`, `pnpm build`.
+
+Rules: R1 (ui → ui only; the only new import is `IconButton` from `../Button` in `MapItemEditor`), R3 none, R4 (Files
+tables only), R5 (tests below). R2/R6/R7 not touched.
+
+### Tests to write / update (slice 6c)
+| Test (file › name) | Covers |
+|---|---|
+| `screen-tokens.test.ts` › `MIGRATED` gains 23 files: `ui/roomlayout/{RoomMap,RoomMapSection,SeatOverlay,ZoomControl,GestureOverlay,LayoutEditor,LayoutEditorPage,EditorToolbar,EditorInspector,EditorViews,EditorWarnings,EditorCanvas,ShortcutList,Palette,WalkLayer}.tsx`, `ui/mapItems/{MapItemsPage,MapItemsView,MapItemCard,MapItemEditor,MapItemEditorAppearance,MapItemEditorDetails,SpriteBrowser,FramePreview}.tsx`; the existing legacy / raw-type / low-target / palette / `opacity-60` / focus and "not pending" tests then cover them | R-a…R-c, R-h |
+| screen-tokens › "kit Button only" list gains `ui/roomlayout/{ZoomControl,EditorToolbar,EditorViews}.tsx`, `ui/mapItems/{MapItemEditor,MapItemEditorAppearance,MapItemEditorDetails,SpriteBrowser}.tsx` | R-f |
+| screen-tokens › new "map, editor and map items chrome": none of the 23 files matches `/--px-\|outline-none\|peer-focus\|rgba\(\|(?<![\w-])(?:bg\|text\|border\|ring\|outline)-(?:white\|black)(?![\w-])\|-(?:emerald\|teal\|amber)-\d/`; `Palette.tsx` contains `aria-pressed:border-pixel-primary`; `MapItemEditor.tsx` and `MapItemEditorDetails.tsx` contain `variant="pixel"`; `SpriteBrowser.tsx` contains `has-[:checked]:border-pixel-primary`, `outline-focus` and `bg-tile`; `MapItemEditorAppearance.tsx` contains `bg-tile` and `aria-checked:border-pixel-primary`; `LayoutEditor.tsx` contains `--spacing(72)` | R-i, Q4, R-c, focus rule |
+| `tokens.test.ts` › the two new `TEXT_PAIRS` pass in both themes (existing `describe.each`) | AC 6 |
+| `RoomMap.test.tsx` › 32–38: `border-outline-variant` → `border-divider` (name "status views use the divider token …"); new: `ZoomControl` pressed `<button` has `aria-pressed:border-text-primary`, no `font-extrabold` | R-a, R-b |
+| `SeatOverlay.test.tsx` › 67–72: keep `hover:outline-2`, replace `focus-visible:outline-2` with `not.toMatch(/focus-visible:/)` and `hover:outline-surface` (name "… hover outline token; focus from the global ring"); 152 `bg-surface-container-high` → `bg-tile`; new: present tag has `bg-text-primary` and `text-surface`, its dot `bg-current`; markup has no `rgba(`, `text-white`, `emerald`, `teal`; open tag `<button` has `bg-pixel-primary`, `before:h-control`, `disabled:opacity-50` and no `opacity-60`. 189 (`bg-emerald-400` absent) unchanged | R-i, R-e, Q-S6c-2…4 |
+| `LayoutEditorViews.test.tsx` › 299 `border-primary` → `border-text-primary`; 303 → `border-dashed border-danger`; 309 → `border-dashed border-text-primary`; new: gate view `<h2` has `text-body` and `font-semibold`, back link `<a` has `min-h-control` and `rounded-lg`; palette entry `<button` has `min-h-control`, `aria-pressed:border-pixel-primary`, no `opacity-`; inspector item rows have `min-h-control`, no `py-1.5`; place-panel inputs have `min-h-control` and `border-border-strong`; shortcut `<summary` has `py-3`. Existing count/aria asserts (190–196, 233–239) unchanged | R-f, R-i, R-e |
+| `EditorWarnings.test.tsx` › new: box has `bg-warning-tint`, no `amber-` | palette rule |
+| `MapItemCard.test.tsx` › 51–58: `opacity-60` → `opacity-50` (name unchanged) | Q-S6c-6 |
+| `MapItemEditor.test.tsx` › new "tokens": `<h2 id="ed-title"` has `text-subtitle`; close `<button` has `size-control` (IconButton) and `aria-label`; Save `<button` has `data-variant="pixel"`; markup has no `min-h-11`, `text-[`, `font-extrabold`. Existing 31–84 unchanged | R-b, R-f, Q4 |
+| `MapItemEditorAppearance.test.tsx` › new: each `role="radio"` `<button` has `data-variant="outlined"` and `min-h-control`, the checked one `aria-checked:border-pixel-primary`; preview box has `bg-tile`; no `opacity-40`, `rounded-md3`, `text-[`. `radios()` (46–59) and 156–171 unchanged | R-f, R-i |
+| `MapItemEditorDetails.test.tsx` › new: legend has `text-label` and no `tracking-[`; checkbox inputs have `size-5`; confirming-reset render: the confirm `<button` has `data-variant="pixel"`. 83–86 unchanged | R-b, R-f |
+| `SpriteBrowser.test.tsx` › new: tile `<label` has `bg-tile`, `has-[:checked]:border-pixel-primary`, `has-[:focus-visible]:outline-focus`; markup has no `peer-focus`, `text-[11px]`, `primary-container`. 46 unchanged | R-i, Q-S6c-3 |
+| `scripts/check-tokens.test.ts` (unchanged) › repo ratchet green with 10 keys removed | pending only shrinks |
+
+Existing asserts that keep passing unchanged: `RoomMapSection.test.tsx:36–37` (`fill` classes), 42–87; the rest of
+`SeatOverlay.test.tsx` (labels, positions, zoom-stable classes, open-tag behaviour); `MapItemsView.test.tsx:79`
+(`page-library`); `RoomMap.test.tsx:42–54`.
+
+### Acceptance → verification (slice 6c)
+| # | Criterion | How the reviewer verifies it |
+|---|---|---|
+| S6c-1 | Room map, layout editor and Map items screens use token utilities only (R-a/R-c/R-i); legacy lines 131 → 0 | `screen-tokens.test.ts` green with the 23 files; `rg -n --pcre2 "on-surface\|outline-variant\|text-error\|-container\b\|surface-high\|rounded-md3\|text-\[\|tracking-\[\|shadow-\[\|bg-\[\|(?<![\w-])(text\|bg\|border\|ring\|outline)-primary(?![\w-])\|(amber\|emerald\|teal)-\d\|-white\b" src/ui/roomlayout src/ui/mapItems -g '*.tsx' -g '!*.test.tsx'` → no hits |
+| S6c-2 | No off-scale type: page h1 Display, dialog title Subtitle, panel titles Body 600, labels 14, metadata 12; no 700/800 (Q7, Q8, Q16) | `rg -n "text-(xs\|sm\|base\|lg\|xl\|2xl)\b\|text-h[23]\|font-(bold\|extrabold\|heading)" <same paths>` → no hits; MapItemEditor, LayoutEditorViews tests |
+| S6c-3 | Targets ≥ 44 px: Edit layout / back links, palette and inspector rows, number inputs, search, checkbox rows, sprite tiles, direction/source options, editor close, shortcut summary; the Move-here tag has a 44 px tall hit area (AC 3) | LayoutEditorViews, MapItemEditor, Appearance, Details, SpriteBrowser, SeatOverlay tests; `rg -n "min-h-11\|size-11\|py-1\.5\|py-1 text-left" <same paths>` → no hits |
+| S6c-4 | Pixel green only in the layout palette (pressed bar), the Map items editor (Save, reset confirm, selected options, changed dot, selected sprite tile) and the check-in Move-here tag (Q4); sprite previews on `bg-tile` (R-i) | screen-tokens "map, editor and map items chrome"; `rg -n "pixel-" src/ui/roomlayout src/ui/mapItems -g '!*.test.tsx'` hits only `Palette.tsx`, `SeatOverlay.tsx:204`, `MapItemEditor.tsx`, `MapItemEditorAppearance.tsx`, `MapItemEditorDetails.tsx`, `SpriteBrowser.tsx` |
+| S6c-5 | Focus visible without per-component or hard-coded colours: seat buttons, map frames, inputs and links use the global `--color-focus` ring; sprite tiles restate it with `outline-focus` | `rg -n "focus(-within\|-visible)?:\|outline-none" <same paths>` → no hits (`has-[:focus-visible]:` does not match); `rg -n "outline-focus" <same paths>` hits only `SpriteBrowser.tsx`; SeatOverlay, SpriteBrowser tests; manual Tab (Ming) |
+| S6c-6 | No opacity dimming of text rows or options (R-e); the hidden-item art dim and the busy Move-here tag use the kit strength 50 | `rg -n "opacity-" <same paths>` hits only `MapItemCard.tsx:53` and `SeatOverlay.tsx:204`; MapItemCard, SeatOverlay, LayoutEditorViews tests |
+| S6c-7 | AA in both themes on every new pair (name tags, pressed rows, warnings) | `tokens.test.ts` green, light and dark |
+| S6c-8 | Map items editor dialog is the kit dialog (16 px corners, `shadow-dialog`, surface), same widths (580 px cap, 12 px side gap) | MapItemEditor test; read `MapItemEditor.tsx:332` |
+| S6c-9 | Pending shrinks by exactly the 10 keys (83 → 32, 11 → 1 key) | `git diff main -- scripts/check-tokens.pending.json` shows 10 removed lines only; `node scripts/check-tokens.mjs` exits 0; screen-tokens pending test |
+| S6c-10 | No behaviour, copy, prop, id, `role`, `data-*` or `aria-*` change (roving tab index and arrow keys in `Radios`, `aria-pressed`, `aria-keyshortcuts`, `data-map-seat`, `data-open-tag`, `data-testid`, dialog `onCancel`/scrim close, focus return, `fill` layout of 8b27bfa, inline geometry) | existing tests unchanged except the listed asserts; `git diff main -- src/ui/copy src/lib src/app src/ui/roomlayout/*.ts src/ui/mapItems/*.ts` empty except `src/lib/color/tokens.test.ts` |
+| S6c-11 | Only planned files | `git diff --stat main` ⊆ Files tables |
+| S6c-12 | Checks green; impl-log "Slice 6c" complete (legacy and pending before/after, build-output check of Approach 5, visible differences) | `pnpm format:check && pnpm typecheck && pnpm check:layers && pnpm test && pnpm build`; read impl-log |
+
+### Visible differences to log (slice 6c)
+- Room page and check-in map card: title 16 px · 800 → 16 px · 600; pan hint and notes 14 px; "Edit layout" pill
+  (full radius, 13 px · 700) → 8 px-corner secondary button, 44 px tall (was about 36), 14 px · 500. Map frame border
+  divider (same colour); the map frame's extra inner focus ring is gone, the standard green outline stays.
+- Zoom buttons: the pressed level is ink-bordered and 600 (was 800).
+- Map tags: hover/focus tags and present name tags navy 92 % → solid ink in light mode; **in dark mode they turn light
+  with dark text** (Q-S6c-5); 2 px wider side padding, 4 px marker gap (was 6). Away and pre-presence tags: grey →
+  tile. The present marker is a dot in the tag's text colour instead of emerald green (Q-S6c-4). Seat buttons: hover
+  outline white (unchanged in light; dark-surface colour in dark), no teal ring on keyboard focus (the global green
+  outline remains).
+- "Move here" tag (check-in): ink pill, 700 → pixel-green pill with white 600 text and a soft shadow; same visible
+  size; it now also reacts to taps up to 10 px above and below it; while busy it fades to 50 % (was 60 %).
+- Layout editor: page title 32 px · 800 → 600; panel titles 16 px · 800 → 600, group titles 700 → 600; palette and
+  item rows 13 → 14 px and 44 px tall (were about 28/32): the palette list (max 256 px) shows fewer rows before it
+  scrolls; the pressed palette entry gets a 4 px pixel-green bar and a tile background (was ink text, 800); pressed
+  inspector rows a tile background and 600; rows no longer fade when disabled. Number inputs 44 px tall, 8 px corners,
+  stronger border. Drag/place ghosts and the selection outline keep ink; refused ghosts red (same hue, danger token).
+  Warnings box amber → warning tint with a warning border. Shortcut keys on canvas grey, 12 px; "Keyboard shortcuts"
+  summary 44 px tall. Gate and save-error views: back links as 44 px secondary buttons.
+- Map items editor: dialog corners 20 → 16 px, background grey-tinted → white surface, the dialog shadow token; side
+  gap at 390 px unchanged; title 20 px · 800 → 18 px · 600; eyebrow 11 px · 800 → 12 px · 600; close button round →
+  8 px square-ish kit icon button (44 px, icon 20 → 22 px, a native tooltip). Save and "Reset to library defaults"
+  confirm: ink → pixel green. Direction and source options: full-radius pills 700 with a coral fill when selected →
+  8 px kit secondary buttons, selected = pixel-green border on tile, 600; changed dot ink → pixel green; disabled
+  options 40 % → kit 50 %. Preview area: white → tile with 12 px corners; source badge grey → canvas, 12 px · 600.
+  Sprite tiles: white → tile, selected = coral fill → pixel-green border + ring; focus ring green outline (was ink
+  ring); key and size 11 → 12 px. Search 44 px with 8 px corners and a stronger border. Checkboxes 16 → 20 px. Field
+  legends 11 px · 800 uppercase grey → 14 px · 500 ink (as the dialog fields). Warnings 13 → 14 px.
+- Map items library: hidden items' art 60 % → 50 % opacity; the load error red text is the danger token (same colour).
+
+### Ming verification after merge (slice 6c)
+- A room page at 390 / 1024 / 1280 px, light and dark: map card, Edit layout button (admin), zoom buttons, hover and
+  Tab across seats (focus outline visible on the map art, Q-S6c-3), the seat panel opens.
+- Check-in with presence: present and away name tags in both themes (dark-mode light tags, Q-S6c-5; present dot vs
+  away ring readable, Q-S6c-4); tap "Move here" on a phone and confirm it does not steal taps meant for a nearby
+  seat (Q-S6c-2).
+- Layout editor at 1280 px: arm a palette entry (green bar), place, select from the Items list, drag a desk (ghost
+  visible), resize the room, open Keyboard shortcuts, trigger the no-door warning; save.
+- Map items: open an item, switch direction and source with the arrow keys, pick a sprite tile with the keyboard
+  (green outline), upload a PNG, change size (resize warning + checkbox), reset to defaults, discard changes; at 390 px
+  the dialog fits with the same side gap.
+
+### Assumptions and non-blocking questions (slice 6c)
+- Hotspots: no other ticket is IN_PROGRESS/REVIEW/DONE (`work/backlog.md:161`: only SIM-071). `screen-tokens.test.ts`,
+  `tokens.test.ts` and `scripts/check-tokens.pending.json` change again in slice 7; 6c merges first.
+  `RoomMap.tsx`/`RoomMapSection.tsx` were last changed by 8b27bfa; the `fill` classes are kept byte for byte.
+- `bg-current` resolves to `currentColor` (the tag's `text-surface`); `outline-focus`, `size-control`, `min-h-control`
+  and `max-w-145` resolve through the existing theme (`globals.css:170`, `tokens.css:33`); the v4 `before:` variant adds
+  `content: var(--tw-content)` itself, so no `before:content-['']` is needed.
+- Approved defaults used: Q1, Q2, Q4 (pixel scope), Q5, Q6, Q7, Q8, Q15, Q16; Q-S6-11 (hand-built multi-part rows),
+  Q-S6b-3 (focus restated on the label of an `sr-only` input), Q-S6b-4 (no opacity on disabled options).
+- Q-S6c-1 (non-blocking). Size ≈ 490: **default one PR (6c), no 6d.** Alternative: roomlayout and mapItems as two PRs.
+- Q-S6c-2 (non-blocking). The "Move here" tag is placed by `tag-layout.ts` at 22 px (`TAG_H`, `min-h-6` renders 24) among
+  obstacles; a 44 px visible tag needs a `src/lib` layout change. **Default: visible tag unchanged, a 44 px tall
+  invisible hit area via `before:`** (it may overlap a seat edge by 10 px; the tag sits above seats, z-30).
+  Alternative: keep 24 px (meets WCAG 2.5.8 AA minimum, not the ticket's 44 px) and log the exception.
+- Q-S6c-3 (non-blocking). Seat buttons and the map frames drop their own focus classes; the global 2 px
+  `--color-focus` outline (already shown today, it wins over the layered utilities) stays. On light map art it may sit
+  near 2.6:1 (e.g. on `#d9dee5`). **Default: global ring only (brief: focus ring 2 px `--color-focus`).** Alternative:
+  keep a 2 px inner `ring-surface` on seat buttons with an exemption in the screen-tokens focus check.
+- Q-S6c-4 (non-blocking). Present dot `bg-emerald-400` has no token that reaches 3:1 on the ink tag in both themes
+  (`success` ≈ 2.2:1 light). **Default: `bg-current`** (the state stays a shape: filled dot vs ring, D80; the word is in
+  the seat's `aria-label`). Alternative: present tags `bg-success-tint text-success` (green pill, AA pair tested).
+- Q-S6c-5 (non-blocking). `bg-text-primary text-surface` follows the theme, so the tags turn light in dark mode (was
+  navy in both). **Default: accept (same as the RoleBadge admin pattern).** Alternative: a new fixed-dark token in
+  slice 7.
+- Q-S6c-6 (non-blocking). Hidden item art (`aria-hidden`, next to the "Hidden" pill): **default `opacity-50` (kit
+  disabled strength; R-e is about text)**. Alternative: no dim (the pill alone).
+- Q-S6c-7 (non-blocking). The outline says "kit `Button variant="outlined" size="sm"`" for the Edit layout and back
+  links, but they are `<Link>`s (navigation). **Default: keep `<Link>` with the "Secondary link button" string (same
+  look, 44 px).** Alternative: `router.push` from a kit Button (loses link semantics).
+- Q-S6c-8 (non-blocking). Palette and Inspector rows stay hand-built `<button>`s (full-width, left-aligned list rows
+  with `aria-pressed`; the kit Button is centred and `whitespace-nowrap`). **Default: the "List option row" string,
+  44 px, global focus ring, no opacity.** Same for the `SeatOverlay` seat and Move-here buttons (absolutely placed,
+  inline size) and the `MapItemCard` pencil (unchanged).
+- Q-S6c-9 (non-blocking). Room backdrops: no chrome paints one (`rg` above). **Default: no change in 6c**; the map
+  scroll frame keeps the card surface behind a canvas narrower than the frame. Alternative: `bg-room-green` on the map
+  frame (new visible change, not asked for).
+- Q-S6c-10 (non-blocking). "Reset to library defaults" confirm: **default `variant="pixel"`** (the editor's primary
+  style). Alternative: `variant="danger"` (it discards custom art).
+- Q-S6c-11 (non-blocking). Editor dialog width: **default keep 100 % − 24 px and the 580 px cap** (`var(--space-6)`,
+  `max-w-145`), not the kit's 100 % − 40 px; the `popin` animation takes the kit timing (150 ms ease-out, already
+  cancelled by reduced motion, `globals.css:360–368`).
+- Q-S6c-12 (non-blocking). Name tags: `px-2.5 gap-1.5` → `px-3 gap-1` makes the tag's inner budget 36 px against
+  `TAG_PAD = 34` (`tag-layout.ts:7`); the 2 px fall inside the 12 px right padding. **Default: R-d snap, `src/lib`
+  untouched.** Alternative: `px-2` (28 px, 4 px tighter pills).
+- Q-S6c-13 (non-blocking). Editor drag/place ghosts and the selection outline: **default ink (R-a, as today)**, not
+  pixel green (Q4 lists only the palette).
+- Q-S6c-14 (non-blocking). Editor close button → kit `IconButton` (44 px, 8 px corners, `title` tooltip). **Default:
+  yes (R-f).** Alternative: keep the hand-built round button with token classes.
+- Q-S6c-15 (non-blocking). Two `TEXT_PAIRS` added (`text-primary` on `tile`, on `warning-tint`) instead of switching
+  that text to `text-pixel` / `warning`. **Default: add the pairs** (both pass by a wide margin; the test proves it).
+- Q-S6c-16 (non-blocking). Shortcut `<summary>`: **default `py-3`** (44 px, keeps the native disclosure marker that
+  `display: flex` would remove).
+- Q-S6c-17 (non-blocking). The 6b nit (`PersonalInfoCard.tsx:68` class order) is folded in: one class string, no
+  visible change. **Default: yes.**
+
+Status: READY
