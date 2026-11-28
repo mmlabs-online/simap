@@ -40,9 +40,13 @@
   --color-warning-tint: color-mix(in srgb, var(--color-warning) 8%, var(--color-surface));
   --color-danger-tint: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
   --color-info-tint: color-mix(in srgb, var(--color-info) 8%, var(--color-surface));
+  /* Neutral tint: avatar initials background (5 % ink on surface, Q-S3-2) */
+  --color-ink-tint: color-mix(in srgb, var(--color-text-primary) 5%, var(--color-surface));
   /* Room map */
   --color-room-floor: #e2c8a7;
   --color-room-green: #e9eddf;
+  /* Overlay: native <dialog> backdrop */
+  --color-scrim: rgba(28, 28, 28, 0.32);
 
   /* Shape (equal to Tailwind v4 defaults except 2xl/full) */
   --radius-sm: 4px;
@@ -90,6 +94,7 @@
   /* next/font hashes the family name, so the brief's "DM Sans" literal resolves through its variable */
   --font-family-sans: var(--font-dm-sans), sans-serif;
   --font-family-mono: ui-monospace, monospace; /* coordinates, keys, code */
+  --font-family-icon: "Material Symbols Outlined"; /* .i glyphs (stylesheet <link> in the layout head) */
 
   --space-1: 4px;
   --space-2: 8px;
@@ -112,6 +117,17 @@
   --shadow-card: 0 4px 20px #53613e08;
   --shadow-dialog: 0 24px 100px #16221340;
   --shadow-pixel: 0 4px 0 #35492c; /* game-like primary button */
+  /* .px-scene frame: four 2 px offsets with no blur, so the corners stay notched (pixel art) */
+  --shadow-px-scene:
+    0 -2px 0 0 var(--px-outline), 0 2px 0 0 var(--px-outline), -2px 0 0 0 var(--px-outline),
+    2px 0 0 0 var(--px-outline);
+
+  /* Pixel art palette (D52, docs/art/style-guide.md section 3). Art colours, not UI chrome: the sign-in
+     vignette (.px-scene) and the check-in room thumbnail (checkin/RoomThumb.tsx). Not in the AA pair table. */
+  --px-outline: #2a3140;
+  --px-accent: #14b8a6;
+  --px-floor: #d9dee5;
+  --px-wall: #eef1f5;
 }
 
 [data-theme="dark"] {
@@ -141,10 +157,20 @@
   --color-warning-tint: color-mix(in srgb, var(--color-warning) 8%, var(--color-surface));
   --color-danger-tint: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
   --color-info-tint: color-mix(in srgb, var(--color-info) 8%, var(--color-surface));
+  --color-ink-tint: color-mix(in srgb, var(--color-text-primary) 5%, var(--color-surface));
   --color-room-floor: #3a3226;
   --color-room-green: #2a3222;
+  --color-scrim: rgba(0, 0, 0, 0.6);
 
   --shadow-card: 0 4px 20px #00000066;
   --shadow-dialog: 0 24px 100px #000000a0;
   --shadow-pixel: 0 4px 0 #0f1a0c;
+  --shadow-px-scene:
+    0 -2px 0 0 var(--px-outline), 0 2px 0 0 var(--px-outline), -2px 0 0 0 var(--px-outline),
+    2px 0 0 0 var(--px-outline);
+
+  /* wall top: keeps the pixel frame at 3:1 or more on the dark surface */
+  --px-outline: #8b95a7;
+  --px-floor: #1e2228;
+  --px-wall: #2a2f37;
 }

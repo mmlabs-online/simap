@@ -29,8 +29,8 @@ export function Avatar({
       style={{
         width: size,
         height: size,
-        background: color ?? "var(--secondary-container)",
-        color: color ? "var(--color-on-action)" : "var(--on-secondary-container)",
+        background: color ?? "var(--color-ink-tint)",
+        color: color ? "var(--color-on-action)" : "var(--color-text-primary)",
         fontSize: Math.round(size * 0.34),
       }}
       aria-hidden

@@ -22,4 +22,9 @@ describe("Avatar", () => {
     expect(html).toContain("color:var(--color-on-action)");
     expect(html).not.toContain("#");
   });
+  it("without a colour uses the ink tint and ink text (no compat alias)", () => {
+    const html = renderToStaticMarkup(<Avatar name="Lê Bình" />);
+    expect(html).toContain("background:var(--color-ink-tint)");
+    expect(html).toContain("color:var(--color-text-primary)");
+  });
 });

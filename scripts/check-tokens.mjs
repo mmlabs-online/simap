@@ -1,6 +1,6 @@
 // SIM-071 token guard. Node built-ins only. Runs inside `pnpm test` (scripts/check-tokens.test.ts).
 // Flags hard-coded colours, arbitrary sizes and off-scale spacing in src/**/*.{ts,tsx,css}. Files that still have
-// violations are listed with their count in scripts/check-tokens.pending.json (ratchet: it may only shrink).
+// violations were listed with their count in scripts/check-tokens.pending.json; SIM-071 slice 7 emptied and deleted it, so a missing file means no violation is allowed.
 // `node scripts/check-tokens.mjs` checks; `--list` prints the current counts as JSON.
 // Known gaps: inline style numbers (borderRadius: 12), non-hex/rgb/hsl style strings, font-bold/extrabold weights.
 import { readdirSync, readFileSync, statSync } from "node:fs";

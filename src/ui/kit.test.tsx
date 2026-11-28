@@ -75,8 +75,6 @@ const r = (el: React.ReactElement) => renderToStaticMarkup(el);
 /** Class tokens of the first element matching `tag` (optionally containing `needle`). */
 const classes = (html: string, tag = "[a-z0-9]+") =>
   (new RegExp(`<${tag}[^>]*class="([^"]*)"`).exec(html)?.[1] ?? "").split(/\s+/);
-const LEGACY =
-  /^(?:[\w-]+:)*(?:bg|text|border|outline|shadow)-(?:primary|on-primary|on-surface(?:-variant)?|surface-(?:high|highest|low|lowest|container)|outline(?:-variant)?|error|secondary[\w-]*|tertiary[\w-]*|accent-orange[\w-]*|[\w-]*-container)(?:\/\d+)?$|^rounded-md3/;
 
 describe("Button", () => {
   const html = (variant: Parameters<typeof Button>[0]["variant"]) =>
@@ -373,7 +371,6 @@ describe("no legacy alias or weight in the kit", () => {
       const html = r(el);
       for (const [, list] of html.matchAll(/class="([^"]*)"/g))
         for (const c of list.split(/\s+/)) {
-          expect(c, c).not.toMatch(LEGACY);
           expect(["font-bold", "font-extrabold"]).not.toContain(c);
         }
     }

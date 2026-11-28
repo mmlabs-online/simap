@@ -606,3 +606,80 @@ None new.
 
 ### Blockers from review agents (slice 6c attempt 2)
 - None (no review trigger matched).
+
+## Slice 7 (attempt 1)
+Verdict: PASS
+
+Reviewed commit 592f115 (branch `claude/modest-allen-yru4g8`, `git diff origin/main...HEAD`; later commits change only `work/`). 2026-11-28.
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0
+- `pnpm typecheck`: exit 0
+- `pnpm check:layers`: exit 0
+- `pnpm test`: exit 0. Test Files 398 passed, 1 skipped (399); Tests 3978 passed, 7 skipped (3985). This matches impl-log.
+- `pnpm build`: exit 0
+- `node scripts/check-tokens.mjs`: exit 0, `check-tokens: 0 files, no violations outside the pending list`. `--list` prints `{}`. `test ! -e scripts/check-tokens.pending.json` is true.
+
+### After-edit searches (re-run by reviewer)
+- A1 (C1): no output.
+- A2 (C2 on the whole of `src`, both CSS files included): no output.
+- A3: 7 lines, all in `src/styles/tokens.css` (127–130 light, 173–175 dark). C3 with tokens.css excluded: only `RoomThumb.tsx` 4, 5, 6, 7, 19, 27, 28.
+- A4 (C4): no output.
+- A5 (hex/rgba/hsla in globals.css): no output.
+- A6 (`print` in tokens.test.ts): no output.
+
+### Byte-identical spot check
+- `--scrim` (light 74 and dark 101 on `origin/main`) matches `--color-scrim` as `rgba(28, 28, 28, 0.32)` / `rgba(0, 0, 0, 0.6)`.
+- The `.px-scene` four-offset `box-shadow` matches `--shadow-px-scene`, the same four offsets, re-wrapped by oxfmt only.
+- `--px-outline/accent/floor/wall` light and `--px-outline/floor/wall` dark match the old values.
+- `.i` `"Material Symbols Outlined"` matches `--font-family-icon`.
+- `--secondary-container` expression matches `--color-ink-tint`.
+- `--on-secondary-container` (= `var(--color-text-primary)`) matches `var(--color-text-primary)` in Avatar.
+- Built CSS: each of the five strings appears in one `.next/static` CSS file. The minifier gives `--color-scrim:#1c1c1c52` / `#0009`, which equal the rgba values. `--shadow-px-scene` survives unchanged.
+
+### Acceptance criteria
+- [x] S7-1: compat layer gone. globals.css 7–30: `:root`/dark set only `color-scheme`, and `@theme inline` has the 5 kept keys. tokens.test "compat layer removed" (2) and (3) are green, and A2 is empty.
+- [x] S7-2: no removed name is used in `src`. The impl-log "Alias audit" C1–C4 equal Expected. A1, A2 and A4 are empty. The screen-tokens "whole src" test is green and is not vacuous: the `files.length > 100` assertion holds, and impl-log mutation (b) shows it failing.
+- [x] S7-3: Avatar defaults are now `var(--color-ink-tint)` / `var(--color-text-primary)` (`src/ui/Avatar.tsx:32-33`). Covered by the Avatar.test new test, tokens.test (6), and the `["text-primary","ink-tint"]` AA pair in both themes (13.20 / 12.52).
+- [x] S7-4: `.text-h2`/`.font-heading` deleted. The three `<h1>` lines are one-word changes to `text-display` (AppShellView.tsx:206, PageSkeleton.tsx:17, KitGallery.tsx:36). tokens.test (5) is green.
+- [x] S7-5: `--px-*` lives only in tokens.css, in labelled sections (`:root` 125–130, dark 172–175). The 13 dead `--px-*` and 3 dead `--color-px-*` are deleted. tokens.test (7) and A3 confirm this.
+- [x] S7-6: 32 → 0 violations. `--list` prints `{}`, A5 is empty, and tokens.test (1) and (5) are green.
+- [x] S7-7: the pending file is deleted. Tolerant read at `scripts/check-tokens.test.ts:16-20`. The new test "the pending list is gone and src has zero violations (AC 1b)" is green. CLI exit 0. Mutation checks are recorded in impl-log.
+- [x] S7-8: no visible difference. Covered by tokens.test (6), (7), Avatar.test, the built-CSS counts (reviewer re-ran them) and impl-log "Visible differences: None".
+- [x] S7-9: impl-log "SIM-071 final changelog" has one row per slice with PRs that match the ticket.md PR field, plus 10 forced-difference bullets.
+- [x] S7-10: impl-log "Brief self-check" covers contrast (84 rows = 42 pairs × 2 themes, which equals 28 TEXT + 1 LARGE + 13 NON_TEXT in tokens.test.ts), focus, 44 px (120 MIGRATED files), reduced motion (rg output pasted) and 800/1024/1280 (code-level, marked for Ming). The Deliverable 2 grep is included. A6 is empty.
+- [x] S7-11: the changed non-work files are exactly the 14 entries of the slice 7 Files table. No High path is touched.
+- [x] S7-12: checks green (above).
+
+Brief self-check (brief.md Deliverables 3–4): the changelog lists the files and forced visible differences. The self-check covers contrast for text on every asserted background, focus ring, 44 px, reduced motion, and layout at 800/1024/1280. The layout row is code-level only and is flagged for Ming, as Q-S7-6 allows.
+
+### Issues
+None.
+
+### Rules (CLAUDE.md)
+No violations found.
+- R1: the only new import is `readdirSync` from `node:fs`, in a test file.
+- R2, R6, R7: not touched.
+- R3: no config or secrets.
+- R4: only planned files.
+- R5: checks green, and the new logic has tests (tokens.test 7 tests, check-tokens AC 1b test, whole-src guard, Avatar test).
+
+### Blockers from review agents
+None (no review trigger matched: no security paths changed).
+
+### Nits (do not block)
+- The plan asked for the contrast table to have threshold and pass columns. The impl-log table has theme/fg/bg/ratio only, and the thresholds are given in a sentence under it. Every ratio clears its threshold and the test asserts this.
+- The impl-log build-output check names `.next/static/chunks/*.css` and the plan names `.next/static/css/*.css`. The reviewer found the strings in the built CSS either way.
+- The mutation revert (`git checkout -- src/ui/PageSkeleton.tsx`) also dropped the planned `text-display` edit. It was re-applied and the final diff is correct.
+
+### Ming verification after merge
+- As in plan "Ming verification after merge (slice 7)":
+  - light and dark at 390/800/1024/1280: dialog backdrop dim; Members avatars without a group colour; Material Symbols icons; `/dev/shell` and signed-out shell headings; `/sign-in` pixel vignette notched corners; check-in room thumbnails;
+  - tick each "Brief self-check" item, including the 800/1024/1280 layout row, keyboard Tab and OS reduced motion.
+- Neither the implementer nor the reviewer checked these in a browser.
+
+### Follow-ups (out of scope)
+- `scripts/check-tokens.mjs` CLI output still says "no violations outside the pending list". The pending list no longer exists, so the wording is stale. The plan allowed only the line-3 comment change. A one-line `/solo` could reword it to e.g. `check-tokens: 0 files, no violations`. Update `scripts/check-tokens.test.ts` "cli" too if it asserts the string.
+
+### Blockers from review agents (slice 7)
+- None (no review trigger matched).

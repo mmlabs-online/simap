@@ -2,180 +2,31 @@
 @import "../styles/tokens.css";
 
 /* ============================================================
-   Legacy token layer (SIM-071 slice 1): the old names now point at the Simap tokens in
-   src/styles/tokens.css so components keep working; slice 7 removes this compat layer.
-   Theme is set by <html data-theme="light|dark"> (see src/lib/theme.ts).
+   App-wide CSS on the Simap design tokens (src/styles/tokens.css, SIM-071). Every colour, shadow and
+   font value lives in tokens.css; this file only reads them with var(). Theme is set by
+   <html data-theme="light|dark"> (see src/lib/theme.ts).
    ============================================================ */
 
 :root {
   color-scheme: light;
-
-  /* ---- accent + status (status pairs with a label) ---- */
-  --accent-orange: var(--color-workspace-primary);
-  --accent-orange-soft: color-mix(
-    in srgb,
-    var(--color-workspace-primary) 10%,
-    var(--color-surface)
-  );
-  --on-accent: var(--color-on-action);
-  --status-online: var(--color-success);
-  --status-warn: var(--color-warning);
-  --status-alert: var(--color-danger);
-
-  /* accent ring helpers still used by fields and the shell logo */
-  --field-focus: color-mix(in srgb, var(--accent-orange) 15%, transparent);
-
-  /* ---- primary = ink (near-black buttons until the kit rework, slice 3) ---- */
-  --primary: var(--color-text-primary);
-  --on-primary: var(--color-surface);
-  --primary-container: var(--color-workspace-action);
-  --on-primary-container: var(--color-on-action);
-
-  --secondary: var(--color-text-secondary);
-  --secondary-container: color-mix(in srgb, var(--color-text-primary) 5%, var(--color-surface));
-  --on-secondary-container: var(--color-text-primary);
-
-  --tertiary: var(--color-info);
-  --tertiary-container: var(--color-info-tint);
-  --on-tertiary-container: var(--color-info);
-
-  --error: var(--color-danger);
-  --error-container: var(--color-danger-tint);
-  --on-error-container: var(--color-danger);
-
-  --success-container: var(--color-success-tint);
-  --on-success-container: var(--color-success);
-  --warning-container: var(--color-warning-tint);
-  --on-warning-container: var(--color-warning);
-
-  /* ---- base + surfaces ---- */
-  --background: var(--color-canvas);
-  --on-background: var(--color-text-primary);
-  --surface: var(--color-surface);
-  --on-surface: var(--color-text-primary);
-  --on-surface-variant: var(--color-text-secondary);
-  --surface-container-lowest: var(--color-surface);
-  --surface-container-low: var(--color-surface);
-  --surface-container: var(--color-canvas);
-  --surface-container-high: color-mix(in srgb, var(--color-text-primary) 5%, var(--color-surface));
-  --surface-container-highest: color-mix(
-    in srgb,
-    var(--color-text-primary) 8%,
-    var(--color-surface)
-  );
-
-  --outline: var(--color-border);
-  --outline-variant: var(--color-divider);
-
-  --inverse-surface: var(--color-text-primary);
-  --inverse-on-surface: var(--color-surface);
-  --inverse-primary: var(--color-workspace-primary);
-
-  --scrim: rgba(28, 28, 28, 0.32);
-  --shadow: rgba(0, 0, 0, 0.06);
-  --shadow-strong: rgba(0, 0, 0, 0.16);
-
-  --grid-line: rgba(0, 0, 0, 0.045);
-  --card-shadow: var(--shadow-card);
-  --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.1);
-
-  /* pixel accents (D52, docs/art/style-guide.md section 3) */
-  --px-outline: #2a3140;
-  --px-accent: #14b8a6;
-  --px-floor: #d9dee5;
-  --px-wall: #eef1f5;
-  --px-bg: #eceff3;
-  --px-bg-alt: #e4e8ee;
-  --px-shadow: #b3bcc9;
-  --px-title: #1a2230;
-  --px-title-shadow: #5eead4;
-  --px-heading-shadow: #99f6e4;
-  --px-btn: #c2410c;
-  --px-btn-ledge: #7c2d12;
-  --px-btn-text: #ffffff;
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-
-  --scrim: rgba(0, 0, 0, 0.6);
-  --shadow: rgba(0, 0, 0, 0.5);
-  --shadow-strong: rgba(0, 0, 0, 0.6);
-
-  --grid-line: rgba(255, 255, 255, 0.06);
-  --card-shadow-hover: 0 8px 28px rgba(0, 0, 0, 0.6);
-
-  /* wall top: keeps the pixel frame at 3:1 or more on the dark surface */
-  --px-outline: #8b95a7;
-  --px-bg: #121417;
-  --px-bg-alt: #171a1e;
-  --px-shadow: #050608;
-  --px-heading-shadow: #115e59;
-  --px-floor: #1e2228;
-  --px-wall: #2a2f37;
 }
 
 /* Class-based dark variant for later tickets: `dark:` utilities follow data-theme. */
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
-/* Map tokens into Tailwind's theme so every color/radius/font is a utility. */
+/* Utilities that tokens.css @theme does not give: the pixel art outline (border-px-outline in
+   checkin/RoomThumb.tsx) and the layout sizes max-w-content, max-w-library, min-h-control, w-sidebar. */
 @theme inline {
-  --color-primary: var(--primary);
-  --color-on-primary: var(--on-primary);
-  --color-primary-container: var(--primary-container);
-  --color-on-primary-container: var(--on-primary-container);
-  --color-secondary: var(--secondary);
-  --color-secondary-container: var(--secondary-container);
-  --color-on-secondary-container: var(--on-secondary-container);
-  --color-tertiary: var(--tertiary);
-  --color-tertiary-container: var(--tertiary-container);
-  --color-on-tertiary-container: var(--on-tertiary-container);
-  --color-error: var(--error);
-  --color-error-container: var(--error-container);
-  --color-on-error-container: var(--on-error-container);
-  --color-success-container: var(--success-container);
-  --color-on-success-container: var(--on-success-container);
-  --color-warning-container: var(--warning-container);
-  --color-on-warning-container: var(--on-warning-container);
-  --color-background: var(--background);
-  --color-on-background: var(--on-background);
-  --color-on-surface: var(--on-surface);
-  --color-on-surface-variant: var(--on-surface-variant);
-  --color-surface-lowest: var(--surface-container-lowest);
-  --color-surface-low: var(--surface-container-low);
-  --color-surface-container: var(--surface-container);
-  --color-surface-high: var(--surface-container-high);
-  --color-surface-highest: var(--surface-container-highest);
-  --color-outline: var(--outline);
-  --color-outline-variant: var(--outline-variant);
-  --color-inverse-surface: var(--inverse-surface);
-  --color-inverse-on-surface: var(--inverse-on-surface);
-
-  --color-accent-orange: var(--accent-orange);
-  --color-accent-orange-soft: var(--accent-orange-soft);
-  --color-status-online: var(--status-online);
-  --color-status-warn: var(--status-warn);
-  --color-status-alert: var(--status-alert);
   --color-px-outline: var(--px-outline);
-  --color-px-accent: var(--px-accent);
-  --color-px-floor: var(--px-floor);
-  --color-px-wall: var(--px-wall);
 
-  /* type: DM Sans (loaded in layout.tsx); --font-sans and --font-mono come from tokens.css. */
-  --font-heading: var(--font-family-sans);
-
-  /* sizes for later slices: max-w-content, max-w-library, min-h-control, w-sidebar */
   --container-content: var(--width-content);
   --container-library: var(--width-library);
   --spacing-control: var(--size-control-min);
   --spacing-sidebar: var(--size-sidebar);
-
-  --radius-md3-sm: 10px;
-  --radius-md3: 12px;
-  --radius-md3-lg: 16px;
-  --radius-md3-xl: 20px;
-
-  --ease-md3: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 * {
@@ -189,8 +40,8 @@ body {
 }
 
 body {
-  background-color: var(--background);
-  color: var(--on-surface);
+  background-color: var(--color-canvas);
+  color: var(--color-text-primary);
   font-family: var(--font-family-sans);
   -webkit-font-smoothing: antialiased;
   transition: background-color var(--duration-ui) ease-out;
@@ -201,14 +52,6 @@ h2,
 h3 {
   font-family: var(--font-family-sans);
   letter-spacing: -0.01em;
-}
-.font-heading {
-  font-family: var(--font-family-sans);
-}
-
-.text-h2 {
-  font-size: var(--text-display);
-  line-height: var(--text-display--line-height);
 }
 
 /* Shadows live in :root (tokens.css) so the dark block can override them. */
@@ -251,7 +94,7 @@ h3 {
 
 /* Material Symbols icon face (loaded via <link> in layout head). */
 .i {
-  font-family: "Material Symbols Outlined";
+  font-family: var(--font-family-icon);
   font-weight: normal;
   font-style: normal;
   line-height: 1;
@@ -305,7 +148,7 @@ h3 {
 
 /* Native <dialog> scrim (EntityFormDialog). */
 dialog::backdrop {
-  background: var(--scrim);
+  background: var(--color-scrim);
   animation: fadein var(--duration-ui) ease;
 }
 
@@ -368,19 +211,10 @@ dialog::backdrop {
 }
 
 /* Pixel accents for the sign-in surface (D52): CSS only, no font, no motion. */
-.px-stage {
-  /* a low-contrast 32 px checker floor */
-  background: repeating-conic-gradient(var(--px-bg) 0 25%, var(--px-bg-alt) 0 50%) 0 0 / 64px 64px;
-}
 .px-frame {
   position: relative;
   border: 4px solid var(--color-pixel-primary);
   box-shadow: var(--shadow-pixel);
-}
-.px-heading {
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  text-shadow: 2px 2px 0 var(--px-heading-shadow);
 }
 .px-scene {
   width: 384px; /* 12 tiles of 32 px at 1x */
@@ -392,11 +226,7 @@ dialog::backdrop {
     var(--px-outline) 40% calc(40% + 4px),
     var(--px-floor) calc(40% + 4px) 100%
   );
-  box-shadow:
-    0 -2px 0 0 var(--px-outline),
-    0 2px 0 0 var(--px-outline),
-    -2px 0 0 0 var(--px-outline),
-    2px 0 0 0 var(--px-outline);
+  box-shadow: var(--shadow-px-scene);
 }
 .px-scene-canvas {
   display: block;

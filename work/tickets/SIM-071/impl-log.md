@@ -411,3 +411,187 @@ None.
 
 ### Scope self-check
 Only the review's Issue 1 and the listed nits.
+
+## Slice 7 (attempt 1)
+Cleanup and audit: the compat layer, the dead pixel tokens and the token-guard pending list are removed.
+
+### Files touched
+- `src/styles/tokens.css`: required because the moved values need a home: `--color-ink-tint`, `--color-scrim` (light and dark), `--font-family-icon`, `--shadow-px-scene` (light and dark) and the pixel art palette (4 light, 3 dark), values copied unchanged.
+- `src/app/globals.css`: required because the compat layer goes: header, `:root`, dark block and `@theme inline` replaced by the plan text (`color-scheme` only plus 5 kept keys); `.font-heading`, `.text-h2`, `.px-stage`, `.px-heading` deleted; `body`, `.i`, `.px-scene`, `dialog::backdrop` now read tokens.
+- `src/ui/Avatar.tsx`: lines 32-33 now `var(--color-ink-tint)` / `var(--color-text-primary)` (Q-S3-2).
+- `src/ui/AppShellView.tsx`, `src/ui/PageSkeleton.tsx`, `src/app/dev/shell/KitGallery.tsx`: `text-h2` -> `text-display` (one word each).
+- `scripts/check-tokens.pending.json`: `git rm` after `--list` printed `{}`.
+- `scripts/check-tokens.mjs`: comment line 3 only.
+- `scripts/check-tokens.test.ts`: tolerant pending read and the zero-violation test.
+- `src/lib/color/tokens.test.ts`: 4 derived tokens, `["text-primary", "ink-tint"]` pair, `describe("compat layer removed (slice 7)")` with 7 tests.
+- `src/ui/screen-tokens.test.ts`: `readdirSync` import, comment, whole-src guard.
+- `src/ui/kit.test.tsx`, `src/ui/AppShellView.test.tsx`: duplicate `LEGACY` and its expect deleted (Q-S4-6).
+- `src/ui/Avatar.test.tsx`: one new test.
+
+### Alias audit (step 0, on the unedited branch)
+C1: no output. C2: `src/ui/Avatar.tsx:32` (`var(--secondary-container)`), `src/ui/Avatar.tsx:33` (`var(--on-secondary-container)`). C3: `src/ui/checkin/RoomThumb.tsx` lines 4, 5, 6, 7, 19, 27, 28 only. C4: `PageSkeleton.tsx:17`, `AppShellView.tsx:206`, `KitGallery.tsx:36` (`text-h2 font-semibold`). All equal "Expected".
+
+### After-edit searches
+- A1 (C1): no output.
+- A2 (C2 on whole `src`, globals.css and tokens.css included): no output.
+- A3: `rg -n -e '--px-[\w-]+\s*:' src` -> 7 lines, all `src/styles/tokens.css` (127-130 light, 173-175 dark). C3 re-run: `RoomThumb.tsx` 4, 5, 6, 7, 19, 27, 28 unchanged, plus the new definitions and `--shadow-px-scene` uses in `tokens.css` (the plan's C3 only excluded globals.css; tokens.css is the new home).
+- A4 (C4): no output.
+- A5 (`rg` hex/rgba in globals.css): no output.
+- A6 (`rg -n "print" src/lib/color/tokens.test.ts`): no output (temporary print block removed; the console output was silenced by the vitest config, so the rows were captured with a temporary `appendFileSync` in the same block, also removed).
+
+### Pending before/after
+`src/app/globals.css` 32 -> 0. `node scripts/check-tokens.mjs --list` -> `{}`. `scripts/check-tokens.pending.json` deleted. `node scripts/check-tokens.mjs` -> exit 0, `check-tokens: 0 files, no violations outside the pending list`.
+
+### Build-output check (`pnpm build`, `grep -c` over `.next/static/chunks/*.css`, minified so counts are lines)
+`--shadow-px-scene`: 1, `--color-scrim`: 1, `--color-ink-tint`: 1, `--px-outline`: 1, `Material Symbols Outlined`: 1.
+
+### Mutation checks
+- (a) append `export const m = "bg-[#fff]";` to `PageSkeleton.tsx` -> `pnpm test scripts/check-tokens.test.ts` exit 1 (3 failed: pending-count test, "the pending list is gone and src has zero violations (AC 1b)", cli).
+- (b) append `export const m = "text-on-surface";` -> `pnpm test src/ui/screen-tokens.test.ts` exit 1 (1 failed: whole-src guard).
+- Both reverted with `git checkout -- src/ui/PageSkeleton.tsx`, which also dropped the slice-7 `text-display` edit; it was re-applied afterwards (diff shows the one-word change).
+
+### Visible differences
+None. Every moved value is byte-identical (tokens.test "moved values are unchanged", "pixel art palette lives in tokens.css only"); every deleted name had no use (C1-C4); headings keep 32/40 · 600.
+
+### Checks
+- `pnpm format:check`: All matched files use the correct format.
+- `pnpm typecheck`: exit 0
+- `pnpm check:layers`: `1032 files, no violations`
+- `pnpm test`: exit 0, 398 passed | 1 skipped files; 3978 passed | 7 skipped tests
+- `pnpm build`: exit 0
+- `node scripts/check-tokens.mjs`: `0 files, no violations outside the pending list`
+
+### Out-of-plan files / Follow-ups
+None out of plan. Follow-up: the check-tokens.mjs output wording ("outside the pending list") is now stale; left as is (no code change in scope).
+
+### Scope self-check
+Only the Files table of the slice 7 addendum. No change to `check-tokens.mjs` rules or `ALLOWLIST`, `RoomThumb.tsx`, `SignInScene.tsx`, `CheckinPopup.tsx`, `layout.tsx`.
+
+## SIM-071 final changelog
+
+| Slice | PR | Areas / main files | Visible differences |
+|---|---|---|---|
+| 1 Tokens foundation | #154 | tokens.css, globals.css compat layer, DM Sans, `md` 800, focus ring, reduced motion | impl-log "Visible differences (slice 1)" |
+| 2 Token guard | #155 | `scripts/check-tokens.*` | none |
+| 3 UI kit | #158 | `src/ui/` kit components, KitGallery | "Slice 3 ... Visible differences" |
+| 4 Shell | #160 | AppShellView, sidebar, page containers | "Slice 4 ... Visible differences" |
+| 5a / 5b / 5c | #161 / #163 / #164 | management screens | their sections |
+| 6a / 6b / 6c | #165 / #166 / #167 | auth + check-in, portal, room map + editor + Map items | their sections |
+| 7 Cleanup | (this PR) | globals.css, tokens.css, guard tests | none |
+
+Visible differences forced by the token scale (summary of the per-slice lists, no new claims):
+- Font Manrope -> DM Sans.
+- Page headings 30 -> 32 px, metrics -> 24 px.
+- 13 px text -> 14 px (labels) or 12 px (metadata).
+- Weights 700/800 -> 600/500.
+- Pill buttons -> 8 px radius.
+- Filled actions coral `#D3441F` (not the brief `#ED5B35`, Q1).
+- Control borders `--color-border-strong` (Q6).
+- `md` breakpoint 768 -> 800.
+- Controls 44 px.
+- Dark theme is a derived palette (Q5).
+
+## Brief self-check (Deliverable 4)
+- *Contrast (WCAG AA):* asserted by `src/lib/color/tokens.test.ts` in both themes. 84 rows = 42 pairs x 2 themes (28 text 4.5, 1 large text 3, 13 non-text 3), all pass. Known non-text-only use: white on brief coral `--color-workspace-primary` (3.4:1) is not used for text (Q1).
+
+| Theme | Foreground | Background | Ratio |
+|---|---|---|---|
+| light | text-primary | canvas | 13.77 |
+| light | text-primary | surface | 14.50 |
+| light | text-secondary | canvas | 7.19 |
+| light | text-secondary | surface | 7.58 |
+| light | text-pixel | cream | 9.53 |
+| light | text-pixel | tile | 9.38 |
+| light | text-primary | tile | 12.84 |
+| light | text-primary | warning-tint | 12.98 |
+| light | text-primary | cream | 13.04 |
+| light | text-secondary | cream | 6.81 |
+| light | text-secondary | tile | 6.71 |
+| light | on-action | workspace-action | 4.55 |
+| light | on-action | workspace-action-hover | 5.67 |
+| light | on-action | pixel-primary | 6.46 |
+| light | on-action | pixel-hover | 8.23 |
+| light | text-primary | ink-tint | 13.20 |
+| light | success | surface | 6.72 |
+| light | success | canvas | 6.38 |
+| light | success | success-tint | 6.00 |
+| light | warning | surface | 5.93 |
+| light | warning | canvas | 5.63 |
+| light | warning | warning-tint | 5.31 |
+| light | danger | surface | 5.17 |
+| light | danger | canvas | 4.91 |
+| light | danger | danger-tint | 4.64 |
+| light | info | surface | 6.05 |
+| light | info | canvas | 5.74 |
+| light | info | info-tint | 5.43 |
+| light | pixel-primary | cream | 5.81 |
+| light | focus | canvas | 3.30 |
+| light | focus | surface | 3.48 |
+| light | focus | cream | 3.13 |
+| light | focus | tile | 3.08 |
+| light | border-strong | surface | 3.24 |
+| light | border-strong | canvas | 3.08 |
+| light | workspace-primary | surface | 3.42 |
+| light | workspace-primary | canvas | 3.24 |
+| light | workspace-action | surface | 4.55 |
+| light | workspace-action | canvas | 4.32 |
+| light | pixel-primary | cream | 5.81 |
+| light | pixel-primary | tile | 5.72 |
+| light | pixel-primary | surface | 6.46 |
+| dark | text-primary | canvas | 15.57 |
+| dark | text-primary | surface | 14.18 |
+| dark | text-secondary | canvas | 8.45 |
+| dark | text-secondary | surface | 7.70 |
+| dark | text-pixel | cream | 14.01 |
+| dark | text-pixel | tile | 11.81 |
+| dark | text-primary | tile | 13.12 |
+| dark | text-primary | warning-tint | 12.15 |
+| dark | text-primary | cream | 15.57 |
+| dark | text-secondary | cream | 8.45 |
+| dark | text-secondary | tile | 7.12 |
+| dark | on-action | workspace-action | 4.55 |
+| dark | on-action | workspace-action-hover | 5.67 |
+| dark | on-action | pixel-primary | 4.81 |
+| dark | on-action | pixel-hover | 6.46 |
+| dark | text-primary | ink-tint | 12.52 |
+| dark | success | surface | 9.17 |
+| dark | success | canvas | 10.07 |
+| dark | success | success-tint | 7.83 |
+| dark | warning | surface | 8.63 |
+| dark | warning | canvas | 9.47 |
+| dark | warning | warning-tint | 7.39 |
+| dark | danger | surface | 6.80 |
+| dark | danger | canvas | 7.47 |
+| dark | danger | danger-tint | 5.96 |
+| dark | info | surface | 7.42 |
+| dark | info | canvas | 8.14 |
+| dark | info | info-tint | 6.40 |
+| dark | pixel-primary | cream | 3.76 |
+| dark | focus | canvas | 9.41 |
+| dark | focus | surface | 8.57 |
+| dark | focus | cream | 9.41 |
+| dark | focus | tile | 7.93 |
+| dark | border-strong | surface | 3.46 |
+| dark | border-strong | canvas | 3.79 |
+| dark | workspace-primary | surface | 4.82 |
+| dark | workspace-primary | canvas | 5.29 |
+| dark | workspace-action | surface | 3.62 |
+| dark | workspace-action | canvas | 3.98 |
+| dark | pixel-primary | cream | 3.76 |
+| dark | pixel-primary | tile | 3.17 |
+| dark | pixel-primary | surface | 3.43 |
+
+Thresholds: text pairs (the first 28 per theme) 4.5; `pixel-primary` on `cream` (large text, serif headline) 3; the last 13 per theme (focus, border-strong, workspace-primary, workspace-action, pixel-primary) non-text 3. The `pixel-primary` / `cream` row appears twice per theme (large text and non-text).
+
+- *Focus ring visible:* global `:where(button, a, [tabindex], input, select, summary):focus-visible` 2 px `--color-focus` + 2 px offset and `.field-box:focus-within` (globals.css); `--color-focus` is 3.08:1 or more on canvas, surface, cream, tile in both themes (table); per-component focus classes are forbidden in migrated files (`screen-tokens` `OTHER`), restated only as `has-[:focus-visible]:outline-focus` on labels of `sr-only` inputs. Known limit: on light map art the ring can be about 2.6:1 (Q-S6c-3).
+- *44 px targets:* `--size-control-min: 44px` -> `min-h-control`/`size-control`; kit Button/IconButton asserted in `kit.test.tsx`; `LOW_TARGET` guard over every `MIGRATED` file (120 files). Documented exceptions: links inside table cells and sentences (Q-S5b-3, WCAG 2.5.8 spacing exception); the "Move here" tag is 24 px visible with a 44 px hit area (Q-S6c-2); the Map item pencil is a 32 px circle in a 44 px hit area (6c).
+- *Reduced motion:* globals.css `@media (prefers-reduced-motion: reduce)` sets `animation`/`transition: none !important` (tokens.test); the auth world has no motion (tokens.test). Canvas loops, `rg -n "requestAnimationFrame|setInterval" src/ui -g '!*.test.*'`:
+```
+src/ui/roomlayout/WalkLayer.tsx:73:      if (draw()) id = requestAnimationFrame(loop);
+src/ui/roomlayout/WalkLayer.tsx:75:    id = requestAnimationFrame(loop);
+src/ui/roomlayout/WalkLayer.tsx:90:    const id = setInterval(() => {
+src/ui/roomlayout/EditorCanvas.tsx:199:    frame.current = requestAnimationFrame(() => {
+```
+  `EditorCanvas.tsx:199` is a one-shot paint; `WalkLayer.tsx` is gated by `useWalks`/`idleOn` (slice 1 check).
+- *Layout 800 / 1024 / 1280:* code-level evidence only (no browser in the agent environment): sidebar from `md` 800 (`AppShellView`), desktop composition at `lg` 1024 (layout-editor gate `MEDIA.lg`, check-in two columns, sign-in Hero), wide at `xl` 1280 (sign-in small world, page padding 32 px); see the slice-4 "Width table". To be confirmed by Ming after merge (Q-S7-6).
+- *Deliverable 2 grep:* `node scripts/check-tokens.mjs` -> `check-tokens: 0 files, no violations outside the pending list`; A5 -> no output.

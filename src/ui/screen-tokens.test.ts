@@ -1,10 +1,10 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { TABLE_CELL, TABLE_HEAD, TABLE_REFS, TABLE_ROW } from "./table";
 
 const read = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 
-/** Management screens already on the kit tokens (slice 7 replaces this test). */
+/** Screens migrated to the kit tokens (slices 5–6); the last describe guards every non-test src file (slice 7). */
 const MIGRATED = [
   "ui/table.ts",
   "ui/members/MembersView.tsx",
@@ -294,5 +294,20 @@ describe("migrated management screens", () => {
     }
     expect(TABLE_ROW).toContain("border-divider");
     expect(TABLE_REFS).toContain("text-caption");
+  });
+});
+
+describe("whole src after the compat layer removal (slice 7)", () => {
+  const REMOVED =
+    /var\(--(?:scrim|shadow|shadow-strong|grid-line|card-shadow|card-shadow-hover|field-focus|px-bg|px-bg-alt|px-shadow|px-title|px-title-shadow|px-heading-shadow|px-btn|px-btn-ledge|px-btn-text)\)|(?<![\w-])(?:ease-md3|font-heading|text-h2)(?![\w-])/;
+
+  it("no non-test ts/tsx file uses a removed alias, class or variable", () => {
+    const files = readdirSync(new URL("../", import.meta.url), { recursive: true })
+      .map((p) => String(p).split("\\").join("/"))
+      .filter((p) => /\.tsx?$/.test(p) && !/\.test\.tsx?$/.test(p));
+    expect(files.length).toBeGreaterThan(100);
+    for (const f of files) {
+      for (const re of [LEGACY, REMOVED]) expect(read(f).match(re)?.[0], f).toBeUndefined();
+    }
   });
 });

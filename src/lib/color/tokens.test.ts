@@ -85,6 +85,10 @@ const DERIVED_TOKENS = [
   "--color-warning-tint",
   "--color-danger-tint",
   "--color-info-tint",
+  "--color-ink-tint",
+  "--color-scrim",
+  "--font-family-icon",
+  "--shadow-px-scene",
 ];
 
 describe("tokens.css", () => {
@@ -137,6 +141,7 @@ const TEXT_PAIRS: [string, string][] = [
   ["on-action", "workspace-action-hover"],
   ["on-action", "pixel-primary"],
   ["on-action", "pixel-hover"],
+  ["text-primary", "ink-tint"],
 ];
 for (const f of ["success", "warning", "danger", "info"]) {
   for (const bg of ["surface", "canvas", `${f}-tint`]) TEXT_PAIRS.push([f, bg]);
@@ -298,5 +303,78 @@ describe("auth world and pixel chrome (replaces world-palette.test.ts)", () => {
 
   it("the old pixel button, strip and title rules are gone", () => {
     expect(globalsCss).not.toMatch(/\.px-(card|strip|title)\b/);
+  });
+});
+
+describe("compat layer removed (slice 7)", () => {
+  const ws = (s?: string) => s?.replace(/\s+/g, " ").trim();
+  const names = (decls: Decl[], prefix: string) =>
+    decls.filter((d) => d.name.startsWith(prefix)).map((d) => d.name);
+  const values = (decls: Decl[], prefix: string) =>
+    decls.filter((d) => d.name.startsWith(prefix)).map((d) => d.value);
+
+  it("globals.css defines no colour value", () => {
+    expect(globalsCss).not.toMatch(/#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?)\(/);
+  });
+
+  it(":root and dark blocks only set color-scheme", () => {
+    expect(ws(/:root\s*\{([^}]*)\}/.exec(globalsCss)?.[1])).toBe("color-scheme: light;");
+    expect(ws(/\[data-theme="dark"\]\s*\{([^}]*)\}/.exec(globalsCss)?.[1])).toBe(
+      "color-scheme: dark;",
+    );
+  });
+
+  it("@theme inline keeps only the art outline and layout sizes", () => {
+    const inline = /@theme inline\s*\{([^}]*)\}/.exec(globalsCss);
+    const found = [...(inline?.[1] ?? "").matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]);
+    expect(found).toEqual([
+      "--color-px-outline",
+      "--container-content",
+      "--container-library",
+      "--spacing-control",
+      "--spacing-sidebar",
+    ]);
+  });
+
+  it("every var() in globals.css is a tokens.css token", () => {
+    for (const m of globalsCss.matchAll(/var\((--[\w-]+)/g)) {
+      expect(lightMap.has(m[1]) || m[1] === "--font-serif", m[1]).toBe(true);
+    }
+  });
+
+  it("dead rules are gone and the last literals read tokens", () => {
+    expect(globalsCss).not.toMatch(/\.(?:font-heading|text-h2|px-stage|px-heading)\b/);
+    expect(globalsCss).toMatch(/(?:^|\n)\.i\s*\{[^}]*font-family:\s*var\(--font-family-icon\);/);
+    expect(globalsCss).toMatch(/\.px-scene\s*\{[^}]*box-shadow:\s*var\(--shadow-px-scene\);/);
+    expect(globalsCss).toMatch(/dialog::backdrop\s*\{[^}]*background:\s*var\(--color-scrim\);/);
+    expect(globalsCss).toMatch(
+      /(?:^|\n)body\s*\{[^}]*background-color:\s*var\(--color-canvas\);\s*color:\s*var\(--color-text-primary\);/,
+    );
+  });
+
+  it("moved values are unchanged", () => {
+    const ink = "color-mix(in srgb, var(--color-text-primary) 5%, var(--color-surface))";
+    expect(ws(lightMap.get("--color-ink-tint"))).toBe(ink);
+    expect(ws(darkMap.get("--color-ink-tint"))).toBe(ink);
+    expect(lightMap.get("--color-scrim")).toBe("rgba(28, 28, 28, 0.32)");
+    expect(darkMap.get("--color-scrim")).toBe("rgba(0, 0, 0, 0.6)");
+    expect(lightMap.get("--font-family-icon")).toBe('"Material Symbols Outlined"');
+    const frame =
+      "0 -2px 0 0 var(--px-outline), 0 2px 0 0 var(--px-outline), -2px 0 0 0 var(--px-outline), 2px 0 0 0 var(--px-outline)";
+    expect(ws(lightMap.get("--shadow-px-scene"))).toBe(frame);
+    expect(ws(darkMap.get("--shadow-px-scene"))).toBe(frame);
+  });
+
+  it("pixel art palette lives in tokens.css only", () => {
+    expect(globalsCss).not.toMatch(/--px-[\w-]+\s*:/);
+    expect(names(light, "--px-")).toEqual([
+      "--px-outline",
+      "--px-accent",
+      "--px-floor",
+      "--px-wall",
+    ]);
+    expect(values(light, "--px-")).toEqual(["#2a3140", "#14b8a6", "#d9dee5", "#eef1f5"]);
+    expect(names(dark, "--px-")).toEqual(["--px-outline", "--px-floor", "--px-wall"]);
+    expect(values(dark, "--px-")).toEqual(["#8b95a7", "#1e2228", "#2a2f37"]);
   });
 });
