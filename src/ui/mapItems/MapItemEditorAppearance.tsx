@@ -228,7 +228,6 @@ export function MapItemEditorAppearance(p: AppearanceProps) {
             <Button
               variant="tonal"
               size="sm"
-
               disabled={busy}
               onClick={() => fileRef.current?.click()}
             >
@@ -263,7 +262,6 @@ export function MapItemEditorAppearance(p: AppearanceProps) {
         <Button
           variant="outlined"
           size="sm"
-
           disabled={busy || (eff.source === "library" && !eff.staged)}
           onClick={() => p.onRestore(dir)}
         >

@@ -171,13 +171,7 @@ export function MapItemEditorDetails(p: DetailsProps) {
             <Button variant="pixel" size="sm" disabled={busy} onClick={p.onReset}>
               {resetCopy.confirm}
             </Button>
-            <Button
-              variant="tonal"
-              size="sm"
-
-              disabled={busy}
-              onClick={p.onKeepEditing}
-            >
+            <Button variant="tonal" size="sm" disabled={busy} onClick={p.onKeepEditing}>
               {ed.reset.keep}
             </Button>
           </div>
@@ -187,7 +181,6 @@ export function MapItemEditorDetails(p: DetailsProps) {
           <Button
             variant="outlined"
             size="sm"
-
             disabled={busy || isLibraryDefault(item)}
             onClick={p.onAskReset}
           >

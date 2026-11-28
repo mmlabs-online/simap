@@ -386,3 +386,28 @@ None out of plan. Follow-up: S6c-5's `rg` in the plan should exclude `group-focu
 
 ### Scope self-check
 Only the 6c Files tables, tests, pending and this log; `src/ui/copy`, `src/lib` (except `tokens.test.ts`), `src/app`, `*.ts` in roomlayout/mapItems untouched.
+
+## Slice 6c (attempt 2)
+REWORK of the review "Slice 6c (attempt 1)": Issue 1 (blocker) and the formatting nits only.
+
+### Files touched
+- `src/ui/screen-tokens.test.ts`: required because Issue 1. `OTHER` is now `/opacity-60|(?<!group-)focus-visible:|group-focus-visible:(?!flex(?![\w-]))|focus-within:/`. It exempts only `group-focus-visible:flex`. New test "the focus guard exempts only group-focus-visible:flex" allows `group-focus-visible:flex` and `has-[:focus-visible]:outline-focus`. It rejects `focus-visible:ring-2`, `peer-focus-visible:`, `group-focus-visible:ring-2`, `in-focus-visible:`, `md:focus-visible:` and `group-focus-visible:flex-col`.
+- `src/ui/mapItems/MapItemEditor.tsx`, `MapItemEditorAppearance.tsx`, `MapItemEditorDetails.tsx`: required because the nit. Deleted the five empty lines inside JSX attribute lists.
+- `src/ui/roomlayout/Palette.tsx`: required because the nit. The `border-l-4 border-transparent aria-pressed:border-pixel-primary` classes now sit before the transition string, as in the other rows.
+
+### Deviation note (updated)
+The earlier note that widened `OTHER` to `(?<![\w-])focus-visible:` is superseded. The guard now exempts only `group-focus-visible:flex` (SeatOverlay.tsx:165-166); every other per-component focus class still fails.
+
+### Checks
+- `pnpm format:check`: exit 0
+- `pnpm typecheck`: exit 0
+- `pnpm check:layers`: `1032 files, no violations`
+- `pnpm test`: exit 0, 398 passed | 1 skipped files; 3968 passed | 7 skipped tests
+- `pnpm build`: exit 0
+- `node scripts/check-tokens.mjs`: `1 files, no violations outside the pending list`
+
+### Out-of-plan files / Follow-ups
+None.
+
+### Scope self-check
+Only the review's Issue 1 and the listed nits.

@@ -52,7 +52,7 @@ export function Palette({ groups, armed, disabled, status, onRetry, onArm }: Pal
                     aria-pressed={armed === e.sprite}
                     disabled={disabled}
                     onClick={() => onArm(e)}
-                    className="flex min-h-control w-full cursor-pointer items-center rounded-lg px-2 text-left text-label font-normal text-text-primary enabled:hover:bg-tile disabled:cursor-not-allowed aria-pressed:bg-tile aria-pressed:font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out border-l-4 border-transparent aria-pressed:border-pixel-primary"
+                    className="flex min-h-control w-full cursor-pointer items-center rounded-lg px-2 text-left text-label font-normal text-text-primary enabled:hover:bg-tile disabled:cursor-not-allowed aria-pressed:bg-tile aria-pressed:font-semibold border-l-4 border-transparent aria-pressed:border-pixel-primary transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out"
                   >
                     {e.name}
                   </button>

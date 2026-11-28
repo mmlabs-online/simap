@@ -152,12 +152,7 @@ export function MapItemEditorFrame(p: EditorFrameProps) {
         {state.phase === "confirmDiscard" ? (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-label font-semibold text-text-primary">{copy.discard.title}</span>
-            <Button
-              variant="tonal"
-              size="sm"
-
-              onClick={() => dispatch({ type: "keepEditing" })}
-            >
+            <Button variant="tonal" size="sm" onClick={() => dispatch({ type: "keepEditing" })}>
               {copy.discard.keep}
             </Button>
             <Button variant="danger" size="sm" onClick={p.onDiscard}>

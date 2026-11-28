@@ -135,7 +135,8 @@ const RAW_TYPE =
 const LOW_TARGET = /(?<![\w-])(?:min-h-11|h-11|size-11|h-8|h-9)(?![\w-])/;
 const PALETTE =
   /(?<![\w-])(?:bg|text|border)-(?:red|amber|orange|yellow|green|blue|gray|slate|zinc|neutral|stone)-\d{2,3}(?![\w-])/;
-const OTHER = /opacity-60|(?<![\w-])focus-visible:|focus-within:/;
+const OTHER =
+  /opacity-60|(?<!group-)focus-visible:|group-focus-visible:(?!flex(?![\w-]))|focus-within:/;
 
 const MAP_CHROME = MIGRATED.filter(
   (m) => m.startsWith("ui/roomlayout/") || m.startsWith("ui/mapItems/"),
@@ -149,6 +150,22 @@ describe("migrated management screens", () => {
       for (const re of [LEGACY, RAW_TYPE, LOW_TARGET, PALETTE, OTHER]) {
         expect(text.match(re)?.[0], `${f} ${re.source.slice(0, 20)}`).toBeUndefined();
       }
+    }
+  });
+
+  it("the focus guard exempts only group-focus-visible:flex", () => {
+    for (const ok of ["group-focus-visible:flex", "has-[:focus-visible]:outline-focus"]) {
+      expect(ok.match(OTHER)?.[0], ok).toBeUndefined();
+    }
+    for (const bad of [
+      "focus-visible:ring-2",
+      "peer-focus-visible:flex",
+      "group-focus-visible:ring-2",
+      "in-focus-visible:flex",
+      "md:focus-visible:flex",
+      "group-focus-visible:flex-col",
+    ]) {
+      expect(bad.match(OTHER), bad).not.toBeNull();
     }
   });
 
