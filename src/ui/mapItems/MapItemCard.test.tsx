@@ -51,10 +51,10 @@ describe("MapItemCard", () => {
   it("hidden: a Hidden pill after the name and a dimmed preview", () => {
     const html = render(dto("door", { hidden: true }));
     expect(html.indexOf(mapItemsCopy.list.hidden)).toBeGreaterThan(html.indexOf("</h3>"));
-    expect(html).toContain("opacity-60");
+    expect(html).toContain("opacity-50");
     const shown = render(dto("door"));
     expect(shown).not.toContain(mapItemsCopy.list.hidden);
-    expect(shown).not.toContain("opacity-60");
+    expect(shown).not.toContain("opacity-50");
   });
 
   it("custom image: a pixelated img with empty alt and the Custom image label", () => {

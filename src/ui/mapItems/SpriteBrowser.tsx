@@ -57,11 +57,12 @@ export function SpriteBrowser({
           value={query}
           disabled={busy}
           onChange={(e) => onQuery(e.target.value)}
-          className="min-h-11 min-w-0 flex-1 rounded-md3 border border-outline-variant bg-surface px-3 text-sm font-medium text-on-surface"
+          className="min-h-control min-w-0 flex-1 rounded-lg border border-border-strong bg-surface px-3 text-label text-text-primary"
         />
-        <label className="flex min-h-11 items-center gap-2 text-sm font-medium text-on-surface">
+        <label className="flex min-h-control cursor-pointer items-center gap-2 text-label text-text-primary">
           <input
             type="checkbox"
+            className="size-5 flex-none"
             checked={allTypes}
             disabled={busy}
             onChange={(e) => onAllTypes(e.target.checked)}
@@ -69,11 +70,11 @@ export function SpriteBrowser({
           {editorCopy.allTypes}
         </label>
       </div>
-      <p role="status" className="text-xs font-medium text-on-surface-variant">
+      <p role="status" className="text-caption font-medium text-text-secondary">
         {title ? `${title} · ` : ""}
         {count === 0 ? (query.trim() ? editorCopy.noMatch : copy.empty) : copy.count(count)}
       </p>
-      {smaller && <p className="text-xs text-on-surface-variant">{copy.smaller}</p>}
+      {smaller && <p className="text-caption text-text-secondary">{copy.smaller}</p>}
       {count > 0 && (
         <div
           role="radiogroup"
@@ -82,7 +83,7 @@ export function SpriteBrowser({
         >
           {groups.map((g) => (
             <div key={g.group} className="flex flex-col gap-1">
-              <h4 className="text-xs font-extrabold uppercase text-on-surface-variant">
+              <h4 className="text-caption font-semibold tracking-wide text-text-secondary uppercase">
                 {g.group}
               </h4>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -91,7 +92,7 @@ export function SpriteBrowser({
                   return (
                     <label
                       key={k}
-                      className="relative flex min-h-11 cursor-pointer flex-col items-center gap-1 rounded-md3 border border-outline-variant bg-surface p-2 has-[:checked]:border-primary has-[:checked]:bg-primary-container"
+                      className="relative flex min-h-control cursor-pointer flex-col items-center gap-1 rounded-xl border border-divider bg-tile p-2 has-[:checked]:border-pixel-primary has-[:checked]:ring-2 has-[:checked]:ring-pixel-primary has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus"
                     >
                       <input
                         type="radio"
@@ -100,9 +101,8 @@ export function SpriteBrowser({
                         checked={selected === k}
                         disabled={busy}
                         onChange={() => onPick(k)}
-                        className="peer sr-only"
+                        className="sr-only"
                       />
-                      <span className="pointer-events-none absolute inset-0 rounded-md3 peer-focus-visible:ring-2 peer-focus-visible:ring-primary" />
                       {atlas && (
                         <FramePreview
                           atlas={atlas}
@@ -111,10 +111,10 @@ export function SpriteBrowser({
                           label={mapItemsCopy.art.frameAlt(k)}
                         />
                       )}
-                      <span className="break-all text-center font-mono text-[11px] text-on-surface">
+                      <span className="break-all text-center font-mono text-caption text-text-pixel">
                         {k}
                       </span>
-                      <span className="text-[11px] text-on-surface-variant">{`${w} × ${h}`}</span>
+                      <span className="text-caption text-text-secondary">{`${w} × ${h}`}</span>
                     </label>
                   );
                 })}

@@ -65,7 +65,7 @@ export function PersonalInfoCard({
                 {copy.nameHint}
               </small>
             )}
-            <small id="portal-name-count" className="text-caption text-text-secondary flex-none">
+            <small id="portal-name-count" className="flex-none text-caption text-text-secondary">
               {copy.counter(nameLength(name), DISPLAY_NAME_MAX)}
             </small>
           </div>

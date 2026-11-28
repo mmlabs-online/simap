@@ -9,10 +9,10 @@
 | Gate | plan-approval |
 | Depends on | — |
 | Needs Ming | — |
-| Attempts | 1 |
+| Attempts | 2 |
 | Created | 2026-11-27 |
 | Claimed by | |
-| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 (merged); slice 5c: https://github.com/mmlabs-online/simap/pull/164 (merged); slice 6a: https://github.com/mmlabs-online/simap/pull/165 (merged); slice 6b: https://github.com/mmlabs-online/simap/pull/166 |
+| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 (merged); slice 5c: https://github.com/mmlabs-online/simap/pull/164 (merged); slice 6a: https://github.com/mmlabs-online/simap/pull/165 (merged); slice 6b: https://github.com/mmlabs-online/simap/pull/166 (merged); slice 6c: https://github.com/mmlabs-online/simap/pull/167 |
 
 ## Goal
 Every screen of simap uses one set of design tokens (colours, type, spacing, radius, elevation, layout, motion) from
@@ -145,3 +145,9 @@ workspace coral) via D87.
 - Done: slice 6b (portal, 16 screen files, pending 93 → 83) passed review on attempt 1. PR https://github.com/mmlabs-online/simap/pull/166.
 - In progress / next: after Ming merges #166, run `/run SIM-071` for 6c (roomlayout chrome + mapItems; the outline is in plan.md and needs a full addendum), then slice 7.
 - Gotchas: Q-S6b-1..7 took their defaults. 1 rework left on the ticket.
+
+### 2026-11-28 — claude — IN_PROGRESS (slice 6c PR open)
+- Agent calls: 5 (planner×1 229k slice 6c addendum, implementer×2 101k + 26k, reviewer×2 98k + 27k)
+- Done: slice 6c (roomlayout chrome and mapItems; pending 83 → 32, only globals.css left). Attempt 1 was REWORK because the focus-guard regex was too broad. Attempt 2 passed. PR https://github.com/mmlabs-online/simap/pull/167.
+- In progress / next: after Ming merges #167, `/run SIM-071` for slice 7 (cleanup: compat aliases, `--px-*` into tokens.css, empty and delete the pending list, changelog, brief self-check). It needs an addendum.
+- Gotchas: **no reworks left on the ticket (Attempts = 2)**. Any REWORK in slice 7 escalates. Keep slice 7 small and well-specified. Q-S6c-1..17 took their defaults.

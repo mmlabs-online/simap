@@ -12,7 +12,10 @@ export type EditorWarningsProps = {
 export function EditorWarnings({ noDoor, unreachable }: EditorWarningsProps) {
   if (!noDoor && unreachable.length === 0) return null;
   return (
-    <div role="status" className="rounded border border-amber-300 bg-amber-50 p-2 text-sm">
+    <div
+      role="status"
+      className="rounded-md border border-warning/40 bg-warning-tint p-2 text-label font-normal text-text-primary"
+    >
       <p className="font-medium">{copy.heading}</p>
       <ul className="list-disc pl-5">
         {noDoor && <li>{copy.noDoor}</li>}

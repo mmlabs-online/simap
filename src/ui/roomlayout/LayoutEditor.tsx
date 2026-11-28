@@ -190,7 +190,7 @@ export function LayoutEditor({
       )}
       <EditorStatusLine notice={state.notice} />
       <EditorWarnings noDoor={warnings.noDoor} unreachable={warnings.unreachable} />
-      <div className="grid grid-cols-[minmax(0,1fr)_18rem] items-start gap-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_--spacing(72)] items-start gap-4">
         <EditorCanvas
           draft={draft}
           seatDevices={state.seatDevices}

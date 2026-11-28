@@ -30,6 +30,16 @@ const keys = browserChoices(dto("desk.single"), "n", null, {
 }).groups.flatMap((g) => g.keys);
 
 describe("SpriteBrowser", () => {
+  it("tiles sit on the tile colour; selected is pixel green; focus is the restated outline", () => {
+    const html = render({ selected: keys[0] });
+    const tile = /<label[^>]*class="([^"]*bg-tile[^"]*)"/.exec(html)?.[1] ?? "";
+    expect(tile).toContain("has-[:checked]:border-pixel-primary");
+    expect(tile).toContain("has-[:focus-visible]:outline-focus");
+    for (const bad of ["peer-focus", "text-[11px]", "primary-container"]) {
+      expect(html, bad).not.toContain(bad);
+    }
+  });
+
   it("tiles are a radiogroup by group; the selected key is checked; no Use/Cancel buttons; search and All types controls", () => {
     const html = render({ selected: "desk.single.n" });
     expect(html).toContain('role="radiogroup"');

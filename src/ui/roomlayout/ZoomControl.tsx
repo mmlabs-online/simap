@@ -16,7 +16,7 @@ export function ZoomControl({ zoom, onZoom, allowed = ZOOM_LEVELS }: Props) {
           aria-pressed={z === zoom}
           disabled={!allowed.includes(z)}
           onClick={() => onZoom(z)}
-          className="aria-pressed:border-primary aria-pressed:font-extrabold aria-pressed:text-primary"
+          className="aria-pressed:border-text-primary aria-pressed:font-semibold"
         >
           {roomlayoutCopy.zoomOption(z)}
         </Button>

@@ -58,10 +58,10 @@ export function EditorInspector({
   ];
 
   return (
-    <aside className="flex flex-col gap-4 text-sm text-on-surface">
+    <aside className="flex flex-col gap-4 text-label font-normal text-text-primary">
       <section className="flex flex-col gap-2">
-        <h2 className="text-base font-extrabold">{c.heading}</h2>
-        {none && <p className="text-on-surface-variant">{c.none}</p>}
+        <h2 className="text-body font-semibold">{c.heading}</h2>
+        {none && <p className="text-text-secondary">{c.none}</p>}
         {selected.length === 1 && (
           <p>
             <span className="font-semibold">
@@ -88,7 +88,7 @@ export function EditorInspector({
           </Button>
         </div>
         {hasSavedSeat && (
-          <p id="editor-delete-note" className="text-on-surface-variant">
+          <p id="editor-delete-note" className="text-text-secondary">
             {c.deleteSeatNote}
           </p>
         )}
@@ -118,7 +118,7 @@ export function EditorInspector({
 
       {draft.tray.length > 0 && (
         <section className="flex flex-col gap-1">
-          <h3 className="font-bold">{c.trayHeading(draft.tray.length)}</h3>
+          <h3 className="font-semibold">{c.trayHeading(draft.tray.length)}</h3>
           <ul>
             {draft.tray.map((t) => (
               <li key={t.id}>
@@ -127,7 +127,7 @@ export function EditorInspector({
                   aria-pressed={tool?.kind === "tray" && tool.seatId === t.id}
                   disabled={disabled}
                   onClick={() => onArmTray(t.id)}
-                  className="w-full cursor-pointer px-3 py-1.5 text-left text-[13px] hover:bg-surface-high disabled:cursor-not-allowed disabled:opacity-50 aria-pressed:font-extrabold aria-pressed:text-primary"
+                  className="flex min-h-control w-full cursor-pointer items-center rounded-lg px-3 text-left text-label font-normal text-text-primary enabled:hover:bg-tile disabled:cursor-not-allowed aria-pressed:bg-tile aria-pressed:font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out"
                 >
                   {c.placeSeat(t.code)}
                 </button>
@@ -138,18 +138,18 @@ export function EditorInspector({
       )}
 
       <section className="flex flex-col gap-1">
-        <h3 className="font-bold">{c.itemsHeading}</h3>
+        <h3 className="font-semibold">{c.itemsHeading}</h3>
         {items.length === 0 ? (
-          <p className="text-on-surface-variant">{c.itemsEmpty}</p>
+          <p className="text-text-secondary">{c.itemsEmpty}</p>
         ) : (
-          <ul className="max-h-64 overflow-auto rounded-md border border-outline-variant">
+          <ul className="max-h-64 overflow-auto rounded-md border border-divider">
             {items.map((i) => (
               <li key={i.key}>
                 <button
                   type="button"
                   aria-pressed={selection.includes(i.key)}
                   onClick={(e) => onSelect(i.key, e.shiftKey)}
-                  className="w-full cursor-pointer px-3 py-1.5 text-left text-[13px] hover:bg-surface-high aria-pressed:font-extrabold aria-pressed:text-primary"
+                  className="flex min-h-control w-full cursor-pointer items-center rounded-lg px-3 text-left text-label font-normal text-text-primary enabled:hover:bg-tile disabled:cursor-not-allowed aria-pressed:bg-tile aria-pressed:font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out"
                 >
                   {label(i)}
                 </button>
@@ -214,12 +214,12 @@ export function RoomSizeForm({ w, h, disabled, refused, onResize }: SizeProps) {
         </Button>
       </div>
       {bad && (
-        <p id="size-bad" className="text-error">
+        <p id="size-bad" className="text-danger">
           {c.sizeBad}
         </p>
       )}
       {refused && !bad && (
-        <p id="size-refused" className="text-error">
+        <p id="size-refused" className="text-danger">
           {copy.refused.resize_cut}
         </p>
       )}

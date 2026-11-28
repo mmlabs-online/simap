@@ -229,7 +229,7 @@ export function EditorCanvas({
   return (
     <div className="space-y-2">
       {allowed.length < ZOOM_LEVELS.length && (
-        <p role="status" className="text-sm text-on-surface-variant">
+        <p role="status" className="text-label font-normal text-text-secondary">
           {roomlayoutCopy.zoomLimited}
         </p>
       )}
@@ -239,7 +239,7 @@ export function EditorCanvas({
         tabIndex={0}
         aria-label={roomlayoutCopy.regionLabel}
         onKeyDown={onRegionKeyDown}
-        className="max-h-[70vh] overflow-auto overscroll-contain rounded-md border border-outline-variant outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="max-h-[70vh] overflow-auto overscroll-contain rounded-md border border-divider"
       >
         <div className="relative" style={{ width, height }}>
           <canvas
@@ -263,7 +263,7 @@ export function EditorCanvas({
             {preview && (
               <div
                 data-testid="place-ghost"
-                className={`pointer-events-none absolute border-2 ${preview.ok ? "border-primary bg-primary/20" : "border-dashed border-error bg-error/20"}`}
+                className={`pointer-events-none absolute border-2 ${preview.ok ? "border-text-primary bg-text-primary/20" : "border-dashed border-danger bg-danger/20"}`}
                 style={{
                   left: (preview.x * TILE - bounds.x) * effective,
                   top: (preview.y * TILE - bounds.y) * effective,
@@ -279,7 +279,7 @@ export function EditorCanvas({
                 return (
                   <div
                     key={i.key}
-                    className="pointer-events-none absolute border-2 border-primary outline-2 -outline-offset-4 outline-dashed outline-on-surface"
+                    className="pointer-events-none absolute border-2 border-text-primary outline-2 -outline-offset-4 outline-dashed outline-text-primary"
                     style={{
                       left: (b.x * TILE - bounds.x) * effective,
                       top: (b.y * TILE - bounds.y) * effective,

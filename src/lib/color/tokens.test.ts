@@ -128,6 +128,8 @@ const TEXT_PAIRS: [string, string][] = [
   ["text-secondary", "surface"],
   ["text-pixel", "cream"],
   ["text-pixel", "tile"],
+  ["text-primary", "tile"],
+  ["text-primary", "warning-tint"],
   ["text-primary", "cream"],
   ["text-secondary", "cream"],
   ["text-secondary", "tile"],

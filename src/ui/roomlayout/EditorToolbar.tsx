@@ -38,7 +38,9 @@ export function EditorToolbar(p: Props) {
         </Button>
         <ZoomControl zoom={p.zoom} onZoom={p.onZoom} />
         <span className="flex-1" />
-        {p.dirty && <span className="text-sm font-semibold text-on-surface">{copy.unsaved}</span>}
+        {p.dirty && (
+          <span className="text-label font-semibold text-text-primary">{copy.unsaved}</span>
+        )}
         <Button
           size="sm"
           disabled={!p.canSave}
@@ -51,7 +53,7 @@ export function EditorToolbar(p: Props) {
         </Button>
       </div>
       {p.saveBlock && (
-        <p id="editor-save-reason" className="text-sm text-on-surface-variant">
+        <p id="editor-save-reason" className="text-label font-normal text-text-secondary">
           {copy.saveBlock[p.saveBlock]}
         </p>
       )}

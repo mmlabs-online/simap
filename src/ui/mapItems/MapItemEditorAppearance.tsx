@@ -15,10 +15,10 @@ import { effectiveArt, pendingItem, type EditorState } from "./map-item-editor";
 
 const copy = mapItemsCopy.art;
 const ed = mapItemsCopy.editor;
-const CHANGED_DOT = "ml-1 inline-block size-1.5 rounded-full bg-primary align-middle";
+const CHANGED_DOT = "ml-1 inline-block size-1.5 rounded-full bg-pixel-primary align-middle";
 const GRID: React.CSSProperties = {
   backgroundImage:
-    "linear-gradient(var(--outline-variant) 1px, transparent 1px), linear-gradient(90deg, var(--outline-variant) 1px, transparent 1px)",
+    "linear-gradient(var(--color-divider) 1px, transparent 1px), linear-gradient(90deg, var(--color-divider) 1px, transparent 1px)",
   backgroundSize: "32px 32px",
 };
 
@@ -61,9 +61,10 @@ function Radios<T extends string>({
       {options.map((o, i) => {
         const on = o.id === value;
         return (
-          <button
+          <Button
             key={o.id}
-            type="button"
+            variant="outlined"
+            size="sm"
             role="radio"
             aria-checked={on}
             tabIndex={on ? 0 : -1}
@@ -76,12 +77,7 @@ function Radios<T extends string>({
               onSelect(options[next]!.id);
               ref.current?.querySelectorAll<HTMLElement>('[role="radio"]')[next]?.focus();
             }}
-            className={[
-              "state-layer min-h-11 flex-1 rounded-full border px-4 text-sm font-bold disabled:pointer-events-none disabled:opacity-40",
-              on
-                ? "border-primary bg-primary-container text-on-surface"
-                : "border-outline-variant bg-surface text-on-surface-variant",
-            ].join(" ")}
+            className="flex-1 aria-checked:border-pixel-primary aria-checked:bg-tile aria-checked:font-semibold"
           >
             {on && <span aria-hidden="true">✓ </span>}
             {o.label}
@@ -91,7 +87,7 @@ function Radios<T extends string>({
                 <span className="sr-only"> {ed.changed}</span>
               </>
             )}
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -122,7 +118,7 @@ export function MapItemEditorAppearance(p: AppearanceProps) {
           style={{ imageRendering: "pixelated", width: size.w * scale }}
         />
       ) : (
-        <p className="text-xs font-medium text-on-surface-variant">{copy.previewNA}</p>
+        <p className="text-caption font-medium text-text-secondary">{copy.previewNA}</p>
       );
     }
     if (!p.atlas) return null;
@@ -134,22 +130,22 @@ export function MapItemEditorAppearance(p: AppearanceProps) {
         label={copy.frameAlt(frameKey!, scaleLabel)}
       />
     ) : (
-      <p className="text-xs font-medium text-on-surface-variant">{copy.previewNA}</p>
+      <p className="text-caption font-medium text-text-secondary">{copy.previewNA}</p>
     );
   };
 
   return (
     <div className="flex flex-col gap-4">
       {p.atlasFailed && (
-        <p role="status" className="text-xs font-semibold text-on-surface-variant">
+        <p role="status" className="text-caption font-semibold text-text-secondary">
           {copy.atlasFailed}
         </p>
       )}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-extrabold text-on-surface">
+        <h3 className="text-label font-semibold text-text-primary">
           {item.directional ? ed.directional : copy.single}
         </h3>
-        <span className="text-xs font-semibold text-on-surface-variant">
+        <span className="text-caption font-semibold text-text-secondary">
           {item.directional ? ed.neverRotated : copy.sameForAll}
         </span>
       </div>
@@ -165,10 +161,10 @@ export function MapItemEditorAppearance(p: AppearanceProps) {
       )}
 
       <div
-        className="relative flex min-h-48 flex-col items-center justify-center gap-3 rounded-md3 border border-outline-variant bg-surface p-4"
+        className="relative flex min-h-48 flex-col items-center justify-center gap-3 rounded-xl border border-divider bg-tile p-4"
         style={GRID}
       >
-        <span className="absolute top-2 left-2 rounded-full bg-surface-high px-2 py-0.5 text-xs font-bold text-on-surface">
+        <span className="absolute top-2 left-2 rounded-full bg-canvas px-2 py-1 text-caption font-semibold text-text-primary">
           {eff.source === "image"
             ? copy.source.image
             : eff.source === "sprite"
@@ -178,22 +174,22 @@ export function MapItemEditorAppearance(p: AppearanceProps) {
         <div className="flex max-w-full items-end gap-6 overflow-x-auto">
           <figure className="m-0 flex flex-col items-center gap-1">
             {render(2)}
-            <figcaption className="text-xs text-on-surface-variant">{copy.scale2}</figcaption>
+            <figcaption className="text-caption text-text-secondary">{copy.scale2}</figcaption>
           </figure>
           <figure className="m-0 flex flex-col items-center gap-1">
             {render(1)}
-            <figcaption className="text-xs text-on-surface-variant">{copy.scale1}</figcaption>
+            <figcaption className="text-caption text-text-secondary">{copy.scale1}</figcaption>
           </figure>
         </div>
         <span
           aria-hidden="true"
-          className="font-mono text-[11px] tracking-wide text-on-surface-variant"
+          className="font-mono text-caption tracking-wide text-text-secondary"
         >
           {ed.previewCaption(dirLabel)}
         </span>
       </div>
       {eff.removedOnSave && (
-        <p role="note" className="text-xs font-semibold text-error">
+        <p role="note" className="text-caption font-semibold text-danger">
           {ed.removedOnSave}
         </p>
       )}
@@ -225,14 +221,13 @@ export function MapItemEditorAppearance(p: AppearanceProps) {
         />
       ) : (
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-on-surface-variant">
+          <p className="text-caption font-medium text-text-secondary">
             {copy.size(size.w, size.hMin, size.hMax)}
           </p>
           <div>
             <Button
               variant="tonal"
               size="sm"
-              className="min-h-11"
               disabled={busy}
               onClick={() => fileRef.current?.click()}
             >
@@ -255,19 +250,18 @@ export function MapItemEditorAppearance(p: AppearanceProps) {
       )}
 
       {state.dirNotes[dir] && (
-        <p role="alert" className="text-[13px] font-semibold text-error">
+        <p role="alert" className="text-label font-semibold text-danger">
           {state.dirNotes[dir]}
         </p>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         {item.directional && (
-          <p className="text-xs font-medium text-on-surface-variant">{ed.onlyUpdates(dirLabel)}</p>
+          <p className="text-caption font-medium text-text-secondary">{ed.onlyUpdates(dirLabel)}</p>
         )}
         <Button
           variant="outlined"
           size="sm"
-          className="min-h-11"
           disabled={busy || (eff.source === "library" && !eff.staged)}
           onClick={() => p.onRestore(dir)}
         >

@@ -23,6 +23,36 @@ describe("editor views", () => {
     expect(html).toContain('href="/rooms/C1"');
   });
 
+  it("gate view: panel heading is Body 600 and the back link is a 44 px secondary button", () => {
+    const html = renderToStaticMarkup(<EditorGateView gate="not_allowed" backHref="/rooms/C1" />);
+    const h2 = /<h2[^>]*class="([^"]*)"/.exec(html)?.[1] ?? "";
+    expect(h2).toContain("text-body");
+    expect(h2).toContain("font-semibold");
+    const a = /<a[^>]*class="([^"]*)"/.exec(html)?.[1] ?? "";
+    expect(a).toContain("min-h-control");
+    expect(a).toContain("rounded-lg");
+  });
+
+  it("palette entries, inspector rows, number inputs and the shortcut summary are 44 px tokens", () => {
+    const entry =
+      /<button[^>]*aria-pressed="false"[^>]*class="([^"]*)"|<button[^>]*class="([^"]*)"[^>]*aria-pressed="false"/.exec(
+        pal({}),
+      );
+    const cls = entry?.[1] ?? entry?.[2] ?? "";
+    expect(cls).toContain("min-h-control");
+    expect(cls).toContain("aria-pressed:border-pixel-primary");
+    expect(cls).not.toContain("opacity-");
+    const rows = inspector(["s:s1"]);
+    expect(rows).not.toContain("py-1.5");
+    expect(rows).toContain("min-h-control");
+    const place = renderToStaticMarkup(
+      <PlacePanel toolName="plant large" disabled={false} onPlace={noop} onDone={noop} />,
+    );
+    expect(place).toContain("min-h-control");
+    expect(place).toContain("border-border-strong");
+    expect(renderToStaticMarkup(<ShortcutList />)).toContain("py-3");
+  });
+
   it("truncated read-only view shows the A6 message and no Save button", () => {
     const html = renderToStaticMarkup(<EditorGateView gate="read_only" backHref="/rooms/C1" />);
     expect(html).toContain("can&#x27;t open it");
@@ -296,17 +326,17 @@ describe("editor views", () => {
     const box = { x: 1, y: 2, w: 2, h: 1 };
     const ok = render({ ok: true, boxes: [box] });
     expect(ok).toContain('data-testid="drag-ghost"');
-    expect(ok).toContain("border-primary");
+    expect(ok).toContain("border-text-primary");
     expect(ok).not.toContain("border-dashed");
     expect(ok).toContain("left:64px;top:128px;width:128px;height:64px");
     const refused = render({ ok: false, boxes: [box] });
-    expect(refused).toContain("border-dashed border-error");
+    expect(refused).toContain("border-dashed border-danger");
     const m = render(null, {
       box: { x: 0, y: 0, w: 3, h: 2 },
       items: [box],
     });
     expect(m).toContain('data-testid="marquee"');
-    expect(m).toContain("border-dashed border-primary");
+    expect(m).toContain("border-dashed border-text-primary");
     expect(m.match(/marquee-item/g)).toHaveLength(1);
     expect(render(null)).toBe("");
   });

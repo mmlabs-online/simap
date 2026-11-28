@@ -185,7 +185,7 @@ export function MapItemsView({
 
       {allowed && items.status === "error" && (
         <Card className="flex flex-col items-start gap-3 p-4">
-          <p role="alert" className="text-label font-semibold text-error">
+          <p role="alert" className="text-label font-semibold text-danger">
             {apiErrorMessage(items.errorCode ?? "internal")}
           </p>
           <Button variant="tonal" size="sm" onClick={onRetry}>

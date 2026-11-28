@@ -64,10 +64,11 @@ describe("SeatOverlay", () => {
     expect(html).toContain('aria-label="Seat B2, empty"');
   });
 
-  it("button keeps a visible hover and focus outline (no outline-none)", () => {
+  it("button keeps a hover outline token; focus comes from the global ring", () => {
     const cls = /<button[^>]*class="([^"]*)"/.exec(render())?.[1].split(" ") ?? [];
     expect(cls).toContain("hover:outline-2");
-    expect(cls).toContain("focus-visible:outline-2");
+    expect(cls).toContain("hover:outline-surface");
+    expect(cls.join(" ")).not.toMatch(/focus-visible:/);
     expect(cls).not.toContain("outline-none");
   });
 
@@ -149,7 +150,7 @@ describe("SeatOverlay presence view (D80, D77)", () => {
       /<span aria-hidden="true" data-presence="away" class="([^"]*)"[^>]*><span data-marker="ring"/.exec(
         html,
       );
-    expect(away?.[1]).toContain("bg-surface-container-high");
+    expect(away?.[1]).toContain("bg-tile");
     expect(html).toMatch(/data-presence="present"[^>]*><span data-marker="dot"/);
     expect(html).toContain('aria-label="Seat A1, occupied, Nguyễn Thị Ánh, away"');
     expect(html).toContain('aria-label="Seat A2, your seat, Lee, here"');
@@ -179,6 +180,28 @@ describe("SeatOverlay presence view (D80, D77)", () => {
     expect(renderAlways({ openTags: ["c"], openTagsBusy: true })).toMatch(
       /data-open-tag="B2"[^>]*disabled=""/,
     );
+  });
+
+  it("name tags and the open tag use tokens only", () => {
+    const html = renderAlways({ openTags: ["c"], onOpenTag: () => {} });
+    for (const bad of ["rgba(", "text-white", "emerald", "teal", "opacity-60"]) {
+      expect(html, bad).not.toContain(bad);
+    }
+    const present =
+      /data-presence="present" class="([^"]*)"[^>]*><span data-marker="dot" class="([^"]*)"/.exec(
+        html,
+      );
+    expect(present?.[1]).toContain("bg-text-primary");
+    expect(present?.[1]).toContain("text-surface");
+    expect(present?.[2]).toContain("bg-current");
+    const open =
+      /<button[^>]*data-open-tag="B2"[^>]*class="([^"]*)"|<button[^>]*class="([^"]*)"[^>]*data-open-tag="B2"/.exec(
+        html,
+      );
+    const cls = open?.[1] ?? open?.[2] ?? "";
+    for (const c of ["bg-pixel-primary", "before:h-control", "disabled:opacity-50"]) {
+      expect(cls, c).toContain(c);
+    }
   });
 
   it("before the first presence answer the tags show without a present/away split", () => {

@@ -50,7 +50,7 @@ export function MapItemCard({
           className="flex h-36 items-center justify-center overflow-hidden rounded-t-xl bg-tile sm:h-40"
           style={TILE_GRID}
         >
-          <span className={item.hidden ? "opacity-60" : undefined}>{art}</span>
+          <span className={item.hidden ? "opacity-50" : undefined}>{art}</span>
         </div>
         <span className="absolute left-2 top-2 rounded-md border border-divider bg-surface px-2 font-mono text-caption text-text-secondary">
           <span aria-hidden="true">{card.size(item.w, item.h)}</span>

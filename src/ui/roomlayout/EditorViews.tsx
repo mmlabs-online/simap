@@ -10,9 +10,9 @@ import type { EditorNotice } from "@/lib/layout-editor/editor-state";
 import type { SaveDetail } from "@/lib/layout-editor/save-run";
 
 const copy = roomlayoutCopy.editor;
-const BOX = "flex max-w-xl flex-col items-start gap-3 rounded-md border border-outline-variant p-4";
+const BOX = "flex max-w-xl flex-col items-start gap-3 rounded-md border border-divider p-4";
 const LINK =
-  "state-layer rounded-full border border-outline-variant bg-surface px-4 py-2 text-[13px] font-bold text-on-surface hover:border-outline";
+  "state-layer inline-flex min-h-control shrink-0 items-center justify-center rounded-lg border border-border bg-surface px-4 text-label text-text-primary hover:border-border-strong transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out";
 
 type GateProps = {
   gate: Exclude<EditorGate, "ready">;
@@ -26,7 +26,7 @@ type GateProps = {
 export function EditorGateView({ gate, backHref, onRetry }: GateProps) {
   if (gate === "checking" || gate === "loading") {
     return (
-      <p role="status" className="text-sm text-on-surface-variant">
+      <p role="status" className="text-label font-normal text-text-secondary">
         {gate === "checking" ? copy.checking : copy.loading}
       </p>
     );
@@ -34,24 +34,24 @@ export function EditorGateView({ gate, backHref, onRetry }: GateProps) {
   const text =
     gate === "not_allowed" ? (
       <>
-        <h2 className="text-base font-extrabold text-on-surface">{copy.notAllowed.title}</h2>
-        <p className="text-sm text-on-surface-variant">{copy.notAllowed.body}</p>
+        <h2 className="text-body font-semibold text-text-primary">{copy.notAllowed.title}</h2>
+        <p className="text-label font-normal text-text-secondary">{copy.notAllowed.body}</p>
       </>
     ) : gate === "desktop" ? (
       <>
-        <h2 className="text-base font-extrabold text-on-surface">{copy.desktop.title}</h2>
-        <p className="text-sm text-on-surface-variant">{copy.desktop.body}</p>
+        <h2 className="text-body font-semibold text-text-primary">{copy.desktop.title}</h2>
+        <p className="text-label font-normal text-text-secondary">{copy.desktop.body}</p>
       </>
     ) : gate === "read_only" ? (
-      <p role="status" className="text-sm text-on-surface">
+      <p role="status" className="text-label font-normal text-text-primary">
         {copy.readOnly(LAYOUT_LIMITS.seats)}
       </p>
     ) : gate === "missing" ? (
-      <p role="alert" className="text-sm font-semibold text-error">
+      <p role="alert" className="text-label font-semibold text-danger">
         {copy.missing}
       </p>
     ) : (
-      <p role="alert" className="text-sm font-semibold text-error">
+      <p role="alert" className="text-label font-semibold text-danger">
         {copy.error}
       </p>
     );
@@ -87,13 +87,13 @@ export function SaveErrorBanner({ code, detail, roomHref, onReload, onRetry }: B
   return (
     <div
       role="alert"
-      className="flex flex-col items-start gap-2 rounded-md border border-error/40 p-3 text-sm"
+      className="flex flex-col items-start gap-2 rounded-md border border-danger/40 p-3 text-label font-normal"
     >
-      <p className="font-semibold text-error">{copy.saveErrors[code] ?? apiErrorMessage(code)}</p>
-      {detailText && <p className="text-on-surface-variant">{detailText}</p>}
+      <p className="font-semibold text-danger">{copy.saveErrors[code] ?? apiErrorMessage(code)}</p>
+      {detailText && <p className="text-text-secondary">{detailText}</p>}
       {kind === "conflict" && (
         <>
-          <p className="text-on-surface-variant">{copy.conflictNote}</p>
+          <p className="text-text-secondary">{copy.conflictNote}</p>
           <Button variant="tonal" size="sm" onClick={onReload}>
             {copy.reload}
           </Button>
@@ -152,7 +152,7 @@ export function EditorStatusLine({ notice }: { notice: EditorNotice | null }) {
           ? copy.cleaned(notice.count)
           : copy.done[notice.what];
   return (
-    <p role="status" className="min-h-5 text-sm text-on-surface-variant">
+    <p role="status" className="min-h-5 text-label font-normal text-text-secondary">
       {text}
     </p>
   );

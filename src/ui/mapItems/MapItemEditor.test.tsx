@@ -28,6 +28,19 @@ const render = (over: Partial<EditorState> = {}, p: Partial<EditorFrameProps> = 
 const dirty = editorReducer(item, initEditor(item), { type: "form", patch: { name: "Other" } });
 
 describe("MapItemEditorFrame", () => {
+  it("tokens: Subtitle title, kit icon close button, pixel Save, no legacy sizes", () => {
+    const html = render();
+    expect(/<h2 id="ed-title"[^>]*class="([^"]*)"/.exec(html)?.[1] ?? "").toContain(
+      "text-subtitle",
+    );
+    const close = /<button[^>]*aria-label="[^"]*"[^>]*>/.exec(html)?.[0] ?? "";
+    expect(close).toContain("size-control");
+    expect(html).toMatch(/<button[^>]*data-variant="pixel"[^>]*>/);
+    for (const bad of ["min-h-11", "text-[", "font-extrabold"]) {
+      expect(html, bad).not.toContain(bad);
+    }
+  });
+
   it("shell: eyebrow, h2 Edit <name>, key, close button with aria-label, tablist with Appearance selected, both tabpanels (inactive hidden)", () => {
     const html = render();
     expect(html).toContain(ed.eyebrow);

@@ -21,5 +21,7 @@ describe("EditorWarnings", () => {
     expect(html).toContain("no usable door");
     expect(html).toContain("Phòng-A-01");
     expect(html).toContain("new desk");
+    expect(html).toContain("bg-warning-tint");
+    expect(html).not.toContain("amber-");
   });
 });

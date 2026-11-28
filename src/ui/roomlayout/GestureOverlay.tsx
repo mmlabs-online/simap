@@ -25,7 +25,7 @@ export function GestureOverlay({ bounds, zoom, drag, marquee }: Props) {
         <div
           key={n}
           data-testid="drag-ghost"
-          className={`pointer-events-none absolute border-2 ${drag.ok ? "border-primary bg-primary/20" : "border-dashed border-error bg-error/20"}`}
+          className={`pointer-events-none absolute border-2 ${drag.ok ? "border-text-primary bg-text-primary/20" : "border-dashed border-danger bg-danger/20"}`}
           style={style(b)}
         />
       ))}
@@ -33,14 +33,14 @@ export function GestureOverlay({ bounds, zoom, drag, marquee }: Props) {
         <>
           <div
             data-testid="marquee"
-            className="pointer-events-none absolute border border-dashed border-primary bg-primary/10"
+            className="pointer-events-none absolute border border-dashed border-text-primary bg-text-primary/10"
             style={style(marquee.box)}
           />
           {marquee.items.map((b, n) => (
             <div
               key={n}
               data-testid="marquee-item"
-              className="pointer-events-none absolute border border-primary"
+              className="pointer-events-none absolute border border-text-primary"
               style={style(b)}
             />
           ))}

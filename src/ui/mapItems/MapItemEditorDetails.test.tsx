@@ -26,6 +26,18 @@ const render = (item: ReturnType<typeof dto>, p: Partial<DetailsProps> = {}) =>
   );
 
 describe("MapItemEditorDetails", () => {
+  it("tokens: legend is a 14 px label, checkboxes are 20 px, the reset confirm is pixel", () => {
+    const html = render(dto("table.meeting"));
+    const legend = /<legend[^>]*class="([^"]*)"/.exec(html)?.[1] ?? "";
+    expect(legend).toContain("text-label");
+    expect(legend).not.toContain("tracking-[");
+    expect(html).toContain("size-5");
+    const confirm = render(dto("table.meeting", { name: "Other" }), { confirmingReset: true });
+    expect(confirm).toMatch(
+      new RegExp(`<button[^>]*data-variant="pixel"[^>]*>${mapItemsCopy.reset.confirm}`),
+    );
+  });
+
   it("shows the key note, name and group limits, a group datalist, the palette checkbox and two size selects 1-4", () => {
     const html = render(dto("table.meeting"));
     expect(html).toContain("table.meeting");

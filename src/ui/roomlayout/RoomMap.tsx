@@ -27,7 +27,7 @@ import { useWalks } from "./useWalks";
 import { WalkLayer } from "./WalkLayer";
 import { ZoomControl } from "./ZoomControl";
 
-const STATUS = "rounded-md border border-outline-variant p-4 text-sm text-on-surface";
+const STATUS = "rounded-md border border-divider p-4 text-label font-normal text-text-primary";
 
 /** The loading, error and too-large views of the map. */
 export function RoomMapStatus({ status }: { status: "loading" | "error" | "tooLarge" }) {
@@ -39,7 +39,7 @@ export function RoomMapStatus({ status }: { status: "loading" | "error" | "tooLa
     );
   }
   return (
-    <p role="alert" className={`${STATUS} border-error/40`}>
+    <p role="alert" className={`${STATUS} border-danger/40`}>
       {status === "tooLarge" ? roomlayoutCopy.tooLarge : roomlayoutCopy.error}
     </p>
   );
@@ -171,7 +171,7 @@ export function RoomMap({
     <div className={fill ? "flex flex-col gap-2 lg:min-h-0 lg:flex-1" : "space-y-2"}>
       {onZoom && <ZoomControl zoom={effective} onZoom={onZoom} allowed={allowed} />}
       {allowed.length < ZOOM_LEVELS.length && (
-        <p role="status" className="text-sm text-on-surface-variant">
+        <p role="status" className="text-label font-normal text-text-secondary">
           {roomlayoutCopy.zoomLimited}
         </p>
       )}
@@ -179,7 +179,7 @@ export function RoomMap({
         role="region"
         tabIndex={0}
         aria-label={roomlayoutCopy.regionLabel}
-        className={`${fill ? "max-h-[70vh] lg:max-h-none lg:min-h-0 lg:flex-1" : "max-h-[70vh]"} overflow-auto overscroll-contain rounded-md border border-outline-variant outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+        className={`${fill ? "max-h-[70vh] lg:max-h-none lg:min-h-0 lg:flex-1" : "max-h-[70vh]"} overflow-auto overscroll-contain rounded-md border border-divider`}
       >
         <div ref={stageRef} className="relative" style={{ width, height }}>
           <canvas
