@@ -14,7 +14,7 @@ export function PageSkeleton({
 }) {
   return (
     <div className="page-content flex flex-col gap-4">
-      <h1 className="text-h2 font-semibold text-text-primary">{title}</h1>
+      <h1 className="text-display font-semibold text-text-primary">{title}</h1>
       <Card className="flex flex-col items-center gap-3 px-6 py-12 text-center">
         <Icon name={icon} size={36} className="text-text-secondary" />
         <p className="text-label text-text-secondary">{emptyText}</p>

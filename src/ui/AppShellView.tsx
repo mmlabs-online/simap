@@ -203,7 +203,7 @@ export function AppShellView({
             <div className="page-content">
               <Card className="flex flex-col items-center gap-3 px-6 py-12 text-center">
                 <Icon name="login" size={36} className="text-text-secondary" />
-                <h1 className="text-h2 font-semibold text-text-primary">
+                <h1 className="text-display font-semibold text-text-primary">
                   {shellCopy.signedOut.title}
                 </h1>
                 <p className="text-label text-text-secondary">{shellCopy.signedOut.body}</p>

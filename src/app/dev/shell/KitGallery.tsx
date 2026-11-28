@@ -33,7 +33,7 @@ export function KitGallery() {
 
   return (
     <div className="page-content flex flex-col gap-4">
-      <h1 className="text-h2 font-semibold">{c.title}</h1>
+      <h1 className="text-display font-semibold">{c.title}</h1>
 
       <Card className="p-5 flex flex-wrap items-center gap-3">
         <Button>{c.buttons.primary}</Button>

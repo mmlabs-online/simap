@@ -13,9 +13,11 @@ import {
 const TSX = "src/ui/X.tsx";
 const CSS = "src/app/x.css";
 const rules = (text: string, path = TSX) => findViolations(path, text).map((v) => v.rule);
-const pending: Record<string, number> = JSON.parse(
-  readFileSync("scripts/check-tokens.pending.json", "utf8"),
-);
+const PENDING_FILE = "scripts/check-tokens.pending.json";
+// Slice 7 deleted the pending list: a missing file is {} and every file must be clean.
+const pending: Record<string, number> = existsSync(PENDING_FILE)
+  ? JSON.parse(readFileSync(PENDING_FILE, "utf8"))
+  : {};
 const found = scanRepo();
 const counts = Object.fromEntries(Object.entries(found).map(([p, v]) => [p, v.length]));
 
@@ -173,6 +175,11 @@ describe("repo", () => {
       ...r.stale.map((p) => `${p}: no violations, remove from the pending list`),
     ];
     expect(lines).toEqual([]);
+  });
+
+  it("the pending list is gone and src has zero violations (AC 1b)", () => {
+    expect(existsSync(PENDING_FILE)).toBe(false);
+    expect(counts).toEqual({});
   });
 });
 

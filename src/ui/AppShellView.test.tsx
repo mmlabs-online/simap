@@ -325,8 +325,6 @@ describe("AppShellView", () => {
   });
 });
 
-const LEGACY =
-  /^(?:[\w-]+:)*(?:bg|text|border|outline|shadow)-(?:primary|on-primary|on-surface(?:-variant)?|surface-(?:high|highest|low|lowest|container)|outline(?:-variant)?|error|secondary[\w-]*|tertiary[\w-]*|accent-orange[\w-]*|[\w-]*-container)(?:\/\d+)?$|^rounded-md3/;
 const PALETTE =
   /^(?:[\w-]+:)*(?:bg|text|border)-(?:red|amber|orange|yellow|green|blue|gray|slate|zinc|neutral|stone)-\d{2,3}$/;
 
@@ -455,7 +453,6 @@ describe("AppShellView slice 4: sidebar, controls, tokens", () => {
     ];
     for (const html of htmls) {
       for (const c of allClasses(html)) {
-        expect(c, c).not.toMatch(LEGACY);
         expect(c, c).not.toMatch(PALETTE);
         expect(["font-bold", "font-extrabold"]).not.toContain(c);
         expect(c, c).not.toMatch(/^(?:[\w-]+:)*(?:text|rounded|shadow|tracking|leading)-\[/);
