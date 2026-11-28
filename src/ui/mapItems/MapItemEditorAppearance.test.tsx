@@ -59,6 +59,21 @@ const radios = (html: string, label: string) => {
 };
 
 describe("MapItemEditorAppearance", () => {
+  it("options are kit outlined buttons, the checked one pixel green; the preview sits on the tile colour", () => {
+    const html = render();
+    const radios = html.match(/<button[^>]*role="radio"[^>]*>/g) ?? [];
+    expect(radios.length).toBeGreaterThan(0);
+    for (const r of radios) {
+      expect(r).toContain('data-variant="outlined"');
+      expect(r).toContain("min-h-control");
+    }
+    expect(radios.find((r) => r.includes('aria-checked="true"'))).toContain(
+      "aria-checked:border-pixel-primary",
+    );
+    expect(html).toContain("bg-tile");
+    for (const bad of ["opacity-40", "rounded-md3", "text-["]) expect(html, bad).not.toContain(bad);
+  });
+
   it("directional item: radiogroup North, East, South, West with North checked, and Never auto-rotated", () => {
     const html = render();
     expect(radios(html, ed.dirsLabel)).toEqual([

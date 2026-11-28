@@ -5,8 +5,7 @@ import type { MapItemDto } from "@/lib/map-items/types";
 import { parsePng } from "@/lib/validate/png";
 import type { Direction } from "@/lib/sprites/types";
 import { mapItemsCopy } from "../copy/mapItems";
-import { Button } from "../Button";
-import { Icon } from "../Icon";
+import { Button, IconButton } from "../Button";
 import type { Atlas } from "../roomlayout/loadAtlas";
 import { TabBar } from "../TabBar";
 import { MapItemEditorAppearance } from "./MapItemEditorAppearance";
@@ -61,22 +60,20 @@ export function MapItemEditorFrame(p: EditorFrameProps) {
     <div className="flex max-h-[92dvh] flex-col">
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant">
+          <p className="text-caption font-semibold tracking-wide text-text-secondary uppercase">
             {copy.eyebrow}
           </p>
-          <h2 id={`${p.idBase}-title`} className="text-[20px] font-extrabold text-on-surface">
+          <h2 id={`${p.idBase}-title`} className="text-subtitle text-text-primary">
             {copy.title(item.name)}
           </h2>
-          <p className="font-mono text-xs text-on-surface-variant">{item.builtinKey}</p>
+          <p className="font-mono text-caption text-text-secondary">{item.builtinKey}</p>
         </div>
-        <button
-          type="button"
-          aria-label={copy.close}
+        <IconButton
+          icon="close"
+          label={copy.close}
           onClick={p.onRequestClose}
-          className="state-layer inline-flex size-11 shrink-0 items-center justify-center rounded-full text-on-surface-variant"
-        >
-          <Icon name="close" size={20} />
-        </button>
+          className="shrink-0"
+        />
       </div>
       <div className="px-5">
         <TabBar
@@ -101,7 +98,7 @@ export function MapItemEditorFrame(p: EditorFrameProps) {
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         {state.error && (
-          <p role="alert" className="mb-3 text-[13px] font-semibold text-error">
+          <p role="alert" className="mb-3 text-label font-semibold text-danger">
             {state.error.message}
           </p>
         )}
@@ -147,32 +144,32 @@ export function MapItemEditorFrame(p: EditorFrameProps) {
           />
         </div>
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-outline-variant px-5 py-3">
-        <p role="status" className="text-xs font-semibold text-on-surface-variant">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-divider px-5 py-3">
+        <p role="status" className="text-caption font-semibold text-text-secondary">
           {status}
           {state.notice && !busy && !dirty ? ` ${state.notice}` : ""}
         </p>
         {state.phase === "confirmDiscard" ? (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-bold text-on-surface">{copy.discard.title}</span>
+            <span className="text-label font-semibold text-text-primary">{copy.discard.title}</span>
             <Button
               variant="tonal"
               size="sm"
-              className="min-h-11"
+
               onClick={() => dispatch({ type: "keepEditing" })}
             >
               {copy.discard.keep}
             </Button>
-            <Button variant="danger" size="sm" className="min-h-11" onClick={p.onDiscard}>
+            <Button variant="danger" size="sm" onClick={p.onDiscard}>
               {copy.discard.discard}
             </Button>
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="tonal" className="min-h-11" disabled={busy} onClick={p.onRequestClose}>
+            <Button variant="tonal" disabled={busy} onClick={p.onRequestClose}>
               {copy.cancel}
             </Button>
-            <Button className="min-h-11" disabled={busy || !dirty} onClick={p.onSave}>
+            <Button variant="pixel" disabled={busy || !dirty} onClick={p.onSave}>
               {copy.save}
             </Button>
           </div>
@@ -329,8 +326,8 @@ export function MapItemEditor({
         if (pressedOnScrim.current && e.target === e.currentTarget) requestClose();
         pressedOnScrim.current = false;
       }}
-      className="m-auto w-[calc(100%-1.5rem)] max-w-[580px] p-0 bg-surface-high text-on-surface rounded-md3-xl overflow-hidden shadow-[0_12px_40px_var(--shadow)]"
-      style={{ animation: "popin .2s ease" }}
+      className="m-auto w-[calc(100%-var(--space-6))] max-w-145 overflow-hidden rounded-2xl bg-surface p-0 text-text-primary shadow-dialog"
+      style={{ animation: "popin var(--duration-ui) ease-out" }}
     >
       <MapItemEditorFrame
         item={item}

@@ -103,6 +103,29 @@ const MIGRATED = [
   "ui/portal/PixelLookPicker.tsx",
   "ui/portal/LookStage.tsx",
   "ui/portal/LookPreview.tsx",
+  "ui/roomlayout/RoomMap.tsx",
+  "ui/roomlayout/RoomMapSection.tsx",
+  "ui/roomlayout/SeatOverlay.tsx",
+  "ui/roomlayout/ZoomControl.tsx",
+  "ui/roomlayout/GestureOverlay.tsx",
+  "ui/roomlayout/LayoutEditor.tsx",
+  "ui/roomlayout/LayoutEditorPage.tsx",
+  "ui/roomlayout/EditorToolbar.tsx",
+  "ui/roomlayout/EditorInspector.tsx",
+  "ui/roomlayout/EditorViews.tsx",
+  "ui/roomlayout/EditorWarnings.tsx",
+  "ui/roomlayout/EditorCanvas.tsx",
+  "ui/roomlayout/ShortcutList.tsx",
+  "ui/roomlayout/Palette.tsx",
+  "ui/roomlayout/WalkLayer.tsx",
+  "ui/mapItems/MapItemsPage.tsx",
+  "ui/mapItems/MapItemsView.tsx",
+  "ui/mapItems/MapItemCard.tsx",
+  "ui/mapItems/MapItemEditor.tsx",
+  "ui/mapItems/MapItemEditorAppearance.tsx",
+  "ui/mapItems/MapItemEditorDetails.tsx",
+  "ui/mapItems/SpriteBrowser.tsx",
+  "ui/mapItems/FramePreview.tsx",
 ];
 
 const LEGACY =
@@ -112,7 +135,11 @@ const RAW_TYPE =
 const LOW_TARGET = /(?<![\w-])(?:min-h-11|h-11|size-11|h-8|h-9)(?![\w-])/;
 const PALETTE =
   /(?<![\w-])(?:bg|text|border)-(?:red|amber|orange|yellow|green|blue|gray|slate|zinc|neutral|stone)-\d{2,3}(?![\w-])/;
-const OTHER = /opacity-60|focus-visible:|focus-within:/;
+const OTHER = /opacity-60|(?<![\w-])focus-visible:|focus-within:/;
+
+const MAP_CHROME = MIGRATED.filter(
+  (m) => m.startsWith("ui/roomlayout/") || m.startsWith("ui/mapItems/"),
+);
 
 describe("migrated management screens", () => {
   it("every file exists and matches no legacy class, raw size, low target or palette colour", () => {
@@ -145,6 +172,13 @@ describe("migrated management screens", () => {
       "ui/checkin/CheckinButton.tsx",
       "ui/checkin/CheckinView.tsx",
       "ui/portal/ProfilePhotoSection.tsx",
+      "ui/roomlayout/ZoomControl.tsx",
+      "ui/roomlayout/EditorToolbar.tsx",
+      "ui/roomlayout/EditorViews.tsx",
+      "ui/mapItems/MapItemEditor.tsx",
+      "ui/mapItems/MapItemEditorAppearance.tsx",
+      "ui/mapItems/MapItemEditorDetails.tsx",
+      "ui/mapItems/SpriteBrowser.tsx",
     ]) {
       expect(read(f), f).not.toContain("<button");
     }
@@ -213,6 +247,25 @@ describe("migrated management screens", () => {
     for (const f of MIGRATED.filter((m) => m.startsWith("ui/portal/"))) {
       expect(read(f), f).not.toContain("outline-variant");
     }
+  });
+
+  it("map, editor and map items chrome uses tokens and pixel green only where planned", () => {
+    const bad =
+      /--px-|outline-none|peer-focus|rgba\(|(?<![\w-])(?:bg|text|border|ring|outline)-(?:white|black)(?![\w-])|-(?:emerald|teal|amber)-\d/;
+    for (const f of MAP_CHROME) expect(read(f), f).not.toMatch(bad);
+    expect(read("ui/roomlayout/Palette.tsx")).toContain("aria-pressed:border-pixel-primary");
+    for (const f of ["ui/mapItems/MapItemEditor.tsx", "ui/mapItems/MapItemEditorDetails.tsx"]) {
+      expect(read(f), f).toContain('variant="pixel"');
+    }
+    const browser = read("ui/mapItems/SpriteBrowser.tsx");
+    for (const c of ["has-[:checked]:border-pixel-primary", "outline-focus", "bg-tile"]) {
+      expect(browser, c).toContain(c);
+    }
+    const appearance = read("ui/mapItems/MapItemEditorAppearance.tsx");
+    for (const c of ["bg-tile", "aria-checked:border-pixel-primary"]) {
+      expect(appearance, c).toContain(c);
+    }
+    expect(read("ui/roomlayout/LayoutEditor.tsx")).toContain("--spacing(72)");
   });
 
   it("table.ts exposes the shared table classes", () => {

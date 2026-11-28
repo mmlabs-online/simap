@@ -44,7 +44,7 @@ export function RoomMapSection({
   const failure =
     state.status === "error" ? (
       <div className="flex flex-col items-start gap-3">
-        <p role="alert" className="text-sm font-semibold text-error">
+        <p role="alert" className="text-label font-semibold text-danger">
           {apiErrorMessage(state.errorCode ?? "internal")}
         </p>
         <Button variant="tonal" size="sm" onClick={onRetry}>
@@ -57,7 +57,7 @@ export function RoomMapSection({
   if (view === null) {
     body = state.status === "error" ? null : <RoomMapStatus status="loading" />;
   } else if (view.empty) {
-    body = <p className="text-sm font-medium text-on-surface-variant">{roomlayoutCopy.emptyMap}</p>;
+    body = <p className="text-label text-text-secondary">{roomlayoutCopy.emptyMap}</p>;
   } else {
     body = (
       <RoomMap
@@ -79,13 +79,13 @@ export function RoomMapSection({
     <Card as="section" className={`flex flex-col gap-3 p-4${fill ? " lg:h-full lg:min-h-0" : ""}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-extrabold text-on-surface">{roomlayoutCopy.heading}</h2>
-          <p className="text-sm font-medium text-on-surface-variant">{roomlayoutCopy.panHint}</p>
+          <h2 className="text-body font-semibold text-text-primary">{roomlayoutCopy.heading}</h2>
+          <p className="text-label text-text-secondary">{roomlayoutCopy.panHint}</p>
         </div>
         {editHref && !view?.truncated && (
           <Link
             href={editHref}
-            className="state-layer shrink-0 rounded-full border border-outline-variant bg-surface px-4 py-2 text-[13px] font-bold text-on-surface hover:border-outline"
+            className="state-layer inline-flex min-h-control shrink-0 items-center justify-center rounded-lg border border-border bg-surface px-4 text-label text-text-primary hover:border-border-strong transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out"
           >
             {roomlayoutCopy.editLayout}
           </Link>
@@ -95,12 +95,12 @@ export function RoomMapSection({
       {body}
       {notice}
       {view?.truncated && (
-        <p role="status" className="text-sm font-semibold text-on-surface-variant">
+        <p role="status" className="text-label font-semibold text-text-secondary">
           {roomlayoutCopy.truncated(LAYOUT_LIMITS.seats)}
         </p>
       )}
       {view && view.unplaced.length > 0 && (
-        <p role="status" className="text-sm font-semibold text-on-surface-variant">
+        <p role="status" className="text-label font-semibold text-text-secondary">
           {roomlayoutCopy.unplacedNote(view.unplaced.length)}
         </p>
       )}

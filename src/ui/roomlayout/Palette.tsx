@@ -10,7 +10,7 @@ const copy = roomlayoutCopy.editor;
 const c = copy.palette;
 
 export const inputClass =
-  "w-16 rounded-md border border-outline-variant bg-surface px-2 py-1 text-sm text-on-surface";
+  "w-16 min-h-control rounded-lg border border-border-strong bg-surface px-2 text-label font-normal text-text-primary";
 
 type PaletteProps = {
   groups: { group: string; entries: PaletteEntry[] }[];
@@ -25,12 +25,12 @@ type PaletteProps = {
 /** The catalog's seat and fixture items by group; a pressed entry is the armed tool and a second press disarms it. */
 export function Palette({ groups, armed, disabled, status, onRetry, onArm }: PaletteProps) {
   return (
-    <section className="flex flex-col gap-2 text-sm text-on-surface">
-      <h2 className="text-base font-extrabold">{c.heading}</h2>
+    <section className="flex flex-col gap-2 text-label font-normal text-text-primary">
+      <h2 className="text-body font-semibold">{c.heading}</h2>
       {status === "loading" && <p role="status">{c.loading}</p>}
       {status === "error" && (
         <div className="flex flex-col gap-2">
-          <p role="alert" className="text-error">
+          <p role="alert" className="text-danger">
             {c.failed}
           </p>
           <div>
@@ -40,10 +40,10 @@ export function Palette({ groups, armed, disabled, status, onRetry, onArm }: Pal
           </div>
         </div>
       )}
-      <div className="flex max-h-64 flex-col gap-2 overflow-auto rounded-md border border-outline-variant p-2">
+      <div className="flex max-h-64 flex-col gap-2 overflow-auto rounded-md border border-divider p-2">
         {groups.map((g) => (
           <div key={g.group}>
-            <h3 className="font-bold">{g.group}</h3>
+            <h3 className="font-semibold">{g.group}</h3>
             <ul>
               {g.entries.map((e) => (
                 <li key={e.sprite}>
@@ -52,7 +52,7 @@ export function Palette({ groups, armed, disabled, status, onRetry, onArm }: Pal
                     aria-pressed={armed === e.sprite}
                     disabled={disabled}
                     onClick={() => onArm(e)}
-                    className="w-full cursor-pointer px-2 py-1 text-left text-[13px] hover:bg-surface-high disabled:cursor-not-allowed disabled:opacity-50 aria-pressed:font-extrabold aria-pressed:text-primary"
+                    className="flex min-h-control w-full cursor-pointer items-center rounded-lg px-2 text-left text-label font-normal text-text-primary enabled:hover:bg-tile disabled:cursor-not-allowed aria-pressed:bg-tile aria-pressed:font-semibold transition-[color,background-color,border-color,box-shadow,transform] duration-(--duration-ui) ease-out border-l-4 border-transparent aria-pressed:border-pixel-primary"
                   >
                     {e.name}
                   </button>
@@ -89,7 +89,10 @@ export function PlacePanel({ toolName, disabled, onPlace, onDone }: PanelProps) 
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-2 text-sm text-on-surface">
+    <form
+      onSubmit={submit}
+      className="flex flex-col gap-2 text-label font-normal text-text-primary"
+    >
       <p role="status">{c.armed(toolName)}</p>
       <div className="flex items-center gap-2">
         <label className="flex items-center gap-1">
@@ -114,7 +117,7 @@ export function PlacePanel({ toolName, disabled, onPlace, onDone }: PanelProps) 
         </label>
       </div>
       {bad && (
-        <p id="place-bad" className="text-error">
+        <p id="place-bad" className="text-danger">
           {c.badTile}
         </p>
       )}

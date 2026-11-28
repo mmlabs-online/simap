@@ -15,12 +15,12 @@ const ALIGN = {
 } as const;
 
 const TAG_BASE =
-  "pointer-events-none absolute items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap";
+  "pointer-events-none absolute items-center gap-1 rounded-full px-3 py-1 text-caption font-semibold whitespace-nowrap";
 const TAG_LOOK: Record<SeatPresence, string> = {
-  present: "bg-[rgba(22,27,37,.92)] text-white",
-  away: "bg-surface-container-high text-on-surface-variant",
+  present: "bg-text-primary text-surface",
+  away: "bg-tile text-text-secondary",
 };
-const TAG_NEUTRAL = "bg-surface-container-high text-on-surface";
+const TAG_NEUTRAL = "bg-tile text-text-primary";
 
 /** The always-visible name tag (D80): a filled dot when present, a hollow ring when away, so the state is a shape and a word, not colour. */
 function NameTag({
@@ -36,7 +36,7 @@ function NameTag({
   // Before the first presence answer there is no marker: unknown is not "present".
   const marker =
     presence === "present" ? (
-      <span data-marker="dot" className="size-2 shrink-0 rounded-full bg-emerald-400" />
+      <span data-marker="dot" className="size-2 shrink-0 rounded-full bg-current" />
     ) : presence === "away" ? (
       <span data-marker="ring" className="size-2 shrink-0 rounded-full border-2 border-current" />
     ) : null;
@@ -155,15 +155,15 @@ export function SeatOverlay({
             aria-haspopup="dialog"
             onClick={() => onSelect?.(seat.code)}
             aria-label={label}
-            className="group absolute cursor-pointer rounded-sm hover:outline-2 hover:outline-white focus-visible:outline-2 focus-visible:outline-white focus-visible:ring-2 focus-visible:ring-teal-500"
+            className="group absolute cursor-pointer rounded-sm hover:outline-2 hover:outline-surface"
             style={{ left: box.left, top: box.top, width: box.w, height: box.h }}
           >
             <span
               aria-hidden="true"
               className={
                 hoverPos
-                  ? "pointer-events-none absolute z-20 hidden items-center gap-1.5 rounded-full bg-[rgba(22,27,37,.92)] px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-white group-hover:flex group-focus-visible:flex"
-                  : `pointer-events-none absolute z-10 hidden ${always ? "" : "max-w-40 "}items-center gap-1.5 rounded-full bg-[rgba(22,27,37,.92)] px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-white group-hover:flex group-focus-visible:flex ${SIDE[tag.side]} ${ALIGN[tag.align]}`
+                  ? "pointer-events-none absolute z-20 hidden items-center gap-1 rounded-full bg-text-primary px-3 py-1 text-caption font-semibold whitespace-nowrap text-surface group-hover:flex group-focus-visible:flex"
+                  : `pointer-events-none absolute z-10 hidden ${always ? "" : "max-w-40 "}items-center gap-1 rounded-full bg-text-primary px-3 py-1 text-caption font-semibold whitespace-nowrap text-surface group-hover:flex group-focus-visible:flex ${SIDE[tag.side]} ${ALIGN[tag.align]}`
               }
               style={hoverPos ?? undefined}
             >
@@ -201,7 +201,7 @@ export function SeatOverlay({
           aria-label={roomlayoutCopy.presence.moveHereLabel(seat.code)}
           disabled={openTagsBusy}
           onClick={() => onOpenTag?.(seat.id)}
-          className="absolute z-30 min-h-6 cursor-pointer rounded-full bg-primary px-2.5 text-xs font-bold whitespace-nowrap text-on-primary shadow focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60"
+          className="absolute z-30 min-h-6 cursor-pointer rounded-full bg-pixel-primary px-3 text-caption font-semibold whitespace-nowrap text-on-action shadow-card before:absolute before:inset-x-0 before:top-1/2 before:h-control before:-translate-y-1/2 disabled:cursor-wait disabled:opacity-50"
           style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
         >
           {roomlayoutCopy.presence.moveHere}

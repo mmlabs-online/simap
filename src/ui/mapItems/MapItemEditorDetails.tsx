@@ -11,9 +11,8 @@ import { isLibraryDefault } from "./map-items-state";
 const copy = mapItemsCopy.form;
 const resetCopy = mapItemsCopy.reset;
 const ed = mapItemsCopy.editor;
-const CAPTION =
-  "text-[11px] font-extrabold tracking-[0.05em] uppercase text-on-surface-variant px-0.5";
-const HINT = "text-xs font-medium text-on-surface-variant";
+const CAPTION = "text-label text-text-primary";
+const HINT = "text-caption font-medium text-text-secondary";
 const SIZES = Array.from(
   { length: MAP_ITEM_LIMITS.sizeMax - MAP_ITEM_LIMITS.sizeMin + 1 },
   (_, i) => MAP_ITEM_LIMITS.sizeMin + i,
@@ -26,7 +25,7 @@ export function ResetMapItemBody({ item }: { item: MapItemDto }) {
   const images = MAP_ITEM_DIRS.filter((d) => item.art[d].hasImage).length;
   const sizeChanges = lib.w !== item.w || lib.h !== item.h;
   return (
-    <div className="flex flex-col gap-2 text-sm font-medium text-on-surface">
+    <div className="flex flex-col gap-2 text-label text-text-primary">
       <p>{resetCopy.intro(item.name)}</p>
       <ul className="list-disc pl-5">
         <li>{resetCopy.name(lib.name)}</li>
@@ -38,7 +37,7 @@ export function ResetMapItemBody({ item }: { item: MapItemDto }) {
         {images > 0 ? `${resetCopy.images(images)} ` : ""}
         {resetCopy.sprites}
       </p>
-      {sizeChanges && <p className="text-on-surface-variant">{resetCopy.inUseNote}</p>}
+      {sizeChanges && <p className="text-text-secondary">{resetCopy.inUseNote}</p>}
     </div>
   );
 }
@@ -116,7 +115,7 @@ export function MapItemEditorDetails(p: DetailsProps) {
           {sizeSelect("w", copy.width)}
           {sizeSelect("h", copy.height)}
         </div>
-        <p className="text-sm font-bold text-on-surface">
+        <p className="text-label font-semibold text-text-primary">
           {item.fixedSize ? `${item.w} × ${item.h}` : `${form.w} × ${form.h}`}
         </p>
         {item.fixedSize ? (
@@ -127,12 +126,13 @@ export function MapItemEditorDetails(p: DetailsProps) {
             {item.directional && <p className={HINT}>{copy.rotationHint}</p>}
             {fx.images + fx.sprites > 0 && (
               <div className="flex flex-col gap-2">
-                <p role="note" className="text-[13px] font-semibold text-error">
+                <p role="note" className="text-label font-semibold text-danger">
                   {copy.resizeWarning(fx.images, fx.sprites)}
                 </p>
-                <label className="flex min-h-11 items-center gap-2 text-sm font-medium text-on-surface">
+                <label className="flex min-h-control cursor-pointer items-center gap-2 text-label text-text-primary">
                   <input
                     type="checkbox"
+                    className="size-5 flex-none"
                     checked={form.confirmResize}
                     disabled={busy}
                     onChange={(e) => p.onChange({ confirmResize: e.target.checked })}
@@ -149,9 +149,10 @@ export function MapItemEditorDetails(p: DetailsProps) {
         <p className={HINT}>{copy.chairNote}</p>
       ) : (
         <label className="flex flex-col gap-1">
-          <span className="flex min-h-11 items-center gap-2 text-sm font-medium text-on-surface">
+          <span className="flex min-h-control cursor-pointer items-center gap-2 text-label text-text-primary">
             <input
               type="checkbox"
+              className="size-5 flex-none"
               checked={form.shown}
               disabled={busy}
               onChange={(e) => p.onChange({ shown: e.target.checked })}
@@ -163,17 +164,17 @@ export function MapItemEditorDetails(p: DetailsProps) {
       )}
 
       {p.confirmingReset ? (
-        <div className="flex flex-col gap-3 rounded-md3 border border-outline-variant p-3">
+        <div className="flex flex-col gap-3 rounded-xl border border-divider p-3">
           <ResetMapItemBody item={item} />
-          {p.dirty && <p className="text-[13px] font-semibold text-error">{ed.reset.lost}</p>}
+          {p.dirty && <p className="text-label font-semibold text-danger">{ed.reset.lost}</p>}
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" className="min-h-11" disabled={busy} onClick={p.onReset}>
+            <Button variant="pixel" size="sm" disabled={busy} onClick={p.onReset}>
               {resetCopy.confirm}
             </Button>
             <Button
               variant="tonal"
               size="sm"
-              className="min-h-11"
+
               disabled={busy}
               onClick={p.onKeepEditing}
             >
@@ -186,7 +187,7 @@ export function MapItemEditorDetails(p: DetailsProps) {
           <Button
             variant="outlined"
             size="sm"
-            className="min-h-11"
+
             disabled={busy || isLibraryDefault(item)}
             onClick={p.onAskReset}
           >

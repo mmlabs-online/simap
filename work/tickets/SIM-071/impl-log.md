@@ -350,3 +350,39 @@ None.
 
 ### Scope self-check
 Only the 6b Files tables, tests, pending and this log; `src/ui/copy`, `src/lib`, `src/app`, `src/ui/portal/*.ts` untouched.
+
+## Slice 6c (attempt 1)
+Roomlayout chrome and map items on the Simap tokens, per "Slice 6c addendum"; defaults taken for Q-S6c-1..17. One PR, no 6d (diff 331 insertions, 174 deletions, about 505 changed lines, under the 600 threshold).
+
+### Files touched (all in the plan's Files tables)
+- `src/ui/roomlayout/`: `RoomMap`, `RoomMapSection`, `ZoomControl`, `SeatOverlay`, `LayoutEditorPage`, `LayoutEditor`, `EditorToolbar`, `EditorViews`, `EditorWarnings`, `EditorCanvas`, `GestureOverlay`, `Palette`, `EditorInspector`, `ShortcutList`. Class strings only; no prop, handler, id, `aria-*`, copy change. `WalkLayer` added to `MIGRATED` only.
+- `src/ui/mapItems/`: `MapItemsView`, `MapItemCard`, `MapItemEditor` (close is the kit `IconButton`, Save `variant="pixel"`, kit dialog classes), `MapItemEditorAppearance` (`Radios` options are kit outlined `Button`s), `MapItemEditorDetails` (reset confirm `variant="pixel"`), `SpriteBrowser`. `MapItemsPage`, `FramePreview` added to `MIGRATED` only.
+- `src/ui/portal/PersonalInfoCard.tsx`: 6b nit (class order).
+- `scripts/check-tokens.pending.json`: the 10 keys removed; only `src/app/globals.css` (32) remains.
+- Tests: `src/ui/screen-tokens.test.ts` (`MIGRATED` +23, kit-Button list +7, new "map, editor and map items chrome" test), `src/lib/color/tokens.test.ts` (2 pairs), `RoomMap`, `SeatOverlay`, `LayoutEditorViews`, `EditorWarnings`, `MapItemCard`, `MapItemEditor`, `MapItemEditorAppearance`, `MapItemEditorDetails`, `SpriteBrowser` tests.
+
+### Pending and legacy lines before/after
+Pending: 11 keys / 83 violations -> 1 key / 32 (`check-tokens: 1 files, no violations outside the pending list`). Legacy lines in non-test `.tsx` of roomlayout and mapItems: 131 -> 0 (plan `rg` scan: only the intended `rounded-full` pills/dots remain; no other hit).
+
+### Build-output check (Approach 5)
+After `pnpm build`, the built CSS contains `max-w-145` (`calc(var(--spacing) * 145)`), `grid-cols-[minmax(0,1fr)_--spacing(72)]` (compiled to `minmax(0,1fr) calc(var(--spacing) * 72)`), `w-[calc(100%-var(--space-6))]`, `bg-text-primary/20` (color-mix), `before:h-control`, `aria-checked:border-pixel-primary`, `has-[:checked]:border-pixel-primary`, `text-text-pixel`, `outline-focus`. No fallback was needed.
+
+### Deviation in a test file
+`screen-tokens.test.ts` `OTHER` regex: `focus-visible:` became `(?<![\w-])focus-visible:`. The kept `group-focus-visible:flex` on the seat hover tags (shows the tag on keyboard focus, no colour) otherwise matched the per-component focus rule. The plan's own `rg` for S6c-5 has the same hit on `SeatOverlay.tsx:165-166`; only that substring is exempt.
+
+### Visible differences
+As listed in the plan's "Visible differences to log (slice 6c)".
+
+### Checks
+- `pnpm format:check`: pass
+- `pnpm typecheck`: pass
+- `pnpm check:layers`: `1032 files, no violations`
+- `pnpm test`: exit 0, 398 passed | 1 skipped files; 3967 passed | 7 skipped tests
+- `pnpm build`: pass (exit 0)
+- `node scripts/check-tokens.mjs`: `1 files, no violations outside the pending list`
+
+### Out-of-plan files / Follow-ups
+None out of plan. Follow-up: S6c-5's `rg` in the plan should exclude `group-focus-visible:` (see Deviation).
+
+### Scope self-check
+Only the 6c Files tables, tests, pending and this log; `src/ui/copy`, `src/lib` (except `tokens.test.ts`), `src/app`, `*.ts` in roomlayout/mapItems untouched.

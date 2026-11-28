@@ -29,10 +29,10 @@ describe("RoomMap", () => {
     expect(html).toContain(roomlayoutCopy.tooLarge);
   });
 
-  it("status views use theme tokens (no raw red border)", () => {
+  it("status views use the divider token (no raw red border)", () => {
     for (const status of ["loading", "error", "tooLarge"] as const) {
       const html = renderToStaticMarkup(<RoomMapStatus status={status} />);
-      expect(html).toContain("border-outline-variant");
+      expect(html).toContain("border-divider");
       expect(html).not.toContain("red-500");
     }
   });
@@ -51,5 +51,12 @@ describe("ZoomControl", () => {
     expect(buttons[3]).toContain('disabled=""');
     expect(html).toContain("1x");
     expect(html).toContain("2x");
+  });
+
+  it("the pressed button is ink-bordered and 600, not 800", () => {
+    const html = renderToStaticMarkup(<ZoomControl zoom={2} onZoom={() => {}} allowed={[1, 2]} />);
+    const pressed = (html.match(/<button[^>]*>/g) ?? [])[1] ?? "";
+    expect(pressed).toContain("aria-pressed:border-text-primary");
+    expect(pressed).not.toContain("font-extrabold");
   });
 });
