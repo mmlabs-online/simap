@@ -2825,3 +2825,374 @@ Existing asserts that keep passing unchanged: `RoomMapSection.test.tsx:36–37` 
   visible change. **Default: yes.**
 
 Status: READY
+
+## Slice 7 addendum — Cleanup and audit
+Status: READY. Written against `main` after #167 (slices 1–6c merged); every line number below was read on that
+`main`. Expands Split proposal item 7. Ming approved the plan and the split with all defaults. **The ticket has no
+reworks left**, so every step below has one exact outcome: a search command with its expected output, or a test.
+No new decisions. Open points are Q-S7-n at the end, each with a default that causes no visible change.
+
+Scope (Split proposal item 7, quoted): "remove every compat alias and dead token from globals.css (`--primary…`,
+`--surface-*`, `--accent-*`, `--status-*`, `--scrim`/`--shadow*` → tokens, `--ease-md3`), move `--px-*` art palette
+into tokens.css, `check-tokens.pending.json` empty then deleted (test asserts zero violations), final changelog and the
+brief's self-check (contrast table, focus, 44 px, reduced motion, 800/1024/1280 layouts) in `impl-log.md`". Plus the
+items earlier slices assigned to slice 7: the unused `--px-btn*`/`--px-title*` (6a review, `review.md:442,449`), the
+tolerant pending read (slice 2 review, `review.md:93,101`), Avatar's default colours off the alias (Q-S3-2), `.text-h2`
+removal (Q-S5-2), `.i`/`.font-heading`/`.text-h2` (slice 6 addendum, "globals.css entries that slice 7 owns"), the
+duplicate `LEGACY` regexes in `kit.test.tsx`/`AppShellView.test.tsx` replaced by the whole-src guard (Q-S4-6).
+
+Not in scope (explicitly not done): a fixed-dark tag token (Q-S6c-5 default accepted), a solid prod badge token
+(Q-S4-2 default accepted), merging `tonal`/`outlined` (Q-S3-1 follow-up), any change to `scripts/check-tokens.mjs`
+rules or `ALLOWLIST`, `src/ui/checkin/RoomThumb.tsx` (art, Q-S6-14), sprites, canvas paint.
+
+### Size and split
+≈ 430 changed lines: globals.css ≈ −125/+20, tokens.css ≈ +30, `tokens.test.ts` ≈ +65, `check-tokens.test.ts` ≈ +12,
+`screen-tokens.test.ts` ≈ +20, `kit.test.tsx`/`AppShellView.test.tsx` −6, Avatar + test ≈ 8, three `<h1>` lines 3,
+`check-tokens.mjs` comment 1, pending file −3, impl-log ≈ +140. Hand-written code ≈ 170 lines. Under the ~500
+threshold: **one PR, no 7a/7b** (Q-S7-1).
+
+### Alias audit (step 0, run on `main` before any edit; the planner ran the same searches)
+Every alias, dead token and dead class was searched in `src/**` (TS, TSX, CSS, tests). Result: **only two non-CSS uses
+remain** (`Avatar.tsx:32–33`) **plus three `text-h2` headings**; everything else is unused. The implementer re-runs
+C1–C4 first and pastes the output into impl-log; if any output differs from "Expected", stop and record it (do not
+improvise a migration).
+
+C1 — legacy colour utilities (the `@theme inline` aliases) in TS/TSX:
+```sh
+rg -n --pcre2 '(?<![\w-])(?:bg|text|border(?:-[trblxyse])?|divide|outline|ring|fill|stroke|placeholder|accent|caret|decoration|from|via|to|shadow)-(?:primary|on-primary|primary-container|on-primary-container|secondary|secondary-container|on-secondary-container|tertiary|tertiary-container|on-tertiary-container|error|error-container|on-error-container|success-container|on-success-container|warning-container|on-warning-container|background|on-background|on-surface|on-surface-variant|surface-lowest|surface-low|surface-container|surface-high|surface-highest|outline|outline-variant|inverse-surface|inverse-on-surface|accent-orange|accent-orange-soft|status-online|status-warn|status-alert|px-accent|px-floor|px-wall)(?![\w-])' src -g '!*.test.*' -g '!*.css'
+```
+Expected: no output. (Test files only assert absence, e.g. `DashboardView.test.tsx:156`, `SeatActions.test.tsx:183`;
+`PortalTabs.test.tsx:42–43` match `text-text-primary` as a substring and are unaffected.)
+
+C2 — alias custom properties (`:root` block lines 13–80, dark block lines 101–106):
+```sh
+rg -n -e '--(?:accent-orange|accent-orange-soft|on-accent|status-online|status-warn|status-alert|field-focus|primary|on-primary|primary-container|on-primary-container|secondary|secondary-container|on-secondary-container|tertiary|tertiary-container|on-tertiary-container|error|error-container|on-error-container|success-container|on-success-container|warning-container|on-warning-container|background|on-background|surface|on-surface|on-surface-variant|surface-container-lowest|surface-container-low|surface-container|surface-container-high|surface-container-highest|outline|outline-variant|inverse-surface|inverse-on-surface|inverse-primary|scrim|shadow|shadow-strong|grid-line|card-shadow|card-shadow-hover)([^\w-]|$)' src -g '!*.test.*' -g '!src/app/globals.css'
+```
+Expected: exactly two lines, `src/ui/Avatar.tsx:32` (`var(--secondary-container)`) and `src/ui/Avatar.tsx:33`
+(`var(--on-secondary-container)`). Inside globals.css the only uses outside the alias blocks are `body` (192–193:
+`--background`, `--on-surface`) and `dialog::backdrop` (308: `--scrim`). `--shadow`, `--shadow-strong`, `--grid-line`,
+`--card-shadow`, `--card-shadow-hover`, `--field-focus` and `--inverse-primary` have no use at all.
+
+C3 — pixel art palette and its utilities:
+```sh
+rg -n -e '--px-' -e 'px-(?:outline|accent|floor|wall|bg|shadow|title|heading|btn|stage)' src -g '!*.test.*' -g '!src/app/globals.css'
+```
+Expected: only `src/ui/checkin/RoomThumb.tsx` lines 4, 5, 6, 7, 19, 27, 28 (`var(--px-floor|outline|wall|accent)` and
+`border-px-outline`). So `--px-outline`, `--px-accent`, `--px-floor`, `--px-wall` and the `--color-px-outline` utility
+are used; inside globals.css `.px-scene` (385–400) uses `--px-wall`, `--px-outline`, `--px-floor`. **Dead:**
+`--px-bg`, `--px-bg-alt` (only `.px-stage`, which has no user), `--px-heading-shadow` (only `.px-heading`, no user),
+`--px-shadow`, `--px-title`, `--px-title-shadow`, `--px-btn`, `--px-btn-ledge`, `--px-btn-text` (no use), and the
+`--color-px-accent`, `--color-px-floor`, `--color-px-wall` utilities (no `*-px-accent|floor|wall` class anywhere).
+
+C4 — dead classes and theme keys:
+```sh
+rg -n '(?:^|[^\w-])(?:text-h2|font-heading|ease-md3|rounded-md3(?:-\w+)?)(?:[^\w-]|$)' src -g '!*.test.*' -g '!*.css'
+```
+Expected: exactly `src/app/dev/shell/KitGallery.tsx:36`, `src/ui/AppShellView.tsx:206`, `src/ui/PageSkeleton.tsx:17`
+(all `text-h2 font-semibold`). `font-heading`, `ease-md3`, `rounded-md3*` have no use. `.px-stage`/`.px-heading` have
+no use (C3; tests only assert their absence: `CheckinPopup.test.tsx:54`).
+
+Migration of the five uses (the only product-code edits in this slice):
+
+| Use | Today resolves to | After | Visible change |
+|---|---|---|---|
+| `Avatar.tsx:32` `"var(--secondary-container)"` | `color-mix(in srgb, var(--color-text-primary) 5%, var(--color-surface))` | `"var(--color-ink-tint)"` (new derived token, same expression, Q-S3-2) | none |
+| `Avatar.tsx:33` `"var(--on-secondary-container)"` | `var(--color-text-primary)` | `"var(--color-text-primary)"` | none |
+| `AppShellView.tsx:206`, `PageSkeleton.tsx:17`, `KitGallery.tsx:36` `text-h2 font-semibold` | 32/40 (`.text-h2`), 600 | `text-display font-semibold` (32/40 · 600) | none |
+
+### The 32 globals.css violations → 0
+| Cause (current lines) | Count | Fix |
+|---|---|---|
+| `--px-*` hex, light 83–95 | 13 | 4 used move to tokens.css; 9 dead deleted |
+| `--px-*` hex, dark 109–115 | 7 | 3 used move to tokens.css; 4 dead deleted |
+| `rgba()` light 74, 75, 76, 78, 80 | 5 | `--scrim` → `--color-scrim` in tokens.css; the other 4 dead, deleted |
+| `rgba()` dark 101, 102, 103, 105, 106 | 5 | same (dark `--color-scrim` in tokens.css) |
+| `.i` `font-family: "Material Symbols Outlined"` (254) | 1 | `var(--font-family-icon)`, token in tokens.css (Q-S7-3) |
+| `.px-scene` 4-part `box-shadow` (395–399) | 1 | `var(--shadow-px-scene)`, same value in tokens.css (Q-S7-4) |
+| **Total** | **32** | `node scripts/check-tokens.mjs --list` prints `{}` |
+
+### Files (slice 7)
+None matches a High path (`.github/risk-tiers.yml`: `src/app/globals.css`, `src/styles/**`, `src/ui/**`, `scripts/`
+other than `check-layers.mjs` are not listed).
+
+| File | Change |
+|---|---|
+| `src/styles/tokens.css` | add 4 derived tokens and the pixel art palette (exact text below) |
+| `src/app/globals.css` | delete the compat layer and dead rules, re-point 4 declarations (exact edits below) |
+| `src/ui/Avatar.tsx` | lines 32–33 (table above) |
+| `src/ui/AppShellView.tsx` | line 206 `text-h2 font-semibold text-text-primary` → `text-display font-semibold text-text-primary` |
+| `src/ui/PageSkeleton.tsx` | line 17 `text-h2 font-semibold text-text-primary` → `text-display font-semibold text-text-primary` |
+| `src/app/dev/shell/KitGallery.tsx` | line 36 `text-h2 font-semibold` → `text-display font-semibold` |
+| `scripts/check-tokens.pending.json` | `git rm` (after `--list` prints `{}`) |
+| `scripts/check-tokens.mjs` | comment line 3 only (below); no code change |
+| `scripts/check-tokens.test.ts` | tolerant read + zero-violation test (Tests) |
+| `src/lib/color/tokens.test.ts` | new tokens, pair, cleanup describe (Tests) |
+| `src/ui/screen-tokens.test.ts` | comment line 7, `readdirSync` import, whole-src guard (Tests) |
+| `src/ui/kit.test.tsx` | delete `LEGACY` (78–79) and its expect (376) (Q-S4-6) |
+| `src/ui/AppShellView.test.tsx` | delete `LEGACY` (328–329) and its expect (458) (Q-S4-6) |
+| `src/ui/Avatar.test.tsx` | one new test (Tests) |
+| `work/tickets/SIM-071/impl-log.md` | "Slice 7" section, final changelog, brief self-check (below) |
+
+Not touched: `RoomThumb.tsx`, `SignInScene.tsx` (class names `px-scene`, `px-scene-canvas` unchanged), `CheckinPopup.tsx`
+(`px-frame` unchanged), `layout.tsx`, `ALLOWLIST` and rules in `check-tokens.mjs`, `src/lib/**` except the test,
+`src/ui/copy/**`, every other screen file.
+
+### `src/styles/tokens.css` — exact additions (nothing existing changes)
+1. After line 42 (`--color-info-tint` in `@theme static`) insert:
+   ```css
+     /* Neutral tint: avatar initials background (5 % ink on surface, Q-S3-2) */
+     --color-ink-tint: color-mix(in srgb, var(--color-text-primary) 5%, var(--color-surface));
+   ```
+2. After line 45 (`--color-room-green: #e9eddf;`) insert:
+   ```css
+     /* Overlay: native <dialog> backdrop */
+     --color-scrim: rgba(28, 28, 28, 0.32);
+   ```
+3. After line 92 (`--font-family-mono`) insert:
+   ```css
+     --font-family-icon: "Material Symbols Outlined"; /* .i glyphs (stylesheet <link> in the layout head) */
+   ```
+4. After line 114 (`--shadow-pixel` in `:root`), before the closing `}` on line 115, insert:
+   ```css
+     /* .px-scene frame: four 2 px offsets with no blur, so the corners stay notched (pixel art) */
+     --shadow-px-scene:
+       0 -2px 0 0 var(--px-outline),
+       0 2px 0 0 var(--px-outline),
+       -2px 0 0 0 var(--px-outline),
+       2px 0 0 0 var(--px-outline);
+
+     /* Pixel art palette (D52, docs/art/style-guide.md section 3). Art colours, not UI chrome: the sign-in
+        vignette (.px-scene) and the check-in room thumbnail (checkin/RoomThumb.tsx). Not in the AA pair table. */
+     --px-outline: #2a3140;
+     --px-accent: #14b8a6;
+     --px-floor: #d9dee5;
+     --px-wall: #eef1f5;
+   ```
+5. In `[data-theme="dark"]`: after line 143 (`--color-info-tint`) insert the same `--color-ink-tint` line as step 1
+   (no comment); after line 145 (`--color-room-green: #2a3222;`) insert `  --color-scrim: rgba(0, 0, 0, 0.6);`; after
+   line 149 (`--shadow-pixel: 0 4px 0 #0f1a0c;`) insert:
+   ```css
+     --shadow-px-scene:
+       0 -2px 0 0 var(--px-outline),
+       0 2px 0 0 var(--px-outline),
+       -2px 0 0 0 var(--px-outline),
+       2px 0 0 0 var(--px-outline);
+
+     /* wall top: keeps the pixel frame at 3:1 or more on the dark surface */
+     --px-outline: #8b95a7;
+     --px-floor: #1e2228;
+     --px-wall: #2a2f37;
+   ```
+   (`--shadow-px-scene` is repeated in the dark block like the tints, so it always uses the dark `--px-outline`;
+   `--px-accent` has no dark value today and gets none.)
+
+Values are copied byte for byte from globals.css (`--scrim` 74/101, `.px-scene` 395–399, `--px-*` 83–86/109, 114,
+115), so nothing renders differently. tokens.css stays free of nested rules and media queries (its header rule).
+
+### `src/app/globals.css` — exact edits (line numbers of `main` after #167; edit bottom-up so numbers stay valid)
+1. Lines 395–399 (`.px-scene` `box-shadow:` and its four lines) → one line `  box-shadow: var(--shadow-px-scene);`.
+2. Lines 380–384 (`.px-heading { … }`) → delete.
+3. Lines 371–374 (`.px-stage { … }`) → delete. Keep the comment on line 370 and `.px-frame` (375–379).
+4. Line 308 → `  background: var(--color-scrim);`.
+5. Line 254 → `  font-family: var(--font-family-icon);`.
+6. Lines 205–212 (`.font-heading { … }`, the blank line, `.text-h2 { … }`) → delete; line 213 (blank) stays, so one
+   blank line separates the `h1, h2, h3` rule from the `/* Shadows live in :root … */` comment.
+7. Line 192 → `  background-color: var(--color-canvas);`; line 193 → `  color: var(--color-text-primary);`.
+8. Lines 4–179 (header comment, `:root`, `[data-theme="dark"]`, `@custom-variant`, `@theme inline`) → replace with
+   exactly:
+   ```css
+   /* ============================================================
+      App-wide CSS on the Simap design tokens (src/styles/tokens.css, SIM-071). Every colour, shadow and
+      font value lives in tokens.css; this file only reads them with var(). Theme is set by
+      <html data-theme="light|dark"> (see src/lib/theme.ts).
+      ============================================================ */
+
+   :root {
+     color-scheme: light;
+   }
+
+   [data-theme="dark"] {
+     color-scheme: dark;
+   }
+
+   /* Class-based dark variant for later tickets: `dark:` utilities follow data-theme. */
+   @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+   /* Utilities that tokens.css @theme does not give: the pixel art outline (border-px-outline in
+      checkin/RoomThumb.tsx) and the layout sizes max-w-content, max-w-library, min-h-control, w-sidebar. */
+   @theme inline {
+     --color-px-outline: var(--px-outline);
+
+     --container-content: var(--width-content);
+     --container-library: var(--width-library);
+     --spacing-control: var(--size-control-min);
+     --spacing-sidebar: var(--size-sidebar);
+   }
+   ```
+   Lines 1–3 (`@import "tailwindcss";`, `@import "../styles/tokens.css";`, blank) stay. Everything from line 180 on
+   is unchanged except steps 1–7. The two marker comments `/* SIM-068 auth world (aw-*) */` and
+   `/* SIM-068.1 small world (aw-world) */` stay (`SmallWorld.test.tsx:121`).
+9. Run `pnpm format` (oxfmt may re-wrap; the tests normalise whitespace).
+
+### `scripts/check-tokens.mjs` (comment only)
+Line 3 → `// violations were listed with their count in scripts/check-tokens.pending.json; SIM-071 slice 7 emptied and deleted it, so a missing file means no violation is allowed.`
+(If oxfmt wraps it, accept the wrap.) `readPending()` (159–166) already returns `{}` on ENOENT; no code change.
+
+### Approach (slice 7), in order
+1. Run C1–C4 on the unedited branch; paste the output into impl-log ("Alias audit"). It must equal "Expected".
+2. tokens.css additions (steps 1–5), then globals.css edits (steps 1–9).
+3. Avatar.tsx 32–33, the three `<h1>` lines.
+4. Tests (below); `kit.test.tsx`/`AppShellView.test.tsx` `LEGACY` deletions.
+5. `node scripts/check-tokens.mjs --list` → prints `{}` (the "empty" step). Then `git rm scripts/check-tokens.pending.json`
+   and the `check-tokens.mjs` comment. `node scripts/check-tokens.mjs` → exit 0 and prints exactly
+   `check-tokens: 0 files, no violations outside the pending list`.
+6. After-searches (paste output into impl-log):
+   - A1: C1 → no output.
+   - A2: C2 **without** `-g '!src/app/globals.css'` → no output (whole `src`, both CSS files included).
+   - A3: `rg -n -e '--px-[\w-]+\s*:' src` → exactly 7 lines, all in `src/styles/tokens.css` (4 light, 3 dark).
+     C3 → unchanged (RoomThumb.tsx 4, 5, 6, 7, 19, 27, 28).
+   - A4: C4 → no output.
+   - A5: `rg -n '#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?)\(' src/app/globals.css` → no output.
+7. Mutation checks (record, then revert with `git checkout -- src/ui/PageSkeleton.tsx`): (a) append
+   `export const m = "bg-[#fff]";` to `src/ui/PageSkeleton.tsx` → `pnpm test scripts/check-tokens.test.ts` fails;
+   (b) append `export const m = "text-on-surface";` instead → `pnpm test src/ui/screen-tokens.test.ts` fails.
+8. `pnpm build`, then for each of `--shadow-px-scene`, `--color-scrim`, `--color-ink-tint`, `--px-outline` and
+   `Material Symbols Outlined`: `grep -c -- "<string>" .next/static/css/*.css` → at least one file ≥ 1 (the moved
+   values reach the built CSS). Note the five results in impl-log.
+9. Contrast table for the self-check: temporarily add inside the `describe.each` callback of `tokens.test.ts`
+   ```ts
+   it(`${theme} print`, () => {
+     for (const [fg, bg] of [...TEXT_PAIRS, ...LARGE_TEXT_PAIRS, ...NON_TEXT_PAIRS])
+       console.log(`${theme}\t${fg}\t${bg}\t${ratio(fg, bg).toFixed(2)}`);
+   });
+   ```
+   run `pnpm test src/lib/color/tokens.test.ts`, copy the lines into impl-log, **delete the block** (A6:
+   `rg -n "print" src/lib/color/tokens.test.ts` → no output).
+10. impl-log (below). Checks: `pnpm format:check`, `pnpm typecheck && pnpm check:layers`, `pnpm test`, `pnpm build`.
+
+Rules: R1 (no new imports outside test files; `screen-tokens.test.ts` adds `readdirSync` from `node:fs`), R3 none,
+R4 (Files table only), R5 (tests below). R2/R6/R7 not touched.
+
+### Tests to write / update (slice 7)
+In this table `\|` is the Markdown escape for `|`: write a plain `|` in the code.
+
+| Test (file › name) | Exact change | Covers |
+|---|---|---|
+| `scripts/check-tokens.test.ts` (top) | lines 16–18 → `const PENDING_FILE = "scripts/check-tokens.pending.json";` and `// Slice 7 deleted the pending list: a missing file is {} and every file must be clean.` and `const pending: Record<string, number> = existsSync(PENDING_FILE) ? JSON.parse(readFileSync(PENDING_FILE, "utf8")) : {};` (`existsSync` is already imported, line 2) | tolerant read (slice 2 review) |
+| check-tokens.test › repo › "the pending list is gone and src has zero violations (AC 1b)" | new `it` in `describe("repo")`: `expect(existsSync(PENDING_FILE)).toBe(false); expect(counts).toEqual({});` | AC 1b, S7-7 |
+| check-tokens.test (unchanged tests) | "pending › is a sorted flat object…" passes on `{}`; "cli › passes on the repo and --list equals the pending file" passes (`--list` prints `{}`) | no break |
+| `src/lib/color/tokens.test.ts` › `DERIVED_TOKENS` | append `"--color-ink-tint"`, `"--color-scrim"`, `"--font-family-icon"`, `"--shadow-px-scene"` (existing "defines every brief token exactly once (light)" then covers them; "every --color-* token has a value in dark" covers ink-tint and scrim) | S7-3, S7-6 |
+| tokens.test › `TEXT_PAIRS` | append `["text-primary", "ink-tint"]` (Avatar initials; light ≈ 14:1, both themes via the existing `describe.each`; `resolve` already handles `color-mix`) | AC 6 |
+| tokens.test › new `describe("compat layer removed (slice 7)")`, with `const ws = (s?: string) => s?.replace(/\s+/g, " ").trim();` | (1) "globals.css defines no colour value": `expect(globalsCss).not.toMatch(/#[0-9a-fA-F]{3,8}\b\|\b(?:rgba?\|hsla?)\(/)`; (2) ":root and dark blocks only set color-scheme": `ws(/:root\s*\{([^}]*)\}/.exec(globalsCss)?.[1])` is `"color-scheme: light;"` and `ws(/\[data-theme="dark"\]\s*\{([^}]*)\}/.exec(globalsCss)?.[1])` is `"color-scheme: dark;"`; (3) "@theme inline keeps only the art outline and layout sizes": names in `/@theme inline\s*\{([^}]*)\}/` equal `["--color-px-outline", "--container-content", "--container-library", "--spacing-control", "--spacing-sidebar"]`; (4) "every var() in globals.css is a tokens.css token": for each `/var\((--[\w-]+)/g` match, `lightMap.has(name) \|\| name === "--font-serif"`; (5) "dead rules are gone and the last literals read tokens": no match for `/\.(?:font-heading\|text-h2\|px-stage\|px-heading)\b/`; matches `/(?:^\|\n)\.i\s*\{[^}]*font-family:\s*var\(--font-family-icon\);/`, `/\.px-scene\s*\{[^}]*box-shadow:\s*var\(--shadow-px-scene\);/`, `/dialog::backdrop\s*\{[^}]*background:\s*var\(--color-scrim\);/`, `/(?:^\|\n)body\s*\{[^}]*background-color:\s*var\(--color-canvas\);\s*color:\s*var\(--color-text-primary\);/`; (6) "moved values are unchanged": `ws(lightMap.get("--color-ink-tint"))` and `ws(darkMap.get("--color-ink-tint"))` equal `"color-mix(in srgb, var(--color-text-primary) 5%, var(--color-surface))"`; `lightMap.get("--color-scrim")` `"rgba(28, 28, 28, 0.32)"`, `darkMap.get("--color-scrim")` `"rgba(0, 0, 0, 0.6)"`; `lightMap.get("--font-family-icon")` `'"Material Symbols Outlined"'`; `ws(lightMap.get("--shadow-px-scene"))` and dark equal `"0 -2px 0 0 var(--px-outline), 0 2px 0 0 var(--px-outline), -2px 0 0 0 var(--px-outline), 2px 0 0 0 var(--px-outline)"`; (7) "pixel art palette lives in tokens.css only": `globalsCss` does not match `/--px-[\w-]+\s*:/`; `light` `--px-` names in order equal `["--px-outline", "--px-accent", "--px-floor", "--px-wall"]` with values `#2a3140`, `#14b8a6`, `#d9dee5`, `#eef1f5`; `dark` `--px-` names equal `["--px-outline", "--px-floor", "--px-wall"]` with `#8b95a7`, `#1e2228`, `#2a2f37` | S7-1, S7-5, S7-6, S7-8 |
+| `src/ui/screen-tokens.test.ts` | line 1 import gains `readdirSync`; line 7 comment → `/** Screens migrated to the kit tokens (slices 5–6); the last describe guards every non-test src file (slice 7). */`; new `describe("whole src after the compat layer removal (slice 7)")` › "no non-test ts/tsx file uses a removed alias, class or variable": `const files = readdirSync(new URL("../", import.meta.url), { recursive: true }).map((p) => String(p).split("\\").join("/")).filter((p) => /\.tsx?$/.test(p) && !/\.test\.tsx?$/.test(p));` `expect(files.length).toBeGreaterThan(100);` then for each file `expect(read(f).match(re)?.[0], f).toBeUndefined()` for `re` in `[LEGACY, REMOVED]`, with `const REMOVED = /var\(--(?:scrim\|shadow\|shadow-strong\|grid-line\|card-shadow\|card-shadow-hover\|field-focus\|px-bg\|px-bg-alt\|px-shadow\|px-title\|px-title-shadow\|px-heading-shadow\|px-btn\|px-btn-ledge\|px-btn-text)\)\|(?<![\w-])(?:ease-md3\|font-heading\|text-h2)(?![\w-])/;` (`read` already resolves paths relative to `src/`) | S7-2; Q-S4-6 "replaces both with the token guard" |
+| `src/ui/kit.test.tsx` | delete lines 78–79 (`const LEGACY = …`) and line 376 (`expect(c, c).not.toMatch(LEGACY);`); the `font-bold` expect on 377 stays | Q-S4-6 (covered by the whole-src guard) |
+| `src/ui/AppShellView.test.tsx` | delete lines 328–329 (`const LEGACY = …`) and line 458; `PALETTE` (330–331) and lines 459–464 stay | Q-S4-6 |
+| `src/ui/Avatar.test.tsx` › "without a colour uses the ink tint and ink text (no compat alias)" | `renderToStaticMarkup(<Avatar name="Lê Bình" />)` contains `background:var(--color-ink-tint)` and `color:var(--color-text-primary)` | S7-3 |
+
+Existing tests that keep passing unchanged: all of `tokens.test.ts` (the `.aw-*` describe slices from `.aw-stage`,
+after every edit), `SmallWorld.test.tsx:118–130`, `breakpoints.test.ts`, `views.test.tsx:190–281` (`px-scene` class),
+`CheckinPopup.test.tsx:44–55` (`px-frame`, no `px-heading`), every `MIGRATED` test in `screen-tokens.test.ts`.
+
+### Acceptance → verification (slice 7)
+| # | Criterion | How the reviewer verifies it |
+|---|---|---|
+| S7-1 | Every compat alias and dead token is gone from globals.css: `:root`/dark set only `color-scheme`; `@theme inline` has only the 5 kept keys; no `--radius-md3*`, `--ease-md3`, `--font-heading` | tokens.test "compat layer removed" (2), (3); A2 → no output; read the new globals.css lines 1–30 |
+| S7-2 | No removed name is used anywhere in `src` (proof run before deleting; uses migrated) | impl-log "Alias audit" shows C1–C4 output equal to "Expected"; A1, A2, A4 → no output; screen-tokens whole-src test green |
+| S7-3 | Avatar default colours come from tokens with the same computed value | Avatar.test new test; tokens.test (6) ink-tint expression; `["text-primary", "ink-tint"]` AA in both themes |
+| S7-4 | `.text-h2` and `.font-heading` removed; the three headings use `text-display font-semibold` | tokens.test (5); C4/A4; `git diff main -- src/ui/AppShellView.tsx src/ui/PageSkeleton.tsx src/app/dev/shell/KitGallery.tsx` shows 3 one-word changes |
+| S7-5 | `--px-*` art palette lives only in tokens.css, in a labelled section; the 13 dead `--px-*` and 3 dead `--color-px-*` are deleted | tokens.test (7); A3; read tokens.css |
+| S7-6 | The 32 globals.css violations are fixed (`.i`, `.px-scene`, `rgba()`, `--px-*` hex) | `node scripts/check-tokens.mjs --list` prints `{}`; A5 → no output; tokens.test (1), (5) |
+| S7-7 | `scripts/check-tokens.pending.json` is deleted; the test reads a missing file as `{}` and asserts zero violations (AC 1b closed) | `test ! -e scripts/check-tokens.pending.json`; check-tokens.test new test; `node scripts/check-tokens.mjs` exit 0 with `check-tokens: 0 files, …`; mutation checks (Approach 7) recorded in impl-log |
+| S7-8 | No visible difference: every moved value is byte-identical; every deleted name was unused | tokens.test (6), (7); Avatar.test; Approach 8 built-CSS counts in impl-log; impl-log "Visible differences: none" |
+| S7-9 | Final changelog in impl-log (all slices, PRs, files, visible differences forced by the scale) | read impl-log "SIM-071 final changelog" |
+| S7-10 | Brief self-check in impl-log: contrast table (both themes, every asserted pair), focus, 44 px, reduced motion, 800/1024/1280 | read impl-log "Brief self-check"; contrast rows equal the `TEXT_PAIRS`/`LARGE_TEXT_PAIRS`/`NON_TEXT_PAIRS` count × 2 themes; A6 → no output |
+| S7-11 | Only planned files | `git diff --stat main` ⊆ Files table |
+| S7-12 | Checks green | `pnpm format:check && pnpm typecheck && pnpm check:layers && pnpm test && pnpm build` |
+
+### impl-log.md — what "Slice 7 (attempt 1)" must contain
+Same sub-headings as earlier slices (Files touched, Alias audit, Pending before/after `globals.css` 32 → 0 and file
+deleted, Build-output check, Mutation checks, Visible differences, Checks, Out-of-plan files / Follow-ups, Scope
+self-check), then two ticket-level sections:
+
+**`## SIM-071 final changelog`** (brief Deliverable 3), one row per slice, PRs from `ticket.md` Handoff:
+
+| Slice | PR | Areas / main files | Visible differences |
+|---|---|---|---|
+| 1 Tokens foundation | #154 | tokens.css, globals.css compat layer, DM Sans, `md` 800, focus ring, reduced motion | impl-log "Visible differences (slice 1)" |
+| 2 Token guard | #155 | `scripts/check-tokens.*` | none |
+| 3 UI kit | #158 | `src/ui/` kit components, KitGallery | "Slice 3 … Visible differences" |
+| 4 Shell | #160 | AppShellView, sidebar, page containers | "Slice 4 … Visible differences" |
+| 5a / 5b / 5c | #161 / #163 / #164 | management screens | their sections |
+| 6a / 6b / 6c | #165 / #166 / #167 | auth + check-in, portal, room map + editor + Map items | their sections |
+| 7 Cleanup | (this PR) | globals.css, tokens.css, guard tests | none |
+
+Under it, "Visible differences forced by the token scale" (≤ 15 bullets, a summary of the per-slice lists, no new
+claims): font Manrope → DM Sans; page headings 30 → 32 px, metrics → 24 px; 13 px text → 14 px (labels) or 12 px
+(metadata); 700/800 → 600/500; pill buttons → 8 px; filled actions coral `#D3441F` (not the brief `#ED5B35`, Q1);
+control borders `--color-border-strong` (Q6); `md` 768 → 800; controls 44 px; dark theme derived palette (Q5).
+
+**`## Brief self-check (Deliverable 4)`**:
+- *Contrast (WCAG AA):* the table from Approach 9: columns theme, foreground, background, ratio, threshold (text 4.5,
+  large text 3, non-text 3), pass. One sentence: "Asserted by `src/lib/color/tokens.test.ts` in both themes."
+  Known non-text-only use: white on brief coral `--color-workspace-primary` (3.4:1) is not used for text (Q1).
+- *Focus ring visible:* global `:where(button, a, [tabindex], input, select, summary):focus-visible` 2 px
+  `--color-focus` + 2 px offset and `.field-box:focus-within` (globals.css); `--color-focus` ≥ 3:1 on canvas, surface,
+  cream, tile in both themes (table); per-component focus classes forbidden in migrated files (`screen-tokens` `OTHER`),
+  restated only as `has-[:focus-visible]:outline-focus` on labels of `sr-only` inputs. Known limit: on light map art
+  the ring can be about 2.6:1 (Q-S6c-3).
+- *44 px targets:* `--size-control-min: 44px` → `min-h-control`/`size-control`; kit Button/IconButton asserted in
+  `kit.test.tsx`; `LOW_TARGET` guard over every `MIGRATED` file (give the count, `MIGRATED.length`). Documented
+  exceptions: links inside table cells and sentences (Q-S5b-3, WCAG 2.5.8 spacing exception); the "Move here" tag is
+  24 px visible with a 44 px hit area (Q-S6c-2); the Map item pencil is a 32 px circle in a 44 px hit area (6c).
+- *Reduced motion:* globals.css `@media (prefers-reduced-motion: reduce)` sets `animation`/`transition: none
+  !important` (tokens.test); the auth world has no motion (tokens.test); canvas loops: `rg -n
+  "requestAnimationFrame|setInterval" src/ui -g '!*.test.*'` → only `roomlayout/EditorCanvas.tsx:199` (one-shot paint) and
+  `roomlayout/WalkLayer.tsx:73,75,90` (gated by `useWalks`/`idleOn`, slice 1 check); paste the output.
+- *Layout 800 / 1024 / 1280:* code-level evidence only (no browser in the agent environment): sidebar from `md` 800
+  (`AppShellView`), desktop composition at `lg` 1024 (layout-editor gate `MEDIA.lg`, check-in two columns, sign-in
+  Hero), wide at `xl` 1280 (sign-in small world, page padding 32 px); link the slice-4 "Width table". Mark the row
+  "to be confirmed by Ming" (Q-S7-6).
+- *Deliverable 2 grep:* the output of `node scripts/check-tokens.mjs` (zero files) and A5.
+
+### Visible differences to log (slice 7)
+None expected. Every moved value is copied unchanged (tokens.test (6), (7)); every deleted alias, token, class and
+utility has no use (C1–C4); the three headings keep 32/40 · 600. If the implementer finds any difference, it is
+recorded and the slice stops for the orchestrator (it would mean the audit missed a use).
+
+### Ming verification after merge (slice 7)
+- Light and dark at 390 / 800 / 1024 / 1280 px: open any dialog (backdrop dim as before); the Members list (avatars
+  without a group colour: light grey circle, dark initials, as before); icons render everywhere (Material Symbols);
+  `/dev/shell` heading and the signed-out shell heading unchanged; `/sign-in` from 800 px: the pixel vignette frame
+  keeps its notched corners; the check-in popup room thumbnails keep their colours.
+- Read "Brief self-check" in impl-log and tick each item against the app, including the 800/1024/1280 layout row and
+  keyboard Tab and OS reduced motion on one screen. This is the ticket's last slice: after it, SIM-071 can move to
+  MERGED.
+
+### Assumptions and non-blocking questions (slice 7)
+- Hotspots: no other ticket is IN_PROGRESS/REVIEW/DONE (`work/backlog.md:161`: only SIM-071). Any UI ticket started
+  after this slice inherits the zero-violation guard: new hex, arbitrary sizes or legacy aliases fail `pnpm test`.
+- `data-theme` is set on `<html>` (`src/lib/theme.ts:39`), the same element as `:root`, so the tokens.css `:root`/dark
+  order (dark block last, equal specificity) gives the same cascade the globals.css blocks had.
+- Q-S7-1 (non-blocking). Size ≈ 430 lines with ≈ 140 of them in impl-log. **Default: one PR, no 7a/7b.**
+- Q-S7-2 (non-blocking). Scrim name. **Default: `--color-scrim` in tokens.css `@theme static` (light) and the dark
+  block, same rgba values; `dialog::backdrop` reads it.** Alternative: keep the name `--scrim` in tokens.css `:root`.
+- Q-S7-3 (non-blocking). `.i` font stack. **Default: `--font-family-icon` token in tokens.css** (brief Rule 2: no font
+  stacks outside tokens). Alternative: an `ALLOWLIST` entry for globals.css (rejected: it would reopen the file to
+  every rule).
+- Q-S7-4 (non-blocking). `.px-scene` frame. **Default: `--shadow-px-scene` with the same four offsets (notched
+  corners kept).** Alternative: `outline: 2px solid var(--px-outline)` (fills the four corner pixels: visible).
+- Q-S7-5 (non-blocking). Unused pixel rules and tokens (`.px-stage`, `.px-heading`, 9 light and 4 dark `--px-*`,
+  `--color-px-accent/floor/wall`). **Default: delete** (6a review nit; Q-S6-5 left `.px-stage`/`.px-heading` to this
+  slice). Alternative: move them into tokens.css unused.
+- Q-S7-6 (non-blocking). Layout check at 800/1024/1280. **Default: code-level evidence in impl-log, visual check by
+  Ming after merge** (the agent has no browser; earlier slices did the same).
+- Q-S7-7 (non-blocking). `--color-px-outline` utility. **Default: keep it in globals.css `@theme inline`** (only
+  `RoomThumb.tsx:19` uses `border-px-outline`, and RoomThumb is art, untouched per Q-S6-14). Alternative: RoomThumb
+  `border-(--px-outline)` and drop the mapping (edits an art file).
+- Q-S7-8 (non-blocking). `screen-tokens.test.ts` ("slice 7 replaces this test with the empty guard", slice 5a).
+  **Default: keep the `MIGRATED` tests and add the whole-src guard**; deleting them would drop the raw-type, low-target
+  and palette checks that the token guard does not have.
+- Q-S7-9 (non-blocking). Headings keep `font-semibold` next to `text-display` (the utility also sets 600). **Default:
+  keep it**: no reliance on `--text-display--font-weight`, zero visible change.
+
+Status: READY
