@@ -560,3 +560,49 @@ None (no review trigger matched).
 
 ### Blockers from review agents (slice 6c)
 - None (no review trigger matched).
+
+## Slice 6c (attempt 2)
+Verdict: PASS
+
+Date: 2026-11-28. Scope: rework commit 0374131 on `claude/modest-allen-yru4g8` (on top of attempt-1 commit 2fbb828), against "Slice 6c (attempt 1)" Issue 1 and its nits. Later commit 46aee46 touches only `work/tickets/SIM-071/ticket.md` (State REWORK → REVIEW).
+
+### Checks (run by reviewer)
+- `pnpm format:check`: exit 0, "All matched files use the correct format."
+- `pnpm typecheck`: exit 0.
+- `pnpm check:layers`: exit 0, "check-layers: 1032 files, no violations".
+- `pnpm test`: exit 0, "398 passed | 1 skipped (399)" files, "3968 passed | 7 skipped (3975)" tests (attempt 1: 3967; +1 is the new focus-guard test). Matches impl-log.
+- `pnpm build`: exit 0.
+- `node scripts/check-tokens.mjs`: exit 0, "1 files, no violations outside the pending list".
+- `pnpm test:db`: not affected (no server/DB change).
+
+### Issue 1 (blocker) — fixed
+- src/ui/screen-tokens.test.ts:138–139 `OTHER` is now exactly the instructed regex `/opacity-60|(?<!group-)focus-visible:|group-focus-visible:(?!flex(?![\w-]))|focus-within:/`.
+- New test "the focus guard exempts only group-focus-visible:flex" (screen-tokens.test.ts:156–170) allows `group-focus-visible:flex` and `has-[:focus-visible]:outline-focus` and rejects `focus-visible:ring-2`, `peer-focus-visible:flex`, `group-focus-visible:ring-2`, `in-focus-visible:flex`, `md:focus-visible:flex`, `group-focus-visible:flex-col`; green.
+- The migrated-files guard stays green with the narrower regex; the only focus classes left in roomlayout/mapItems chrome are SeatOverlay.tsx:165–166 `group-focus-visible:flex` and SpriteBrowser.tsx:95 `has-[:focus-visible]:outline-*`, both planned. S6c-5 now met.
+- impl-log "Slice 6c (attempt 2)" carries the updated deviation note superseding the old one.
+
+### Nits — fixed
+- Empty lines inside JSX attribute lists removed at all five places (MapItemEditor.tsx:155, MapItemEditorAppearance.tsx:228/262, MapItemEditorDetails.tsx:174/181); oxfmt collapsed two `Button`s to one line. Props unchanged.
+- Palette.tsx:55: same class set, `border-l-4 border-transparent aria-pressed:border-pixel-primary` moved before the transition string. No class added or removed.
+- `whitespace-nowrap` on Radios and the PR-body visible-differences list stay for Ming's check / the PR (not code changes).
+
+### Scope
+`git diff --stat 2fbb828 0374131 -- . ':!work'` = only the 5 files above (21+/18−). No behaviour, copy, prop or aria change; no High path; no out-of-plan file.
+
+### Rules (CLAUDE.md)
+No violations. R5 restored (guard is as strict as before, plus the one planned exemption, and has its own test).
+
+### Blockers from review agents
+None (no review trigger matched).
+
+### Nits (do not block)
+None new.
+
+### Ming verification after merge
+- Unchanged from "Slice 6c (attempt 1)" (room page 390/1024/1280 light and dark, check-in tags, Move here on phone, layout editor, Map items editor incl. Radios wrapping at 390 px). Not browser-verified by implementer or reviewer.
+
+### Follow-ups (out of scope)
+- As in attempt 1 (S6c-5 rg in later addenda should exclude `group-focus-visible:flex`).
+
+### Blockers from review agents (slice 6c attempt 2)
+- None (no review trigger matched).
