@@ -11,8 +11,8 @@
 | Needs Ming | — |
 | Attempts | 2 |
 | Created | 2026-11-27 |
-| Claimed by | claude@2026-11-28T03:19:48Z |
-| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 (merged); slice 5c: https://github.com/mmlabs-online/simap/pull/164 (merged); slice 6a: https://github.com/mmlabs-online/simap/pull/165 (merged); slice 6b: https://github.com/mmlabs-online/simap/pull/166 (merged); slice 6c: https://github.com/mmlabs-online/simap/pull/167 (merged) |
+| Claimed by | |
+| PR | slice 1: https://github.com/mmlabs-online/simap/pull/154 (merged); slice 2: https://github.com/mmlabs-online/simap/pull/155 (merged); slice 3: https://github.com/mmlabs-online/simap/pull/158 (merged); slice 4: https://github.com/mmlabs-online/simap/pull/160 (merged); slice 5a: https://github.com/mmlabs-online/simap/pull/161 (merged); slice 5b: https://github.com/mmlabs-online/simap/pull/163 (merged); slice 5c: https://github.com/mmlabs-online/simap/pull/164 (merged); slice 6a: https://github.com/mmlabs-online/simap/pull/165 (merged); slice 6b: https://github.com/mmlabs-online/simap/pull/166 (merged); slice 6c: https://github.com/mmlabs-online/simap/pull/167 (merged); slice 7: https://github.com/mmlabs-online/simap/pull/168 |
 
 ## Goal
 Every screen of simap uses one set of design tokens (colours, type, spacing, radius, elevation, layout, motion) from
@@ -151,3 +151,9 @@ workspace coral) via D87.
 - Done: slice 6c (roomlayout chrome and mapItems; pending 83 → 32, only globals.css left). Attempt 1 was REWORK because the focus-guard regex was too broad. Attempt 2 passed. PR https://github.com/mmlabs-online/simap/pull/167.
 - In progress / next: after Ming merges #167, `/run SIM-071` for slice 7 (cleanup: compat aliases, `--px-*` into tokens.css, empty and delete the pending list, changelog, brief self-check). It needs an addendum.
 - Gotchas: **no reworks left on the ticket (Attempts = 2)**. Any REWORK in slice 7 escalates. Keep slice 7 small and well-specified. Q-S6c-1..17 took their defaults.
+
+### 2026-11-28 — claude — DONE (slice 7 PR open)
+- Agent calls: 3 (planner×1 231k slice 7 addendum, implementer×1 78k, reviewer×1 69k)
+- Done: slice 7, the cleanup slice: compat layer removed, `--px-*`, scrim, icon font and px-scene moved to tokens.css, pending list deleted, zero-violation guard, final changelog and brief self-check. PASS on the first attempt. PR https://github.com/mmlabs-online/simap/pull/168. All 7 slices (11 PRs) are done.
+- In progress / next: once Ming merges #168, SIM-071 moves to MERGED. Ming then runs the browser check and the brief self-check in impl-log.
+- Gotchas: the CLI wording in `check-tokens.mjs` still says "pending list"; this is a /solo follow-up. From now on every UI change has to pass the zero-violation token guard.
